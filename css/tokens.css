@@ -1,0 +1,118 @@
+/* ══════════════════════════════════
+   DESIGN TOKENS — Charnley Finance
+   Design System v1.0
+   ══════════════════════════════════ */
+
+:root {
+  /* ── Navy scale ── */
+  --n950:#080C18; --n900:#0D1225; --n800:#111830;
+  --n700:#18213E; --n600:#1E2A4A; --n300:#6278A0;
+  /* ── Page + card surfaces ── */
+  --bg:var(--n950); --card:var(--n800); --card2:var(--n700);
+  --card3:var(--n600); --border:rgba(98,120,160,0.2);
+  /* ── Brand ── */
+  --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
+  --purple:#818CF8;
+  /* ── Semantic ── */
+  --success:#00C896; --success-lt:#22D9A9;
+  --warn:#F59E0B; --danger:#EF4444;
+  /* ── Text ── */
+  --text:#E8EDF5; --muted:var(--n300);
+  /* ── Nav ── */
+  --nav-bg:var(--n900); --nav-text:var(--n300); --nav-active:var(--primary);
+  /* ── Inputs ── */
+  --input-bg:var(--n700); --input-border:rgba(98,120,160,0.3);
+  /* ── Spacing tokens (8pt grid) ── */
+  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px;
+  --sp6:24px; --sp8:32px; --sp12:48px; --sp16:64px;
+  /* ── Radii ── */
+  --radius:16px; --radius-sm:10px; --radius-lg:20px; --radius-pill:9999px;
+  /* ── Typography ── */
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'DM Mono',monospace;
+  /* ── Layout ── */
+  --nav-w:240px; --topbar-h:52px;
+  /* ── Shadows ── */
+  --shadow-sm:0 2px 8px rgba(0,0,0,.35);
+  --shadow:0 8px 32px rgba(0,0,0,.45);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.55);
+}
+
+/* ── THEME: Light (manual) ── */
+[data-theme="light"] {
+  --bg:#F8F9FC; --card:#FFFFFF; --card2:#F2F4F8; --card3:#E8ECF4;
+  --border:rgba(0,0,0,.09); --text:#0D1225; --muted:#6278A0;
+  --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
+  --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
+  --nav-bg:#FFFFFF; --nav-text:#6278A0; --nav-active:#F0538A;
+  --input-bg:#F2F4F8; --input-border:rgba(0,0,0,.12);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.08); --shadow:0 4px 24px rgba(0,0,0,.12);
+}
+
+/* ── THEME: Dark (manual override) ── */
+[data-theme="dark"] {
+  --bg:#080C18; --card:#111830; --card2:#18213E; --card3:#1E2A4A;
+  --border:rgba(98,120,160,0.2); --text:#E8EDF5; --muted:#6278A0;
+  --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
+  --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
+  --nav-bg:#0D1225; --nav-text:#6278A0; --nav-active:#F0538A;
+  --input-bg:#18213E; --input-border:rgba(98,120,160,0.3);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.35); --shadow:0 8px 32px rgba(0,0,0,.45);
+}
+
+/* ── THEME: Mint ── */
+[data-theme="mint"] {
+  --bg:#EBF8F4; --card:#FFFFFF; --card2:#D8F3EC; --card3:#C0EDE2;
+  --border:rgba(0,148,120,.15); --text:#0D2520; --muted:#3D8070;
+  --primary:#00C896; --pink-light:#22D9A9; --pink-dark:#009970;
+  --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
+  --nav-bg:#FFFFFF; --nav-text:#3D8070; --nav-active:#00C896;
+  --input-bg:#D8F3EC; --input-border:rgba(0,148,120,.2);
+  --shadow-sm:0 2px 8px rgba(0,148,120,.1); --shadow:0 4px 24px rgba(0,148,120,.15);
+}
+
+/* ── THEME: Ocean ── */
+[data-theme="ocean"] {
+  --bg:#06111E; --card:#0C1E33; --card2:#122740; --card3:#193350;
+  --border:rgba(56,189,248,.15); --text:#E0F2FE; --muted:#7EA8C8;
+  --primary:#38BDF8; --pink-light:#7DD3FC; --pink-dark:#0284C7;
+  --purple:#818CF8; --success:#34D399; --warn:#FBBF24; --danger:#F87171;
+  --nav-bg:#08182A; --nav-text:#7EA8C8; --nav-active:#38BDF8;
+  --input-bg:#0C1E33; --input-border:rgba(56,189,248,.2);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.4); --shadow:0 4px 32px rgba(0,0,0,.5);
+}
+
+/* ── SYSTEM: Light mode default ── */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg:#F8F9FC; --card:#FFFFFF; --card2:#F2F4F8; --card3:#E8ECF4;
+    --border:rgba(0,0,0,.09); --text:#0D1225; --muted:#6278A0;
+    --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
+    --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
+    --nav-bg:#FFFFFF; --nav-text:#6278A0; --nav-active:#F0538A;
+    --input-bg:#F2F4F8; --input-border:rgba(0,0,0,.12);
+    --shadow-sm:0 2px 8px rgba(0,0,0,.08); --shadow:0 4px 24px rgba(0,0,0,.12);
+  }
+}
+
+/* ── CSS RESET ── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  font-family:var(--font-body);background:var(--bg);color:var(--text);
+  min-height:100vh;font-size:15px;line-height:1.5;
+  display:flex;flex-direction:row;overflow-x:hidden;
+}
+::selection{background:#e8457a44;}
+img,svg{display:block;max-width:100%;}
+
+/* ── DM Mono for all currency amounts ── */
+.mono,.sv,.nw-val,.tax-owing,.transfer-amt,.rsu-calculated,
+.stat .sv,.dr-v,.amount-val{font-family:var(--font-mono)!important;}
+.page-title{font-family:var(--font-display);}
+h1,h2,h3,.heading{font-family:var(--font-display);}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}

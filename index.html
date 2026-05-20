@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en-AU" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Charnley Finance</title>
+
+<!-- PWA / iOS home screen -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#080C18" media="(prefers-color-scheme: dark)"/>
+<meta name="theme-color" content="#F8F9FC" media="(prefers-color-scheme: light)"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Charnley Finance"/>
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+<!-- Stylesheets -->
+<link rel="stylesheet" href="css/tokens.css"/>
+<link rel="stylesheet" href="css/components.css"/>
+<link rel="stylesheet" href="css/layout.css"/>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" onerror="window._chartJsError=true"></script>
+
+<!-- Error guards -->
+<script>
+window.addEventListener('error',function(e){
+  if(e.message==='Script error.'||e.message==='Script error'){
+    console.warn('External script failed to load.');return true;
+  }
+});
+window.addEventListener('unhandledrejection',function(e){
+  console.warn('Unhandled promise rejection:',e.reason);
+});
+</script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<!-- Mobile top bar -->
+<!-- Floating Action Button (mobile only) -->
+<div id="fab-overlay" onclick="closeFabMenu()" style="display:none;position:fixed;inset:0;z-index:398;"></div>
+<div id="fab-menu" style="display:none;position:fixed;z-index:400;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);">
+  <div class="fab-arc">
+    <button class="fab-arc-item" onclick="fabAction('transaction')" style="--i:0">
+      <span class="fab-arc-icon">💳</span><span class="fab-arc-lbl">Transaction</span>
+    </button>
+    <button class="fab-arc-item" onclick="fabAction('import')" style="--i:1">
+      <span class="fab-arc-icon">📤</span><span class="fab-arc-lbl">Import CSV</span>
+    </button>
+    <button class="fab-arc-item" onclick="fabAction('bill')" style="--i:2">
+      <span class="fab-arc-icon">📅</span><span class="fab-arc-lbl">Add Bill</span>
+    </button>
+    <button class="fab-arc-item" onclick="fabAction('cash')" style="--i:3">
+      <span class="fab-arc-icon">🏦</span><span class="fab-arc-lbl">Cash Entry</span>
+    </button>
+    <button class="fab-arc-item" onclick="fabAction('transfer')" style="--i:4">
+      <span class="fab-arc-icon">🔄</span><span class="fab-arc-lbl">Transfer</span>
+    </button>
+  </div>
+</div>
+<button id="fab" onclick="toggleFabMenu()" aria-label="Quick actions" style="display:none">+</button>
+
+<!-- iOS Bottom Tab Bar (mobile only) -->
+<nav id="bottom-tab-bar" style="display:none">
+  <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
+    <span class="tab-icon">🏠</span><span class="tab-lbl">Dashboard</span>
+  </button>
+  <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
+    <span class="tab-icon">📅</span><span class="tab-lbl">Bills</span>
+  </button>
+  <button class="tab-btn" id="tb-transactions"        onclick="goMob('transactions')">
+    <span class="tab-icon">💳</span><span class="tab-lbl">Transactions</span>
+  </button>
+  <button class="tab-btn" id="tb-cash"                onclick="goMob('cash')">
+    <span class="tab-icon">🏦</span><span class="tab-lbl">Cash</span>
+  </button>
+  <button class="tab-btn" id="tb-settings"            onclick="openMobMenu()">
+    <span class="tab-icon">⋯</span><span class="tab-lbl">More</span>
+  </button>
+</nav>
+
+<!-- Mobile "More" slide-up menu -->
+<div id="mob-menu-overlay" onclick="closeMobMenu()" style="display:none"></div>
+<div id="mob-menu" style="display:none">
+  <div id="mob-menu-handle"></div>
+  <div class="mob-menu-section">
+    <div class="mob-menu-label">Money</div>
+    <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
+      <button class="mob-menu-item" onclick="goMob('mortgage')"><span>🏡</span>Mortgage</button>
+      <button class="mob-menu-item" onclick="goMob('insurance')"><span>🛡️</span>Insurance</button>
+      <button class="mob-menu-item" onclick="goMob('super')"><span>💼</span>Super</button>
+      <button class="mob-menu-item" onclick="goMob('tax')"><span>🧾</span>Tax</button>
+      <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Assets</button>
+      <button class="mob-menu-item" onclick="goMob('transfers')"><span>🔄</span>Transfers</button>
+      <button class="mob-menu-item" onclick="goMob('forecast')"><span>🔮</span>Forecast</button>
+    </div>
+  </div>
+  <div class="mob-menu-section">
+    <div class="mob-menu-label">Settings</div>
+    <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('categories')"><span>🏷️</span>Categories</button>
+      <button class="mob-menu-item" onclick="goMob('export')"><span>⬇️</span>Export</button>
+      <button class="mob-menu-item" onclick="goMob('settings')"><span>⚙️</span>Settings</button>
+    </div>
+  </div>
+  <div class="mob-menu-section">
+    <div class="mob-menu-label">Themes</div>
+    <div class="mob-menu-themes">
+      <button class="theme-btn t-dark"  onclick="setTheme('dark')"  title="Dark"></button>
+      <button class="theme-btn t-light" onclick="setTheme('light')" title="Light"></button>
+      <button class="theme-btn t-mint"  onclick="setTheme('mint')"  title="Mint"></button>
+      <button class="theme-btn t-ocean" onclick="setTheme('ocean')" title="Ocean"></button>
+      <span style="font-size:.78rem;color:var(--muted);margin-left:8px">Theme</span>
+    </div>
+  </div>
+  <!-- User & Account Settings -->
+  <div class="mob-menu-section">
+    <div class="mob-menu-label">Profiles &amp; Accounts</div>
+    <button class="mob-menu-item" onclick="openUserSettings()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
+      <span>👤</span>Edit Names &amp; Accounts
+    </button>
+    <div id="user-settings-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:16px;margin-top:4px">
+
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px">Profile 1</div>
+      <div style="display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:14px">
+        <div>
+          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Icon</label>
+          <input type="text" id="usc-p1icon" placeholder="👔" style="font-size:1.4rem;text-align:center;padding:8px 4px"/>
+        </div>
+        <div>
+          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
+          <input type="text" id="usc-p1name" placeholder="Brenton" style="font-size:16px"/>
+        </div>
+      </div>
+
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--purple);margin-bottom:12px">Profile 2</div>
+      <div style="display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:18px">
+        <div>
+          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Icon</label>
+          <input type="text" id="usc-p2icon" placeholder="👩" style="font-size:1.4rem;text-align:center;padding:8px 4px"/>
+        </div>
+        <div>
+          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
+          <input type="text" id="usc-p2name" placeholder="Shelley" style="font-size:16px"/>
+        </div>
+      </div>
+
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Account Names</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">🏦 Offset / Main Account</label>
+          <input type="text" id="usc-acct-offset" placeholder="Offset Account" style="font-size:16px"/></div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">🏠 Joint Transaction Account</label>
+          <input type="text" id="usc-acct-home" placeholder="Home Transaction" style="font-size:16px"/></div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">💰 Savings Account 1 (Profile 1)</label>
+          <input type="text" id="usc-acct-sav1" placeholder="Savings Account 1" style="font-size:16px"/></div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">💎 Savings Account 2 (Profile 2)</label>
+          <input type="text" id="usc-acct-sav2" placeholder="Savings Account 2" style="font-size:16px"/></div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveUserSettings()" style="flex:1">Save</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('user-settings-panel').style.display='none'" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App name editor -->
+  <div class="mob-menu-section">
+    <div class="mob-menu-label">App Settings</div>
+    <button class="mob-menu-item" onclick="openRenameApp()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
+      <span>✏️</span>Rename App
+    </button>
+    <div id="rename-app-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:14px;margin-top:4px">
+      <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">App Name</label>
+      <input type="text" id="rename-app-name" placeholder="Charnley Finance" style="margin-bottom:10px;font-size:16px"/>
+      <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Subtitle</label>
+      <input type="text" id="rename-app-sub" placeholder="Family Finance Tracker · AUD" style="margin-bottom:12px;font-size:16px"/>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveAppName()" style="flex:1">Save</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rename-app-panel').style.display='none'" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <button class="mob-menu-lock" onclick="lockApp();closeMobMenu()">🔒 Lock App</button>
+</div>
+
+<!-- Nav overlay (desktop mobile drawer) -->
+<div id="nav-overlay" onclick="closeNav()" style="display:none"></div>
+
+<div id="login-screen" aria-label="Sign in">
+
+  <!-- ── WELCOME SCREEN (shown before profile is selected) ── -->
+  <div id="welcome-screen">
+    <!-- Background gradient orbs -->
+    <div class="lw-orb lw-orb1"></div>
+    <div class="lw-orb lw-orb2"></div>
+
+    <!-- Header -->
+    <div class="lw-header">
+      <div class="lw-badge">FAMILY FINANCE</div>
+      <h1 class="lw-title" data-app-name>Charnley Finance</h1>
+      <p class="lw-sub" data-app-sub>Family Finance Tracker · AUD</p>
+    </div>
+
+    <!-- Inline PFM SVG chart graphic -->
+    <div class="lw-chart-wrap">
+      <svg viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg" class="lw-chart-svg">
+        <!-- Card bg -->
+        <rect x="0" y="0" width="340" height="180" rx="20" fill="rgba(17,24,48,0.8)"/>
+        <!-- Grid lines -->
+        <line x1="20" y1="40"  x2="320" y2="40"  stroke="rgba(98,120,160,.15)" stroke-width="1"/>
+        <line x1="20" y1="80"  x2="320" y2="80"  stroke="rgba(98,120,160,.15)" stroke-width="1"/>
+        <line x1="20" y1="120" x2="320" y2="120" stroke="rgba(98,120,160,.15)" stroke-width="1"/>
+        <!-- Income area (green) -->
+        <defs>
+          <linearGradient id="gInc" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00C896" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#00C896" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F0538A" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#F0538A" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M30,110 C70,100 100,55 140,50 C180,45 210,70 250,60 C280,52 300,48 310,45 L310,150 L30,150 Z" fill="url(#gInc)"/>
+        <path d="M30,110 C70,100 100,55 140,50 C180,45 210,70 250,60 C280,52 300,48 310,45" fill="none" stroke="#00C896" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Expense area (pink) -->
+        <path d="M30,130 C60,125 90,115 130,95 C160,80 200,100 240,90 C270,83 295,88 310,85 L310,150 L30,150 Z" fill="url(#gExp)"/>
+        <path d="M30,130 C60,125 90,115 130,95 C160,80 200,100 240,90 C270,83 295,88 310,85" fill="none" stroke="#F0538A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Data points income -->
+        <circle cx="140" cy="50" r="4" fill="#00C896"/>
+        <circle cx="250" cy="60" r="4" fill="#00C896"/>
+        <!-- Data points expense -->
+        <circle cx="130" cy="95" r="4" fill="#F0538A"/>
+        <circle cx="240" cy="90" r="4" fill="#F0538A"/>
+        <!-- Tooltip -->
+        <rect x="210" y="18" width="100" height="34" rx="8" fill="rgba(24,33,62,0.95)" stroke="rgba(98,120,160,.3)" stroke-width="1"/>
+        <text x="220" y="31" fill="#00C896" font-size="8" font-family="monospace" font-weight="600">NET WORTH</text>
+        <text x="220" y="44" fill="#E8EDF5" font-size="10" font-family="monospace" font-weight="500">$312,450</text>
+        <!-- Legend -->
+        <circle cx="28" cy="165" r="4" fill="#00C896"/>
+        <text x="36" y="168" fill="rgba(232,237,245,.6)" font-size="8" font-family="sans-serif">Income</text>
+        <circle cx="90" cy="165" r="4" fill="#F0538A"/>
+        <text x="98" y="168" fill="rgba(232,237,245,.6)" font-size="8" font-family="sans-serif">Expenses</text>
+        <!-- Month labels -->
+        <text x="28"  y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Jan</text>
+        <text x="80"  y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Mar</text>
+        <text x="136" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">May</text>
+        <text x="190" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Jul</text>
+        <text x="245" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Sep</text>
+        <text x="296" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Nov</text>
+      </svg>
+    </div>
+
+    <!-- Feature chips -->
+    <div class="lw-chips">
+      <div class="lw-chip">📊 Net Worth</div>
+      <div class="lw-chip">💳 Transactions</div>
+      <div class="lw-chip">🏡 Mortgage</div>
+      <div class="lw-chip">🧾 Tax</div>
+    </div>
+
+    <!-- Sign in button -->
+    <button class="lw-signin-btn" onclick="showPinScreen()">Sign In</button>
+    <p class="lw-disclaimer">Secured with PIN · All data stays on your device</p>
+    <button onclick="if(confirm('Reset your PIN?\n\nYour financial data will NOT be deleted — only the PIN is removed.')){localStorage.removeItem('cff_pins');location.reload();}" style="background:none;border:none;color:#6278A0;font-size:.72rem;cursor:pointer;padding:8px;text-decoration:underline;margin-top:-8px;">Forgot PIN?</button>
+  </div>
+
+  <!-- ── PIN SCREEN ── -->
+  <div id="pin-screen" style="display:none">
+    <div class="login-card">
+      <button class="lw-back-btn" onclick="hidePinScreen()">← Back</button>
+      <div class="login-logo" data-app-name>Charnley Finance</div>
+      <div class="login-sub" data-app-sub>Family Finance Tracker · AUD</div>
+      <div class="setup-banner" id="setup-banner" style="display:none">👋 First visit — set your 4-digit PIN below.</div>
+      <div class="prof-row">
+        <div class="prof-btn sel" id="pb-brenton" onclick="selProfile('brenton')">
+          <div class="pi">👔</div><div class="pn">Brenton</div><div class="pr">Profile 1</div>
+        </div>
+        <div class="prof-btn" id="pb-shelley" onclick="selProfile('shelley')">
+          <div class="pi">👩</div><div class="pn">Shelley</div><div class="pr">Profile 2</div>
+        </div>
+        <div class="prof-btn" id="pb-joint" onclick="selProfile('joint')">
+          <div class="pi">👫</div><div class="pn">Joint</div><div class="pr">Combined</div>
+        </div>
+      </div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+      </div>
+      <div class="pin-err" id="pin-err"></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pk('1')">1</button>
+        <button class="pin-key" onclick="pk('2')">2</button>
+        <button class="pin-key" onclick="pk('3')">3</button>
+        <button class="pin-key" onclick="pk('4')">4</button>
+        <button class="pin-key" onclick="pk('5')">5</button>
+        <button class="pin-key" onclick="pk('6')">6</button>
+        <button class="pin-key" onclick="pk('7')">7</button>
+        <button class="pin-key" onclick="pk('8')">8</button>
+        <button class="pin-key" onclick="pk('9')">9</button>
+        <button class="pin-key pk-del" onclick="pd()">⌫</button>
+        <button class="pin-key pk-0" onclick="pk('0')">0</button>
+      </div>
+      <div class="pin-hint" id="pin-hint">Enter your 4-digit PIN</div>
+      <button onclick="forgotPin()" style="background:none;border:none;color:#6278A0;font-family:'DM Sans',sans-serif;font-size:.76rem;cursor:pointer;padding:10px;margin-top:4px;text-decoration:underline;min-height:44px;">Forgot PIN?</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="nav">
+  <div class="nav-logo">
+    <h1 data-app-name style="white-space:nowrap">Charnley Finance</h1>
+    <p data-app-sub>Family Finance Tracker · AUD</p>
+  </div>
+  <ul>
+    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
+    <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
+    <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
+    <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
+    <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
+    <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Insurance</span></a></li>
+    <li><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
+    <li><a onclick="go('tax')" id="n-tax"><span class="ni">🧾</span><span class="nav-lbl">Tax</span></a></li>
+    <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Total Assets</span></a></li>
+    <li><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
+    <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
+    <li><a onclick="go('bva')" id="n-bva"><span class="ni">📈</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
+    <li><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
+    <li><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
+    <li><a onclick="go('settings')" id="n-settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></a></li>
+  </ul>
+  <div class="nav-footer">
+    <button class="nav-lock-btn" onclick="lockApp()">🔒 Lock App</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <div class="topbar-title" data-app-name>Charnley Finance</div>
+    <div class="topbar-user">
+      <div class="user-pill"><div class="user-dot"></div><span id="topbar-user">—</span></div>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Your financial snapshot · All amounts in AUD</div>
+
+    <!-- Time period selector -->
+    <div class="dash-period-bar">
+      <div class="dash-mode-toggle">
+        <button class="dash-mode-btn active" id="db-mode-month" onclick="dbSetMode('month')">Monthly</button>
+        <button class="dash-mode-btn" id="db-mode-year" onclick="dbSetMode('year')">Yearly</button>
+      </div>
+      <div class="dash-nav">
+        <button class="dash-nav-btn" onclick="dbNav(-1)">&#8249;</button>
+        <div class="dash-period-lbl" id="db-period-lbl">—</div>
+        <button class="dash-nav-btn" onclick="dbNav(1)">&#8250;</button>
+      </div>
+      <button class="dash-today-btn" onclick="dbGoToday()">Today</button>
+      <button class="dash-today-btn" onclick="renderDashboard();toast('✅ Dashboard refreshed')" style="margin-left:8px;border-color:var(--primary);color:var(--primary)" title="Refresh all dashboard data">↻ Refresh</button>
+    </div>
+
+    <!-- ── DASHBOARD FLEX LAYOUT ── -->
+    <div class="db-layout">
+
+      <!-- 1. KPI summary cards -->
+      <div class="dash-stats-row" id="db-summary-cards"></div>
+
+      <!-- 2. Cash flow — full width -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:10px">
+          <div class="section-label" style="margin:0">📈 Cash Flow — Last 12 Months</div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div class="db-chart-fill"><canvas id="db-cashflow-chart"></canvas></div>
+      </div>
+
+      <!-- 3. Period comparison — full width -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:12px">
+          <div class="section-label" style="margin:0">📊 Income vs Expenses — Period Comparison</div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div class="db-chart-fill" style="min-height:200px"><canvas id="db-compare-chart"></canvas></div>
+        <div id="db-compare-deltas" style="margin-top:14px"></div>
+      </div>
+
+      <!-- 4. Spending vs Budget — full width -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:12px">
+          <div class="section-label" style="margin:0">🎯 Spending vs Budget</div>
+          <a href="#" onclick="go('bva');return false;" class="tile-link">View full report →</a>
+        </div>
+        <div id="db-budget-bars"></div>
+      </div>
+
+      <!-- 5. Account balances + Net worth -->
+      <div class="db-row">
+        <div class="card">
+          <div class="tile-hd" style="margin-bottom:12px">
+            <div class="section-label" style="margin:0">🏦 Account Balances</div>
+            <a href="#" onclick="go('cash');return false;" class="tile-link">View tracker →</a>
+          </div>
+          <div id="db-accounts"></div>
+        </div>
+        <div class="card">
+          <div class="nw-hero" id="db-networth"></div>
+        </div>
+      </div>
+
+      <!-- 6. Mortgage + Super -->
+      <div class="db-row">
+        <div class="card">
+          <div class="tile-hd" style="margin-bottom:10px">
+            <div class="section-label" style="margin:0">🏡 Mortgage Snapshot</div>
+            <a href="#" onclick="go('mortgage');return false;" class="tile-link">View details →</a>
+          </div>
+          <div id="db-mortgage"></div>
+        </div>
+        <div class="card">
+          <div class="tile-hd" style="margin-bottom:12px">
+            <div class="section-label" style="margin:0">💼 Superannuation</div>
+            <a href="#" onclick="go('super');return false;" class="tile-link">View details →</a>
+          </div>
+          <div id="db-super"></div>
+        </div>
+      </div>
+
+      <!-- 5. Tax liabilities (full width, conditionally rendered) -->
+      <div id="db-tax-stat"></div>
+
+      <!-- Hidden placeholders kept for render functions -->
+      <div style="display:none"><div id="db-upcoming-bills"></div><div id="db-bills-rate"></div><div id="db-goals"></div></div>
+
+      <!-- 8. Income Flow Sankey (full width, content-driven height) -->
+      <div class="card" id="db-sankey-row" style="position:relative">
+        <div class="tile-hd" style="margin-bottom:12px">
+          <div class="section-label" style="margin:0">💸 Income Flow</div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div id="db-sankey-container"></div>
+        <div id="db-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
+      </div>
+
+      <!-- 9. Spending by Category (full width, height driven by bar count) -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="section-label" style="margin:0">📊 Spending by Category</div>
+            <div id="db-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+          </div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div id="db-cat-chart-wrap"><canvas id="db-cat-chart"></canvas></div>
+        <div id="db-cat-breakdown" style="margin-top:16px"></div>
+      </div>
+
+      <!-- 10. Spending by Subcategory (full width, height driven by bar count) -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="section-label" style="margin:0">🔎 Spending by Subcategory</div>
+            <select id="db-subcat-filter-cat" onchange="dbRenderSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+              <option value="">All Categories</option>
+            </select>
+            <div id="db-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+          </div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div id="db-subcat-chart-wrap"><canvas id="db-subcat-chart"></canvas></div>
+        <div id="db-subcat-breakdown" style="margin-top:16px"></div>
+      </div>
+
+      <!-- 11. Insurance status (full width) -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:10px">
+          <div class="section-label" style="margin:0">🛡️ Insurance Status</div>
+          <a href="#" onclick="go('insurance');return false;" class="tile-link">View policies →</a>
+        </div>
+        <div id="db-insurance"></div>
+      </div>
+
+      <!-- Transfer summary (conditionally rendered, full width) -->
+      <div id="db-transfer-stat"></div>
+
+    </div><!-- /db-layout -->
+  </div>
+
+  <!-- ═══ TRANSACTIONS ═══ -->
+  <div class="page" id="page-transactions">
+    <div class="page-title">Income & Expenses</div>
+    <div class="page-sub" id="tx-page-sub">Log transactions for both profiles</div>
+ <div class="g2 mb">
+      <div class="card">
+        <div class="section-label">Add Transaction</div>
+        <div class="form-grid">
+          <div><label class="lbl">Date</label><input type="date" id="tx-date"/></div>
+          <div><label class="lbl">Type</label>
+            <select id="tx-type" onchange="togglePerson();populateCatSelect()">
+              <option value="income">💚 Income</option>
+              <option value="expense">🔴 Expense</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label class="lbl">Name</label>
+            <input type="text" id="tx-name" placeholder="e.g. Woolworths" oninput="AutoCat.onNameInput(this.value)"/>
+            <div id="tx-autocat-pill" style="display:none;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap"></div>
+          </div>
+          <div><label class="lbl">Amount (AUD)</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Category</label><select id="tx-cat" onchange="refreshSubcatSelect()"></select></div>
+          <div><label class="lbl">Subcategory</label><select id="tx-subcat"></select></div>
+        </div>
+        <div class="form-grid">
+          <div id="tx-person-wrap"><label class="lbl">Earner</label>
+            <select id="tx-person">
+              <option value="brenton" data-profile-name="brenton">Brenton</option>
+              <option value="shelley" data-profile-name="shelley">Shelley</option>
+              <option value="joint">🤝 Joint</option>
+            </select>
+          </div>
+          <div><label class="lbl">Account</label>
+            <select id="tx-account">
+              <option value="">— Select Account —</option>
+              <option value="offset">Offset Account</option>
+              <option value="home">Home Transaction</option>
+              <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Brenton Savings</option>
+              <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Shelley Savings</option>
+              <option value="joint">Joint / Other</option>
+            </select>
+          </div>
+          <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
+        </div>
+        <button class="btn btn-primary" onclick="addTx()">＋ Add</button>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px">
+        <div style="text-align:center">
+          <div class="section-label">Running Balance</div>
+          <div id="tx-balance" style="font-family:var(--font-mono);font-size:2.6rem;font-weight:700;color:var(--primary)">$0.00</div>
+        </div>
+        <div style="display:flex;gap:24px">
+          <div style="text-align:center"><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Total Income</div>
+            <div id="tx-inc-total" style="font-weight:700;color:var(--success)">$0.00</div></div>
+          <div style="text-align:center"><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Total Expenses</div>
+            <div id="tx-exp-total" style="font-weight:700;color:var(--primary)">$0.00</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV IMPORT CARD -->
+    <div class="card mb" id="csv-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">📂 Import from CSV</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()">⬇️ Download Template</button>
+          <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none">✕ Cancel</button>
+        </div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="csv-steps">
+        <div class="csv-step-item"><div class="csv-snum active" id="csn1">1</div><span class="csv-slbl active" id="csl1">Upload</span></div>
+        <div class="csv-conn"></div>
+        <div class="csv-step-item"><div class="csv-snum" id="csn2">2</div><span class="csv-slbl" id="csl2">Map Columns</span></div>
+        <div class="csv-conn"></div>
+        <div class="csv-step-item"><div class="csv-snum" id="csn3">3</div><span class="csv-slbl" id="csl3">Preview & Import</span></div>
+      </div>
+
+      <!-- STEP 1: Upload -->
+      <div class="csv-panel show" id="csv-p1">
+        <div class="csv-drop" id="csv-drop"
+          onclick="document.getElementById('csv-file-input').click()"
+          ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
+          <div class="cd-icon">📄</div>
+          <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
+          <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
+        </div>
+        <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
+        <div class="imp-hint">
+          <strong>💡 What format does my CSV need?</strong>
+          Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
+          You'll map your columns in the next step. Download the template above for a ready-to-fill example.
+        </div>
+      </div>
+
+      <!-- STEP 2: Map Columns -->
+      <div class="csv-panel" id="csv-p2">
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
+          We found these columns in your file. Tell us what each one is — then click Preview.
+        </p>
+        <div style="overflow-x:auto">
+          <table class="map-tbl">
+            <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
+            <tbody id="csv-map-body"></tbody>
+          </table>
+        </div>
+        <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
+          💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
+          Negative amounts are treated as expenses automatically.
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
+          <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Preview -->
+      <div class="csv-panel" id="csv-p3">
+        <div class="imp-stats" id="csv-imp-stats"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:.76rem;color:var(--muted)">🟡 Yellow = possible duplicate &nbsp;·&nbsp; 🔴 Red = skipped (missing data)</div>
+          <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
+            <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+            Skip duplicates
+          </label>
+        </div>
+        <div class="prev-wrap">
+          <table class="prev-tbl">
+            <thead><tr><th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody id="csv-prev-body"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
+          <button class="btn btn-primary" onclick="csvConfirmImport()">✅ Import Transactions</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">Transaction History</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="txClearFilters()" id="tx-clear-filters" style="display:none">✕ Clear filters</button>
+          <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions">🤖 Rescan Categories</button>
+          <span id="tx-rescan-result" style="font-size:.76rem;display:none"></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <select id="tx-filter-month" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;"></select>
+        <select id="tx-filter-type" onchange="txFilterCatChanged();renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+          <option value="">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expenses</option>
+        </select>
+        <select id="tx-filter-cat" onchange="txFilterCatChanged();renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+          <option value="">All Categories</option>
+        </select>
+        <select id="tx-filter-subcat" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+          <option value="">All Subcategories</option>
+        </select>
+        <select id="tx-filter-account" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+          <option value="">All Accounts</option>
+          <option value="offset">Offset Account</option>
+          <option value="home">Home Transaction</option>
+          <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Brenton Savings</option>
+          <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Shelley Savings</option>
+          <option value="joint">Joint</option>
+        </select>
+        <input type="text" id="tx-filter-search" placeholder="Search merchant / description..."
+          oninput="renderTx()" style="padding:6px 10px;font-size:.78rem;flex:1;min-width:160px;max-width:240px"/>
+      </div>
+      <!-- Bulk action bar (shown when items selected) -->
+      <div class="tx-bulk-bar" id="tx-bulk-bar" style="display:none">
+        <span class="tx-bulk-count" id="tx-bulk-count">0 selected</span>
+        <select id="tx-bulk-cat" style="padding:7px 10px;font-size:.82rem;width:auto;"></select>
+        <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()">✕ Cancel</button>
+      </div>
+      <!-- Rule suggestion banner -->
+      <div class="rule-banner" id="tx-rule-banner" style="display:none"></div>
+      <div class="tbl-wrap">
+        <table class="tx-table"><thead><tr>
+          <th style="width:32px"><input type="checkbox" id="tx-select-all" class="tx-check" onchange="toggleSelectAll(this)" title="Select all"/></th>
+          <th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Account</th><th>Amount</th><th></th>
+        </tr></thead>
+        <tbody id="tx-tbody"></tbody></table>
+        <div class="empty" id="tx-empty" style="display:none"><div class="ei">💸</div><p>No transactions yet.</p></div>
+      </div>
+    </div>
+    <!-- Transaction category bar chart -->
+    <div class="card" style="margin-top:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">📊 Spending by Category</div>
+        <div id="tx-chart-period" style="font-size:.74rem;color:var(--muted)"></div>
+      </div>
+      <div class="chart-box" style="height:220px"><canvas id="tx-cat-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ BILLS ═══ -->
+  <div class="page" id="page-bills">
+    <div class="page-title">Bills & Due Dates</div>
+    <div class="page-sub">Track recurring bills and mark them paid</div>
+    <div class="g2 mb">
+      <div class="card">
+        <div class="section-label">Add Bill</div>
+        <div class="form-grid"><div><label class="lbl">Bill Name</label><input type="text" id="bill-name" placeholder="e.g. Power Bill"/></div></div>
+        <div class="form-grid">
+          <div><label class="lbl">Amount (AUD)</label><input type="number" id="bill-amount" placeholder="120.00" step="0.01" inputmode="decimal"/></div>
+          <div><label class="lbl">Due Day of Month</label><input type="number" id="bill-due" placeholder="15" min="1" max="31" inputmode="numeric"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Icon / Type</label>
+            <select id="bill-icon">
+              <option value="💡">💡 Electricity</option><option value="💧">💧 Water</option>
+              <option value="📡">📡 Internet</option><option value="📱">📱 Phone</option>
+              <option value="🏠">🏠 Rent/Mortgage</option><option value="🚗">🚗 Car Insurance</option>
+              <option value="❤️">❤️ Health Insurance</option><option value="🎬">🎬 Streaming</option>
+              <option value="🧾">🧾 Other</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addBill()">➕ Add Bill</button>
+      </div>
+      <div class="card"><div class="section-label">Summary</div><div id="bills-summary"></div></div>
+    </div>
+    <div class="card"><div class="section-label" style="margin-bottom:14px">All Bills</div><div id="bills-list"></div></div>
+  </div>
+
+  <!-- ═══ MORTGAGE ═══ -->
+  <div class="page" id="page-mortgage">
+    <div class="page-title">Mortgage & Home</div>
+    <div class="page-sub">Track your mortgage, offset account and home equity</div>
+    <div class="g2 mb">
+      <div class="card">
+        <div class="section-label">Mortgage Details</div>
+        <div class="form-grid">
+          <div><label class="lbl">Remaining Balance (AUD)</label><input type="number" id="m-balance" placeholder="550000" inputmode="decimal"/></div>
+          <div><label class="lbl">Original Loan (AUD)</label><input type="number" id="m-original" placeholder="600000" inputmode="decimal"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Interest Rate (% p.a.)</label><input type="number" id="m-rate" placeholder="6.25" step="0.01" inputmode="decimal"/></div>
+          <div><label class="lbl">Years Remaining</label><input type="number" id="m-years" placeholder="25" inputmode="numeric"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Home Value (AUD)</label><input type="number" id="m-homevalue" placeholder="950000" inputmode="decimal"/></div>
+          <div><label class="lbl">Repayment Type</label>
+            <select id="m-reptype"><option value="pi">Principal & Interest</option><option value="io">Interest Only</option></select>
+          </div>
+        </div>
+        <hr class="div"/>
+        <div class="section-label">Offset Account</div>
+        <div class="form-grid">
+          <div><label class="lbl">Offset Balance (AUD)</label><input type="number" id="m-offset" placeholder="80000" oninput="syncOffsetSlider()" inputmode="decimal"/></div>
+          <div><label class="lbl">Account Name</label><input type="text" id="m-offset-name" placeholder="e.g. Everyday Savings"/></div>
+        </div>
+        <div id="ct-offset-sync-banner" style="display:none;background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
+          <button class="btn btn-ghost btn-sm" onclick="pullOffsetFromCT()" style="float:right;padding:4px 10px;font-size:.72rem;margin-left:8px">↻ Sync</button>
+          <span style="color:var(--primary);font-weight:700">🔗 Cash Tracker offset:</span>
+          <span id="ct-offset-sync-text" style="color:var(--muted);margin-left:5px"></span>
+        </div>
+        <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
+          🔗 <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
+        </div>
+        <button class="btn btn-primary" onclick="saveMortgage()">💾 Save Details</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="section-label">Home Equity</div>
+          <div style="text-align:center;padding:12px 0">
+            <div id="eq-value" style="font-family:var(--font-mono);font-size:2.6rem;font-weight:700;color:var(--primary)">—</div>
+            <div style="font-size:.74rem;color:var(--muted);margin-top:3px">Current home equity</div>
+          </div>
+          <div class="prog-track" style="height:12px"><div class="prog-fill" id="eq-bar" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px">
+            <span id="eq-lbl-l">Balance</span><span id="eq-lbl-r">Value</span>
+          </div>
+        </div>
+        <div class="card"><div class="section-label">Repayment Summary</div><div id="m-summary"></div></div>
+      </div>
+    </div>
+    <div class="card" id="offset-sim-card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+        <div>
+          <div class="section-label">🎚️ Offset Simulator</div>
+          <div style="font-size:.78rem;color:var(--muted)">Drag to see how different offset balances affect your loan</div>
+        </div>
+        <div style="background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center">
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em">Simulating Offset</div>
+          <div id="sim-offset-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">$0</div>
+        </div>
+      </div>
+      <input type="range" id="offset-slider" min="0" max="500000" step="1000" value="0" oninput="runOffsetSim(this.value)"/>
+      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:5px;margin-bottom:20px">
+        <span>$0</span><span id="sim-max-lbl">$500,000</span>
+      </div>
+      <div class="occ-grid">
+        <div class="occ-card"><div class="occ-lbl">Monthly Interest</div>
+          <div class="occ-before" id="occ-int-b">—</div><div class="occ-arrow">↓</div>
+          <div class="occ-after" id="occ-int-a">—</div><div class="occ-save" id="occ-int-s"></div></div>
+        <div class="occ-card"><div class="occ-lbl">Monthly Repayment</div>
+          <div class="occ-before" id="occ-rep-b">—</div><div class="occ-arrow">→</div>
+          <div class="occ-after" id="occ-rep-a">—</div><div class="occ-save" id="occ-rep-s"></div></div>
+        <div class="occ-card"><div class="occ-lbl">Loan Term</div>
+          <div class="occ-before" id="occ-trm-b">—</div><div class="occ-arrow">↓</div>
+          <div class="occ-after" id="occ-trm-a">—</div><div class="occ-save" id="occ-trm-s"></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:.82rem;font-weight:600">💰 Total Interest Saved</span>
+        <span id="occ-total-save" style="font-family:var(--font-mono);font-size:1.1rem;color:var(--primary);font-weight:700">—</span>
+      </div>
+      <div class="prog-track" style="height:12px">
+        <div class="prog-fill" id="occ-save-bar" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--pink-dark))"></div>
+      </div>
+
+    </div><!-- /offset-sim-card -->
+    <!-- MORTGAGE PAYDOWN CHART -->
+    <div class="card" id="mortgage-paydown-card" style="margin-top:18px;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div class="section-label" style="margin-bottom:2px">📉 Mortgage Paydown Schedule</div>
+          <div style="font-size:.76rem;color:var(--muted)">Balance reduction over time — with and without your offset account</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="pd-view-btn" onclick="togglePaydownView()">Show Monthly</button>
+        </div>
+      </div>
+      <div class="chart-box" style="height:300px"><canvas id="paydown-chart"></canvas></div>
+      <div class="g3" id="paydown-stats" style="margin-top:16px"></div>
+
+    <!-- RATE SENSITIVITY CALCULATOR -->
+    <div class="card" id="rate-sensitivity-card" style="margin-top:18px;display:none">
+      <div style="margin-bottom:16px">
+        <div class="section-label" style="margin-bottom:3px">📈 Interest Rate Sensitivity Calculator</div>
+        <div id="rate-linked-info" style="margin-top:6px;font-size:.78rem;line-height:1.5;color:var(--muted)">Repayments calculated on outstanding loan balance (offset shown separately as an interest-saving note).</div>
+      </div>
+
+      <!-- Live rate slider -->
+      <div class="rate-slider-row">
+        <label>Simulate Rate:</label>
+        <input type="range" id="rate-sim-slider" min="1" max="15" step="0.25" value="6.25"
+          oninput="onRateSlider(this.value)" style="flex:1;min-width:180px"/>
+        <div style="background:#2a1030;border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
+          <div style="font-size:.64rem;color:var(--muted);margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em">Rate</div>
+          <div id="rate-sim-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">6.25%</div>
+        </div>
+      </div>
+
+      <!-- Impact badges -->
+      <div class="rate-badge-row" id="rate-impact-badges"></div>
+
+      <!-- Scenario table -->
+      <div style="overflow-x:auto">
+        <table class="rate-table" id="rate-table">
+          <thead>
+            <tr>
+              <th>Rate</th>
+              <th>Monthly Repayment</th>
+              <th>vs Current</th>
+              <th>Monthly Interest</th>
+              <th>Annual Cost</th>
+              <th>vs Current (Annual)</th>
+            </tr>
+          </thead>
+          <tbody id="rate-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Budget callout -->
+      <div id="rate-budget-callout" style="margin-top:16px;border-radius:10px;padding:14px 16px;font-size:.82rem;line-height:1.6;display:none"></div>
+    </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ CASH TRACKER ═══ -->
+  <div class="page" id="page-cash">
+    <div class="page-title">Cash Balance Tracker</div>
+    <div class="page-sub">Monthly balances across all four accounts</div>
+    <div class="card mb">
+      <div class="section-label">Account Labels & People</div>
+      <div class="form-grid">
+        <div><label class="lbl">Offset Label</label><input type="text" id="ct-offset-lbl" placeholder="Offset Account" oninput="saveCTConfig()"/></div>
+        <div><label class="lbl">Home Transaction Label</label><input type="text" id="ct-home-lbl" placeholder="Home Transaction" oninput="saveCTConfig()"/></div>
+        <div><label class="lbl">Brenton Savings Label</label><input type="text" id="ct-sav1-lbl" placeholder="Brenton Savings" oninput="saveCTConfig()"/></div>
+        <div><label class="lbl">Shelley Savings Label</label><input type="text" id="ct-sav2-lbl" placeholder="Shelley Savings" oninput="saveCTConfig()"/></div>
+      </div>
+    </div>
+    <div class="g4 mb" id="ct-summary"></div>
+    <div id="ct-acct-offset" class="acct-card"></div>
+    <div id="ct-acct-home" class="acct-card"></div>
+    <div id="ct-acct-sav1" class="acct-card"></div>
+    <div id="ct-acct-sav2" class="acct-card"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div class="section-label" style="margin:0">📈 Combined Balances Over Time</div>
+        <button class="btn btn-ghost btn-sm" onclick="ctExportCSV()">⬇️ Export CSV</button>
+      </div>
+      <div class="goal-bar">
+        <label>🎯 Goal:</label>
+        <select id="ct-goal-freq" onchange="saveCTGoal()" style="width:110px">
+          <option value="monthly">Monthly</option><option value="annual">Annual</option>
+        </select>
+        <input type="number" id="ct-goal-amt" placeholder="Target amount" step="1000" onchange="saveCTGoal()" style="width:160px" inputmode="decimal"/>
+        <input type="month" id="ct-goal-start" onchange="saveCTGoal()" style="width:145px"/>
+        <div id="ct-goal-status" style="flex:1;text-align:right;font-size:.78rem;color:var(--muted)"></div>
+      </div>
+      <div class="chart-box"><canvas id="ct-chart"></canvas></div>
+      <div style="margin-top:18px"><div class="section-label">Latest Month Net Position</div><div id="ct-net"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ INSURANCE ═══ -->
+  <div class="page" id="page-insurance">
+    <div class="page-title">Insurance</div>
+    <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
+
+    <!-- Life Insurance Needs Analysis -->
+    <div class="card mb" id="li-needs-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div>
+          <div class="section-label" style="margin-bottom:2px">💛 Life, TPD &amp; Income Protection — Needs Analysis</div>
+          <div style="font-size:.76rem;color:var(--muted)">Enter your existing TPD and IP cover in each card to see your coverage gaps. Life, TPD and IP calculated independently. IP: 75% of income, 90-day wait, to age 65.</div>
+        </div>
+        <div style="display:flex;gap:0;background:var(--card2);border:1px solid var(--border);border-radius:9px;overflow:hidden">
+          <button class="li-tab active" id="li-tab-all"    onclick="liSwitchTab('all')"   style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff">All Methods</button>
+          <button class="li-tab"        id="li-tab-dime"   onclick="liSwitchTab('dime')"  style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">DIME</button>
+          <button class="li-tab"        id="li-tab-income" onclick="liSwitchTab('income')" style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">10× Income</button>
+          <button class="li-tab"        id="li-tab-needs"  onclick="liSwitchTab('needs')" style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">Needs PV</button>
+        </div>
+      </div>
+
+      <div class="li-person-grid">
+        <!-- BRENTON -->
+        <div class="li-card">
+          <div class="li-card-hd" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
+            <span style="font-size:1.3rem">💼</span>
+            <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Brenton</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+          </div>
+          <div class="li-card-body">
+            <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-b-income" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Years of Income to Replace</label><input type="number" id="li-b-years" placeholder="25" min="1" max="40" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
+            <div class="li-ass-row"><label>Outstanding Debts (AUD)</label><input type="number" id="li-b-debts" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Mortgage Balance (AUD)</label><input type="number" id="li-b-mortgage" placeholder="550000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Education / Future Costs (AUD)</label><input type="number" id="li-b-education" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Funeral / Final Expenses (AUD)</label><input type="number" id="li-b-funeral" value="15000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Existing Super / Savings (AUD)</label><input type="number" id="li-b-assets" placeholder="185000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Existing Life Cover in Super (AUD)</label><input type="number" id="li-b-existing" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px">Existing TPD &amp; Income Protection</div>
+            <div class="li-ass-row"><label>Existing TPD Cover (AUD)</label><input type="number" id="li-b-exist-tpd" placeholder="0" step="10000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Existing IP Monthly Benefit (AUD/mo)</label><input type="number" id="li-b-exist-ip" placeholder="0" step="500" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Current Age</label><input type="number" id="li-b-age" placeholder="40" min="18" max="70" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
+            <div id="li-b-result" style="margin-top:14px"></div>
+          </div>
+        </div>
+        <!-- SHELLEY -->
+        <div class="li-card">
+          <div class="li-card-hd" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
+            <span style="font-size:1.3rem">💼</span>
+            <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Shelley</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+          </div>
+          <div class="li-card-body">
+            <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-s-income" placeholder="95000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Years of Income to Replace</label><input type="number" id="li-s-years" placeholder="25" min="1" max="40" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
+            <div class="li-ass-row"><label>Outstanding Debts (AUD)</label><input type="number" id="li-s-debts" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Mortgage Balance (AUD)</label><input type="number" id="li-s-mortgage" placeholder="550000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Education / Future Costs (AUD)</label><input type="number" id="li-s-education" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Funeral / Final Expenses (AUD)</label><input type="number" id="li-s-funeral" value="15000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Existing Super / Savings (AUD)</label><input type="number" id="li-s-assets" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Existing Life Cover in Super (AUD)</label><input type="number" id="li-s-existing" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px">Existing TPD &amp; Income Protection</div>
+            <div class="li-ass-row"><label>Existing TPD Cover (AUD)</label><input type="number" id="li-s-exist-tpd" placeholder="0" step="10000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Existing IP Monthly Benefit (AUD/mo)</label><input type="number" id="li-s-exist-ip" placeholder="0" step="500" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
+            <div class="li-ass-row"><label>Current Age</label><input type="number" id="li-s-age" placeholder="38" min="18" max="70" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
+            <div id="li-s-result" style="margin-top:14px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted)">⚠️ Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
+    </div>
+
+    <!-- General Policies -->
+    <div class="g3 mb" id="ins-summary-strip"></div>
+    <div class="g2 mb">
+      <div class="card">
+        <div class="section-label">Add Policy</div>
+        <div class="form-grid"><div><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div></div>
+        <div class="form-grid">
+          <div><label class="lbl">Type</label>
+            <select id="ins-type" onchange="insTypeChanged()">
+              <option>Home &amp; Contents</option><option>Car / Vehicle</option><option>Health</option>
+              <option>Life</option><option>TPD</option><option>Income Protection</option>
+              <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
+            </select>
+          </div>
+          <div><label class="lbl">Provider</label><input type="text" id="ins-prov" placeholder="e.g. TAL, AIA, Zurich"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
+          <div><label class="lbl">Frequency</label>
+            <select id="ins-freq">
+              <option value="monthly">Monthly</option><option value="annual" selected>Annual</option>
+              <option value="quarterly">Quarterly</option><option value="fortnightly">Fortnightly</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Renewal Date</label><input type="date" id="ins-renewal"/></div>
+          <div><label class="lbl">Covered Person</label>
+            <select id="ins-covered">
+              <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Brenton</option><option value="shelley" data-profile-name="shelley">Shelley</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
+          <div><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
+        </div>
+        <!-- IP-specific fields (shown when type = Income Protection) -->
+        <div id="ins-ip-fields" style="display:none">
+          <div class="form-grid">
+            <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
+            <div><label class="lbl">Benefit Period</label>
+              <select id="ins-ip-period">
+                <option value="age65">To Age 65</option>
+                <option value="2yr">2 Years</option>
+                <option value="5yr">5 Years</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div><label class="lbl">Waiting Period</label>
+              <select id="ins-ip-wait">
+                <option value="30">30 days</option>
+                <option value="60">60 days</option>
+                <option value="90" selected>90 days</option>
+                <option value="180">180 days</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- TPD-specific fields -->
+        <div id="ins-tpd-fields" style="display:none">
+          <div class="form-grid">
+            <div><label class="lbl">TPD Definition</label>
+              <select id="ins-tpd-def">
+                <option value="own">Own Occupation</option>
+                <option value="any">Any Occupation</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addInsurance()">Add Policy</button>
+      </div>
+      <div class="card"><div class="section-label">Upcoming Renewals</div><div id="ins-renewals"></div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">All Policies</div>
+        <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto;">
+          <option value="">All Types</option><option>Home &amp; Contents</option><option>Car / Vehicle</option>
+          <option>Health</option><option>Life</option><option>TPD</option><option>Income Protection</option>
+          <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
+        </select>
+      </div>
+      <div id="ins-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SUPERANNUATION ═══ -->
+  <div class="page" id="page-super">
+    <div class="page-title">Superannuation</div>
+    <div class="page-sub" id="super-page-sub">Track and project super balances for both profiles</div>
+    <div class="g2 mb">
+      <!-- Brenton -->
+      <div class="card">
+        <div class="super-header" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
+          <span style="font-size:1.6rem">💼</span>
+          <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Brenton</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+        </div>
+        <div class="super-ass-row"><label>Current Balance (AUD)</label><input type="number" id="sb-balance" placeholder="185000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Current Age</label><input type="number" id="sb-age" placeholder="40" min="18" max="70" oninput="calcSuper()" inputmode="numeric"/></div>
+        <div class="super-ass-row"><label>Retirement Age</label><input type="number" id="sb-retire" placeholder="67" min="50" max="80" oninput="calcSuper()" inputmode="numeric"/></div>
+        <div class="super-ass-row"><label>Annual Salary (AUD)</label><input type="number" id="sb-salary" placeholder="120000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>SGC Rate (%)</label><input type="number" id="sb-sgc" value="11.5" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="sb-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="sb-inflation" value="2.5" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
+        <!-- ART Lifecycle badge -->
+        <div style="margin-top:14px;background:#1a1020;border:1px solid #5a2a50;border-radius:10px;padding:12px 14px">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);margin-bottom:8px">
+            🔄 ART Lifecycle Investment Strategy
+          </div>
+          <div style="font-size:.76rem;color:var(--muted);line-height:1.6;margin-bottom:10px">
+            Returns automatically adjust by age based on ART's Lifecycle pools:<br/>
+            <span style="color:var(--text)">Under 50 → High Growth:</span> ~8.5% p.a. (85% growth assets)<br/>
+            <span style="color:var(--text)">50–55 → Transitioning:</span> ~7.0% p.a. (mixed)<br/>
+            <span style="color:var(--text)">55–60 → Balanced mix:</span> ~5.5% p.a. (~70% growth)<br/>
+            <span style="color:var(--text)">60+ → Balanced/Cash:</span> ~4.5% p.a. (defensive)<br/>
+            <span style="color:var(--muted);font-size:.7rem">Fees: 0.67% p.a. (ART Super Savings). Source: ART 10yr return to Sep 2024.</span>
+          </div>
+          <div id="sb-lifecycle-current" style="font-size:.76rem;font-weight:600;color:var(--pink-light)"></div>
+        </div>
+        <div id="sb-result" style="margin-top:14px"></div>
+      </div>
+      <!-- Shelley -->
+      <div class="card">
+        <div class="super-header" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
+          <span style="font-size:1.6rem">💼</span>
+          <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Shelley</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+        </div>
+        <div class="super-ass-row"><label>Current Balance (AUD)</label><input type="number" id="ss-balance" placeholder="120000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Current Age</label><input type="number" id="ss-age" placeholder="38" min="18" max="70" oninput="calcSuper()" inputmode="numeric"/></div>
+        <div class="super-ass-row"><label>Retirement Age</label><input type="number" id="ss-retire" placeholder="67" min="50" max="80" oninput="calcSuper()" inputmode="numeric"/></div>
+        <div class="super-ass-row"><label>Annual Salary (AUD)</label><input type="number" id="ss-salary" placeholder="95000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>SGC Rate (%)</label><input type="number" id="ss-sgc" value="11.5" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="ss-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.)</label><input type="number" id="ss-return" value="7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="ss-fees" value="0.8" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="ss-inflation" value="2.5" step="0.1" oninput="calcSuper()"/></div>
+        <div id="ss-result" style="margin-top:14px"></div>
+      </div>
+    </div>
+    
+
+    <!-- Div 293 Section -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:3px">⚡ Division 293 Tax — Full Breakdown</div>
+      <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">For high earners (income + concessional contributions &gt; $250,000), Div 293 charges an additional 15% tax on contributions — raising the effective rate from 15% to 30%. This section shows the full impact including after-tax benefit and net super growth impact.</div>
+      <div class="d293-wrap" id="d293-cards"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Combined Super Projection</div>
+      <div class="chart-box"><canvas id="super-chart"></canvas></div>
+      <div id="super-combined" style="margin-top:16px"></div>
+    </div>
+    <div style="margin-top:12px;padding:10px 14px;background:#2a1a25;border-radius:9px;font-size:.72rem;color:var(--muted)">
+      ⚠️ Projections are illustrative estimates only and do not constitute financial advice.
+    </div>
+  </div>
+
+  <!-- ═══ TOTAL ASSETS ═══ -->
+  <div class="page" id="page-assets">
+    <div class="page-title">Total Assets</div>
+    <div class="page-sub">Complete net worth — bank, super, property, and equity holdings</div>
+
+    <!-- Summary stats -->
+    <div class="g4 mb" id="assets-stats"></div>
+
+    <!-- Bank + Super + Property + Chart -->
+    <div class="g2 mb">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card"><div class="section-label">🏦 Bank Balances (Latest)</div><div id="assets-bank"></div></div>
+        <div class="card"><div class="section-label">💼 Superannuation</div><div id="assets-super"></div></div>
+        <div class="card"><div class="section-label">🏡 Property Equity</div><div id="assets-property"></div></div>
+        <div class="card"><div class="section-label">📈 Equity Holdings</div><div id="assets-equities-summary"></div></div>
+      </div>
+      <div class="card">
+        <div class="section-label">Asset Breakdown</div>
+        <div class="chart-box"><canvas id="assets-chart"></canvas></div>
+        <div id="assets-note" style="margin-top:12px;font-size:.72rem;color:var(--muted);text-align:center"></div>
+      </div>
+    </div>
+
+    <!-- Link to full equities tab -->
+    <div class="card mb" style="padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="section-label" style="margin-bottom:2px">📈 Equity Holdings</div>
+          <div style="font-size:.74rem;color:var(--muted)">RSU grants and share portfolio</div>
+        </div>
+        <a href="#" onclick="go('equities');return false;" class="btn btn-ghost btn-sm">View Holdings →</a>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- ═══ EQUITIES ═══ -->
+  <div class="page" id="page-equities">
+    <div class="page-title">Equity Holdings</div>
+    <div class="page-sub">RSU grants &amp; share portfolio — track values and record sales</div>
+
+    <!-- Summary stats (populated by renderEquitiesPage) -->
+    <div class="g3 mb" id="eq-page-stats"></div>
+
+    <!-- Full holdings card -->
+    <div class="card mb">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div>
+          <div class="section-label" style="margin-bottom:2px">📈 RSU Grants &amp; Share Portfolio</div>
+          <div style="font-size:.74rem;color:var(--muted)">RSU grants sync from the Tax tab. Add other holdings manually. Record sales to track your realised position.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openAddEquity()">+ Add Holding</button>
+      </div>
+
+      <!-- Add/Edit form -->
+      <div id="eq-add-form" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+        <div class="section-label" style="margin-bottom:12px" id="eq-form-title">Add Equity Holding</div>
+        <input type="hidden" id="eq-edit-id"/>
+        <div class="g2">
+          <div><label class="lbl">Ticker / Code</label><input type="text" id="eq-ticker" placeholder="e.g. AAPL (US) or CBA.AX / CBA (ASX)" style="text-transform:uppercase"/></div>
+          <div><label class="lbl">Company Name</label><input type="text" id="eq-company" placeholder="e.g. Apple Inc."/></div>
+        </div>
+        <div class="g2">
+          <div><label class="lbl">Type</label>
+            <select id="eq-type">
+              <option value="stock">Shares / ETF</option>
+              <option value="rsu">RSU Grant</option>
+              <option value="option">Options</option>
+            </select>
+          </div>
+          <div><label class="lbl">Held By</label>
+            <select id="eq-owner">
+              <option value="brenton" data-profile-name="brenton">Brenton</option>
+              <option value="shelley" data-profile-name="shelley">Shelley</option>
+              <option value="joint">Joint</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div><label class="lbl">Quantity (units / shares)</label><input type="number" id="eq-qty" placeholder="0" min="0" step="1" inputmode="numeric"/></div>
+          <div><label class="lbl">Cost Base per Unit (AUD)</label><input type="number" id="eq-cost" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+        </div>
+        <div class="g2">
+          <div>
+            <label class="lbl">Current Market Price (AUD)</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="eq-price" placeholder="0.00" min="0" step="0.01" inputmode="decimal" style="flex:1"/>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="eqFetchPrice()" style="white-space:nowrap;flex-shrink:0">🔍 Live</button>
+            </div>
+            <div id="eq-price-status" style="font-size:.71rem;margin-top:4px;min-height:14px;color:var(--muted)"></div>
+          </div>
+          <div><label class="lbl">Vesting / Purchase Date</label><input type="date" id="eq-date"/></div>
+        </div>
+        <div><label class="lbl">Notes (optional)</label><input type="text" id="eq-notes" placeholder="e.g. Vesting schedule, broker, grant #"/></div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="saveEquity()">💾 Save</button>
+          <button class="btn btn-ghost" onclick="closeAddEquity()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Holdings list -->
+      <div id="eq-holdings-list"></div>
+
+      <!-- Record sale panel -->
+      <div id="eq-sale-form" style="display:none;background:#1a2a1a;border:1px solid #1a4a1a;border-radius:10px;padding:16px;margin-top:12px">
+        <div class="section-label" style="margin-bottom:10px;color:var(--success)">💵 Record a Sale</div>
+        <input type="hidden" id="eq-sale-holding-id"/>
+        <div class="g2">
+          <div><label class="lbl">Units Sold</label><input type="number" id="eq-sale-qty" placeholder="0" min="0" step="1" inputmode="numeric"/></div>
+          <div><label class="lbl">Sale Price per Unit (AUD)</label><input type="number" id="eq-sale-price" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+        </div>
+        <div class="g2">
+          <div><label class="lbl">Sale Date</label><input type="date" id="eq-sale-date"/></div>
+          <div><label class="lbl">Brokerage / Costs (AUD)</label><input type="number" id="eq-sale-costs" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="saveEquitySale()">Record Sale</button>
+          <button class="btn btn-ghost" onclick="closeEquitySale()">Cancel</button>
+        </div>
+        <div id="eq-sale-preview" style="margin-top:10px;font-size:.78rem;color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ EXPORT DATA ═══ -->
+  <div class="page" id="page-export">
+    <div class="page-title">Export Data</div>
+    <div class="page-sub">Download your financial data in multiple formats for backup, sharing, or analysis.</div>
+
+    <!-- Quick export buttons -->
+    <div class="g3 mb">
+      <div class="card" style="text-align:center;cursor:pointer" onclick="exportFullBackup()">
+        <div style="font-size:2.2rem;margin-bottom:10px">💾</div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Full Backup</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All data as JSON — restore on any device</div>
+        <button class="btn btn-primary" style="width:100%">⬇️ Download Backup</button>
+      </div>
+      <div class="card" style="text-align:center;cursor:pointer" onclick="exportTransactionsCSV()">
+        <div style="font-size:2.2rem;margin-bottom:10px">💳</div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Transactions CSV</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All transactions — open in Excel or Sheets</div>
+        <button class="btn btn-primary" style="width:100%">⬇️ Download CSV</button>
+      </div>
+      <div class="card" style="text-align:center;cursor:pointer" onclick="exportSummaryCSV()">
+        <div style="font-size:2.2rem;margin-bottom:10px">📊</div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Monthly Summary CSV</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Income & expenses by month — for budgeting</div>
+        <button class="btn btn-primary" style="width:100%">⬇️ Download CSV</button>
+      </div>
+    </div>
+
+    <!-- Restore / Import backup -->
+    <div class="card mb">
+      <div class="section-label">↑ Restore from Backup</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        Upload a previously exported JSON backup file to restore all your data. This will replace your current data — make sure to export a fresh backup first.
+      </p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <label class="btn btn-ghost" style="cursor:pointer;min-height:44px">
+          📂 Choose Backup File
+          <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="restoreBackup(event)"/>
+        </label>
+        <div id="restore-status" style="font-size:.82rem;color:var(--muted)"></div>
+      </div>
+    </div>
+
+    <!-- Detailed export options -->
+    <div class="g2">
+      <!-- Section-by-section exports -->
+      <div class="card">
+        <div class="section-label">Export by Section</div>
+        <div id="export-section-list"></div>
+      </div>
+
+      <!-- Data summary -->
+      <div class="card">
+        <div class="section-label">📋 Data Summary</div>
+        <div id="export-data-summary"></div>
+        <hr class="div"/>
+        <div class="section-label">🗑️ Clear Data</div>
+        <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+          Permanently delete data from a specific section. Always export a backup first.
+        </p>
+        <div id="export-clear-btns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ BUDGET VS ACTUALS ═══ -->
+  <div class="page" id="page-bva">
+    <div class="bva-header">
+      <div>
+        <div class="page-title" id="bva-title">Budget vs Actuals</div>
+        <div class="page-sub" style="margin-bottom:0">Compare what you planned to spend vs what you actually spent.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">
+          <button class="bva-view-btn active" data-view="month" onclick="bvaSetView('month')" style="padding:7px 14px;font-size:.8rem;font-weight:600;background:transparent;border:none;cursor:pointer;color:var(--text)">Monthly</button>
+          <button class="bva-view-btn" data-view="annual" onclick="bvaSetView('annual')" style="padding:7px 14px;font-size:.8rem;font-weight:600;background:transparent;border:none;border-left:1px solid var(--border);cursor:pointer;color:var(--muted)">Annual</button>
+        </div>
+        <select id="bva-period-select" onchange="bvaPeriodChanged()" style="padding:6px 10px;font-size:.78rem;width:auto;"></select>
+      </div>
+    </div>
+
+    <!-- Summary strip -->
+    <div class="g3 mb" id="bva-summary-strip"></div>
+
+    <!-- Budget vs Actuals table -->
+    <div class="card mb">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">Category Breakdown</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer;font-weight:400;color:var(--muted)">
+            <input type="checkbox" id="bva-show-all" onchange="renderBVA()" style="accent-color:var(--primary);width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+            Show all categories
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="go('categories')">⚙️ Manage Categories</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="bva-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th id="bva-th-budget">Monthly Budget</th>
+              <th id="bva-th-actual">Actual</th>
+              <th id="bva-th-remain">Remaining</th>
+              <th>% Used</th>
+              <th style="min-width:100px">Progress</th>
+            </tr>
+          </thead>
+          <tbody id="bva-tbody"></tbody>
+        </table>
+        <div class="empty" id="bva-empty" style="display:none"><div class="ei">📊</div><p>No expense transactions this month yet.</p></div>
+      </div>
+    </div>
+
+    <!-- Set budgets inline -->
+    <div class="card">
+      <div class="section-label" style="margin-bottom:3px">Set Monthly Budgets</div>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter a monthly limit for each category. Leave blank for no budget. Changes save automatically.</p>
+      <div id="bva-budget-inputs"></div>
+    </div>
+  </div>
+
+  <!-- ═══ CATEGORIES ═══ -->
+  <div class="page" id="page-categories">
+    <div class="page-title">Categories</div>
+    <div class="page-sub">16 categories · 83 subcategories. Edit subcategories inline, add custom ones, or import your own set.</div>
+
+    <!-- Add category -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px">Add New Category</div>
+      <div style="margin-bottom:12px">
+        <label class="lbl" style="margin-bottom:8px">Icon — click to select</label>
+        <div id="cat-icon-picker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <input type="text" id="cat-icon-input" placeholder="Or type emoji" maxlength="4"
+            style="width:120px;text-align:center;font-size:1.1rem;" oninput="syncIconFromInput(this.value)"/>
+          <span id="cat-icon-preview" style="font-size:1.8rem">🏷️</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1 1 160px"><label class="lbl">Name</label><input type="text" id="cat-name-input" placeholder="e.g. Subscriptions" maxlength="30"/></div>
+        <div style="flex:0 0 90px"><label class="lbl">Colour</label><input type="color" id="cat-color-input" value="#e8457a" style="height:44px;padding:3px 6px;cursor:pointer;width:100%"/></div>
+        <div><label class="lbl">Type</label>
+          <select id="cat-type-input" style="height:44px">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="addCategoryWithSubcats()" style="align-self:flex-end">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Import / Export / Reset -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:10px">📥 Import / Export</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+          📂 Import JSON
+          <input type="file" accept=".json" style="display:none" onchange="importCategories(event)"/>
+        </label>
+        <button class="btn btn-ghost btn-sm" onclick="exportCategories()">⬇️ Export JSON</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetDefaultCategories()">↩ Reset to Defaults</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Export saves all categories + subcategories. Import replaces the full list. Reset restores the built-in family categories.</div>
+    </div>
+
+    <!-- Category list -->
+    <div class="card mb">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">All Categories</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="cat-filter-expense" onclick="setCatFilter('expense')" style="background:rgba(232,69,122,.15);border-color:var(--primary);color:var(--primary)">Expense</button>
+          <button class="btn btn-ghost btn-sm" id="cat-filter-income" onclick="setCatFilter('income')">Income</button>
+          <button class="btn btn-ghost btn-sm" id="cat-filter-all" onclick="setCatFilter('all')">All</button>
+        </div>
+      </div>
+      <div id="cat-list"></div>
+    </div>
+
+    <!-- Auto-assignment rules -->
+    <div class="card">
+      <div class="section-label" style="margin-bottom:3px">⚡ Auto-Assignment Rules</div>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Auto-assign categories to future transactions from the same merchant.</p>
+      <div id="rules-list"></div>
+    </div>
+
+    <!-- Bulk reprocess -->
+    <div class="card">
+      <div class="section-label" style="margin-bottom:3px">🤖 Bulk Auto-Categorise</div>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a rule.</p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" id="acat-reprocess-btn" onclick="acatReprocess()">▶ Run Now</button>
+        <progress id="acat-progress" value="0" max="100" style="display:none;width:160px;height:8px"></progress>
+        <span id="acat-result" style="font-size:.8rem"></span>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px">🔧 Fix Invalid Category IDs</div>
+        <p style="font-size:.74rem;color:var(--muted);margin-bottom:10px">Repairs transactions with legacy or unrecognised categories (e.g. "groceries", "dining", "Other") and maps them to the correct standard categories or Other.</p>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="runFixOrphaned()">🔧 Fix Now</button>
+          <span id="fix-orphan-result" style="font-size:.8rem"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ FORECAST ═══ -->
+  <div class="page" id="page-forecast">
+    <div class="page-title">Cash Flow Forecast</div>
+    <div class="page-sub">Projected income and expenses based on detected recurring patterns.</div>
+
+    <!-- Starting balance bar -->
+    <div class="fc-balance-bar">
+      <div>
+        <div class="fc-bal-label">Starting Balance (from Cash Tracker)</div>
+        <div id="fc-bal-value" class="fc-bal-value">—</div>
+      </div>
+      <div id="fc-bal-warn" class="fc-bal-warn" style="display:none">⚠️ No balance found in Cash Tracker</div>
+      <button class="btn btn-ghost btn-sm" onclick="go('cash')" style="margin-left:auto">Update in Cash Tracker →</button>
+    </div>
+
+    <!-- Controls -->
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <div style="display:flex;gap:6px">
+        <button class="fc-range-btn active" id="fc-r-3" onclick="setFcRange(3)">3 Months</button>
+        <button class="fc-range-btn" id="fc-r-1" onclick="setFcRange(1)">1 Month</button>
+        <button class="fc-range-btn" id="fc-r-6" onclick="setFcRange(6)">6 Months</button>
+        <button class="fc-range-btn" id="fc-r-12" onclick="setFcRange(12)">12 Months</button>
+      </div>
+      <div class="fc-view-toggle" style="margin-left:auto">
+        <button class="fc-toggle-btn active" id="fc-v-chart" onclick="setFcView('chart')">📈 Chart</button>
+        <button class="fc-toggle-btn" id="fc-v-table" onclick="setFcView('table')">📋 Table</button>
+      </div>
+    </div>
+
+    <!-- Insights -->
+    <div id="fc-insights" class="mb"></div>
+
+    <!-- Negative balance warning -->
+    <div id="fc-neg-warn" class="fc-negative-warn" style="display:none">
+      ⚠️ <span id="fc-neg-warn-text"></span>
+    </div>
+
+    <!-- Chart view -->
+    <div class="card mb" id="fc-chart-panel">
+      <div class="section-label" style="margin-bottom:14px">Running Balance Projection</div>
+      <div class="chart-box" style="height:320px"><canvas id="fc-chart"></canvas></div>
+    </div>
+
+    <!-- Table view -->
+    <div class="card mb" id="fc-table-panel" style="display:none">
+      <div class="section-label" style="margin-bottom:14px">Week-by-Week Forecast</div>
+      <div class="tbl-wrap">
+        <table class="fc-table">
+          <thead><tr>
+            <th>Week of</th><th>Income</th><th>Expenses</th><th>Net</th><th>Running Balance</th>
+          </tr></thead>
+          <tbody id="fc-tbody"></tbody>
+        </table>
+        <div class="empty" id="fc-table-empty" style="display:none"><div class="ei">🔮</div><p>Add recurring patterns to see projections.</p></div>
+      </div>
+    </div>
+
+    <!-- Upcoming 30 days -->
+    <div class="g2 mb">
+      <div class="card">
+        <div class="section-label" style="margin-bottom:14px">📅 Next 30 Days</div>
+        <div id="fc-upcoming"></div>
+      </div>
+      <div class="card">
+        <div class="section-label" style="margin-bottom:14px">💡 Insights</div>
+        <div id="fc-insights-panel"></div>
+      </div>
+    </div>
+
+    <!-- Recurring patterns management -->
+    <div class="card mb">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <div class="section-label" style="margin-bottom:2px">🔄 Recurring Patterns</div>
+          <div style="font-size:.76rem;color:var(--muted)">Auto-detected from your transactions. Review and confirm each one.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="detectRecurring();renderForecast()">🔍 Re-scan Transactions</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddRecurring()">+ Add Manually</button>
+        </div>
+      </div>
+
+      <!-- Pending (unconfirmed) patterns -->
+      <div id="fc-pending-list"></div>
+
+      <!-- Confirmed patterns -->
+      <div style="margin-top:6px">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">✅ Confirmed Patterns</div>
+        <div id="fc-confirmed-list"></div>
+      </div>
+    </div>
+
+    <!-- Add/Edit recurring modal form -->
+    <div id="fc-add-form" class="rec-edit-form" style="display:none">
+      <div class="section-label" style="margin-bottom:12px" id="fc-add-form-title">Add Recurring Item</div>
+      <input type="hidden" id="fc-edit-id"/>
+      <div class="form-grid">
+        <div><label class="lbl">Name / Merchant</label><input type="text" id="fc-add-name" placeholder="e.g. Netflix"/></div>
+        <div><label class="lbl">Amount (AUD)</label><input type="number" id="fc-add-amount" placeholder="19.99" step="0.01" min="0"/></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Type</label>
+          <select id="fc-add-type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div><label class="lbl">Frequency</label>
+          <select id="fc-add-freq">
+            <option value="weekly">Weekly</option>
+            <option value="fortnightly">Fortnightly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Next Expected Date</label><input type="date" id="fc-add-next"/></div>
+        <div><label class="lbl">Category</label><select id="fc-add-cat"></select></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveRecurringItem()">💾 Save</button>
+        <button class="btn btn-ghost" onclick="closeAddRecurring()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ TRANSFERS ═══ -->
+  <div class="page" id="page-transfers">
+    <div class="page-title">Transfers &amp; Reconciliation</div>
+    <div class="page-sub">Internal account transfers are excluded from income, expense and budget analysis.</div>
+    <div class="g3 mb" id="tr-summary"></div>
+    <div class="card mb">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div><div class="section-label" style="margin-bottom:2px">🤖 Auto-Detected Transfer Pairs</div>
+          <div style="font-size:.76rem;color:var(--muted)">Matched by amount (exact), date (same or 1 day apart).</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="autoDetectTransfers();renderTransfersPage();toast('Rescanned')">↻ Re-scan</button>
+      </div>
+      <div id="tr-auto-list"></div>
+    </div>
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px">✅ Confirmed Transfer Pairs</div>
+      <div id="tr-confirmed-list"></div>
+    </div>
+    <div class="card">
+      <div class="section-label" style="margin-bottom:3px">🔗 Manually Link Two Transactions</div>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Select two transactions to mark as an internal transfer pair. Both will be excluded from analysis.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <select id="tr-manual-filter-month" style="padding:7px 10px;font-size:.8rem;width:auto;" onchange="renderManualLinkList()"></select>
+        <input type="text" id="tr-manual-search" placeholder="Search description..." style="flex:1;min-width:160px;padding:7px 10px;font-size:.8rem;" oninput="renderManualLinkList()"/>
+      </div>
+      <div id="tr-manual-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <div id="tr-manual-selected" style="flex:1;font-size:.8rem;color:var(--muted)">Select two transactions above</div>
+        <button class="btn btn-primary btn-sm" onclick="manualLinkSelected()">🔗 Link as Transfer</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearManualSelection()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ TAX LIABILITY TRACKER ═══ -->
+  <div class="page" id="page-tax">
+    <div class="page-title">Tax Liability Tracker</div>
+    <div class="page-sub">Estimated tax liabilities for both profiles, synced from the Super tab. BAS payments reduce the amount owing.</div>
+
+    <!-- FY bar -->
+    <div class="tax-fy-bar">
+      <div>
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Financial Year</div>
+        <div class="tax-fy-lbl" id="tax-fy-label">FY 2024-25</div>
+      </div>
+      <div id="tax-due-pill" class="tax-due-pill"></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <label style="font-size:.76rem;color:var(--muted)">Tracking:</label>
+        <select id="tax-fy-select" onchange="taxFyChanged()" style="padding:6px 10px;font-size:.82rem;width:auto">
+          <option value="2023">FY 2023-24</option>
+          <option value="2024" selected>FY 2024-25</option>
+          <option value="2025">FY 2025-26</option>
+          <option value="2026">FY 2026-27</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Summary strip -->
+    <div class="g3 mb" id="tax-summary-strip"></div>
+
+    <!-- ── BRENTON ─────────────────────────────────────────── -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px" data-profile-label="brenton">Brenton — Tax Position</div>
+
+      <!-- Super data sync panel -->
+      <div id="tax-super-sync" style="background:#1a1a2a;border:1px solid #2a2a4a;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#74b9ff">
+            ⚡ Synced from Super Tab
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="renderTax()" style="font-size:.72rem">↻ Refresh</button>
+        </div>
+        <div id="tax-super-sync-rows"></div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a4a">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.76rem;color:var(--muted)">Division 293 Liability</span>
+            <div id="tax-b-d293-display" style="font-weight:700;font-size:1rem;color:var(--primary)">—</div>
+          </div>
+          <div id="tax-d293-workings" style="font-size:.7rem;color:var(--muted);margin-top:4px"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <label class="lbl" style="margin:0;white-space:nowrap">Marginal Tax Rate (%):</label>
+        <input type="number" id="tax-b-rate" value="47" min="0" max="60" step="1"
+          style="width:80px" oninput="taxSave();renderTax()"/>
+        <span style="font-size:.72rem;color:var(--muted)">Applied to RSU income. Default 47% (top Australian rate).</span>
+      </div>
+
+      <!-- RSU Grants -->
+      <div style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">RSU Grants This FY</div>
+      <div id="tax-b-rsu-list"></div>
+      <button class="btn btn-ghost btn-sm" onclick="taxAddRSU()" style="margin-top:10px">+ Add RSU Grant</button>
+
+      <!-- Brenton result -->
+      <div style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Tax Calculation</div>
+      <div class="tax-result-box" id="tax-b-result"></div>
+    </div>
+
+    <!-- Brenton BAS -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:4px" data-profile-label="brenton">Brenton — PAYG Instalments (BAS)</div>
+      <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Quarterly PAYG payments reduce the end-of-year liability. Enter amounts as you pay them.</div>
+      <div style="overflow-x:auto">
+        <table class="bas-table">
+          <thead><tr><th>Quarter</th><th>Period</th><th>Date Paid</th><th>Amount Paid ($)</th></tr></thead>
+          <tbody id="tax-b-bas-body"></tbody>
+        </table>
+      </div>
+      <div id="tax-b-bas-total" style="margin-top:10px;text-align:right;font-size:.82rem;font-weight:700;color:var(--success)"></div>
+    </div>
+
+    <!-- ── SHELLEY ─────────────────────────────────────────── -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px" data-profile-label="shelley">Shelley — Sole Trader Tax Position</div>
+      <div class="g2 mb">
+        <div>
+          <label class="lbl">Gross Business Income ($)</label>
+          <input type="number" id="tax-s-income" placeholder="0" min="0" step="1000"
+            oninput="taxSave();renderTax()"/>
+        </div>
+        <div>
+          <label class="lbl">Total Business Deductions ($)</label>
+          <input type="number" id="tax-s-deductions" placeholder="0" min="0" step="100"
+            oninput="taxSave();renderTax()"/>
+        </div>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px">2024-25 individual tax brackets applied automatically including 2% Medicare levy.</div>
+      <div class="tax-result-box" id="tax-s-result"></div>
+    </div>
+
+    <!-- Shelley BAS -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:4px" data-profile-label="shelley">Shelley — BAS Payments</div>
+      <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px" id="shelley-bas-sub">Quarterly GST/PAYG instalment payments. These reduce the end-of-year liability.</div>
+      <div style="overflow-x:auto">
+        <table class="bas-table">
+          <thead><tr><th>Quarter</th><th>Period</th><th>Date Paid</th><th>Amount Paid ($)</th></tr></thead>
+          <tbody id="tax-s-bas-body"></tbody>
+        </table>
+      </div>
+      <div id="tax-s-bas-total" style="margin-top:10px;text-align:right;font-size:.82rem;font-weight:700;color:var(--success)"></div>
+    </div>
+
+    <!-- Combined position -->
+    <div class="card">
+      <div class="section-label" style="margin-bottom:14px">Combined Tax Position</div>
+      <div id="tax-combined"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS ═══ -->
+  <div class="page" id="page-settings">
+    <div class="page-title">Settings</div>
+    <div class="page-sub">Personalise your app, manage profiles and accounts</div>
+    <div id="settings-content"></div>
+  </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main -->
+
+<!-- GOAL UPDATE MODAL -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal-box">
+    <h3>Update Goal Progress</h3>
+    <input type="hidden" id="modal-goal-idx"/>
+    <div style="margin-bottom:14px"><label class="lbl">Current Amount Saved (AUD)</label>
+      <input type="number" id="modal-goal-amt" placeholder="0.00" min="0" step="0.01"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="updateGoal()">💾 Update</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+
+<!-- ═══════════ JAVASCRIPT MODULES ═══════════ -->
+<script src="js/storage.js"></script>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<!-- Pages -->
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/transactions.js"></script>
+<script src="js/pages/bills.js"></script>
+<script src="js/pages/mortgage.js"></script>
+<script src="js/pages/cash.js"></script>
+<script src="js/pages/insurance.js"></script>
+<script src="js/pages/super.js"></script>
+<script src="js/pages/assets.js"></script>
+<script src="js/pages/export.js"></script>
+<script src="js/pages/autocategorise.js"></script>
+<script src="js/pages/categories.js"></script>
+<script src="js/pages/bva.js"></script>
+<script src="js/pages/forecast.js"></script>
+<script src="js/pages/transfers.js"></script>
+<script src="js/pages/tax.js"></script>
+<script src="js/pages/equities.js"></script>
+<script src="js/pages/settings.js"></script>
+<!-- Init -->
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  migratePlaintextPins();
+  loadTheme();
+  applyAppName();
+  applyUserConfig();
+  // Auto-fix any orphaned category IDs from legacy data on every load
+  if (typeof fixOrphanedTxCats === 'function') { fixOrphanedTxCats(); }
+  selProfile('brenton');
+  // Register service worker for offline / PWA
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){
+      console.warn('SW registration failed:',e);
+    });
+    // Auto-reload when a new service worker takes over — picks up code changes
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      window.location.reload();
+    });
+  }
+});
+</script>
+</body>
+</html>
