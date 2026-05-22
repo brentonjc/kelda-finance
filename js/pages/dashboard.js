@@ -803,18 +803,24 @@ function dbRenderUpcomingBills(){
 
 function dbRenderGoals(){
   const el=document.getElementById('db-goals');if(!el)return;
-  if(!GOALS.length){el.innerHTML='<div class="empty"><div class="ei">⭐</div><p>No goals yet.</p></div>';return;}
-  el.innerHTML=GOALS.map(g=>{
-    const p=g.target>0?Math.min((g.saved/g.target)*100,100):0;
-    const cls=p>=100?'':p>=75?'warn':'';
-    const rem=Math.max(0,g.target-g.saved);
+  if(!GOALS.length){
+    el.innerHTML='<div class="empty" style="padding:12px 0"><div class="ei">🎯</div><p>No goals yet — <a href="#" onclick="go(\'goals\');return false;" style="color:var(--primary)">add your first goal →</a></p></div>';
+    return;
+  }
+  const shown=GOALS.slice(0,3);
+  el.innerHTML=shown.map(g=>{
+    const current=(typeof _goalCurrent==='function')?_goalCurrent(g):(Number(g.currentAmount)||Number(g.saved)||0);
+    const target=(typeof _goalTarget==='function')?_goalTarget(g):(Number(g.targetAmount)||Number(g.target)||0);
+    const p=target>0?Math.min((current/target)*100,100):0;
+    const cls=p>=100?'over':p>=75?'warn':'';
     return '<div class="prog-wrap">'
-      +'<div class="prog-hd"><span class="prog-lbl">'+(p>=100?'✅ ':'')+g.name+'</span>'
-      +'<span class="prog-val">'+fmt(g.saved)+' / '+fmt(g.target)+'</span></div>'
+      +'<div class="prog-hd"><span class="prog-lbl">'+(g.icon||'🎯')+' '+(p>=100?'✅ ':'')+g.name+'</span>'
+      +'<span class="prog-val" style="font-family:var(--font-mono)">'+fmt(current)+' / '+fmt(target)+'</span></div>'
       +'<div class="prog-track"><div class="prog-fill '+cls+'" style="width:'+p.toFixed(0)+'%"></div></div>'
-      +'<div style="font-size:.7rem;color:var(--muted);margin-top:3px">'+p.toFixed(0)+'% · '+(p>=100?'Goal reached!':fmt(rem)+' to go')+'</div>'
+      +'<div style="font-size:.7rem;color:var(--muted);margin-top:3px">'+p.toFixed(0)+'% · '+(p>=100?'Goal reached!':fmt(Math.max(0,target-current))+' to go')+'</div>'
       +'</div>';
-  }).join('');
+  }).join('')
+  +(GOALS.length>3?'<div style="font-size:.75rem;color:var(--muted);margin-top:8px">+' +(GOALS.length-3)+' more — <a href="#" onclick="go(\'goals\');return false;" style="color:var(--primary)">view all →</a></div>':'');
 }
 
 function dbRenderInsurance(){

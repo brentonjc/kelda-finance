@@ -248,51 +248,5 @@ function renderBudget(){
 function delBudget(cat){delete BUDGETS[cat];save(K.budgets,BUDGETS);renderBudget();toast('🗑️ Removed');}
 
 // ══════════════════════════════════════════════════════════════
-// GOALS
-// ══════════════════════════════════════════════════════════════
-function addGoal(){
-  const name=document.getElementById('goal-name').value.trim();
-  const target=parseFloat(document.getElementById('goal-target').value);
-  const saved=parseFloat(document.getElementById('goal-saved').value)||0;
-  if(!name||!target){toast('⚠️ Enter name and target');return;}
-  GOALS.push({id:Date.now(),name,target,saved});save(K.goals,GOALS);
-  document.getElementById('goal-name').value='';
-  document.getElementById('goal-target').value='';
-  document.getElementById('goal-saved').value='';
-  renderGoals();toast('✅ Goal added');
-}
-
-function openGoalModal(idx){
-  document.getElementById('modal-goal-idx').value=idx;
-  document.getElementById('modal-goal-amt').value=GOALS[idx].saved;
-  document.getElementById('goal-modal').classList.add('open');
-}
-function closeModal(){document.getElementById('goal-modal').classList.remove('open');}
-function updateGoal(){
-  const idx=parseInt(document.getElementById('modal-goal-idx').value);
-  GOALS[idx].saved=parseFloat(document.getElementById('modal-goal-amt').value)||0;
-  save(K.goals,GOALS);closeModal();renderGoals();renderDashboard();toast('✅ Updated');
-}
-
-function delGoal(id){GOALS=GOALS.filter(g=>g.id!==id);save(K.goals,GOALS);renderGoals();toast('🗑️ Removed');}
-
-function renderGoals(){
-  const el=document.getElementById('goals-list');
-  if(!GOALS.length){el.innerHTML='<div class="empty"><div class="ei">⭐</div><p>No goals yet</p></div>';return;}
-  el.innerHTML=GOALS.map((g,i)=>{
-    const p=Math.min((g.saved/g.target)*100,100);
-    const cls=p>=100?'over':p>=75?'warn':'';
-    return`<div class="goal-card">
-      <div class="goal-hd"><div><div class="goal-name">${p>=100?'✅ ':''}${g.name}</div>
-        <div style="font-size:.74rem;color:var(--muted);margin-top:2px">${fmt(g.saved)} of ${fmt(g.target)}</div></div>
-        <div style="display:flex;align-items:center;gap:8px"><div class="goal-pct">${p.toFixed(0)}%</div>
-        <button class="del-btn" onclick="delGoal(${g.id})">🗑</button></div></div>
-      <div class="prog-track" style="height:10px"><div class="prog-fill ${cls}" style="width:${p.toFixed(0)}%"></div></div>
-      <div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="openGoalModal(${i})">✏️ Update</button></div>
-    </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════════════════════════
 // BILLS
 // ══════════════════════════════════════════════════════════════
