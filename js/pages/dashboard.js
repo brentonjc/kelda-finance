@@ -283,7 +283,6 @@ function renderDashboard(){
   dbRenderUpcomingBills();
   dbRenderGoals();
   dbRenderInsurance();
-  dbRenderTaxStat();
   dbRenderTransferStat();
 }
 
@@ -500,14 +499,17 @@ function dbRenderNetWorth(){
   const assets=bank+supB+supS+(MORTGAGE.homeValue||0);
   const liab=MORTGAGE.balance||0;
   const taxOwing=(typeof taxTotalOwing==='function')?taxTotalOwing():0;
-  const nw=bank+supB+supS+equity-taxOwing;
+  var eqV=(typeof eqTotalEquitiesValue==='function')?eqTotalEquitiesValue():0;
+  const nw=bank+supB+supS+equity+eqV-taxOwing;
+  var assetsTotal=bank+supB+supS+(MORTGAGE.homeValue||0)+eqV;
   el.innerHTML='<div class="tile-hd" style="margin-bottom:8px"><div class="section-label" style="margin:0">Net Worth</div><a href="#" onclick="go(\'assets\');return false;" class="tile-link">View assets →</a></div>'
     +'<div class="nw-val">'+fmt(nw)+'</div>'
-    +'<div class="nw-sub">Assets '+fmt(assets)+' − Liabilities '+fmt(liab)+(taxOwing>0?' − Tax '+fmt(taxOwing):'')+'</div>'
+    +'<div class="nw-sub">Assets '+fmt(assetsTotal)+' − Liabilities '+fmt(liab)+(eqV>0?' + Equities '+fmt(eqV):'')+(taxOwing>0?' − Tax '+fmt(taxOwing):'')+'</div>'
     +'<div class="nw-breakdown">'
     +'<div class="nw-item"><div class="nw-item-lbl">Bank</div><div class="nw-item-val" style="color:var(--primary)">'+fmt(bank)+'</div></div>'
     +'<div class="nw-item"><div class="nw-item-lbl">Super</div><div class="nw-item-val" style="color:#a29bfe">'+fmt(supB+supS)+'</div></div>'
-    +'<div class="nw-item"><div class="nw-item-lbl">Equity</div><div class="nw-item-val" style="color:var(--success)">'+fmt(equity)+'</div></div>'
+    +'<div class="nw-item"><div class="nw-item-lbl">Home Equity</div><div class="nw-item-val" style="color:var(--success)">'+fmt(equity)+'</div></div>'
+    +(eqV>0?'<div class="nw-item"><div class="nw-item-lbl">Equities</div><div class="nw-item-val" style="color:#52d68a">'+fmt(eqV)+'</div></div>':'')
     +'<div class="nw-item"><div class="nw-item-lbl">Mortgage</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(liab)+'</div></div>'
     +(taxOwing>0?'<div class="nw-item"><div class="nw-item-lbl">Tax Owing</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(taxOwing)+'</div></div>':'')
     +'</div>';

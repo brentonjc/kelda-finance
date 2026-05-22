@@ -1,7 +1,7 @@
 // Charnley Finance — Service Worker
 // Network-first strategy: always fetches fresh code, falls back to cache if offline.
 
-const CACHE = 'charnley-finance-v20';
+const CACHE = 'charnley-finance-v26';
 
 const SHELL = [
   './',

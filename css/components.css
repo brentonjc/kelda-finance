@@ -5,6 +5,7 @@
 /* ══ CARDS ══ */
 .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:var(--sp6);transition:box-shadow .2s;}
 .mb{margin-bottom:18px;}
+.mb-sm{margin-bottom:8px;}
 
 /* ══ STAT CARDS ══ */
 .stat{border-radius:var(--radius);padding:18px 20px;color:#fff;position:relative;overflow:hidden;min-width:0;}
@@ -496,3 +497,36 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 /* ══ SETTINGS PAGE ══ */
 .settings-row{display:flex;flex-direction:column;gap:4px;}
 .settings-danger-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;background:var(--card2);border-radius:var(--radius-sm);}
+
+/* ══ EQUITY HOLDINGS ══ */
+.eq-group-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.eq-row{border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px;overflow:hidden;}
+.eq-row-main{display:flex;align-items:flex-start;gap:10px;padding:12px;cursor:pointer;transition:background .15s;}
+.eq-row-main:hover{background:var(--card2);}
+.eq-row-icon{font-size:1.4rem;flex-shrink:0;line-height:1.2;}
+.eq-row-info{flex:1;min-width:0;}
+.eq-row-name{font-size:.88rem;font-weight:600;margin-bottom:2px;}
+.eq-row-sub{font-size:.72rem;color:var(--muted);}
+.eq-row-values{text-align:right;flex-shrink:0;}
+.eq-row-actions{display:flex;gap:4px;flex-shrink:0;align-items:flex-start;}
+.eq-vest-bar-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px;}
+.eq-vest-bar{height:100%;border-radius:3px;transition:width .3s;}
+.eq-badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:.65rem;font-weight:700;margin-left:4px;}
+.eq-badge-exch{background:#18213E;color:#6278A0;}
+.eq-badge-private{background:#2a1030;color:var(--primary);}
+.eq-row-detail{border-top:1px solid var(--border);background:var(--card2);}
+.eq-detail-inner{padding:14px 16px;}
+.eq-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px 16px;font-size:.78rem;}
+.eq-lbl{color:var(--muted);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.eq-val{font-weight:600;font-family:var(--font-mono);font-size:.78rem;}
+.eq-schedule-toggle{font-size:.76rem;color:var(--primary);cursor:pointer;padding:4px 0;}
+.eq-sched-table{width:100%;border-collapse:collapse;font-size:.75rem;}
+.eq-sched-table th{text-align:left;padding:6px 8px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);}
+.eq-sched-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.eq-sched-past td{opacity:.55;}
+.eq-sales-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--border);font-size:.76rem;}
+.eq-sales-row:last-child{border-bottom:none;}
+.eq-gain-pos{color:var(--success);font-weight:700;}
+.eq-gain-neg{color:var(--danger);font-weight:700;}
+.eq-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;}
+.eq-modal-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}

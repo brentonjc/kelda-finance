@@ -33,11 +33,20 @@ function renderAssets(){
   const eqSummEl=document.getElementById('assets-equities-summary');
   if(eqSummEl){
     if(eqVal>0){
-      eqSummEl.innerHTML='<div class="dr"><span class="dr-k">RSU Grants (vested)</span><span class="dr-v">'+fmt(typeof eqRSUFromTax==='function'?eqRSUFromTax():0)+'</span></div>'
-        +'<div class="dr"><span class="dr-k">Manual Holdings</span><span class="dr-v">'+fmt(EQUITIES.reduce(function(s,h){return s+eqTotalValue(h);},0))+'</span></div>'
-        +'<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px"><span class="dr-k" style="font-weight:700">Total Equities</span><span class="dr-v" style="color:var(--primary)">'+fmt(eqVal)+'</span></div>';
+      var rsuVal=EQUITIES.filter(function(h){return h.type==='rsu'||h.type==='option';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
+      var stkVal=EQUITIES.filter(function(h){return h.type==='stock';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
+      var etfVal=EQUITIES.filter(function(h){return h.type==='etf';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
+      var cryVal=EQUITIES.filter(function(h){return h.type==='crypto';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
+      var rows='';
+      if(rsuVal>0) rows+='<div class="dr"><span class="dr-k">RSU / Options (vested)</span><span class="dr-v">'+fmt(rsuVal)+'</span></div>';
+      if(stkVal>0) rows+='<div class="dr"><span class="dr-k">Shares</span><span class="dr-v">'+fmt(stkVal)+'</span></div>';
+      if(etfVal>0) rows+='<div class="dr"><span class="dr-k">ETFs</span><span class="dr-v">'+fmt(etfVal)+'</span></div>';
+      if(cryVal>0) rows+='<div class="dr"><span class="dr-k">Crypto</span><span class="dr-v">'+fmt(cryVal)+'</span></div>';
+      eqSummEl.innerHTML=rows
+        +'<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px"><span class="dr-k" style="font-weight:700">Total Equities</span><span class="dr-v" style="color:var(--primary)">'+fmt(eqVal)+'</span></div>'
+        +'<div style="margin-top:10px"><a href="#" onclick="go(\'equities\');return false;" style="font-size:.8rem;color:var(--primary);text-decoration:none;font-weight:600">View Holdings →</a></div>';
     } else {
-      eqSummEl.innerHTML='<div class="empty" style="padding:10px 0"><p>No equity holdings yet.</p></div>';
+      eqSummEl.innerHTML='<div class="empty" style="padding:10px 0"><p>No equity holdings yet. <a href="#" onclick="go(\'equities\');return false;" style="color:var(--primary)">Add holdings →</a></p></div>';
     }
   }
 

@@ -98,6 +98,7 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('super')"><span>💼</span>Super</button>
       <button class="mob-menu-item" onclick="goMob('tax')"><span>🧾</span>Tax</button>
       <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Assets</button>
+      <button class="mob-menu-item" onclick="goMob('equities')"><span>📈</span>Equities</button>
       <button class="mob-menu-item" onclick="goMob('transfers')"><span>🔄</span>Transfers</button>
       <button class="mob-menu-item" onclick="goMob('forecast')"><span>🔮</span>Forecast</button>
     </div>
@@ -1188,89 +1189,61 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ EQUITIES ═══ -->
   <div class="page" id="page-equities">
     <div class="page-title">Equity Holdings</div>
-    <div class="page-sub">RSU grants &amp; share portfolio — track values and record sales</div>
+    <div class="page-sub">Investment portfolio — shares, ETFs, bonds, crypto, RSUs, options</div>
 
-    <!-- Summary stats (populated by renderEquitiesPage) -->
-    <div class="g3 mb" id="eq-page-stats"></div>
+    <!-- Hero card (total value / P&L) -->
+    <div class="card mb" id="eq-hero"></div>
 
-    <!-- Full holdings card -->
-    <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-        <div>
-          <div class="section-label" style="margin-bottom:2px">📈 RSU Grants &amp; Share Portfolio</div>
-          <div style="font-size:.74rem;color:var(--muted)">RSU grants sync from the Tax tab. Add other holdings manually. Record sales to track your realised position.</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddEquity()">+ Add Holding</button>
-      </div>
+    <!-- KPI stat chips -->
+    <div class="g4 mb" id="eq-kpis"></div>
 
-      <!-- Add/Edit form -->
-      <div id="eq-add-form" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
-        <div class="section-label" style="margin-bottom:12px" id="eq-form-title">Add Equity Holding</div>
-        <input type="hidden" id="eq-edit-id"/>
-        <div class="g2">
-          <div><label class="lbl">Ticker / Code</label><input type="text" id="eq-ticker" placeholder="e.g. AAPL (US) or CBA.AX / CBA (ASX)" style="text-transform:uppercase"/></div>
-          <div><label class="lbl">Company Name</label><input type="text" id="eq-company" placeholder="e.g. Apple Inc."/></div>
-        </div>
-        <div class="g2">
-          <div><label class="lbl">Type</label>
-            <select id="eq-type">
-              <option value="stock">Shares / ETF</option>
-              <option value="rsu">RSU Grant</option>
-              <option value="option">Options</option>
-            </select>
-          </div>
-          <div><label class="lbl">Held By</label>
-            <select id="eq-owner">
-              <option value="brenton" data-profile-name="brenton">Brenton</option>
-              <option value="shelley" data-profile-name="shelley">Shelley</option>
-              <option value="joint">Joint</option>
-            </select>
-          </div>
-        </div>
-        <div class="g2">
-          <div><label class="lbl">Quantity (units / shares)</label><input type="number" id="eq-qty" placeholder="0" min="0" step="1" inputmode="numeric"/></div>
-          <div><label class="lbl">Cost Base per Unit (AUD)</label><input type="number" id="eq-cost" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
-        </div>
-        <div class="g2">
-          <div>
-            <label class="lbl">Current Market Price (AUD)</label>
-            <div style="display:flex;gap:6px;align-items:center">
-              <input type="number" id="eq-price" placeholder="0.00" min="0" step="0.01" inputmode="decimal" style="flex:1"/>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="eqFetchPrice()" style="white-space:nowrap;flex-shrink:0">🔍 Live</button>
-            </div>
-            <div id="eq-price-status" style="font-size:.71rem;margin-top:4px;min-height:14px;color:var(--muted)"></div>
-          </div>
-          <div><label class="lbl">Vesting / Purchase Date</label><input type="date" id="eq-date"/></div>
-        </div>
-        <div><label class="lbl">Notes (optional)</label><input type="text" id="eq-notes" placeholder="e.g. Vesting schedule, broker, grant #"/></div>
-        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="saveEquity()">💾 Save</button>
-          <button class="btn btn-ghost" onclick="closeAddEquity()">Cancel</button>
-        </div>
-      </div>
+    <!-- Vested vs Unvested summary (RSU/Options only) -->
+    <div class="card mb" id="eq-vest-summary"></div>
 
-      <!-- Holdings list -->
-      <div id="eq-holdings-list"></div>
-
-      <!-- Record sale panel -->
-      <div id="eq-sale-form" style="display:none;background:#1a2a1a;border:1px solid #1a4a1a;border-radius:10px;padding:16px;margin-top:12px">
-        <div class="section-label" style="margin-bottom:10px;color:var(--success)">💵 Record a Sale</div>
-        <input type="hidden" id="eq-sale-holding-id"/>
-        <div class="g2">
-          <div><label class="lbl">Units Sold</label><input type="number" id="eq-sale-qty" placeholder="0" min="0" step="1" inputmode="numeric"/></div>
-          <div><label class="lbl">Sale Price per Unit (AUD)</label><input type="number" id="eq-sale-price" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
-        </div>
-        <div class="g2">
-          <div><label class="lbl">Sale Date</label><input type="date" id="eq-sale-date"/></div>
-          <div><label class="lbl">Brokerage / Costs (AUD)</label><input type="number" id="eq-sale-costs" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="saveEquitySale()">Record Sale</button>
-          <button class="btn btn-ghost" onclick="closeEquitySale()">Cancel</button>
-        </div>
-        <div id="eq-sale-preview" style="margin-top:10px;font-size:.78rem;color:var(--muted)"></div>
+    <!-- Vested vs Unvested by Year: pie + table -->
+    <div class="card mb" id="eq-vest-by-year" style="display:none">
+      <div class="section-label mb-sm">Vested vs Unvested by Year</div>
+      <div class="g2" style="align-items:start">
+        <div style="height:260px"><canvas id="eq-vest-donut-chart"></canvas></div>
+        <div id="eq-vest-year-table"></div>
       </div>
     </div>
+
+    <!-- Allocation + Top Holdings charts -->
+    <div class="g2 mb">
+      <div class="card">
+        <div class="section-label mb-sm">Portfolio Allocation</div>
+        <div style="height:220px"><canvas id="eq-alloc-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-label mb-sm">Top Holdings by Value</div>
+        <div style="height:220px"><canvas id="eq-bar-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Vesting timeline -->
+    <div class="card mb">
+      <div class="section-label mb-sm">Vesting Timeline — Next 3 Years</div>
+      <div style="height:200px"><canvas id="eq-vest-chart"></canvas></div>
+    </div>
+
+    <!-- Holdings list (grouped by type) -->
+    <div class="card mb">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+        <div class="section-label" style="margin:0">Holdings</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">💱 Update Prices</button>
+          <button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>
+        </div>
+      </div>
+      <div id="eq-holdings-list"></div>
+    </div>
+
+    <!-- Add/Edit modal overlay -->
+    <div id="eq-modal-overlay" class="eq-modal-overlay" style="display:none"></div>
+
+    <!-- Sale modal overlay -->
+    <div id="eq-sale-overlay" class="eq-modal-overlay" style="display:none"></div>
   </div>
 
   <!-- ═══ EXPORT DATA ═══ -->
@@ -1698,10 +1671,11 @@ window.addEventListener('unhandledrejection',function(e){
         <span style="font-size:.72rem;color:var(--muted)">Applied to RSU income. Default 47% (top Australian rate).</span>
       </div>
 
-      <!-- RSU Grants -->
+      <!-- RSU Grants — moved to Equities tab -->
       <div style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">RSU Grants This FY</div>
-      <div id="tax-b-rsu-list"></div>
-      <button class="btn btn-ghost btn-sm" onclick="taxAddRSU()" style="margin-top:10px">+ Add RSU Grant</button>
+      <div style="padding:10px 0;font-size:.78rem;color:var(--muted)">RSU vesting events have moved to the Equities tab.
+        <a href="#" onclick="go('equities');return false;" style="color:var(--primary)">Go to Equities → RSU Tax Estimator</a>
+      </div>
 
       <!-- Brenton result -->
       <div style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Tax Calculation</div>
