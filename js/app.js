@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','transactions','bills','mortgage','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['dashboard','transactions','bills','goals','mortgage','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -45,6 +45,7 @@ function go(id){
     if(id==='dashboard')renderDashboard();
     else if(id==='transactions'){renderTx();populateTxCatSelect();}
     else if(id==='bills')renderBills();
+    else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
     else if(id==='mortgage')renderMortgage();
     else if(id==='cash')renderCashTracker();
     else if(id==='insurance')renderInsurance();

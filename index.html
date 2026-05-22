@@ -92,6 +92,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label">Money</div>
     <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
       <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
       <button class="mob-menu-item" onclick="goMob('mortgage')"><span>🏡</span>Mortgage</button>
       <button class="mob-menu-item" onclick="goMob('insurance')"><span>🛡️</span>Insurance</button>
@@ -327,6 +328,7 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
     <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
     <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
+    <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
     <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
     <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
     <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Insurance</span></a></li>
@@ -445,8 +447,16 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- 5. Tax liabilities (full width, conditionally rendered) -->
       <div id="db-tax-stat"></div>
 
-      <!-- Hidden placeholders kept for render functions -->
-      <div style="display:none"><div id="db-upcoming-bills"></div><div id="db-bills-rate"></div><div id="db-goals"></div></div>
+      <!-- Goals widget (full width) -->
+      <div class="card" id="db-goals-card">
+        <div class="tile-hd" style="margin-bottom:10px">
+          <div class="section-label" style="margin:0">🎯 Savings Goals</div>
+          <a href="#" onclick="go('goals');return false;" class="tile-link">View all →</a>
+        </div>
+        <div id="db-goals"></div>
+      </div>
+      <!-- Upcoming bills (hidden placeholder, kept for render functions) -->
+      <div style="display:none"><div id="db-upcoming-bills"></div><div id="db-bills-rate"></div></div>
 
       <!-- 8. Income Flow Sankey (full width, content-driven height) -->
       <div class="card" id="db-sankey-row" style="position:relative">
@@ -735,6 +745,13 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card"><div class="section-label">Summary</div><div id="bills-summary"></div></div>
     </div>
     <div class="card"><div class="section-label" style="margin-bottom:14px">All Bills</div><div id="bills-list"></div></div>
+  </div>
+
+  <!-- ═══ GOALS ═══ -->
+  <div class="page" id="page-goals">
+    <div class="page-title">Savings Goals</div>
+    <div class="page-sub">Track progress toward your financial targets</div>
+    <div id="goals-content"></div>
   </div>
 
   <!-- ═══ MORTGAGE ═══ -->
@@ -1770,6 +1787,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/dashboard.js"></script>
 <script src="js/pages/transactions.js"></script>
 <script src="js/pages/bills.js"></script>
+<script src="js/pages/goals.js"></script>
 <script src="js/pages/mortgage.js"></script>
 <script src="js/pages/cash.js"></script>
 <script src="js/pages/insurance.js"></script>
