@@ -2,10 +2,10 @@
 // CASH TRACKER
 // ══════════════════════════════════════════════════════════════
 const CT_ACCTS=[
-  {id:'offset',icon:'🏦',color:'#e8457a',light:'#2a1030',owner:'shared',def:'Offset Account'},
-  {id:'home',  icon:'🏠',color:'#7c5cbf',light:'#1e1535',owner:'shared',def:'Home Transaction'},
-  {id:'sav1',  icon:'💰',color:'#f07aaa',light:'#261225',owner:'brenton',def:'Brenton Savings'},
-  {id:'sav2',  icon:'💎',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Shelley Savings'},
+  {id:'offset',icon:'🏦',color:'#e8457a',light:'var(--primary-bg)',owner:'shared',def:'Offset Account'},
+  {id:'home',  icon:'🏠',color:'#7c5cbf',light:'var(--card3)',owner:'shared',def:'Home Transaction'},
+  {id:'sav1',  icon:'💰',color:'#f07aaa',light:'var(--primary-bg)',owner:'brenton',def:'Brenton Savings'},
+  {id:'sav2',  icon:'💎',color:'#a29bfe',light:'var(--card3)',owner:'shelley',def:'Shelley Savings'},
 ];
 
 function ctLabel(a){
@@ -171,14 +171,15 @@ function ctRenderChart(){
 
   const ctx=canvas.getContext('2d');
   if(ctChart)ctChart.destroy();
-  if(!months.length){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#8a8095';ctx.font='14px Inter';ctx.textAlign='center';ctx.fillText('Add balances to see the chart',canvas.width/2,135);return;}
+  if(!months.length){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();ctx.font='14px Inter';ctx.textAlign='center';ctx.fillText('Add balances to see the chart',canvas.width/2,135);return;}
+  const ctToken=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';};
   ctChart= safeChart(ctx,{
     type:'line',data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:'#8a8095'}},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:ctToken('--muted')}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y)}}},
-      scales:{x:{grid:{display:false},ticks:{font:{family:'Inter'},color:'#8a8095'}},
-        y:{grid:{color:'#2a2535'},ticks:{font:{family:'Inter'},color:'#8a8095',callback:v=>'$'+v.toLocaleString()}}}}
+      scales:{x:{grid:{display:false},ticks:{font:{family:'Inter'},color:ctToken('--muted')}},
+        y:{grid:{color:ctToken('--card3')},ticks:{font:{family:'Inter'},color:ctToken('--muted'),callback:v=>'$'+v.toLocaleString()}}}}
   });
 }
 
@@ -226,10 +227,10 @@ function ctRenderNet(){
   // Tax liability deduction
   var taxOwing = (typeof taxTotalOwing === "function") ? taxTotalOwing() : 0;
   if (taxOwing > 0) {
-    rows += '<div class="dr" style="background:#2a1020;border-radius:8px;padding:8px 10px;margin-top:6px;border:1px solid #4a1020">'
+    rows += '<div class="dr" style="background:var(--danger-bg);border-radius:8px;padding:8px 10px;margin-top:6px;border:1px solid var(--danger-border)">'
       + '<div class="dr-k" style="color:var(--warn)">🧾 Tax Liability (set aside)</div>'
       + '<div><span style="font-weight:700;color:var(--danger)">-' + fmt(taxOwing) + '</span></div></div>';
-    rows += '<div class="dr" style="background:#1a2a1a;border-radius:8px;padding:8px 10px;margin-top:4px;border:1px solid #1a4a1a">'
+    rows += '<div class="dr" style="background:var(--success-bg);border-radius:8px;padding:8px 10px;margin-top:4px;border:1px solid var(--success-border)">'
       + '<div class="dr-k" style="color:var(--success);font-weight:700">Net Cash (after tax)</div>'
       + '<div><span style="font-weight:700;color:var(--success)">' + fmt(grandNow - taxOwing) + '</span></div></div>';
   }

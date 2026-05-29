@@ -275,6 +275,7 @@ function renderPaydownChart(){
   const ctx=document.getElementById('paydown-chart')?.getContext('2d');
   if(!ctx)return;
   if(paydownChart)paydownChart.destroy();
+  const mgToken=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';};
   paydownChart= safeChart(ctx,{
     type:'line',
     data:{labels,datasets:[
@@ -286,7 +287,7 @@ function renderPaydownChart(){
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'top',labels:{font:{family:'Inter',size:11},padding:14,color:'#8a8095'}},
+        legend:{position:'top',labels:{font:{family:'Inter',size:11},padding:14,color:mgToken('--muted')}},
         tooltip:{callbacks:{
           label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y),
           afterBody:(items)=>{
@@ -296,8 +297,8 @@ function renderPaydownChart(){
         }}
       },
       scales:{
-        x:{grid:{display:false},ticks:{font:{family:'Inter',size:10},color:'#8a8095',maxTicksLimit:12}},
-        y:{grid:{color:'#2a2535'},ticks:{font:{family:'Inter',size:10},color:'#8a8095',
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:10},color:mgToken('--muted'),maxTicksLimit:12}},
+        y:{grid:{color:mgToken('--card3')},ticks:{font:{family:'Inter',size:10},color:mgToken('--muted'),
           callback:v=>'$'+Math.round(v/1000)+'k'},min:0}
       }
     }
@@ -413,8 +414,8 @@ function updateRateImpact(simRate){
       if (deltaMonthly > 0) {
         // Rate rise — how to absorb it
         const extraPerWeek = deltaAnnual / 52;
-        callout.style.background = '#2a1020';
-        callout.style.border = '1px solid #4a1528';
+        callout.style.background = 'var(--danger-bg)';
+        callout.style.border = '1px solid var(--danger-border)';
         callout.style.color = 'var(--text)';
         callout.innerHTML = `
           <div style="font-weight:700;color:var(--danger);margin-bottom:8px">⚠️ Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
@@ -428,8 +429,8 @@ function updateRateImpact(simRate){
       } else {
         // Rate cut — savings opportunity
         const savedPerWeek = Math.abs(deltaAnnual) / 52;
-        callout.style.background = '#1a2a1a';
-        callout.style.border = '1px solid #1a4a28';
+        callout.style.background = 'var(--success-bg)';
+        callout.style.border = '1px solid var(--success-border)';
         callout.style.color = 'var(--text)';
         callout.innerHTML = `
           <div style="font-weight:700;color:var(--success);margin-bottom:8px">✅ Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>

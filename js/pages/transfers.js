@@ -143,7 +143,7 @@ function renderManualLinkList() {
     const col     = t.type === 'income' ? 'var(--success)' : 'var(--primary)';
     const dateStr = new Date(t.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;'
-      + (checked ? 'background:#0a1a30;' : '')
+      + (checked ? 'background:var(--card2);' : '')
       + '" onclick="toggleManualSelect(' + t.id + ')">'
       + '<input type="checkbox" class="tx-select-check" ' + (checked ? 'checked' : '') + ' onclick="event.stopPropagation();toggleManualSelect(' + t.id + ')" />'
       + '<div style="flex:0 0 65px;font-size:.76rem;color:var(--muted)">' + dateStr + '</div>'

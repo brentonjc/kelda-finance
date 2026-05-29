@@ -5,6 +5,11 @@ let dbCashFlowChart  = null;
 let dbCompareChart   = null;
 let dbCatChart       = null;
 
+// Read a CSS token at render time so Chart.js picks up the active theme
+function dbToken(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
+}
+
 function dbPeriodStr() {
   if (dbMode === 'year') return String(dbYear);
   return dbYear + '-' + String(dbMonth).padStart(2, '0');
@@ -154,8 +159,8 @@ function _dbDrawSankey(el) {
     var id = e[0], amt = e[1];
     var h = Math.max(MIN_NODE_H, Math.round(amt * scale));
     var cat = LCATS.find(function(c){ return c.id === id; });
-    var color = id === 'savings'     ? '#00C896'
-              : id === 'other_group' ? '#6b7280'
+    var color = id === 'savings'     ? dbToken('--success')
+              : id === 'other_group' ? dbToken('--muted')
               : (cat && cat.color)   ? cat.color
               : SANKEY_PALETTE[paletteIdx++ % SANKEY_PALETTE.length];
     var label = id === 'savings'     ? '💚 Savings'
@@ -398,12 +403,12 @@ function dbRenderCashFlowChart(){
       backgroundColor:isBar?highlightBgs:'rgba(232,69,122,.12)',
       fill:!isBar,tension:0.3,pointRadius:3,borderWidth:isBar?0:2,borderRadius:isBar?4:0}
   ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:12,color:'#8a8095'}},
+    plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:12,color:dbToken('--muted')}},
       tooltip:{callbacks:{
         title:items=>{const m=months[items[0].dataIndex];return new Date(m+'-02').toLocaleString('en-AU',{month:'long',year:'numeric'})+(m===selectedPfx?' ★':' ');},
         label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y)}}},
-    scales:{x:{grid:{display:false},ticks:{font:{family:'Inter',size:10},color:'#8a8095'}},
-      y:{grid:{color:'#2a2535'},ticks:{font:{family:'Inter',size:10},color:'#8a8095',callback:v=>'$'+Math.round(v).toLocaleString()}}}}});
+    scales:{x:{grid:{display:false},ticks:{font:{family:'Inter',size:10},color:dbToken('--muted')}},
+      y:{grid:{color:dbToken('--card3')},ticks:{font:{family:'Inter',size:10},color:dbToken('--muted'),callback:v=>'$'+Math.round(v).toLocaleString()}}}}});
   // Update chart subtitle
   const lbl=document.querySelector('#db-cashflow-chart')?.closest('.card')?.querySelector('.section-label');
   if(lbl)lbl.textContent='📈 Cash Flow — '+labelTitle;
@@ -461,12 +466,12 @@ function dbRenderCompareChart(){
       responsive:true, maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:14,color:'#8a8095'}},
+        legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:14,color:dbToken('--muted')}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y)}}
       },
       scales:{
-        x:{grid:{display:false},ticks:{font:{family:'Inter',size:11},color:'#d0cce8',font:{weight:'600'}}},
-        y:{grid:{color:'#2a2535'},ticks:{font:{family:'Inter',size:10},color:'#8a8095',callback:v=>'$'+Math.round(v).toLocaleString()}}
+        x:{grid:{display:false},ticks:{font:{family:'Inter',size:11},color:dbToken('--muted'),font:{weight:'600'}}},
+        y:{grid:{color:dbToken('--card3')},ticks:{font:{family:'Inter',size:10},color:dbToken('--muted'),callback:v=>'$'+Math.round(v).toLocaleString()}}
       }
     }
   });
@@ -543,7 +548,7 @@ function dbRenderAccounts(){
   const dateLbl=lm?new Date(lm+'-02').toLocaleString('en-AU',{month:'long',year:'numeric'}):'No data yet';
   el.innerHTML='<div class="acct-strip">'
     +accts.map((a,i)=>'<div class="acct-strip-item"><div class="acct-strip-lbl">'+a.icon+' '+a.label+'</div><div class="acct-strip-val">'+fmt(vals[i])+'</div></div>').join('')
-    +'<div class="acct-strip-item acct-strip-total"><div class="acct-strip-lbl" style="color:#f0a040">Combined</div><div class="acct-strip-val" style="color:#f0a040">'+fmt(total)+'</div></div>'
+    +'<div class="acct-strip-item acct-strip-total"><div class="acct-strip-lbl" style="color:var(--warn)">Combined</div><div class="acct-strip-val" style="color:var(--warn)">'+fmt(total)+'</div></div>'
     +'</div><div style="font-size:.7rem;color:var(--muted);margin-top:8px">As at '+dateLbl+'</div>';
 }
 
@@ -564,9 +569,9 @@ function dbRenderNetWorth(){
     +'<div class="nw-sub">Assets '+fmt(assetsTotal)+' − Liabilities '+fmt(liab)+(eqV>0?' + Equities '+fmt(eqV):'')+(taxOwing>0?' − Tax '+fmt(taxOwing):'')+'</div>'
     +'<div class="nw-breakdown">'
     +'<div class="nw-item"><div class="nw-item-lbl">Bank</div><div class="nw-item-val" style="color:var(--primary)">'+fmt(bank)+'</div></div>'
-    +'<div class="nw-item"><div class="nw-item-lbl">Super</div><div class="nw-item-val" style="color:#a29bfe">'+fmt(supB+supS)+'</div></div>'
+    +'<div class="nw-item"><div class="nw-item-lbl">Super</div><div class="nw-item-val" style="color:var(--purple)">'+fmt(supB+supS)+'</div></div>'
     +'<div class="nw-item"><div class="nw-item-lbl">Home Equity</div><div class="nw-item-val" style="color:var(--success)">'+fmt(equity)+'</div></div>'
-    +(eqV>0?'<div class="nw-item"><div class="nw-item-lbl">Equities</div><div class="nw-item-val" style="color:#52d68a">'+fmt(eqV)+'</div></div>':'')
+    +(eqV>0?'<div class="nw-item"><div class="nw-item-lbl">Equities</div><div class="nw-item-val" style="color:var(--success-lt)">'+fmt(eqV)+'</div></div>':'')
     +'<div class="nw-item"><div class="nw-item-lbl">Mortgage</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(liab)+'</div></div>'
     +(taxOwing>0?'<div class="nw-item"><div class="nw-item-lbl">Tax Owing</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(taxOwing)+'</div></div>':'')
     +'</div>';
@@ -591,7 +596,7 @@ function dbRenderMortgage(){
     +'<div class="mort-snap-item"><div class="mort-snap-lbl">Monthly Payment</div><div class="mort-snap-val">'+fmt(repmt)+'</div></div>'
     +'<div class="mort-snap-item"><div class="mort-snap-lbl">Next Payment</div><div class="mort-snap-val" style="font-size:.9rem">'+npStr+'</div></div>'
     +'</div>'
-    +(m.offset?'<div style="margin-top:10px;font-size:.76rem;padding:7px 12px;background:#2a1030;border-radius:8px;color:var(--pink-light)">Offset: <strong>'+fmt(m.offset)+'</strong> · Effective balance: <strong>'+fmt(effBal)+'</strong></div>':'');
+    +(m.offset?'<div style="margin-top:10px;font-size:.76rem;padding:7px 12px;background:var(--primary-bg);border-radius:8px;color:var(--pink-light)">Offset: <strong>'+fmt(m.offset)+'</strong> · Effective balance: <strong>'+fmt(effBal)+'</strong></div>':'');
 }
 
 function dbRenderSuper(){
@@ -641,7 +646,7 @@ function dbRenderCatChart(){
   const sorted = Object.entries(catTotals)
     .map(([id,amt]) => {
       const cat = LCATS.find(c => c.id===id);
-      return { id, name: cat?cat.name:(id==='other'?'Other':id), icon:cat?cat.icon:'📋', color:cat?cat.color:'#8a8095', amt };
+      return { id, name: cat?cat.name:(id==='other'?'Other':id), icon:cat?cat.icon:'📋', color:cat?cat.color:dbToken('--muted'), amt };
     })
     .sort((a,b) => b.amt - a.amt);
 
@@ -673,8 +678,8 @@ function dbRenderCatChart(){
           tooltip:{callbacks:{label:c=>' '+fmt(c.parsed.x)+' ('+((c.parsed.x/total)*100).toFixed(1)+'%)'}}
         },
         scales:{
-          x:{grid:{color:'#2a2535'},ticks:{font:{family:'Inter',size:10},color:'#8a8095',callback:v=>'$'+Math.round(v).toLocaleString()}},
-          y:{grid:{display:false},ticks:{font:{family:'Inter',size:11},color:'#d0cce8'}}
+          x:{grid:{color:dbToken('--card3')},ticks:{font:{family:'Inter',size:10},color:dbToken('--muted'),callback:v=>'$'+Math.round(v).toLocaleString()}},
+          y:{grid:{display:false},ticks:{font:{family:'Inter',size:11},color:dbToken('--muted')}}
         }
       }
     });
@@ -693,7 +698,7 @@ function dbRenderCatChart(){
             +'<span style="font-size:.78rem;color:var(--muted)">'+pct+'%</span>'
             +'<span style="font-weight:700;font-size:.86rem;color:'+r.color+'">'+fmt(r.amt)+'</span>'
             +'</div>'
-            +'<div style="height:4px;background:#2a2535;border-radius:99px;overflow:hidden;margin-left:30px">'
+            +'<div style="height:4px;background:var(--card3);border-radius:99px;overflow:hidden;margin-left:30px">'
             +'<div style="height:100%;width:'+barW+'%;background:'+r.color+';border-radius:99px;transition:width .4s ease"></div>'
             +'</div></div>';
         }).join('');
@@ -753,7 +758,7 @@ function dbRenderSubcatChart() {
   const sorted = Object.entries(totals)
     .map(([label, amt]) => {
       // Try to match a category colour from the label prefix
-      let color = '#8a8095';
+      let color = dbToken('--muted');
       if (filterCatId) {
         const cat = LCATS.find(c => c.id === filterCatId);
         if (cat && cat.color) color = cat.color;
@@ -810,8 +815,8 @@ function dbRenderSubcatChart() {
           tooltip: { callbacks: { label: c => ' ' + fmt(c.parsed.x) + ' (' + ((c.parsed.x/total)*100).toFixed(1) + '%)' } }
         },
         scales: {
-          x: { grid:{color:'#2a2535'}, ticks:{font:{family:'Inter',size:10},color:'#8a8095',callback:v=>'$'+Math.round(v).toLocaleString()} },
-          y: { grid:{display:false},  ticks:{font:{family:'Inter',size:10},color:'#d0cce8'} }
+          x: { grid:{color:dbToken('--card3')}, ticks:{font:{family:'Inter',size:10},color:dbToken('--muted'),callback:v=>'$'+Math.round(v).toLocaleString()} },
+          y: { grid:{display:false},  ticks:{font:{family:'Inter',size:10},color:dbToken('--muted')} }
         }
       }
     });
@@ -829,7 +834,7 @@ function dbRenderSubcatChart() {
             + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
             + '<span style="font-weight:700;font-size:.84rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
             + '</div>'
-            + '<div style="height:3px;background:#2a2535;border-radius:99px;overflow:hidden">'
+            + '<div style="height:3px;background:var(--card3);border-radius:99px;overflow:hidden">'
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
             + '</div></div>';
         }).join('');
@@ -905,3 +910,47 @@ function dbRenderInsurance(){
 }
 
 function ord(n){return n+(n===1?'st':n===2?'nd':n===3?'rd':'th');}
+
+// ── Shared helpers — exported for Snapshot page ─────────────────
+function getNetWorthSnapshot() {
+  var months = ctAllMonths();
+  var lm    = months.length ? months[months.length - 1] : null;
+  var prevM = months.length >= 2 ? months[months.length - 2] : null;
+  var bank  = lm ? ['offset','home','sav1','sav2'].reduce(function(s,a){
+    return s + ((CT[a] || {})[lm] || 0);
+  }, 0) : 0;
+  var supB = SUPER.b ? (SUPER.b.balance || 0) : 0;
+  var supS = SUPER.s ? (SUPER.s.balance || 0) : 0;
+  var equity = Math.max(0, (MORTGAGE.homeValue || 0) - (MORTGAGE.balance || 0));
+  var taxOwing = (typeof taxTotalOwing === 'function') ? taxTotalOwing() : 0;
+  var eqV = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
+  var netWorth = bank + supB + supS + equity + eqV - taxOwing;
+  var assets = bank + supB + supS + (MORTGAGE.homeValue || 0) + eqV;
+  var liabilities = MORTGAGE.balance || 0;
+  var bankPrev = prevM ? ['offset','home','sav1','sav2'].reduce(function(s,a){
+    return s + ((CT[a] || {})[prevM] || 0);
+  }, 0) : null;
+  var lastMonthNW = bankPrev !== null ? (bankPrev + supB + supS + equity + eqV - taxOwing) : null;
+  return { netWorth: netWorth, assets: assets, liabilities: liabilities, lastMonthNetWorth: lastMonthNW };
+}
+
+function getMonthSummary(year, month) {
+  var pfx = year + '-' + String(month).padStart(2, '0');
+  var txns = activeTX().filter(function(t) { return t.date && t.date.startsWith(pfx); });
+  var income = txns.filter(function(t) {
+    return t.type === 'income';
+  }).reduce(function(s, t) { return s + Number(t.amount); }, 0);
+  var expenses = txns.filter(function(t) {
+    return t.type === 'expense'
+      && t.catId !== 'transfers'
+      && (t.category || '').toLowerCase() !== 'transfers';
+  }).reduce(function(s, t) { return s + Number(t.amount); }, 0);
+  var surplus = income - expenses;
+  var budgetIds = Object.keys(LBUDGETS || {});
+  var budgetTotal = 0;
+  for (var bi = 0; bi < budgetIds.length; bi++) {
+    budgetTotal += Number(LBUDGETS[budgetIds[bi]] || 0);
+  }
+  var budgetVariance = budgetTotal - expenses; // positive = under budget
+  return { income: income, expenses: expenses, surplus: surplus, budgetTotal: budgetTotal, budgetVariance: budgetVariance };
+}

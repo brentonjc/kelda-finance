@@ -1,16 +1,16 @@
 // INSURANCE
 // ══════════════════════════════════════════════════════════════
 const INS_META={
-  'Home & Contents':{icon:'🏠',color:'#7c5cbf',bg:'#1e1535'},
-  'Car / Vehicle':  {icon:'🚗',color:'#e8457a',bg:'#2a1030'},
-  'Health':         {icon:'❤️',color:'#f04060',bg:'#2a1020'},
-  'Life':           {icon:'💛',color:'#f0a040',bg:'#2a2010'},
-  'Income Protection':{icon:'🛡️',color:'#a29bfe',bg:'#1e1635'},
-  'TPD':             {icon:'♿',color:'#f0a040',bg:'#2a2010'},
-  'Travel':         {icon:'✈️',color:'#74b9ff',bg:'#10182a'},
-  'Pet':            {icon:'🐾',color:'#f07aaa',bg:'#261225'},
-  'Business':       {icon:'💼',color:'#8a8095',bg:'#1e1c25'},
-  'Other':          {icon:'📋',color:'#8a8095',bg:'#1e1c25'},
+  'Home & Contents':{icon:'🏠',color:'#7c5cbf',bg:'var(--card3)'},
+  'Car / Vehicle':  {icon:'🚗',color:'#e8457a',bg:'var(--primary-bg)'},
+  'Health':         {icon:'❤️',color:'#f04060',bg:'var(--danger-bg)'},
+  'Life':           {icon:'💛',color:'#f0a040',bg:'var(--warn-bg)'},
+  'Income Protection':{icon:'🛡️',color:'#a29bfe',bg:'var(--card3)'},
+  'TPD':             {icon:'♿',color:'#f0a040',bg:'var(--warn-bg)'},
+  'Travel':         {icon:'✈️',color:'#74b9ff',bg:'var(--card2)'},
+  'Pet':            {icon:'🐾',color:'#f07aaa',bg:'var(--primary-bg)'},
+  'Business':       {icon:'💼',color:'#8a8095',bg:'var(--card2)'},
+  'Other':          {icon:'📋',color:'#8a8095',bg:'var(--card2)'},
 };
 function insToAnnual(amt,freq){return(amt||0)*({monthly:12,annual:1,quarterly:4,fortnightly:26}[freq]||1);}
 function daysTilRenewal(ds){if(!ds)return null;return Math.ceil((new Date(ds)-new Date())/(864e5));}
@@ -98,10 +98,10 @@ function renderInsurance(){
         <div class="ins-tags">
           <span class="ins-tag" style="background:${m.bg};color:${m.color}">${p.type}</span>
           <span class="badge ${rbc}">${rlbl} · ${rdate}</span>
-          <span class="ins-tag" style="background:#1e1c25;color:var(--muted)">👤 ${cov}</span>
-          ${p.notes?`<span class="ins-tag" style="background:#1e1c25;color:var(--muted)">📝 ${p.notes}</span>`:''}
-          ${p.type==='Income Protection'&&p.ipBenefit?`<span class="ins-tag" style="background:#1e1635;color:#a29bfe">${fmt(p.ipBenefit)}/mo · ${p.ipWait||90}d wait · to ${p.ipPeriod==='age65'?'age 65':p.ipPeriod}</span>`:''}
-          ${p.type==='TPD'&&p.tpdDef?`<span class="ins-tag" style="background:#2a2010;color:var(--warn)">${p.tpdDef==='own'?'Own Occupation':'Any Occupation'} TPD</span>`:''}
+          <span class="ins-tag" style="background:var(--card2);color:var(--muted)">👤 ${cov}</span>
+          ${p.notes?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)">📝 ${p.notes}</span>`:''}
+          ${p.type==='Income Protection'&&p.ipBenefit?`<span class="ins-tag" style="background:var(--card3);color:var(--purple)">${fmt(p.ipBenefit)}/mo · ${p.ipWait||90}d wait · to ${p.ipPeriod==='age65'?'age 65':p.ipPeriod}</span>`:''}
+          ${p.type==='TPD'&&p.tpdDef?`<span class="ins-tag" style="background:var(--warn-bg);color:var(--warn)">${p.tpdDef==='own'?'Own Occupation':'Any Occupation'} TPD</span>`:''}
         </div>
       </div>
       <div>
@@ -192,11 +192,11 @@ function showSuperResults(){
     const final=rows[rows.length-1];
     const sgcAmt=(d.salary||0)*(d.sgc||11.5)/100;
     const methodNote=p==='b'?'ART Lifecycle (age-adjusted returns)':'Standard projection';
-    el.innerHTML=`<div style="text-align:center;padding:10px;background:#2a1030;border-radius:10px;margin-bottom:10px">
+    el.innerHTML=`<div style="text-align:center;padding:10px;background:var(--primary-bg);border-radius:10px;margin-bottom:10px">
       <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">At age ${d.retire}</div>
       <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--primary)">${fmt(final.nominal)}</div>
       <div style="font-size:.72rem;color:var(--muted)">Real: ${fmt(final.real)} · Drawdown: ${fmt(final.nominal*.04/12)}/mo</div>
-      <div style="font-size:.68rem;color:#a29bfe;margin-top:3px">${methodNote}</div></div>
+      <div style="font-size:.68rem;color:var(--purple);margin-top:3px">${methodNote}</div></div>
       <div class="dr"><span class="dr-k">Annual SGC</span><span class="dr-v">${fmt(sgcAmt)}</span></div>
       <div class="dr"><span class="dr-k">Years to retire</span><span class="dr-v">${(d.retire||67)-(d.age||40)} yrs</span></div>`;
   });
@@ -211,6 +211,7 @@ function renderSuperChart(){
   const labels=Array.from({length:maxLen},(_,i)=>now+i);
   const ctx=document.getElementById('super-chart')?.getContext('2d');if(!ctx)return;
   if(superChart)superChart.destroy();
+  const insToken=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';};
   superChart= safeChart(ctx,{
     type:'line',
     data:{labels,datasets:[
@@ -219,10 +220,10 @@ function renderSuperChart(){
       {label:'Combined',data:labels.map((_,i)=>(rowsB[i]?.nominal||0)+(rowsS[i]?.nominal||0)),borderColor:'#f0a040',borderDash:[6,3],borderWidth:2.5,backgroundColor:'transparent',pointRadius:2,spanGaps:true},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:'#8a8095'}},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:insToken('--muted')}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y)}}},
-      scales:{x:{grid:{display:false},ticks:{font:{family:'Inter'},color:'#8a8095'}},
-        y:{grid:{color:'#2a2535'},ticks:{font:{family:'Inter'},color:'#8a8095',callback:v=>'$'+Math.round(v/1000)+'k'}}}}
+      scales:{x:{grid:{display:false},ticks:{font:{family:'Inter'},color:insToken('--muted')}},
+        y:{grid:{color:insToken('--card3')},ticks:{font:{family:'Inter'},color:insToken('--muted'),callback:v=>'$'+Math.round(v/1000)+'k'}}}}
   });
 
   const fB=rowsB.length?rowsB[rowsB.length-1].nominal:0;
@@ -333,8 +334,8 @@ function calcLifeNeeds() {
     const tpdGap  = Math.max(0, tpdNeed - existTPD);
     const ipGap   = Math.max(0, ipAnnual - existIP);
 
-    const color = p === 'b' ? 'var(--primary)' : '#a29bfe';
-    const bg    = p === 'b' ? '#2a1030' : '#1e1635';
+    const color = p === 'b' ? 'var(--primary)' : 'var(--purple)';
+    const bg    = p === 'b' ? 'var(--primary-bg)' : 'var(--card3)';
 
     // Build method comparison boxes
     const showAll    = liActiveTab === 'all';

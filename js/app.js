@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','transactions','bills','goals','mortgage','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['snapshot','dashboard','transactions','bills','goals','mortgage','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -42,7 +42,8 @@ function go(id){
     if(nv) nv.classList.toggle('active',p===id);
   });
   try{
-    if(id==='dashboard')renderDashboard();
+    if(id==='snapshot'){if(typeof renderSnapshot==='function')renderSnapshot();}
+    else if(id==='dashboard')renderDashboard();
     else if(id==='transactions'){renderTx();populateTxCatSelect();}
     else if(id==='bills')renderBills();
     else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
@@ -62,12 +63,12 @@ function go(id){
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar
-  var tabs=['dashboard','bva','bills','transactions','cash'];
+  var tabs=['snapshot','bva','bills','transactions','cash'];
   tabs.forEach(function(t){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
+  var stPages=['dashboard','categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
   if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
 }
@@ -97,13 +98,13 @@ function goMob(pageId) {
   closeMobMenu();
   go(pageId);
   // Update tab bar active state
-  var tabs = ['dashboard','bills','transactions','cash'];
+  var tabs = ['snapshot','bills','transactions','cash'];
   tabs.forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.toggle('active', t === pageId);
   });
   // Settings btn active if settings-related page
-  var settingsPages = ['categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
+  var settingsPages = ['dashboard','categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
   var settBtn = document.getElementById('tb-settings');
   if (settBtn) settBtn.classList.toggle('active', settingsPages.indexOf(pageId) >= 0);
 }

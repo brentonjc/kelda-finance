@@ -265,7 +265,7 @@ function csvRefreshPreview(){
       isDup?`<span class="tag-dup">Duplicate</span>`:`<span class="tag-ok">✓ Ready</span>`;
 
     const cls=isErr?'row-err':isDup?'row-dup':'';
-    const subcatBadge=r.subcat?'<span style="font-size:.68rem;background:#2a2535;color:var(--muted);border-radius:99px;padding:1px 6px">'+r.subcat+'</span>':'—';
+    const subcatBadge=r.subcat?'<span style="font-size:.68rem;background:var(--card3);color:var(--muted);border-radius:99px;padding:1px 6px">'+r.subcat+'</span>':'—';
     tbody.innerHTML+='<tr class="'+cls+(skipped?' row-skip':'') + '">'
       +'<td>'+(r.date||'—')+'</td>'
       +'<td><span class="badge '+(r.type==='income'?'b-income':'b-expense')+'">'+r.type+'</span></td>'
@@ -279,10 +279,10 @@ function csvRefreshPreview(){
   });
 
   document.getElementById('csv-imp-stats').innerHTML=`
-    <div class="imp-stat" style="background:#1a1a2e"><div class="isn">${total}</div><div class="isl">Total rows</div></div>
-    <div class="imp-stat" style="background:#1a2a1a"><div class="isn" style="color:var(--success)">${willImport}</div><div class="isl">Will import</div></div>
-    <div class="imp-stat" style="background:#2a2010"><div class="isn" style="color:var(--warn)">${dupes}</div><div class="isl">Duplicates</div></div>
-    <div class="imp-stat" style="background:#2a1020"><div class="isn" style="color:var(--danger)">${errs}</div><div class="isl">Errors</div></div>`;
+    <div class="imp-stat" style="background:var(--card2)"><div class="isn">${total}</div><div class="isl">Total rows</div></div>
+    <div class="imp-stat" style="background:var(--success-bg)"><div class="isn" style="color:var(--success)">${willImport}</div><div class="isl">Will import</div></div>
+    <div class="imp-stat" style="background:var(--warn-bg)"><div class="isn" style="color:var(--warn)">${dupes}</div><div class="isl">Duplicates</div></div>
+    <div class="imp-stat" style="background:var(--danger-bg)"><div class="isn" style="color:var(--danger)">${errs}</div><div class="isl">Errors</div></div>`;
 }
 
 // ── CONFIRM IMPORT ───────────────────────────────────────────

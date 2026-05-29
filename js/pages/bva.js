@@ -169,7 +169,7 @@ function renderBVA() {
 
   if (uncatAmt > 0) {
     tbody.innerHTML += '<tr>'
-      + '<td><div class="bva-cat-cell"><div class="bva-icon" style="background:#2a2535;color:var(--muted)">❓</div><span>Uncategorised</span></div></td>'
+      + '<td><div class="bva-cat-cell"><div class="bva-icon" style="background:var(--card3);color:var(--muted)">❓</div><span>Uncategorised</span></div></td>'
       + '<td><span class="bva-no-budget">No budget</span></td>'
       + '<td>' + fmt(uncatAmt) + '</td>'
       + '<td class="bva-no-budget">—</td><td>—</td><td></td></tr>';

@@ -33,7 +33,7 @@ function renderBills(){
     const dlbl=b.due===today_d?'Today!':b.due<today_d?(b.paid?'Paid':'Overdue'):`Due ${b.due}${ord(b.due)}`;
     const bc=b.paid?'b-paid':over?'b-overdue':'b-due';
     return`<div class="bill-card" style="${b.paid?'opacity:.55':''}">
-      <div class="bill-icon" style="background:${b.paid?'#1a3020':over?'#2a1020':'#2a2010'}">${b.icon}</div>
+      <div class="bill-icon" style="background:${b.paid?'var(--success-bg)':over?'var(--danger-bg)':'var(--warn-bg)'}">${b.icon}</div>
       <div class="bill-info"><div class="bill-name">${b.name}</div>
         <div class="bill-meta"><span class="badge ${bc}">${dlbl}</span></div></div>
       <div class="bill-amt">${fmt(b.amount)}</div>

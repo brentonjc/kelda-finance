@@ -1,6 +1,7 @@
 // TRANSACTION BAR CHART
 // ══════════════════════════════════════════════════════════════
 let txCatChart = null;
+function txToken(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';}
 
 function renderTxCatChart() {
   const canvas = document.getElementById('tx-cat-chart');
@@ -52,8 +53,8 @@ function renderTxCatChart() {
       plugins: { legend: { display: false },
         tooltip: { callbacks: { label: c => ' '+fmt(c.parsed.x) } } },
       scales: {
-        x: { grid:{color:'#2a2535'}, ticks:{font:{family:'Inter',size:10},color:'#8a8095',callback:v=>'$'+Math.round(v).toLocaleString()} },
-        y: { grid:{display:false}, ticks:{font:{family:'Inter',size:11},color:'#8a8095'} }
+        x: { grid:{color:txToken('--card3')}, ticks:{font:{family:'Inter',size:10},color:txToken('--muted'),callback:v=>'$'+Math.round(v).toLocaleString()} },
+        y: { grid:{display:false}, ticks:{font:{family:'Inter',size:11},color:txToken('--muted')} }
       }
     }
   });

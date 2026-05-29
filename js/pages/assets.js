@@ -1,4 +1,5 @@
 let assetsChart=null;
+function asToken(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';}
 
 function renderAssets(){
   // Bank
@@ -72,12 +73,12 @@ function renderAssets(){
   ].filter(d=>d.value>0);
   const ctx=document.getElementById('assets-chart')?.getContext('2d');if(!ctx)return;
   if(assetsChart)assetsChart.destroy();
-  if(!chartData.length){ctx.clearRect(0,0,400,250);ctx.fillStyle='#8a8095';ctx.font='14px Inter';ctx.textAlign='center';ctx.fillText('No asset data yet',200,125);return;}
+  if(!chartData.length){ctx.clearRect(0,0,400,250);ctx.fillStyle=asToken('--muted');ctx.font='14px Inter';ctx.textAlign='center';ctx.fillText('No asset data yet',200,125);return;}
   assetsChart= safeChart(ctx,{
     type:'doughnut',
-    data:{labels:chartData.map(d=>d.label),datasets:[{data:chartData.map(d=>d.value),backgroundColor:chartData.map(d=>d.color),borderWidth:3,borderColor:'#1f1c25',hoverOffset:6}]},
+    data:{labels:chartData.map(d=>d.label),datasets:[{data:chartData.map(d=>d.value),backgroundColor:chartData.map(d=>d.color),borderWidth:3,borderColor:asToken('--card'),hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:12},padding:14,color:'#8a8095'}},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:12},padding:14,color:asToken('--muted')}},
         tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.parsed)}}},
       onClick:(evt,els)=>{if(els.length){const l=chartData[els[0].index].label;
         if(l==='Bank')go('cash');else if(l==='Super')go('super');else if(l==='Home Equity')go('mortgage');

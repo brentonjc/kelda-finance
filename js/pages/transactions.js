@@ -171,7 +171,7 @@ function renderTx(){
     tr.dataset.id=t.id;
     const isTr=isTransfer(t);
     if(isTr)tr.classList.add('transfer-excluded-row');
-    const personBadge=t.type==='income'?'<span style="font-size:.68rem;background:#2a1530;color:#f07aaa;border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
+    const personBadge=t.type==='income'?'<span style="font-size:.68rem;background:var(--primary-bg);color:var(--pink-light);border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
     const catOpts=buildCatOptions(t.catId||t.category);
     const rowColor=t.type==='income'?'var(--success)':'var(--primary)';
     const amtSign=t.type==='income'?'+':'-';

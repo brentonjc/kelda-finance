@@ -3,6 +3,8 @@
 // Single source of truth for all investment holdings.
 // ══════════════════════════════════════════════════════════════
 
+function eqToken(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';}
+
 // ── Chart instances ────────────────────────────────────────────
 var eqAllocChart      = null;
 var eqBarChart        = null;
@@ -223,7 +225,7 @@ function renderEqVestByYear() {
                     data: [totalVested, totalUnvested],
                     backgroundColor: ['#00C896', '#F59E0B'],
                     borderWidth: 3,
-                    borderColor: '#111830',
+                    borderColor: eqToken('--card'),
                     hoverOffset: 6
                 }]
             },
@@ -231,7 +233,7 @@ function renderEqVestByYear() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position:'bottom', labels:{ color:'#6278A0', font:{size:12}, padding:14 } },
+                    legend: { position:'bottom', labels:{ color:eqToken('--muted'), font:{size:12}, padding:14 } },
                     tooltip: { callbacks: { label: function(c){ return ' ' + c.label + ': ' + fmt(c.parsed); } } }
                 }
             }
@@ -339,8 +341,8 @@ function renderEqCharts() {
         if (allocData.length) {
             eqAllocChart = safeChart(allocCtx, {
                 type: 'doughnut',
-                data: { labels: allocData.map(function(d){return d.label;}), datasets: [{ data: allocData.map(function(d){return d.value;}), backgroundColor: allocData.map(function(d){return d.color;}), borderWidth:3, borderColor:'#111830', hoverOffset:6 }] },
-                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#6278A0', font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label:function(c){ return ' '+c.label+': '+fmt(c.parsed); } } } } }
+                data: { labels: allocData.map(function(d){return d.label;}), datasets: [{ data: allocData.map(function(d){return d.value;}), backgroundColor: allocData.map(function(d){return d.color;}), borderWidth:3, borderColor:eqToken('--card'), hoverOffset:6 }] },
+                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:eqToken('--muted'), font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label:function(c){ return ' '+c.label+': '+fmt(c.parsed); } } } } }
             });
         }
     }
@@ -357,7 +359,7 @@ function renderEqCharts() {
                     datasets: [{ label:'Value', data: sorted.map(function(h){ return eqHoldingValue(h); }), backgroundColor: sorted.map(function(h){ return eqTypeCfg(h.type).color+'cc'; }), borderColor: sorted.map(function(h){ return eqTypeCfg(h.type).color; }), borderWidth:1.5, borderRadius:4 }] },
                 options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
                     plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:function(c){ return ' '+fmt(c.parsed.x); } } } },
-                    scales:{ x:{ grid:{color:'#18213E'}, ticks:{color:'#6278A0',font:{size:10},callback:function(v){ return '$'+Math.round(v/1000)+'k'; }} }, y:{ grid:{display:false}, ticks:{color:'#6278A0',font:{size:11}} } } }
+                    scales:{ x:{ grid:{color:eqToken('--card2')}, ticks:{color:eqToken('--muted'),font:{size:10},callback:function(v){ return '$'+Math.round(v/1000)+'k'; }} }, y:{ grid:{display:false}, ticks:{color:eqToken('--muted'),font:{size:11}} } } }
             });
         }
     }
@@ -411,18 +413,18 @@ function renderEqCharts() {
                                 if (q.value > 0) s += ' (' + fmt(q.value) + ')';
                                 return s;
                             }}}},
-                        scales:{ x:{ grid:{display:false}, ticks:{color:'#6278A0',font:{size:10}} },
-                            y:{ grid:{color:'#18213E'}, ticks:{color:'#6278A0',font:{size:10},
+                        scales:{ x:{ grid:{display:false}, ticks:{color:eqToken('--muted'),font:{size:10}} },
+                            y:{ grid:{color:eqToken('--card2')}, ticks:{color:eqToken('--muted'),font:{size:10},
                                 callback:function(v){ return v % 1 === 0 ? v : ''; }} } } }
                 });
             } else {
                 // No future vesting events — show message on canvas
                 var ctx2d = vestCtx.getContext('2d');
-                if (ctx2d) { ctx2d.clearRect(0,0,vestCtx.width,vestCtx.height); ctx2d.fillStyle='#6278A0'; ctx2d.font='13px Inter,sans-serif'; ctx2d.textAlign='center'; ctx2d.fillText('No upcoming vesting events', vestCtx.width/2, vestCtx.height/2||80); }
+                if (ctx2d) { ctx2d.clearRect(0,0,vestCtx.width,vestCtx.height); ctx2d.fillStyle=eqToken('--muted'); ctx2d.font='13px Inter,sans-serif'; ctx2d.textAlign='center'; ctx2d.fillText('No upcoming vesting events', vestCtx.width/2, vestCtx.height/2||80); }
             }
         } else {
             var ctx2d2 = vestCtx.getContext('2d');
-            if (ctx2d2) { ctx2d2.clearRect(0,0,vestCtx.width,vestCtx.height); ctx2d2.fillStyle='#6278A0'; ctx2d2.font='13px Inter,sans-serif'; ctx2d2.textAlign='center'; ctx2d2.fillText('Add RSU or Options holdings to see vesting timeline', vestCtx.width/2, vestCtx.height/2||80); }
+            if (ctx2d2) { ctx2d2.clearRect(0,0,vestCtx.width,vestCtx.height); ctx2d2.fillStyle=eqToken('--muted'); ctx2d2.font='13px Inter,sans-serif'; ctx2d2.textAlign='center'; ctx2d2.fillText('Add RSU or Options holdings to see vesting timeline', vestCtx.width/2, vestCtx.height/2||80); }
         }
     }
 }

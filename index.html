@@ -68,8 +68,8 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- iOS Bottom Tab Bar (mobile only) -->
 <nav id="bottom-tab-bar" style="display:none">
-  <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
-    <span class="tab-icon">🏠</span><span class="tab-lbl">Dashboard</span>
+  <button class="tab-btn active" id="tb-snapshot"     onclick="goMob('snapshot')">
+    <span class="tab-icon">⚡</span><span class="tab-lbl">Snapshot</span>
   </button>
   <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
     <span class="tab-icon">📅</span><span class="tab-lbl">Bills</span>
@@ -92,6 +92,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label">Money</div>
     <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('dashboard')"><span>🏠</span>Dashboard</button>
       <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
       <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
       <button class="mob-menu-item" onclick="goMob('mortgage')"><span>🏡</span>Mortgage</button>
@@ -324,7 +325,8 @@ window.addEventListener('unhandledrejection',function(e){
     <p data-app-sub>Family Finance Tracker · AUD</p>
   </div>
   <ul>
-    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('snapshot')" id="n-snapshot" class="active"><span class="ni">⚡</span><span class="nav-lbl">Snapshot</span></a></li>
+    <li><a onclick="go('dashboard')" id="n-dashboard"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
     <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
     <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
     <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
@@ -358,8 +360,22 @@ window.addEventListener('unhandledrejection',function(e){
 
   <div class="page-content">
 
+  <!-- ═══ SNAPSHOT ═══ -->
+  <div class="page active" id="page-snapshot">
+    <div class="page-title">Snapshot</div>
+    <div class="page-sub">Your financial pulse &middot; <span id="snap-date"></span></div>
+    <!-- Period controls bar — persists across re-renders -->
+    <div class="snap-controls" id="snap-controls">
+      <div class="snap-ctrl-left">
+        <select id="snap-period-select" onchange="snapPeriodChanged()" class="snap-period-select"></select>
+      </div>
+      <button class="snap-ctrl-now" onclick="snapGoNow()">Now</button>
+    </div>
+    <div id="snapshot-content"></div>
+  </div>
+
   <!-- ═══ DASHBOARD ═══ -->
-  <div class="page active" id="page-dashboard">
+  <div class="page" id="page-dashboard">
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Your financial snapshot · All amounts in AUD</div>
 
@@ -474,7 +490,7 @@ window.addEventListener('unhandledrejection',function(e){
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="db-sankey-container"></div>
-        <div id="db-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
+        <div id="db-sankey-tip" style="display:none;position:absolute;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
       </div>
 
       <!-- 9. Spending by Category (full width, height driven by bar count) -->
@@ -632,7 +648,7 @@ window.addEventListener('unhandledrejection',function(e){
             <tbody id="csv-map-body"></tbody>
           </table>
         </div>
-        <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
+        <div style="background:var(--success-bg);border-radius:9px;padding:10px 14px;font-size:.78rem;color:var(--success);margin-bottom:14px">
           💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
           Negative amounts are treated as expenses automatically.
         </div>
@@ -701,8 +717,10 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Bulk action bar (shown when items selected) -->
       <div class="tx-bulk-bar" id="tx-bulk-bar" style="display:none">
         <span class="tx-bulk-count" id="tx-bulk-count">0 selected</span>
-        <select id="tx-bulk-cat" style="padding:7px 10px;font-size:.82rem;width:auto;"></select>
-        <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
+        <select id="tx-bulk-cat" onchange="txBulkCatChanged()" style="padding:7px 10px;font-size:.82rem;width:auto;min-height:34px;"></select>
+        <select id="tx-bulk-subcat" style="padding:7px 10px;font-size:.82rem;width:auto;min-height:34px;display:none;"></select>
+        <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign</button>
+        <button class="btn btn-sm tx-bulk-del-btn" onclick="bulkDeleteSelected()">🗑 Delete</button>
         <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()">✕ Cancel</button>
       </div>
       <!-- Rule suggestion banner -->
@@ -790,12 +808,12 @@ window.addEventListener('unhandledrejection',function(e){
           <div><label class="lbl">Offset Balance (AUD)</label><input type="number" id="m-offset" placeholder="80000" oninput="syncOffsetSlider()" inputmode="decimal"/></div>
           <div><label class="lbl">Account Name</label><input type="text" id="m-offset-name" placeholder="e.g. Everyday Savings"/></div>
         </div>
-        <div id="ct-offset-sync-banner" style="display:none;background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
+        <div id="ct-offset-sync-banner" style="display:none;background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
           <button class="btn btn-ghost btn-sm" onclick="pullOffsetFromCT()" style="float:right;padding:4px 10px;font-size:.72rem;margin-left:8px">↻ Sync</button>
           <span style="color:var(--primary);font-weight:700">🔗 Cash Tracker offset:</span>
           <span id="ct-offset-sync-text" style="color:var(--muted);margin-left:5px"></span>
         </div>
-        <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
+        <div style="background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
           🔗 <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
         </div>
         <button class="btn btn-primary" onclick="saveMortgage()">💾 Save Details</button>
@@ -821,7 +839,7 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="section-label">🎚️ Offset Simulator</div>
           <div style="font-size:.78rem;color:var(--muted)">Drag to see how different offset balances affect your loan</div>
         </div>
-        <div style="background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center">
+        <div style="background:var(--primary-bg);border-radius:10px;padding:9px 16px;text-align:center">
           <div style="font-size:.68rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em">Simulating Offset</div>
           <div id="sim-offset-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">$0</div>
         </div>
@@ -876,7 +894,7 @@ window.addEventListener('unhandledrejection',function(e){
         <label>Simulate Rate:</label>
         <input type="range" id="rate-sim-slider" min="1" max="15" step="0.25" value="6.25"
           oninput="onRateSlider(this.value)" style="flex:1;min-width:180px"/>
-        <div style="background:#2a1030;border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
+        <div style="background:var(--primary-bg);border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
           <div style="font-size:.64rem;color:var(--muted);margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em">Rate</div>
           <div id="rate-sim-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">6.25%</div>
         </div>
@@ -1122,7 +1140,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="sb-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="sb-inflation" value="2.5" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <!-- ART Lifecycle badge -->
-        <div style="margin-top:14px;background:#1a1020;border:1px solid #5a2a50;border-radius:10px;padding:12px 14px">
+        <div style="margin-top:14px;background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:10px;padding:12px 14px">
           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);margin-bottom:8px">
             🔄 ART Lifecycle Investment Strategy
           </div>
@@ -1170,7 +1188,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="chart-box"><canvas id="super-chart"></canvas></div>
       <div id="super-combined" style="margin-top:16px"></div>
     </div>
-    <div style="margin-top:12px;padding:10px 14px;background:#2a1a25;border-radius:9px;font-size:.72rem;color:var(--muted)">
+    <div style="margin-top:12px;padding:10px 14px;background:var(--card2);border-radius:9px;font-size:.72rem;color:var(--muted)">
       ⚠️ Projections are illustrative estimates only and do not constitute financial advice.
     </div>
   </div>
@@ -1677,7 +1695,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="section-label" style="margin-bottom:14px" data-profile-label="brenton">Brenton — Tax Position</div>
 
       <!-- Super data sync panel -->
-      <div id="tax-super-sync" style="background:#1a1a2a;border:1px solid #2a2a4a;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div id="tax-super-sync" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#74b9ff">
             ⚡ Synced from Super Tab
@@ -1685,7 +1703,7 @@ window.addEventListener('unhandledrejection',function(e){
           <button class="btn btn-ghost btn-sm" onclick="renderTax()" style="font-size:.72rem">↻ Refresh</button>
         </div>
         <div id="tax-super-sync-rows"></div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a4a">
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:.76rem;color:var(--muted)">Division 293 Liability</span>
             <div id="tax-b-d293-display" style="font-weight:700;font-size:1rem;color:var(--primary)">—</div>
@@ -1797,6 +1815,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/app.js"></script>
 <!-- Pages -->
 <script src="js/pages/dashboard.js"></script>
+<script src="js/pages/snapshot.js"></script>
 <script src="js/pages/transactions.js"></script>
 <script src="js/pages/bills.js"></script>
 <script src="js/pages/goals.js"></script>
