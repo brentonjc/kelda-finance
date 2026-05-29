@@ -68,8 +68,8 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- iOS Bottom Tab Bar (mobile only) -->
 <nav id="bottom-tab-bar" style="display:none">
-  <button class="tab-btn active" id="tb-snapshot"     onclick="goMob('snapshot')">
-    <span class="tab-icon">⚡</span><span class="tab-lbl">Snapshot</span>
+  <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
+    <span class="tab-icon">🏠</span><span class="tab-lbl">Dashboard</span>
   </button>
   <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
     <span class="tab-icon">📅</span><span class="tab-lbl">Bills</span>
@@ -327,8 +327,7 @@ window.addEventListener('unhandledrejection',function(e){
     <p data-app-sub>Family Finance Tracker · AUD</p>
   </div>
   <ul>
-    <li><a onclick="go('snapshot')" id="n-snapshot" class="active"><span class="ni">⚡</span><span class="nav-lbl">Snapshot</span></a></li>
-    <li><a onclick="go('dashboard')" id="n-dashboard"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
     <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
     <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
     <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
@@ -363,20 +362,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page-content">
 
   <!-- ═══ DASHBOARD ═══ -->
-  <!-- ═══ SNAPSHOT ═══ -->
-  <div class="page active" id="page-snapshot">
-    <div class="page-title">Snapshot</div>
-    <div class="page-sub">Your financial pulse &middot; <span id="snap-date"></span></div>
-    <div class="snap-controls" id="snap-controls">
-      <div class="snap-ctrl-left">
-        <select id="snap-period-select" onchange="snapPeriodChanged()" class="snap-period-select"></select>
-      </div>
-      <button class="snap-ctrl-now" onclick="snapGoNow()">Now</button>
-    </div>
-    <div id="snapshot-content"></div>
-  </div>
-
-  <div class="page" id="page-dashboard">
+  <div class="page active" id="page-dashboard">
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Your financial snapshot · All amounts in AUD</div>
 
@@ -1814,7 +1800,6 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/app.js"></script>
 <!-- Pages -->
 <script src="js/pages/dashboard.js"></script>
-<script src="js/pages/snapshot.js"></script>
 <script src="js/pages/transactions.js"></script>
 <script src="js/pages/bills.js"></script>
 <script src="js/pages/goals.js"></script>
