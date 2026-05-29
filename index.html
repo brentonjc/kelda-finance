@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>Charnley Finance</title>
+<title>Kelda Finance</title>
 
 <!-- PWA / iOS home screen -->
 <link rel="manifest" href="manifest.json"/>
@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#F8F9FC" media="(prefers-color-scheme: light)"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Charnley Finance"/>
+<meta name="apple-mobile-web-app-title" content="Kelda Finance"/>
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
 
 <!-- Fonts -->
@@ -68,8 +68,8 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- iOS Bottom Tab Bar (mobile only) -->
 <nav id="bottom-tab-bar" style="display:none">
-  <button class="tab-btn active" id="tb-snapshot"     onclick="goMob('snapshot')">
-    <span class="tab-icon">⚡</span><span class="tab-lbl">Snapshot</span>
+  <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
+    <span class="tab-icon">🏠</span><span class="tab-lbl">Dashboard</span>
   </button>
   <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
     <span class="tab-icon">📅</span><span class="tab-lbl">Bills</span>
@@ -92,7 +92,6 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label">Money</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('dashboard')"><span>🏠</span>Dashboard</button>
       <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
       <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
       <button class="mob-menu-item" onclick="goMob('mortgage')"><span>🏡</span>Mortgage</button>
@@ -140,7 +139,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div>
           <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
-          <input type="text" id="usc-p1name" placeholder="Brenton" style="font-size:16px"/>
+          <input type="text" id="usc-p1name" placeholder="Profile 1" style="font-size:16px"/>
         </div>
       </div>
 
@@ -152,7 +151,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div>
           <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
-          <input type="text" id="usc-p2name" placeholder="Shelley" style="font-size:16px"/>
+          <input type="text" id="usc-p2name" placeholder="Profile 2" style="font-size:16px"/>
         </div>
       </div>
 
@@ -183,7 +182,7 @@ window.addEventListener('unhandledrejection',function(e){
     </button>
     <div id="rename-app-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:14px;margin-top:4px">
       <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">App Name</label>
-      <input type="text" id="rename-app-name" placeholder="Charnley Finance" style="margin-bottom:10px;font-size:16px"/>
+      <input type="text" id="rename-app-name" placeholder="Kelda Finance" style="margin-bottom:10px;font-size:16px"/>
       <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Subtitle</label>
       <input type="text" id="rename-app-sub" placeholder="Family Finance Tracker · AUD" style="margin-bottom:12px;font-size:16px"/>
       <div style="display:flex;gap:8px">
@@ -209,8 +208,8 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Header -->
     <div class="lw-header">
       <div class="lw-badge">FAMILY FINANCE</div>
-      <h1 class="lw-title" data-app-name>Charnley Finance</h1>
-      <p class="lw-sub" data-app-sub>Family Finance Tracker · AUD</p>
+      <h1 class="lw-title">Kelda Finance</h1>
+      <p class="lw-sub">Track every dollar, together.</p>
     </div>
 
     <!-- Inline PFM SVG chart graphic -->
@@ -281,15 +280,15 @@ window.addEventListener('unhandledrejection',function(e){
   <div id="pin-screen" style="display:none">
     <div class="login-card">
       <button class="lw-back-btn" onclick="hidePinScreen()">← Back</button>
-      <div class="login-logo" data-app-name>Charnley Finance</div>
+      <div class="login-logo" data-app-name>Kelda Finance</div>
       <div class="login-sub" data-app-sub>Family Finance Tracker · AUD</div>
       <div class="setup-banner" id="setup-banner" style="display:none">👋 First visit — set your 4-digit PIN below.</div>
       <div class="prof-row">
         <div class="prof-btn sel" id="pb-brenton" onclick="selProfile('brenton')">
-          <div class="pi">👔</div><div class="pn">Brenton</div><div class="pr">Profile 1</div>
+          <div class="pi">👤</div><div class="pn">Profile 1</div><div class="pr">Profile 1</div>
         </div>
         <div class="prof-btn" id="pb-shelley" onclick="selProfile('shelley')">
-          <div class="pi">👩</div><div class="pn">Shelley</div><div class="pr">Profile 2</div>
+          <div class="pi">👤</div><div class="pn">Profile 2</div><div class="pr">Profile 2</div>
         </div>
         <div class="prof-btn" id="pb-joint" onclick="selProfile('joint')">
           <div class="pi">👫</div><div class="pn">Joint</div><div class="pr">Combined</div>
@@ -319,15 +318,17 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 </div>
 
+<!-- SETUP WIZARD (shown on first run, before login) -->
+<div id="wizard-screen"></div>
+
 <!-- SIDEBAR -->
 <nav id="nav">
   <div class="nav-logo">
-    <h1 data-app-name style="white-space:nowrap">Charnley Finance</h1>
+    <h1 data-app-name style="white-space:nowrap">Kelda Finance</h1>
     <p data-app-sub>Family Finance Tracker · AUD</p>
   </div>
   <ul>
-    <li><a onclick="go('snapshot')" id="n-snapshot" class="active"><span class="ni">⚡</span><span class="nav-lbl">Snapshot</span></a></li>
-    <li><a onclick="go('dashboard')" id="n-dashboard"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
     <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
     <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
     <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
@@ -354,7 +355,7 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- MAIN -->
 <div id="main">
   <div id="topbar">
-    <div class="topbar-title" data-app-name>Charnley Finance</div>
+    <div class="topbar-title" data-app-name>Kelda Finance</div>
     <div class="topbar-user">
       <div class="user-pill"><div class="user-dot"></div><span id="topbar-user">—</span></div>
     </div>
@@ -362,22 +363,8 @@ window.addEventListener('unhandledrejection',function(e){
 
   <div class="page-content">
 
-  <!-- ═══ SNAPSHOT ═══ -->
-  <div class="page active" id="page-snapshot">
-    <div class="page-title">Snapshot</div>
-    <div class="page-sub">Your financial pulse &middot; <span id="snap-date"></span></div>
-    <!-- Period controls bar — persists across re-renders -->
-    <div class="snap-controls" id="snap-controls">
-      <div class="snap-ctrl-left">
-        <select id="snap-period-select" onchange="snapPeriodChanged()" class="snap-period-select"></select>
-      </div>
-      <button class="snap-ctrl-now" onclick="snapGoNow()">Now</button>
-    </div>
-    <div id="snapshot-content"></div>
-  </div>
-
   <!-- ═══ DASHBOARD ═══ -->
-  <div class="page" id="page-dashboard">
+  <div class="page active" id="page-dashboard">
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Your financial snapshot · All amounts in AUD</div>
 
@@ -402,16 +389,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- 1. KPI summary cards -->
       <div class="dash-stats-row" id="db-summary-cards"></div>
 
-      <!-- 2. 12-month forecast summary -->
-      <div class="card">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div class="section-label" style="margin:0">&#x1F4C8; 12-Month Cash Flow Forecast</div>
-          <a href="#" onclick="go('forecast');return false;" class="tile-link">Manage forecast &#x2192;</a>
-        </div>
-        <div id="db-forecast-table-wrap"></div>
-      </div>
-
-      <!-- 3. Cash flow — full width -->
+      <!-- 2. Cash flow — full width -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:10px">
           <div class="section-label" style="margin:0">📈 Cash Flow — Last 12 Months</div>
@@ -497,7 +475,7 @@ window.addEventListener('unhandledrejection',function(e){
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="db-sankey-container"></div>
-        <div id="db-sankey-tip" style="display:none;position:absolute;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
+        <div id="db-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
       </div>
 
       <!-- 9. Spending by Category (full width, height driven by bar count) -->
@@ -655,7 +633,7 @@ window.addEventListener('unhandledrejection',function(e){
             <tbody id="csv-map-body"></tbody>
           </table>
         </div>
-        <div style="background:var(--success-bg);border-radius:9px;padding:10px 14px;font-size:.78rem;color:var(--success);margin-bottom:14px">
+        <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
           💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
           Negative amounts are treated as expenses automatically.
         </div>
@@ -724,10 +702,8 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Bulk action bar (shown when items selected) -->
       <div class="tx-bulk-bar" id="tx-bulk-bar" style="display:none">
         <span class="tx-bulk-count" id="tx-bulk-count">0 selected</span>
-        <select id="tx-bulk-cat" onchange="txBulkCatChanged()" style="padding:7px 10px;font-size:.82rem;width:auto;min-height:34px;"></select>
-        <select id="tx-bulk-subcat" style="padding:7px 10px;font-size:.82rem;width:auto;min-height:34px;display:none;"></select>
-        <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign</button>
-        <button class="btn btn-sm tx-bulk-del-btn" onclick="bulkDeleteSelected()">🗑 Delete</button>
+        <select id="tx-bulk-cat" style="padding:7px 10px;font-size:.82rem;width:auto;"></select>
+        <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
         <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()">✕ Cancel</button>
       </div>
       <!-- Rule suggestion banner -->
@@ -815,12 +791,12 @@ window.addEventListener('unhandledrejection',function(e){
           <div><label class="lbl">Offset Balance (AUD)</label><input type="number" id="m-offset" placeholder="80000" oninput="syncOffsetSlider()" inputmode="decimal"/></div>
           <div><label class="lbl">Account Name</label><input type="text" id="m-offset-name" placeholder="e.g. Everyday Savings"/></div>
         </div>
-        <div id="ct-offset-sync-banner" style="display:none;background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
+        <div id="ct-offset-sync-banner" style="display:none;background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
           <button class="btn btn-ghost btn-sm" onclick="pullOffsetFromCT()" style="float:right;padding:4px 10px;font-size:.72rem;margin-left:8px">↻ Sync</button>
           <span style="color:var(--primary);font-weight:700">🔗 Cash Tracker offset:</span>
           <span id="ct-offset-sync-text" style="color:var(--muted);margin-left:5px"></span>
         </div>
-        <div style="background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
+        <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
           🔗 <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
         </div>
         <button class="btn btn-primary" onclick="saveMortgage()">💾 Save Details</button>
@@ -846,7 +822,7 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="section-label">🎚️ Offset Simulator</div>
           <div style="font-size:.78rem;color:var(--muted)">Drag to see how different offset balances affect your loan</div>
         </div>
-        <div style="background:var(--primary-bg);border-radius:10px;padding:9px 16px;text-align:center">
+        <div style="background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center">
           <div style="font-size:.68rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em">Simulating Offset</div>
           <div id="sim-offset-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">$0</div>
         </div>
@@ -901,7 +877,7 @@ window.addEventListener('unhandledrejection',function(e){
         <label>Simulate Rate:</label>
         <input type="range" id="rate-sim-slider" min="1" max="15" step="0.25" value="6.25"
           oninput="onRateSlider(this.value)" style="flex:1;min-width:180px"/>
-        <div style="background:var(--primary-bg);border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
+        <div style="background:#2a1030;border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
           <div style="font-size:.64rem;color:var(--muted);margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em">Rate</div>
           <div id="rate-sim-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">6.25%</div>
         </div>
@@ -972,8 +948,8 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="form-grid">
         <div><label class="lbl">Offset Label</label><input type="text" id="ct-offset-lbl" placeholder="Offset Account" oninput="saveCTConfig()"/></div>
         <div><label class="lbl">Home Transaction Label</label><input type="text" id="ct-home-lbl" placeholder="Home Transaction" oninput="saveCTConfig()"/></div>
-        <div><label class="lbl">Brenton Savings Label</label><input type="text" id="ct-sav1-lbl" placeholder="Brenton Savings" oninput="saveCTConfig()"/></div>
-        <div><label class="lbl">Shelley Savings Label</label><input type="text" id="ct-sav2-lbl" placeholder="Shelley Savings" oninput="saveCTConfig()"/></div>
+        <div><label class="lbl">Profile 1 Savings Label</label><input type="text" id="ct-sav1-lbl" placeholder="Savings Account 1" oninput="saveCTConfig()"/></div>
+        <div><label class="lbl">Profile 2 Savings Label</label><input type="text" id="ct-sav2-lbl" placeholder="Savings Account 2" oninput="saveCTConfig()"/></div>
       </div>
     </div>
     <div class="g4 mb" id="ct-summary"></div>
@@ -1176,7 +1152,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="sb-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="sb-inflation" value="2.5" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <!-- ART Lifecycle badge -->
-        <div style="margin-top:14px;background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:10px;padding:12px 14px">
+        <div style="margin-top:14px;background:#1a1020;border:1px solid #5a2a50;border-radius:10px;padding:12px 14px">
           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);margin-bottom:8px">
             🔄 ART Lifecycle Investment Strategy
           </div>
@@ -1224,7 +1200,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="chart-box"><canvas id="super-chart"></canvas></div>
       <div id="super-combined" style="margin-top:16px"></div>
     </div>
-    <div style="margin-top:12px;padding:10px 14px;background:var(--card2);border-radius:9px;font-size:.72rem;color:var(--muted)">
+    <div style="margin-top:12px;padding:10px 14px;background:#2a1a25;border-radius:9px;font-size:.72rem;color:var(--muted)">
       ⚠️ Projections are illustrative estimates only and do not constitute financial advice.
     </div>
   </div>
@@ -1537,132 +1513,129 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ FORECAST ═══ -->
   <div class="page" id="page-forecast">
     <div class="page-title">Cash Flow Forecast</div>
-    <div class="page-sub">12-month projection built from your transaction history, adjusted to taste.</div>
+    <div class="page-sub">Projected income and expenses based on detected recurring patterns.</div>
 
-    <!-- Sync bar -->
-    <div class="fc-balance-bar" style="justify-content:space-between">
+    <!-- Starting balance bar -->
+    <div class="fc-balance-bar">
       <div>
-        <div class="fc-bal-label">Cash Tracker balance</div>
-        <div id="fc2-bal-value" style="font-size:.9rem;color:var(--muted);margin-top:2px">Sync from Cash Tracker to enable cumulative view</div>
-        <div id="fc2-sync-time" style="font-size:.72rem;color:var(--muted);margin-top:2px"></div>
+        <div class="fc-bal-label">Starting Balance (from Cash Tracker)</div>
+        <div id="fc-bal-value" class="fc-bal-value">—</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="fc2SyncBalance()">&#x1F504; Sync from Cash Tracker</button>
+      <div id="fc-bal-warn" class="fc-bal-warn" style="display:none">⚠️ No balance found in Cash Tracker</div>
+      <button class="btn btn-ghost btn-sm" onclick="go('cash')" style="margin-left:auto">Update in Cash Tracker →</button>
     </div>
 
-    <!-- KPI strip -->
-    <div class="g4 mb" id="fc2-kpis"></div>
-
-    <!-- Chart card -->
-    <div class="card mb">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-        <div class="section-label" style="margin-bottom:0">&#x1F4C8; 12-Month Projection</div>
-        <div class="fc-view-toggle">
-          <button class="fc-toggle-btn active" id="fc2-bars-btn" onclick="fc2SetChartMode('bars')">Income vs Expenses</button>
-          <button class="fc-toggle-btn" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled>Cumulative Balance</button>
-        </div>
+    <!-- Controls -->
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <div style="display:flex;gap:6px">
+        <button class="fc-range-btn active" id="fc-r-3" onclick="setFcRange(3)">3 Months</button>
+        <button class="fc-range-btn" id="fc-r-1" onclick="setFcRange(1)">1 Month</button>
+        <button class="fc-range-btn" id="fc-r-6" onclick="setFcRange(6)">6 Months</button>
+        <button class="fc-range-btn" id="fc-r-12" onclick="setFcRange(12)">12 Months</button>
       </div>
-      <div class="chart-box" style="height:320px"><canvas id="fc2-chart"></canvas></div>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:10px">
-        Solid bars = actuals &nbsp;&#xB7;&nbsp; Faded bars = forecast &nbsp;&#xB7;&nbsp; Dashed amber line = net cash flow
+      <div class="fc-view-toggle" style="margin-left:auto">
+        <button class="fc-toggle-btn active" id="fc-v-chart" onclick="setFcView('chart')">📈 Chart</button>
+        <button class="fc-toggle-btn" id="fc-v-table" onclick="setFcView('table')">📋 Table</button>
       </div>
     </div>
 
     <!-- Insights -->
-    <div class="section-label mb-sm">&#x1F4A1; Insights</div>
-    <div id="fc2-insights" class="mb"></div>
+    <div id="fc-insights" class="mb"></div>
 
-    <!-- Month strip -->
-    <div class="section-label mb-sm">&#x1F4C5; Month by Month</div>
-    <div class="fc2-strip-wrap mb">
-      <div class="fc2-strip" id="fc2-strip"></div>
+    <!-- Negative balance warning -->
+    <div id="fc-neg-warn" class="fc-negative-warn" style="display:none">
+      ⚠️ <span id="fc-neg-warn-text"></span>
     </div>
 
-    <!-- Adjustments table -->
+    <!-- Chart view -->
+    <div class="card mb" id="fc-chart-panel">
+      <div class="section-label" style="margin-bottom:14px">Running Balance Projection</div>
+      <div class="chart-box" style="height:320px"><canvas id="fc-chart"></canvas></div>
+    </div>
+
+    <!-- Table view -->
+    <div class="card mb" id="fc-table-panel" style="display:none">
+      <div class="section-label" style="margin-bottom:14px">Week-by-Week Forecast</div>
+      <div class="tbl-wrap">
+        <table class="fc-table">
+          <thead><tr>
+            <th>Week of</th><th>Income</th><th>Expenses</th><th>Net</th><th>Running Balance</th>
+          </tr></thead>
+          <tbody id="fc-tbody"></tbody>
+        </table>
+        <div class="empty" id="fc-table-empty" style="display:none"><div class="ei">🔮</div><p>Add recurring patterns to see projections.</p></div>
+      </div>
+    </div>
+
+    <!-- Upcoming 30 days -->
+    <div class="g2 mb">
+      <div class="card">
+        <div class="section-label" style="margin-bottom:14px">📅 Next 30 Days</div>
+        <div id="fc-upcoming"></div>
+      </div>
+      <div class="card">
+        <div class="section-label" style="margin-bottom:14px">💡 Insights</div>
+        <div id="fc-insights-panel"></div>
+      </div>
+    </div>
+
+    <!-- Recurring patterns management -->
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div>
-          <div class="section-label" style="margin-bottom:2px">&#x1F39B;&#xFE0F; Forecast Adjustments</div>
-          <div style="font-size:.76rem;color:var(--muted)">Override the baseline for specific months — one-off events, planned expenses, expected income changes.</div>
+          <div class="section-label" style="margin-bottom:2px">🔄 Recurring Patterns</div>
+          <div style="font-size:.76rem;color:var(--muted)">Auto-detected from your transactions. Review and confirm each one.</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="fc2OpenAdjForm(-1)">+ Add</button>
-      </div>
-
-      <!-- Inline add/edit form -->
-      <div id="fc2-adj-form" class="rec-edit-form" style="display:none;margin-bottom:16px">
-        <div class="section-label" style="margin-bottom:12px">Add / Edit Adjustment</div>
-        <div class="form-grid">
-          <div><label class="lbl">Description</label><input type="text" id="fc2-adj-desc" placeholder="e.g. Annual insurance renewal"/></div>
-          <div><label class="lbl">Category</label>
-            <select id="fc2-adj-cat">
-              <option value="">-- Select category --</option>
-              <option value="Tax">Tax</option>
-              <option value="Insurance">Insurance</option>
-              <option value="Asset Purchase">Asset Purchase</option>
-              <option value="Asset Sale">Asset Sale</option>
-              <option value="Holidays">Holidays</option>
-              <option value="Bills">Bills</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Type</label>
-            <select id="fc2-adj-type" onchange="fc2AdjTypeChange()">
-              <option value="oneoff">One-off</option>
-              <option value="recurring">Recurring</option>
-            </select>
-          </div>
-          <div><label class="lbl">Amount (negative = expense, positive = income)</label>
-            <input type="number" id="fc2-adj-amount" placeholder="-1200 or +500" step="0.01" inputmode="decimal"/>
-          </div>
-        </div>
-        <!-- One-off row -->
-        <div id="fc2-adj-oneoff-row" class="form-grid">
-          <div><label class="lbl">Month</label>
-            <select id="fc2-adj-month"><option value="">-- Select month --</option></select>
-          </div>
-          <div></div>
-        </div>
-        <!-- Recurring row -->
-        <div id="fc2-adj-recur-row" style="display:none">
-          <div class="form-grid">
-            <div><label class="lbl">Frequency</label>
-              <select id="fc2-adj-freq">
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="annually">Annually</option>
-              </select>
-            </div>
-            <div><label class="lbl">Start month</label>
-              <select id="fc2-adj-start"><option value="">-- Select month --</option></select>
-            </div>
-          </div>
-          <div class="form-grid" style="margin-top:8px">
-            <div><label class="lbl">End month</label>
-              <select id="fc2-adj-end"><option value="">None (ongoing)</option></select>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding-top:22px">
-              <input type="checkbox" id="fc2-adj-ongoing" onchange="fc2AdjOngoingChange()" style="accent-color:var(--primary)"/>
-              <label for="fc2-adj-ongoing" style="font-size:.84rem;color:var(--muted);cursor:pointer">Ongoing (no end date)</label>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="fc2SaveAdj()">&#x1F4BE; Save</button>
-          <button class="btn btn-ghost" onclick="fc2CloseAdjForm()">Cancel</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="detectRecurring();renderForecast()">🔍 Re-scan Transactions</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddRecurring()">+ Add Manually</button>
         </div>
       </div>
 
-      <!-- Table output -->
-      <div id="fc2-adj-table-wrap">
-        <div class="empty" style="padding:20px 0"><div class="ei">&#x2795;</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>
+      <!-- Pending (unconfirmed) patterns -->
+      <div id="fc-pending-list"></div>
+
+      <!-- Confirmed patterns -->
+      <div style="margin-top:6px">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">✅ Confirmed Patterns</div>
+        <div id="fc-confirmed-list"></div>
       </div>
     </div>
-  </div>
 
-  <!-- Month detail modal -->
-  <div class="modal-overlay" id="fc2-month-overlay" onclick="if(event.target===this)fc2CloseMonthModal()">
-    <div class="modal-box" id="fc2-month-box"></div>
+    <!-- Add/Edit recurring modal form -->
+    <div id="fc-add-form" class="rec-edit-form" style="display:none">
+      <div class="section-label" style="margin-bottom:12px" id="fc-add-form-title">Add Recurring Item</div>
+      <input type="hidden" id="fc-edit-id"/>
+      <div class="form-grid">
+        <div><label class="lbl">Name / Merchant</label><input type="text" id="fc-add-name" placeholder="e.g. Netflix"/></div>
+        <div><label class="lbl">Amount (AUD)</label><input type="number" id="fc-add-amount" placeholder="19.99" step="0.01" min="0"/></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Type</label>
+          <select id="fc-add-type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div><label class="lbl">Frequency</label>
+          <select id="fc-add-freq">
+            <option value="weekly">Weekly</option>
+            <option value="fortnightly">Fortnightly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Next Expected Date</label><input type="date" id="fc-add-next"/></div>
+        <div><label class="lbl">Category</label><select id="fc-add-cat"></select></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveRecurringItem()">💾 Save</button>
+        <button class="btn btn-ghost" onclick="closeAddRecurring()">Cancel</button>
+      </div>
+    </div>
   </div>
 
 
@@ -1731,7 +1704,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="section-label" style="margin-bottom:14px" data-profile-label="brenton">Brenton — Tax Position</div>
 
       <!-- Super data sync panel -->
-      <div id="tax-super-sync" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div id="tax-super-sync" style="background:#1a1a2a;border:1px solid #2a2a4a;border-radius:10px;padding:14px 16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#74b9ff">
             ⚡ Synced from Super Tab
@@ -1739,7 +1712,7 @@ window.addEventListener('unhandledrejection',function(e){
           <button class="btn btn-ghost btn-sm" onclick="renderTax()" style="font-size:.72rem">↻ Refresh</button>
         </div>
         <div id="tax-super-sync-rows"></div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a4a">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:.76rem;color:var(--muted)">Division 293 Liability</span>
             <div id="tax-b-d293-display" style="font-weight:700;font-size:1rem;color:var(--primary)">—</div>
@@ -1947,7 +1920,6 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/app.js"></script>
 <!-- Pages -->
 <script src="js/pages/dashboard.js"></script>
-<script src="js/pages/snapshot.js"></script>
 <script src="js/pages/transactions.js"></script>
 <script src="js/pages/bills.js"></script>
 <script src="js/pages/goals.js"></script>
@@ -1966,6 +1938,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/equities.js"></script>
 <script src="js/pages/liabilities.js"></script>
 <script src="js/pages/settings.js"></script>
+<script src="js/wizard.js"></script>
 <!-- Init -->
 <script>
 document.addEventListener('DOMContentLoaded',function(){
@@ -1975,6 +1948,8 @@ document.addEventListener('DOMContentLoaded',function(){
   applyUserConfig();
   // Auto-fix any orphaned category IDs from legacy data on every load
   if (typeof fixOrphanedTxCats === 'function') { fixOrphanedTxCats(); }
+  // First-run wizard check — mutates welcome screen or marks existing user
+  checkFirstRun();
   selProfile('brenton');
   // Register service worker for offline / PWA
   if('serviceWorker' in navigator){

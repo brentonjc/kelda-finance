@@ -1,7 +1,7 @@
-// Charnley Finance — Service Worker
+// Kelda Finance — Service Worker
 // Network-first strategy: always fetches fresh code, falls back to cache if offline.
 
-const CACHE = 'charnley-finance-v30';
+const CACHE = 'kelda-finance-v1';
 
 const SHELL = [
   './',
@@ -15,7 +15,6 @@ const SHELL = [
   './js/auth.js',
   './js/app.js',
   './js/pages/dashboard.js',
-  './js/pages/snapshot.js',
   './js/pages/transactions.js',
   './js/pages/bills.js',
   './js/pages/mortgage.js',
@@ -31,6 +30,7 @@ const SHELL = [
   './js/pages/transfers.js',
   './js/pages/tax.js',
   './js/pages/equities.js',
+  './js/wizard.js',
   './js/pages/settings.js',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',

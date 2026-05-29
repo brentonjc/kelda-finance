@@ -7,8 +7,15 @@ let _sessionTimer=null;
 const PIN_MAX_ATTEMPTS=5, PIN_LOCKOUT_SECS=30, SESSION_TIMEOUT_MS=15*60*1000;
 
 
-// SHA-256 via Web Crypto API — returns hex string
+// SHA-256 via Web Crypto API — returns hex string (new kelda: salt)
 async function hashPin(pin) {
+  const msgBuffer = new TextEncoder().encode('kelda:' + pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Legacy hash (charnley: salt) — used only for one-time migration
+async function hashPinLegacy(pin) {
   const msgBuffer = new TextEncoder().encode('charnley:' + pin);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
@@ -92,7 +99,7 @@ function pd(){curPin=curPin.slice(0,-1);updateDots();document.getElementById('pi
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('on',i<curPin.length);}
 
 function forgotPin(){
-  const name = activeProfile==='brenton' ? 'Brenton' : activeProfile==='shelley' ? 'Shelley' : 'this profile';
+  const name = typeof getUserName === 'function' ? getUserName(activeProfile) : activeProfile;
   if(!confirm('Reset PIN for '+name+'?\n\nYour financial data will NOT be deleted — only the PIN is removed. You\'ll set a new one now.')){return;}
   delete PINS[activeProfile];
   try { save(K.pins, PINS); } catch(e) {}
@@ -158,32 +165,55 @@ function handlePin() {
     return;
   }
 
-  // Verify — hash input and compare to stored hash
+  // Verify — hash input and compare to stored hash.
+  // If kelda_pin_salt flag is absent, also try legacy charnley: salt
+  // and transparently migrate on first successful match.
   const attempt = curPin;
   curPin = ''; updateDots();
+  const saltMigrated = localStorage.getItem('kelda_pin_salt') === 'v2';
   hashPin(attempt).then(function(hashed) {
     if (hashed === PINS[activeProfile]) {
       pinFailCount = 0;
       unlock();
+    } else if (!saltMigrated) {
+      // Try legacy salt
+      return hashPinLegacy(attempt).then(function(legacyHashed) {
+        if (legacyHashed === PINS[activeProfile]) {
+          // Match on old salt — rehash with new salt and migrate
+          pinFailCount = 0;
+          return hashPin(attempt).then(function(newHashed) {
+            PINS[activeProfile] = newHashed;
+            try { save(K.pins, PINS); } catch(e) {}
+            try { localStorage.setItem('kelda_pin_salt', 'v2'); } catch(e) {}
+            unlock();
+            setTimeout(function() { toast('🔒 Security updated'); }, 600);
+          });
+        } else {
+          _pinFail();
+        }
+      });
     } else {
-      pinFailCount++;
-      const remaining = PIN_MAX_ATTEMPTS - pinFailCount;
-      if (pinFailCount >= PIN_MAX_ATTEMPTS) {
-        pinLockedUntil = Date.now() + PIN_LOCKOUT_SECS * 1000;
-        pinFailCount = 0;
-        showPinErr('Too many attempts — locked for ' + PIN_LOCKOUT_SECS + 's');
-        // Show countdown
-        const iv = setInterval(function() {
-          const sLeft = Math.ceil((pinLockedUntil - Date.now()) / 1000);
-          if (sLeft <= 0) { clearInterval(iv); showPinErr(''); } 
-          else { showPinErr('Too many attempts — wait ' + sLeft + 's'); }
-        }, 1000);
-      } else {
-        showPinErr('Incorrect PIN — ' + remaining + ' attempt' + (remaining !== 1 ? 's' : '') + ' remaining');
-      }
-      shakePinCard();
+      _pinFail();
     }
   });
+
+  function _pinFail() {
+    pinFailCount++;
+    const remaining = PIN_MAX_ATTEMPTS - pinFailCount;
+    if (pinFailCount >= PIN_MAX_ATTEMPTS) {
+      pinLockedUntil = Date.now() + PIN_LOCKOUT_SECS * 1000;
+      pinFailCount = 0;
+      showPinErr('Too many attempts — locked for ' + PIN_LOCKOUT_SECS + 's');
+      const iv = setInterval(function() {
+        const sLeft = Math.ceil((pinLockedUntil - Date.now()) / 1000);
+        if (sLeft <= 0) { clearInterval(iv); showPinErr(''); }
+        else { showPinErr('Too many attempts — wait ' + sLeft + 's'); }
+      }, 1000);
+    } else {
+      showPinErr('Incorrect PIN — ' + remaining + ' attempt' + (remaining !== 1 ? 's' : '') + ' remaining');
+    }
+    shakePinCard();
+  }
 }
 
 function unlock(){
@@ -219,7 +249,6 @@ function unlock(){
   if(_tu)_tu.textContent=activeProfile==='joint'?'Joint':(typeof getUserName==='function'?getUserName(activeProfile):activeProfile);
   const mu=document.getElementById('mob-user');if(mu)mu.textContent=getUserIcon(activeProfile)+' '+getUserName(activeProfile);
   var _txDate=document.getElementById('tx-date');if(_txDate)_txDate.value=today();
-  try{if(typeof renderSnapshot==='function')renderSnapshot();}catch(e){console.warn('renderSnapshot:',e);}
   try{renderDashboard();}catch(e){console.warn('renderDashboard:',e);}
   try{renderTx();}catch(e){console.warn('renderTx:',e);}
   try{renderBills();}catch(e){console.warn('renderBills:',e);}

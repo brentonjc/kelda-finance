@@ -37,7 +37,7 @@ function renderSettings() {
 
   html += '<div class="settings-row">';
   html += '<label class="lbl">App Name</label>';
-  html += '<input type="text" id="s-app-name" value="' + _settEsc(getAppName()) + '" placeholder="Charnley Finance" style="font-size:16px"/>';
+  html += '<input type="text" id="s-app-name" value="' + _settEsc(getAppName()) + '" placeholder="Kelda Finance" style="font-size:16px"/>';
   html += '</div>';
 
   html += '<div class="settings-row" style="margin-top:10px">';
@@ -88,7 +88,16 @@ function renderSettings() {
   html += '</div>';
 
   // ════════════════════════════════════════════════════════════
-  // 3D — DANGER ZONE
+  // 3D — SETUP WIZARD
+  // ════════════════════════════════════════════════════════════
+  html += '<div class="card mb">';
+  html += '<div class="section-label" style="margin-bottom:10px">Setup Wizard</div>';
+  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Re-run the first-time setup to change your app name, profile names, PINs, and account labels.</p>';
+  html += '<button class="btn btn-primary btn-sm" onclick="settingsRunWizard()">Re-run Setup Wizard</button>';
+  html += '</div>';
+
+  // ════════════════════════════════════════════════════════════
+  // 3E — DANGER ZONE
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb" style="border:1px solid rgba(239,68,68,.35)">';
   html += '<div class="section-label" style="margin-bottom:12px;color:var(--danger)">Danger Zone</div>';
@@ -165,7 +174,7 @@ function _settProfileCard(profileId, defaultIcon, defaultName) {
 function settingsSaveAppIdentity() {
   var nameEl = document.getElementById('s-app-name');
   var subEl  = document.getElementById('s-app-sub');
-  var name = nameEl ? (nameEl.value.trim() || 'Charnley Finance') : 'Charnley Finance';
+  var name = nameEl ? (nameEl.value.trim() || 'Kelda Finance') : 'Kelda Finance';
   var sub  = subEl  ? (subEl.value.trim()  || 'Family Finance Tracker \xb7 AUD') : 'Family Finance Tracker \xb7 AUD';
   setAppName(name, sub);
   toast('✅ App name saved');
@@ -176,10 +185,10 @@ function settingsSaveProfiles() {
     var el = document.getElementById(id);
     return el ? el.value.trim() : '';
   };
-  USER_CONFIG.p1icon = g('s-brenton-icon') || '👔';
-  USER_CONFIG.p1name = g('s-brenton-name') || 'Brenton';
-  USER_CONFIG.p2icon = g('s-shelley-icon') || '👩';
-  USER_CONFIG.p2name = g('s-shelley-name') || 'Shelley';
+  USER_CONFIG.p1icon = g('s-brenton-icon') || '👤';
+  USER_CONFIG.p1name = g('s-brenton-name') || 'Profile 1';
+  USER_CONFIG.p2icon = g('s-shelley-icon') || '👤';
+  USER_CONFIG.p2name = g('s-shelley-name') || 'Profile 2';
   saveUserConfig();
   applyUserConfig();
   // Sync any open mob-menu panel inputs
@@ -271,10 +280,19 @@ function settingsEraseAll() {
     K.categories, K.lbudgets, K.rules, K.recurring,
     K.transfers, K.tax, K.equities,
     'cff_userconfig', 'cff_app_name', 'cff_app_sub',
-    'cff_cat_version', 'cff_settings', 'learnedMappings'
+    'cff_cat_version', 'cff_settings', 'learnedMappings',
+    'kelda_wizard_complete', 'kelda_pin_salt'
   ];
   allKeys.forEach(function(key) {
     try { localStorage.removeItem(key); } catch(e) {}
   });
   location.reload();
+}
+
+function settingsRunWizard() {
+  if (!confirm("Re-run the setup wizard?
+
+This will lock the app and walk you through setup again. Your financial data will NOT be deleted.")) return;
+  if (typeof wzRestart === "function") wzRestart();
+  else location.reload();
 }

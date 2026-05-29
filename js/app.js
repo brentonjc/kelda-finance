@@ -42,8 +42,7 @@ function go(id){
     if(nv) nv.classList.toggle('active',p===id);
   });
   try{
-    if(id==='snapshot'){if(typeof renderSnapshot==='function')renderSnapshot();}
-    else if(id==='dashboard')renderDashboard();
+    if(id==='dashboard')renderDashboard();
     else if(id==='transactions'){renderTx();populateTxCatSelect();}
     else if(id==='bills')renderBills();
     else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
@@ -58,13 +57,13 @@ function go(id){
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
     else if(id==='transfers'){if(typeof renderTransfersPage==='function')renderTransfersPage();}
-    else if(id==='forecast'){renderForecast();}
+    else if(id==='forecast'){detectRecurring();renderForecast();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar
-  var tabs=['snapshot','bva','bills','transactions','cash'];
+  var tabs=['dashboard','bva','bills','transactions','cash'];
   tabs.forEach(function(t){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
@@ -99,13 +98,13 @@ function goMob(pageId) {
   closeMobMenu();
   go(pageId);
   // Update tab bar active state
-  var tabs = ['snapshot','bills','transactions','cash'];
+  var tabs = ['dashboard','bills','transactions','cash'];
   tabs.forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.toggle('active', t === pageId);
   });
   // Settings btn active if settings-related page
-  var settingsPages = ['dashboard','categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
+  var settingsPages = ['categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
   var settBtn = document.getElementById('tb-settings');
   if (settBtn) settBtn.classList.toggle('active', settingsPages.indexOf(pageId) >= 0);
 }
@@ -134,13 +133,13 @@ function closeMobMenu() {
 
 // ── USER & ACCOUNT CONFIG ─────────────────────────────────────
 function getUserName(profileId) {
-  if (profileId === 'brenton') return USER_CONFIG.p1name || 'Brenton';
-  if (profileId === 'shelley') return USER_CONFIG.p2name || 'Shelley';
+  if (profileId === 'brenton') return USER_CONFIG.p1name || 'Profile 1';
+  if (profileId === 'shelley') return USER_CONFIG.p2name || 'Profile 2';
   return profileId;
 }
 function getUserIcon(profileId) {
-  if (profileId === 'brenton') return USER_CONFIG.p1icon || '👔';
-  if (profileId === 'shelley') return USER_CONFIG.p2icon || '👩';
+  if (profileId === 'brenton') return USER_CONFIG.p1icon || '👤';
+  if (profileId === 'shelley') return USER_CONFIG.p2icon || '👤';
   return '👤';
 }
 function getAccountName(acctId) {
@@ -199,6 +198,8 @@ function applyUserConfig() {
     var suffix = opt.getAttribute('data-label-suffix') || '';
     opt.textContent = getUserName(p) + suffix;
   });
+  // Show/hide profile 2 and joint buttons based on wizard config
+  if (typeof applyLoginProfileVis === 'function') applyLoginProfileVis();
 }
 function openUserSettings() {
   var panel = document.getElementById('user-settings-panel');
@@ -222,10 +223,10 @@ function openUserSettings() {
 }
 function saveUserSettings() {
   var g = function(id) { return (document.getElementById(id) || {}).value || ''; };
-  USER_CONFIG.p1name = g('usc-p1name').trim() || 'Brenton';
-  USER_CONFIG.p1icon = g('usc-p1icon').trim() || '👔';
-  USER_CONFIG.p2name = g('usc-p2name').trim() || 'Shelley';
-  USER_CONFIG.p2icon = g('usc-p2icon').trim() || '👩';
+  USER_CONFIG.p1name = g('usc-p1name').trim() || 'Profile 1';
+  USER_CONFIG.p1icon = g('usc-p1icon').trim() || '👤';
+  USER_CONFIG.p2name = g('usc-p2name').trim() || 'Profile 2';
+  USER_CONFIG.p2icon = g('usc-p2icon').trim() || '👤';
   USER_CONFIG.acct_offset = g('usc-acct-offset').trim() || 'Offset Account';
   USER_CONFIG.acct_home   = g('usc-acct-home').trim()   || 'Home Transaction';
   USER_CONFIG.acct_sav1   = g('usc-acct-sav1').trim()   || 'Savings Account 1';
@@ -250,14 +251,14 @@ var APP_NAME_KEY = 'cff_app_name';
 var APP_SUB_KEY  = 'cff_app_sub';
 
 function getAppName() {
-  try { return localStorage.getItem(APP_NAME_KEY) || 'Charnley Finance'; } catch(e) { return 'Charnley Finance'; }
+  try { return localStorage.getItem(APP_NAME_KEY) || 'Kelda Finance'; } catch(e) { return 'Kelda Finance'; }
 }
 function getAppSub() {
   try { return localStorage.getItem(APP_SUB_KEY) || 'Family Finance Tracker · AUD'; } catch(e) { return 'Family Finance Tracker · AUD'; }
 }
 function setAppName(name, sub) {
   try {
-    localStorage.setItem(APP_NAME_KEY, name || 'Charnley Finance');
+    localStorage.setItem(APP_NAME_KEY, name || 'Kelda Finance');
     localStorage.setItem(APP_SUB_KEY,  sub  || 'Family Finance Tracker · AUD');
   } catch(e) {}
   applyAppName();
@@ -289,10 +290,10 @@ function openUserSettingsDesktop() {
 }
 function saveDesktopUserSettings() {
   var g = function(id) { return (document.getElementById(id)||{}).value||''; };
-  USER_CONFIG.p1icon = g('usc-p1icon-d').trim() || '👔';
-  USER_CONFIG.p1name = g('usc-p1name-d').trim() || 'Brenton';
-  USER_CONFIG.p2icon = g('usc-p2icon-d').trim() || '👩';
-  USER_CONFIG.p2name = g('usc-p2name-d').trim() || 'Shelley';
+  USER_CONFIG.p1icon = g('usc-p1icon-d').trim() || '👤';
+  USER_CONFIG.p1name = g('usc-p1name-d').trim() || 'Profile 1';
+  USER_CONFIG.p2icon = g('usc-p2icon-d').trim() || '👤';
+  USER_CONFIG.p2name = g('usc-p2name-d').trim() || 'Profile 2';
   USER_CONFIG.acct_offset = g('usc-acct-offset-d').trim() || 'Offset Account';
   USER_CONFIG.acct_home   = g('usc-acct-home-d').trim()   || 'Home Transaction';
   USER_CONFIG.acct_sav1   = g('usc-acct-sav1-d').trim()   || 'Savings Account 1';
@@ -315,7 +316,7 @@ function openDesktopRenameApp() {
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 function saveDesktopAppName() {
-  var name = (document.getElementById('rename-app-name-d')?.value||'').trim()||'Charnley Finance';
+  var name = (document.getElementById('rename-app-name-d')?.value||'').trim()||'Kelda Finance';
   var sub  = (document.getElementById('rename-app-sub-d')?.value||'').trim()||'Family Finance Tracker · AUD';
   setAppName(name, sub);
   document.getElementById('rename-app-panel-desktop').style.display='none';
@@ -334,7 +335,7 @@ function openRenameApp() {
 }
 
 function saveAppName() {
-  var name = (document.getElementById('rename-app-name')?.value || '').trim() || 'Charnley Finance';
+  var name = (document.getElementById('rename-app-name')?.value || '').trim() || 'Kelda Finance';
   var sub  = (document.getElementById('rename-app-sub')?.value  || '').trim() || 'Family Finance Tracker · AUD';
   setAppName(name, sub);
   var panel = document.getElementById('rename-app-panel');

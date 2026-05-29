@@ -1,6 +1,6 @@
 {
-  "name": "Charnley Finance",
-  "short_name": "Finance",
+  "name": "Kelda Finance",
+  "short_name": "Kelda",
   "description": "Family personal finance manager — AUD, private, local-only",
   "start_url": "./index.html",
   "display": "standalone",

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════
-   DESIGN TOKENS — Charnley Finance
+   DESIGN TOKENS — Kelda Finance
    Design System v1.0
    ══════════════════════════════════ */
 
@@ -16,13 +16,6 @@
   /* ── Semantic ── */
   --success:#00C896; --success-lt:#22D9A9;
   --warn:#F59E0B; --danger:#EF4444;
-  /* ── Semantic tint backgrounds (theme-aware) ── */
-  --success-bg:#1a2a1a;  --success-border:#1a4a1a;
-  --danger-bg:#2a1020;   --danger-border:#4a1a28;
-  --warn-bg:#2a2010;     --warn-border:#4a3810;
-  --primary-bg:#2a1030;  --primary-border:#4a1050;
-  --hover-bg:#221e2a;
-  --nav-blur-bg:rgba(17,24,48,.9);
   /* ── Text ── */
   --text:#E8EDF5; --muted:var(--n300);
   /* ── Nav ── */
@@ -52,12 +45,6 @@
   --border:rgba(0,0,0,.09); --text:#0D1225; --muted:#6278A0;
   --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
   --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-  --success-bg:#e8f5e9;  --success-border:#a5d6a7;
-  --danger-bg:#fce4ec;   --danger-border:#ef9a9a;
-  --warn-bg:#fff8e1;     --warn-border:#ffe082;
-  --primary-bg:#fce4ef;  --primary-border:#f48fb1;
-  --hover-bg:#f0f0f8;
-  --nav-blur-bg:rgba(255,255,255,.9);
   --nav-bg:#FFFFFF; --nav-text:#6278A0; --nav-active:#F0538A;
   --input-bg:#F2F4F8; --input-border:rgba(0,0,0,.12);
   --shadow-sm:0 2px 8px rgba(0,0,0,.08); --shadow:0 4px 24px rgba(0,0,0,.12);
@@ -69,12 +56,6 @@
   --border:rgba(98,120,160,0.2); --text:#E8EDF5; --muted:#6278A0;
   --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
   --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-  --success-bg:#1a2a1a;  --success-border:#1a4a1a;
-  --danger-bg:#2a1020;   --danger-border:#4a1a28;
-  --warn-bg:#2a2010;     --warn-border:#4a3810;
-  --primary-bg:#2a1030;  --primary-border:#4a1050;
-  --hover-bg:#221e2a;
-  --nav-blur-bg:rgba(17,24,48,.9);
   --nav-bg:#0D1225; --nav-text:#6278A0; --nav-active:#F0538A;
   --input-bg:#18213E; --input-border:rgba(98,120,160,0.3);
   --shadow-sm:0 2px 8px rgba(0,0,0,.35); --shadow:0 8px 32px rgba(0,0,0,.45);
@@ -86,12 +67,6 @@
   --border:rgba(0,148,120,.15); --text:#0D2520; --muted:#3D8070;
   --primary:#00C896; --pink-light:#22D9A9; --pink-dark:#009970;
   --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-  --success-bg:#d0f0e4;  --success-border:#6abf94;
-  --danger-bg:#fce4ec;   --danger-border:#ef9a9a;
-  --warn-bg:#f8f4d8;     --warn-border:#d8c86a;
-  --primary-bg:#c0ede4;  --primary-border:#6abf9a;
-  --hover-bg:#c8e8e0;
-  --nav-blur-bg:rgba(255,255,255,.9);
   --nav-bg:#FFFFFF; --nav-text:#3D8070; --nav-active:#00C896;
   --input-bg:#D8F3EC; --input-border:rgba(0,148,120,.2);
   --shadow-sm:0 2px 8px rgba(0,148,120,.1); --shadow:0 4px 24px rgba(0,148,120,.15);
@@ -103,12 +78,6 @@
   --border:rgba(56,189,248,.15); --text:#E0F2FE; --muted:#7EA8C8;
   --primary:#38BDF8; --pink-light:#7DD3FC; --pink-dark:#0284C7;
   --purple:#818CF8; --success:#34D399; --warn:#FBBF24; --danger:#F87171;
-  --success-bg:#0d2a1e;  --success-border:#1a4a30;
-  --danger-bg:#2a1018;   --danger-border:#4a1828;
-  --warn-bg:#2a2010;     --warn-border:#4a3810;
-  --primary-bg:#0a1e30;  --primary-border:#1a3a50;
-  --hover-bg:#162030;
-  --nav-blur-bg:rgba(8,24,42,.9);
   --nav-bg:#08182A; --nav-text:#7EA8C8; --nav-active:#38BDF8;
   --input-bg:#0C1E33; --input-border:rgba(56,189,248,.2);
   --shadow-sm:0 2px 8px rgba(0,0,0,.4); --shadow:0 4px 32px rgba(0,0,0,.5);
@@ -121,12 +90,6 @@
     --border:rgba(0,0,0,.09); --text:#0D1225; --muted:#6278A0;
     --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a;
     --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-    --success-bg:#e8f5e9;  --success-border:#a5d6a7;
-    --danger-bg:#fce4ec;   --danger-border:#ef9a9a;
-    --warn-bg:#fff8e1;     --warn-border:#ffe082;
-    --primary-bg:#fce4ef;  --primary-border:#f48fb1;
-    --hover-bg:#f0f0f8;
-    --nav-blur-bg:rgba(255,255,255,.9);
     --nav-bg:#FFFFFF; --nav-text:#6278A0; --nav-active:#F0538A;
     --input-bg:#F2F4F8; --input-border:rgba(0,0,0,.12);
     --shadow-sm:0 2px 8px rgba(0,0,0,.08); --shadow:0 4px 24px rgba(0,0,0,.12);

@@ -339,29 +339,10 @@ function buildCatOptions(currentCatIdOrName) {
 }
 
 function updateTxBulkSelects() {
-  var sel = document.getElementById('tx-bulk-cat');
+  const sel = document.getElementById('tx-bulk-cat');
   if (!sel) return;
   sel.innerHTML = '<option value="">— Pick category —</option>'
-    + LCATS.map(function(c) { return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>'; }).join('');
-  // Reset subcat dropdown
-  var subSel = document.getElementById('tx-bulk-subcat');
-  if (subSel) { subSel.innerHTML = ''; subSel.style.display = 'none'; }
-}
-
-// Populate bulk subcat dropdown when category changes in bulk bar
-function txBulkCatChanged() {
-  var catId = document.getElementById('tx-bulk-cat') ? document.getElementById('tx-bulk-cat').value : '';
-  var subSel = document.getElementById('tx-bulk-subcat');
-  if (!subSel) return;
-  var subcats = catId ? getSubcats(catId) : [];
-  if (subcats.length) {
-    subSel.innerHTML = '<option value="">— Subcategory (optional) —</option>'
-      + subcats.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
-    subSel.style.display = '';
-  } else {
-    subSel.innerHTML = '';
-    subSel.style.display = 'none';
-  }
+    + LCATS.map(c => '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>').join('');
 }
 
 // Sync existing transactions: map old string category names to new cat IDs if needed
@@ -419,10 +400,10 @@ function renderCategories() {
     el.innerHTML = filtered.map(c => {
       const count    = TX.filter(t => t.catId === c.id || t.category === c.name).length;
       const typeCol  = c.type === 'income' ? 'var(--success)' : c.type === 'both' ? '#74b9ff' : 'var(--primary)';
-      const typeBg   = c.type === 'income' ? 'var(--success-bg)' : c.type === 'both' ? 'var(--card2)' : 'var(--danger-bg)';
+      const typeBg   = c.type === 'income' ? '#1a3020' : c.type === 'both' ? '#0a1a30' : '#2a1020';
       const typeLbl  = c.type || 'expense';
       const subcatPills = (c.subcats || []).map(s =>
-        '<span style="display:inline-block;font-size:.68rem;background:var(--card3);color:var(--muted);'
+        '<span style="display:inline-block;font-size:.68rem;background:#2a2535;color:var(--muted);'
         + 'border-radius:99px;padding:2px 8px;margin:2px 3px 2px 0;cursor:pointer;border:1px solid var(--border)"'
         + ' onclick="deleteSubcat(\'' + c.id + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="Click to remove">'
         + s + ' ✕</span>'
@@ -471,8 +452,8 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
 
   // Source badge + meta line
   var sourceBadge = source === 'lrule'
-    ? '<span style="font-size:.65rem;background:var(--primary-bg);color:var(--primary);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">⚡ RULE</span>'
-    : '<span style="font-size:.65rem;background:var(--success-bg);color:var(--success);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">🤖 AUTO-LEARNED</span>';
+    ? '<span style="font-size:.65rem;background:#1a2540;color:var(--primary);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">⚡ RULE</span>'
+    : '<span style="font-size:.65rem;background:#1a2520;color:var(--success);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">🤖 AUTO-LEARNED</span>';
 
   var metaLine = '';
   if (source === 'learned' && meta) {
@@ -506,7 +487,7 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     + '<span style="font-weight:700;color:' + catColor + '">' + catName + '</span></div>'
     + '<span style="color:var(--border)">›</span>'
     + '<div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px">Subcategory</div>'
-    + (subcat ? '<span style="background:var(--card3);color:var(--text);border-radius:6px;padding:2px 9px;font-size:.8rem;font-weight:600">' + subcat + '</span>'
+    + (subcat ? '<span style="background:#2a2535;color:var(--text);border-radius:6px;padding:2px 9px;font-size:.8rem;font-weight:600">' + subcat + '</span>'
               : '<span style="font-size:.78rem;color:var(--muted);font-style:italic">None</span>')
     + '</div></div>'
     + '<div style="display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap">'
@@ -869,45 +850,21 @@ function clearTxSelection() {
 }
 
 function bulkAssignCategory() {
-  var catId = document.getElementById('tx-bulk-cat') ? document.getElementById('tx-bulk-cat').value : '';
+  const catId = document.getElementById('tx-bulk-cat')?.value;
   if (!catId) { toast('⚠️ Pick a category first'); return; }
-  var subcat = document.getElementById('tx-bulk-subcat') ? document.getElementById('tx-bulk-subcat').value : '';
-  var cat = LCATS.find(function(c) { return c.id === catId; });
-  var checked = document.querySelectorAll('.tx-row-check:checked');
-  var count = 0;
-  checked.forEach(function(cb) {
-    var txId = Number(cb.dataset.id);
-    var t = TX.find(function(x) { return x.id === txId; });
-    if (t) {
-      t.catId    = catId;
-      t.category = cat ? cat.name : 'Other';
-      if (subcat) t.subcat = subcat;
-      t.userSet  = true;
-      count++;
-    }
+  const cat = LCATS.find(c => c.id === catId);
+  const checked = document.querySelectorAll('.tx-row-check:checked');
+  let count = 0;
+  checked.forEach(cb => {
+    const txId = Number(cb.dataset.id);
+    const t = TX.find(x => x.id === txId);
+    if (t) { t.catId = catId; t.category = cat ? cat.name : 'Other'; count++; }
   });
-  try { save(K.tx, TX); } catch(e) {}
+  save(K.tx, TX);
   clearTxSelection();
   renderTx();
-  if (document.getElementById('page-bva') && document.getElementById('page-bva').classList.contains('active')) renderBVA();
-  var msg = '✅ ' + count + ' transaction' + (count !== 1 ? 's' : '') + ' → ' + (cat ? cat.name : catId);
-  if (subcat) msg += ' › ' + subcat;
-  toast(msg);
-}
-
-function bulkDeleteSelected() {
-  var checked = document.querySelectorAll('.tx-row-check:checked');
-  var count = checked.length;
-  if (!count) return;
-  if (!confirm('Delete ' + count + ' selected transaction' + (count !== 1 ? 's' : '') + '?\n\nThis cannot be undone.')) return;
-  var ids = {};
-  checked.forEach(function(cb) { ids[Number(cb.dataset.id)] = true; });
-  TX = TX.filter(function(t) { return !ids[t.id]; });
-  try { save(K.tx, TX); } catch(e) {}
-  clearTxSelection();
-  renderTx();
-  renderDashboard();
-  toast('🗑️ Deleted ' + count + ' transaction' + (count !== 1 ? 's' : ''));
+  if (document.getElementById('page-bva').classList.contains('active')) renderBVA();
+  toast('✅ Assigned ' + count + ' transactions to ' + (cat ? cat.name : catId));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1044,7 +1001,7 @@ function exportCategories() {
   const blob = new Blob([JSON.stringify(LCATS, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'charnley-categories.json';
+  a.download = 'kelda-categories.json';
   a.click();
   toast('Categories exported');
 }
