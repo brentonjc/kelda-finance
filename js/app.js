@@ -42,7 +42,8 @@ function go(id){
     if(nv) nv.classList.toggle('active',p===id);
   });
   try{
-    if(id==='dashboard')renderDashboard();
+    if(id==='snapshot'){if(typeof renderSnapshot==='function')renderSnapshot();}
+    else if(id==='dashboard')renderDashboard();
     else if(id==='transactions'){renderTx();populateTxCatSelect();}
     else if(id==='bills')renderBills();
     else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
@@ -62,7 +63,7 @@ function go(id){
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar
-  var tabs=['dashboard','bva','bills','transactions','cash'];
+  var tabs=['snapshot','bva','bills','transactions','cash'];
   tabs.forEach(function(t){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
@@ -97,7 +98,7 @@ function goMob(pageId) {
   closeMobMenu();
   go(pageId);
   // Update tab bar active state
-  var tabs = ['dashboard','bills','transactions','cash'];
+  var tabs = ['snapshot','bills','transactions','cash'];
   tabs.forEach(function(t) {
     var btn = document.getElementById('tb-' + t);
     if (btn) btn.classList.toggle('active', t === pageId);

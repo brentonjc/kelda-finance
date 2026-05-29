@@ -248,6 +248,7 @@ function unlock(){
   if(_tu)_tu.textContent=activeProfile==='joint'?'Joint':(typeof getUserName==='function'?getUserName(activeProfile):activeProfile);
   const mu=document.getElementById('mob-user');if(mu)mu.textContent=getUserIcon(activeProfile)+' '+getUserName(activeProfile);
   var _txDate=document.getElementById('tx-date');if(_txDate)_txDate.value=today();
+  try{if(typeof renderSnapshot==='function')renderSnapshot();}catch(e){console.warn('renderSnapshot:',e);}
   try{renderDashboard();}catch(e){console.warn('renderDashboard:',e);}
   try{renderTx();}catch(e){console.warn('renderTx:',e);}
   try{renderBills();}catch(e){console.warn('renderBills:',e);}
