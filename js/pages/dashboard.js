@@ -266,10 +266,9 @@ function renderDashboard(){
     var _months=ctAllMonths(),_lm=_months.length?_months[_months.length-1]:null;
     var _bank=_lm?['offset','home','sav1','sav2'].reduce(function(s,a){return s+((CT[a]||{})[_lm]||0);},0):0;
     var _supB=(SUPER.b&&SUPER.b.balance)||0,_supS=(SUPER.s&&SUPER.s.balance)||0;
-    var _eq=(MORTGAGE.homeValue||0)-(MORTGAGE.balance||0);
     var _eqV=(typeof eqTotalEquitiesValue==='function')?eqTotalEquitiesValue():0;
-    var _tax=(typeof taxTotalOwing==='function')?taxTotalOwing():0;
-    var _nw=_bank+_supB+_supS+Math.max(0,_eq)+_eqV-_tax;
+    var _totalLiab=(typeof liabTotal==='function')?liabTotal():(MORTGAGE.balance||0)+((typeof taxTotalOwing==='function')?taxTotalOwing():0);
+    var _nw=_bank+_supB+_supS+(MORTGAGE.homeValue||0)+_eqV-_totalLiab;
     if(_heroNW) _heroNW.textContent=fmt(_nw);
   } catch(e) {}
   const lbl=document.getElementById('db-period-lbl');
@@ -280,6 +279,7 @@ function renderDashboard(){
   dbRenderBudgetBars();
   dbRenderAccounts();
   dbRenderNetWorth();
+  dbRenderLiabilities();
   dbRenderMortgage();
   dbRenderSuper();
   dbRenderSankey();
@@ -557,24 +557,43 @@ function dbRenderNetWorth(){
   const months=ctAllMonths(),lm=months.length?months[months.length-1]:null;
   const bank=lm?['offset','home','sav1','sav2'].reduce((s,a)=>s+((CT[a]||{})[lm]||0),0):0;
   const supB=SUPER.b?.balance||0,supS=SUPER.s?.balance||0;
-  const equity=Math.max(0,(MORTGAGE.homeValue||0)-(MORTGAGE.balance||0));
-  const assets=bank+supB+supS+(MORTGAGE.homeValue||0);
-  const liab=MORTGAGE.balance||0;
-  const taxOwing=(typeof taxTotalOwing==='function')?taxTotalOwing():0;
+  const homeVal=MORTGAGE.homeValue||0;
   var eqV=(typeof eqTotalEquitiesValue==='function')?eqTotalEquitiesValue():0;
-  const nw=bank+supB+supS+equity+eqV-taxOwing;
-  var assetsTotal=bank+supB+supS+(MORTGAGE.homeValue||0)+eqV;
+  var totalLiab=(typeof liabTotal==='function')?liabTotal():(MORTGAGE.balance||0)+((typeof taxTotalOwing==='function')?taxTotalOwing():0);
+  var assetsTotal=bank+supB+supS+homeVal+eqV;
+  const nw=assetsTotal-totalLiab;
   el.innerHTML='<div class="tile-hd" style="margin-bottom:8px"><div class="section-label" style="margin:0">Net Worth</div><a href="#" onclick="go(\'assets\');return false;" class="tile-link">View assets →</a></div>'
     +'<div class="nw-val">'+fmt(nw)+'</div>'
-    +'<div class="nw-sub">Assets '+fmt(assetsTotal)+' − Liabilities '+fmt(liab)+(eqV>0?' + Equities '+fmt(eqV):'')+(taxOwing>0?' − Tax '+fmt(taxOwing):'')+'</div>'
+    +'<div class="nw-sub">Assets '+fmt(assetsTotal)+' − Liabilities '+fmt(totalLiab)+'</div>'
+    +'<div style="font-size:.68rem;color:var(--muted);margin-top:2px;margin-bottom:10px">Assets − Liabilities · <a href="#" onclick="go(\'liabilities\');return false;" style="color:var(--primary)">View liabilities →</a></div>'
     +'<div class="nw-breakdown">'
     +'<div class="nw-item"><div class="nw-item-lbl">Bank</div><div class="nw-item-val" style="color:var(--primary)">'+fmt(bank)+'</div></div>'
     +'<div class="nw-item"><div class="nw-item-lbl">Super</div><div class="nw-item-val" style="color:var(--purple)">'+fmt(supB+supS)+'</div></div>'
-    +'<div class="nw-item"><div class="nw-item-lbl">Home Equity</div><div class="nw-item-val" style="color:var(--success)">'+fmt(equity)+'</div></div>'
+    +'<div class="nw-item"><div class="nw-item-lbl">Home Value</div><div class="nw-item-val" style="color:var(--success)">'+fmt(homeVal)+'</div></div>'
     +(eqV>0?'<div class="nw-item"><div class="nw-item-lbl">Equities</div><div class="nw-item-val" style="color:var(--success-lt)">'+fmt(eqV)+'</div></div>':'')
-    +'<div class="nw-item"><div class="nw-item-lbl">Mortgage</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(liab)+'</div></div>'
-    +(taxOwing>0?'<div class="nw-item"><div class="nw-item-lbl">Tax Owing</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(taxOwing)+'</div></div>':'')
+    +'<div class="nw-item"><div class="nw-item-lbl">All Liabilities</div><div class="nw-item-val" style="color:var(--danger)">-'+fmt(totalLiab)+'</div></div>'
     +'</div>';
+}
+
+function dbRenderLiabilities(){
+  var el=document.getElementById('db-liabilities');if(!el)return;
+  var total=(typeof liabTotal==='function')?liabTotal():0;
+  var monthly=(typeof liabMonthlyTotal==='function')?liabMonthlyTotal():0;
+  var mortCount=(MORTGAGE&&MORTGAGE.balance)?1:0;
+  var count=LIABILITIES.length+mortCount;
+  var dti=(typeof liabDTI==='function')?liabDTI():null;
+  var dtiHtml='';
+  if(dti!==null){
+    var dtiColor=dti<=36?'var(--success)':dti<=50?'var(--warn)':'var(--danger)';
+    dtiHtml='<div style="font-size:.72rem;color:'+dtiColor+';margin-top:6px">DTI: '+dti.toFixed(1)+'% · '+(dti<=36?'Healthy':dti<=50?'Elevated':'High risk')+'</div>';
+  }
+  el.innerHTML='<div class="tile-hd" style="margin-bottom:10px">'
+    +'<div class="section-label" style="margin:0">⚖️ Total Liabilities</div>'
+    +'<a href="#" onclick="go(\'liabilities\');return false;" class="tile-link">View all →</a>'
+    +'</div>'
+    +'<div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;color:var(--danger)">'+fmt(total)+'</div>'
+    +'<div style="font-size:.78rem;color:var(--muted);margin-top:4px">'+fmt(monthly)+'/mo &middot; '+count+' liabilit'+(count===1?'y':'ies')+'</div>'
+    +dtiHtml;
 }
 
 function dbRenderMortgage(){

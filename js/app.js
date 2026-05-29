@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['snapshot','dashboard','transactions','bills','goals','mortgage','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['snapshot','dashboard','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -48,6 +48,7 @@ function go(id){
     else if(id==='bills')renderBills();
     else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
     else if(id==='mortgage')renderMortgage();
+    else if(id==='liabilities'){if(typeof liabRenderPage==='function')liabRenderPage();}
     else if(id==='cash')renderCashTracker();
     else if(id==='insurance')renderInsurance();
     else if(id==='super')renderSuperPage();
@@ -68,7 +69,7 @@ function go(id){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['dashboard','categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
+  var stPages=['dashboard','categories','export','mortgage','liabilities','cash','insurance','super','tax','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
   if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
 }

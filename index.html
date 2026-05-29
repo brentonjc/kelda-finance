@@ -96,6 +96,7 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
       <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
       <button class="mob-menu-item" onclick="goMob('mortgage')"><span>🏡</span>Mortgage</button>
+      <button class="mob-menu-item" onclick="goMob('liabilities')"><span>⚖️</span>Liabilities</button>
       <button class="mob-menu-item" onclick="goMob('insurance')"><span>🛡️</span>Insurance</button>
       <button class="mob-menu-item" onclick="goMob('super')"><span>💼</span>Super</button>
       <button class="mob-menu-item" onclick="goMob('tax')"><span>🧾</span>Tax</button>
@@ -332,6 +333,7 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
     <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
     <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
+    <li><a onclick="go('liabilities')" id="n-liabilities"><span class="ni">⚖️</span><span class="nav-lbl">Liabilities</span></a></li>
     <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
     <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Insurance</span></a></li>
     <li><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
@@ -471,6 +473,11 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- 5. Tax liabilities (full width, conditionally rendered) -->
       <div id="db-tax-stat"></div>
+
+      <!-- 5b. Total Liabilities tile -->
+      <div class="card" id="db-liabilities-tile" onclick="go('liabilities')" style="cursor:pointer">
+        <div id="db-liabilities"></div>
+      </div>
 
       <!-- Goals widget (full width) -->
       <div class="card" id="db-goals-card">
@@ -928,6 +935,35 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 
   <!-- ═══ CASH TRACKER ═══ -->
+  <!-- ═══ LIABILITIES ═══ -->
+  <div class="page" id="page-liabilities">
+    <div class="page-title">Liabilities</div>
+    <div class="page-sub">Total debt obligations across all accounts</div>
+
+    <!-- Summary panel -->
+    <div class="card" id="liab-summary"></div>
+
+    <!-- Mortgage section -->
+    <div style="margin-top:20px">
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">🏠 Mortgage</div>
+      <div id="liab-mortgages"></div>
+    </div>
+
+    <!-- Manual liabilities -->
+    <div style="margin-top:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Other Liabilities</div>
+        <button class="btn btn-primary" onclick="liabOpenModal()" style="border-radius:9999px;padding:10px 20px;min-height:48px;font-size:.82rem">+ Add Liability</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button id="liab-sort-rate"    onclick="liabSetSort('rate')"    class="fc-range-btn active">Rate ↓</button>
+        <button id="liab-sort-balance" onclick="liabSetSort('balance')" class="fc-range-btn">Balance ↓</button>
+        <button id="liab-sort-due"     onclick="liabSetSort('due')"     class="fc-range-btn">Due Date</button>
+      </div>
+      <div id="liab-list"></div>
+    </div>
+  </div>
+
   <div class="page" id="page-cash">
     <div class="page-title">Cash Balance Tracker</div>
     <div class="page-sub">Monthly balances across all four accounts</div>
@@ -1792,6 +1828,102 @@ window.addEventListener('unhandledrejection',function(e){
 </div><!-- /main -->
 
 <!-- GOAL UPDATE MODAL -->
+<!-- ═══ LIABILITIES MODAL ═══ -->
+<div class="modal-overlay" id="liab-modal">
+  <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <h3 id="liab-modal-title">Add Liability</h3>
+
+    <div style="margin-bottom:14px">
+      <label class="lbl">Liability Type</label>
+      <select id="liab-m-type" onchange="liabModalTypeChange()">
+        <option value="personal_loan">💰 Personal Loan</option>
+        <option value="credit_card">💳 Credit Card</option>
+        <option value="bnpl">📱 Buy Now Pay Later (BNPL)</option>
+        <option value="hecs">🎓 HECS / HELP Debt</option>
+        <option value="car_loan">🚗 Car Loan</option>
+        <option value="investment_loan">📊 Investment Loan</option>
+        <option value="tax_debt">⚠️ Tax Debt</option>
+        <option value="other">📋 Other</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label class="lbl">Lender / Provider</label>
+      <input type="text" id="liab-m-lender" placeholder="e.g. CommBank, Afterpay" style="font-size:16px"/>
+    </div>
+
+    <div class="form-grid" style="margin-bottom:14px">
+      <div>
+        <label class="lbl">Current Balance (AUD)</label>
+        <input type="number" id="liab-m-balance" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
+      </div>
+      <div>
+        <label class="lbl">Original Amount (optional)</label>
+        <input type="number" id="liab-m-original" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
+      </div>
+    </div>
+
+    <div id="liab-m-rate-row" style="margin-bottom:14px">
+      <label class="lbl" id="liab-m-rate-label">Interest Rate (% p.a.)</label>
+      <input type="number" id="liab-m-rate" placeholder="0" min="0" step="0.01" inputmode="decimal"/>
+    </div>
+
+    <div class="form-grid" style="margin-bottom:14px">
+      <div>
+        <label class="lbl">Rate Type</label>
+        <select id="liab-m-rate-type" onchange="liabModalRateTypeChange()">
+          <option value="variable">Variable</option>
+          <option value="fixed">Fixed</option>
+        </select>
+      </div>
+      <div id="liab-m-fixed-expiry-row" style="display:none">
+        <label class="lbl">Fixed Rate Expiry</label>
+        <input type="date" id="liab-m-fixed-expiry"/>
+      </div>
+    </div>
+
+    <div id="liab-m-payment-row" style="margin-bottom:14px">
+      <label class="lbl" id="liab-m-payment-label">Minimum Monthly Payment (AUD)</label>
+      <input type="number" id="liab-m-payment" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
+    </div>
+
+    <div id="liab-m-due-row" class="form-grid" style="margin-bottom:14px">
+      <div>
+        <label class="lbl">Payment Due Day (1–31)</label>
+        <input type="number" id="liab-m-due-day" placeholder="15" min="1" max="31" inputmode="numeric"/>
+      </div>
+      <div>
+        <label class="lbl">Term Remaining (months, optional)</label>
+        <input type="number" id="liab-m-term" placeholder="48" min="1" inputmode="numeric"/>
+      </div>
+    </div>
+
+    <div id="liab-m-credit-limit-row" style="display:none;margin-bottom:14px">
+      <label class="lbl">Credit Limit (AUD)</label>
+      <input type="number" id="liab-m-credit-limit" placeholder="10000" min="0" step="0.01" inputmode="decimal"/>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label class="lbl">Notes (optional)</label>
+      <input type="text" id="liab-m-notes" placeholder="e.g. Consolidation loan" style="font-size:16px"/>
+    </div>
+
+    <div id="liab-m-sched-note" style="display:none;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:10px 14px;font-size:.76rem;color:var(--muted);margin-bottom:14px">
+      🎓 HECS repayments are managed via ATO payroll deduction. Enter your estimated annual repayment. No amortisation schedule is generated.
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:var(--card2);border-radius:10px">
+      <input type="checkbox" id="liab-m-add-to-bills" style="width:18px;height:18px;min-width:18px;accent-color:var(--primary)"/>
+      <label for="liab-m-add-to-bills" style="font-size:.82rem;color:var(--text);cursor:pointer">Add monthly payment to Bills tab</label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="liabCloseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="liabSave()">💾 Save Liability</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="goal-modal">
   <div class="modal-box">
     <h3>Update Goal Progress</h3>
@@ -1832,6 +1964,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/transfers.js"></script>
 <script src="js/pages/tax.js"></script>
 <script src="js/pages/equities.js"></script>
+<script src="js/pages/liabilities.js"></script>
 <script src="js/pages/settings.js"></script>
 <!-- Init -->
 <script>
