@@ -46,9 +46,6 @@ function liabTotal() {
   var total = 0;
   liabAllMortgages().forEach(function(m) { total += m.balance; });
   LIABILITIES.forEach(function(l) { total += Number(l.balance) || 0; });
-  try {
-    if (typeof taxTotalOwing === 'function') total += taxTotalOwing();
-  } catch(e) {}
   return total;
 }
 
@@ -218,10 +215,6 @@ function liabRenderSummary() {
     if (groups[g] !== undefined) groups[g] += Number(l.balance) || 0;
     else groups.unsecured += Number(l.balance) || 0;
   });
-  try {
-    if (typeof taxTotalOwing === 'function') groups.unsecured += taxTotalOwing();
-  } catch(e) {}
-
   var highest = null;
   LIABILITIES.forEach(function(l) {
     if (!highest || Number(l.rate) > Number(highest.rate)) highest = l;

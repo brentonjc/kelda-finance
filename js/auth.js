@@ -224,7 +224,6 @@ function unlock(){
   MORTGAGE   = load(K.mortgage)  || {};
   INS        = load(K.ins)       || [];
   SUPER      = load(K.superdata) || {};
-  TAX        = load(K.tax)       || {};
   GOALS      = load(K.goals)     || [];
   CT         = load(K.ct)        || {};
   LRECURRING = load(K.recurring) || [];
@@ -258,7 +257,6 @@ function unlock(){
   try{renderSuperPage();}catch(e){console.warn('renderSuperPage:',e);}
   try{renderAssets();}catch(e){console.warn('renderAssets:',e);}
   try{renderCategories();}catch(e){console.warn('renderCategories:',e);}
-  try{renderTax();}catch(e){console.warn('renderTax:',e);}
   try{populateTxCatSelect();}catch(e){console.warn('populateTxCatSelect:',e);}
   try{renderIconPicker();}catch(e){console.warn('renderIconPicker:',e);}
   try{detectRecurring();}catch(e){console.warn('detectRecurring:',e);}
@@ -266,7 +264,6 @@ function unlock(){
   // Deferred init: DOM-dependent work after render cycle completes
   setTimeout(() => {
     renderD293Section();
-    if(typeof renderTax==='function')renderTax();
     syncOffsetToMortgage();
     renderRateSensitivity();
     // Pre-fill life insurance fields from super/mortgage data
@@ -293,7 +290,7 @@ function lockApp(){
   clearTimeout(_sessionTimer); _sessionTimer = null;
 
   // Scrub financial data from memory — forces reload from localStorage on next unlock
-  TX = []; BILLS = []; MORTGAGE = {}; INS = []; SUPER = {}; TAX = {};
+  TX = []; BILLS = []; MORTGAGE = {}; INS = []; SUPER = {};
   GOALS = []; CT = {}; LRECURRING = []; TRANSFERS = []; EQUITIES = [];
   BUDGETS = {}; LBUDGETS = {}; LRULES = {};
 

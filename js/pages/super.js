@@ -20,7 +20,6 @@ function renderSuperPage(){
     fill('ss-return',d.s.ret);fill('ss-fees',d.s.fees);fill('ss-inflation',d.s.inflation);
   }
   showSuperResults();renderSuperChart();renderD293Section();
-  if(typeof renderTax==='function')renderTax();
 }
 
 // ══════════════════════════════════════════════════════════════

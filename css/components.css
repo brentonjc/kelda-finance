@@ -383,23 +383,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .export-section-count{font-size:.74rem;color:var(--muted);margin-top:2px;}
 .export-section-btns{display:flex;gap:6px;flex-shrink:0;}
 
-/* ══ TAX LIABILITY TRACKER ══ */
-.tax-fy-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;background:var(--card2);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;}
-.tax-fy-lbl{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--primary);}
-.tax-due-pill{font-size:.74rem;font-weight:700;padding:4px 12px;border-radius:99px;background:#2a1020;color:var(--warn);border:1px solid #4a2010;}
-.tax-section-head{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-.tax-result-box{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:12px;}
-.tax-result-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.82rem;}
-.tax-result-row:last-child{border-bottom:none;padding-bottom:0;}
-.tax-result-total{font-weight:700;font-size:.95rem;color:var(--primary);}
-.tax-result-label{color:var(--muted);}
-.tax-owing{font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--danger);}
-.tax-owing.clear{color:var(--success);}
-.bas-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:10px;}
-.bas-table th{text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);}
-.bas-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
-.bas-table tr:last-child td{border-bottom:none;}
-.bas-inp{width:120px;padding:5px 8px;font-size:.8rem;}
+/* ══ EQUITIES / RSU ══ */
 .rsu-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border);}
 .rsu-row:last-child{border-bottom:none;}
 .rsu-calculated{font-weight:700;color:var(--primary);font-size:.9rem;min-width:100px;}

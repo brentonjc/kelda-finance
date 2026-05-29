@@ -997,38 +997,5 @@ function saveBatchPrices() {
     toast('Prices updated for '+changed+' holding'+(changed!==1?'s':''));
 }
 
-// ── Backward-compat: legacy TAX-RSU sale ──────────────────────
-function openRSUSale(fyKey, rsuIdx) {
-    var fy = String(fyKey);
-    if (!TAX[fy]||!TAX[fy].rsus||!TAX[fy].rsus[rsuIdx]) return;
-    var rsu = TAX[fy].rsus[rsuIdx];
-    var units = parseFloat(rsu.units)||0;
-    var sold  = (rsu.sales||[]).reduce(function(s,x){return s+(parseFloat(x.qty)||0);},0);
-    var held  = Math.max(0, units-sold);
-    var salePrice = prompt('Sale price per unit (AUD)? Units held: '+held.toFixed(0));
-    if (!salePrice) return;
-    var saleQty = prompt('Units to sell? (max '+held.toFixed(0)+')');
-    if (!saleQty) return;
-    var qtyNum=Math.min(parseFloat(saleQty)||0,held), priceNum=parseFloat(salePrice)||0;
-    if (qtyNum<=0||priceNum<=0){ toast('Invalid quantity or price'); return; }
-    if (!rsu.sales) rsu.sales=[];
-    rsu.sales.push({ id:Date.now(), qty:qtyNum, price:priceNum, date:today() });
-    try { save(K.tax, TAX); } catch(e) {}
-    renderEquitiesPage();
-    if (typeof renderAssets==='function') renderAssets();
-    toast('RSU sale recorded: '+qtyNum+' units at '+fmt(priceNum));
-}
-
-// Updates TAX RSU current price (called by legacy price inputs)
-function taxUpdateRSUPrice(fy, idx, value) {
-    try {
-        var fyStr = String(fy);
-        if (!TAX[fyStr]||!TAX[fyStr].rsus||!TAX[fyStr].rsus[idx]) return;
-        TAX[fyStr].rsus[idx].currentPrice = parseFloat(value)||0;
-        save(K.tax, TAX);
-    } catch(e) {}
-    if (typeof renderAssets==='function') renderAssets();
-}
-
 // ── Mobile nav ────────────────────────────────────────────────
 var MOB_TAB_PAGES = ['dashboard','bills','transactions','cash'];

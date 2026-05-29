@@ -26,9 +26,8 @@ function renderAssets(){
     <div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px"><span class="dr-k" style="font-weight:700">Net Equity</span><span class="dr-v" style="color:var(--primary)">${fmt(eq)}</span></div>`
     :'<div class="empty" style="padding:12px 0"><p>Add mortgage details</p></div>';
 
-  const taxOwing=(typeof taxTotalOwing==='function')?taxTotalOwing():0;
   const eqVal=(typeof eqTotalEquitiesValue==='function')?eqTotalEquitiesValue():0;
-  const netWorth=bankTotal+supTotal+Math.max(0,eq)+eqVal-taxOwing;
+  const netWorth=bankTotal+supTotal+Math.max(0,eq)+eqVal;
 
   // Equities summary card
   const eqSummEl=document.getElementById('assets-equities-summary');
@@ -56,8 +55,7 @@ function renderAssets(){
     +'<div class="stat stat-rose"><div class="sl">Bank Balances</div><div class="sv">'+fmt(bankTotal)+'</div><div class="ss">Cash Tracker</div></div>'
     +'<div class="stat stat-purple"><div class="sl">Superannuation</div><div class="sv">'+fmt(supTotal)+'</div><div class="ss">'+getUserName('brenton')+' + '+getUserName('shelley')+'</div></div>'
     +'<div class="stat stat-dark"><div class="sl">Home Equity</div><div class="sv">'+fmt(Math.max(0,eq))+'</div><div class="ss">Value minus mortgage</div></div>'
-    +(eqVal>0?'<div class="stat stat-dark"><div class="sl">Equities</div><div class="sv" style="color:var(--success)">'+fmt(eqVal)+'</div><div class="ss">RSU + Holdings</div></div>':'')
-    +(taxOwing>0?'<div class="stat stat-rose"><div class="sl">Tax Owing</div><div class="sv" style="color:var(--danger)">-'+fmt(taxOwing)+'</div><div class="ss">Deducted from net worth</div></div>':'');
+    +(eqVal>0?'<div class="stat stat-dark"><div class="sl">Equities</div><div class="sv" style="color:var(--success)">'+fmt(eqVal)+'</div><div class="ss">RSU + Holdings</div></div>':'');
 
   document.getElementById('assets-note').textContent=lm?'Bank data as at '+new Date(lm+'-02').toLocaleString('default',{month:'long',year:'numeric'}):'Add cash tracker data to see bank balances';
 

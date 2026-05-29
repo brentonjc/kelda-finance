@@ -98,7 +98,6 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('liabilities')"><span>⚖️</span>Liabilities</button>
       <button class="mob-menu-item" onclick="goMob('insurance')"><span>🛡️</span>Insurance</button>
       <button class="mob-menu-item" onclick="goMob('super')"><span>💼</span>Super</button>
-      <button class="mob-menu-item" onclick="goMob('tax')"><span>🧾</span>Tax</button>
       <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Assets</button>
       <button class="mob-menu-item" onclick="goMob('equities')"><span>📈</span>Equities</button>
       <button class="mob-menu-item" onclick="goMob('transfers')"><span>🔄</span>Transfers</button>
@@ -338,7 +337,6 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
     <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Insurance</span></a></li>
     <li><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
-    <li><a onclick="go('tax')" id="n-tax"><span class="ni">🧾</span><span class="nav-lbl">Tax</span></a></li>
     <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Total Assets</span></a></li>
     <li><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
     <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
@@ -450,7 +448,6 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- 5. Tax liabilities (full width, conditionally rendered) -->
-      <div id="db-tax-stat"></div>
 
       <!-- 5b. Total Liabilities tile -->
       <div class="card" id="db-liabilities-tile" onclick="go('liabilities')" style="cursor:pointer">
@@ -1673,123 +1670,6 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 
 
-  <!-- ═══ TAX LIABILITY TRACKER ═══ -->
-  <div class="page" id="page-tax">
-    <div class="page-title">Tax Liability Tracker</div>
-    <div class="page-sub">Estimated tax liabilities for both profiles, synced from the Super tab. BAS payments reduce the amount owing.</div>
-
-    <!-- FY bar -->
-    <div class="tax-fy-bar">
-      <div>
-        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Financial Year</div>
-        <div class="tax-fy-lbl" id="tax-fy-label">FY 2024-25</div>
-      </div>
-      <div id="tax-due-pill" class="tax-due-pill"></div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <label style="font-size:.76rem;color:var(--muted)">Tracking:</label>
-        <select id="tax-fy-select" onchange="taxFyChanged()" style="padding:6px 10px;font-size:.82rem;width:auto">
-          <option value="2023">FY 2023-24</option>
-          <option value="2024" selected>FY 2024-25</option>
-          <option value="2025">FY 2025-26</option>
-          <option value="2026">FY 2026-27</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Summary strip -->
-    <div class="g3 mb" id="tax-summary-strip"></div>
-
-    <!-- ── BRENTON ─────────────────────────────────────────── -->
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px" data-profile-label="brenton">Brenton — Tax Position</div>
-
-      <!-- Super data sync panel -->
-      <div id="tax-super-sync" style="background:#1a1a2a;border:1px solid #2a2a4a;border-radius:10px;padding:14px 16px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#74b9ff">
-            ⚡ Synced from Super Tab
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="renderTax()" style="font-size:.72rem">↻ Refresh</button>
-        </div>
-        <div id="tax-super-sync-rows"></div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a4a">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:.76rem;color:var(--muted)">Division 293 Liability</span>
-            <div id="tax-b-d293-display" style="font-weight:700;font-size:1rem;color:var(--primary)">—</div>
-          </div>
-          <div id="tax-d293-workings" style="font-size:.7rem;color:var(--muted);margin-top:4px"></div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <label class="lbl" style="margin:0;white-space:nowrap">Marginal Tax Rate (%):</label>
-        <input type="number" id="tax-b-rate" value="47" min="0" max="60" step="1"
-          style="width:80px" oninput="taxSave();renderTax()"/>
-        <span style="font-size:.72rem;color:var(--muted)">Applied to RSU income. Default 47% (top Australian rate).</span>
-      </div>
-
-      <!-- RSU Grants — moved to Equities tab -->
-      <div style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">RSU Grants This FY</div>
-      <div style="padding:10px 0;font-size:.78rem;color:var(--muted)">RSU vesting events have moved to the Equities tab.
-        <a href="#" onclick="go('equities');return false;" style="color:var(--primary)">Go to Equities → RSU Tax Estimator</a>
-      </div>
-
-      <!-- Brenton result -->
-      <div style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Tax Calculation</div>
-      <div class="tax-result-box" id="tax-b-result"></div>
-    </div>
-
-    <!-- Brenton BAS -->
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:4px" data-profile-label="brenton">Brenton — PAYG Instalments (BAS)</div>
-      <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Quarterly PAYG payments reduce the end-of-year liability. Enter amounts as you pay them.</div>
-      <div style="overflow-x:auto">
-        <table class="bas-table">
-          <thead><tr><th>Quarter</th><th>Period</th><th>Date Paid</th><th>Amount Paid ($)</th></tr></thead>
-          <tbody id="tax-b-bas-body"></tbody>
-        </table>
-      </div>
-      <div id="tax-b-bas-total" style="margin-top:10px;text-align:right;font-size:.82rem;font-weight:700;color:var(--success)"></div>
-    </div>
-
-    <!-- ── SHELLEY ─────────────────────────────────────────── -->
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px" data-profile-label="shelley">Shelley — Sole Trader Tax Position</div>
-      <div class="g2 mb">
-        <div>
-          <label class="lbl">Gross Business Income ($)</label>
-          <input type="number" id="tax-s-income" placeholder="0" min="0" step="1000"
-            oninput="taxSave();renderTax()"/>
-        </div>
-        <div>
-          <label class="lbl">Total Business Deductions ($)</label>
-          <input type="number" id="tax-s-deductions" placeholder="0" min="0" step="100"
-            oninput="taxSave();renderTax()"/>
-        </div>
-      </div>
-      <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px">2024-25 individual tax brackets applied automatically including 2% Medicare levy.</div>
-      <div class="tax-result-box" id="tax-s-result"></div>
-    </div>
-
-    <!-- Shelley BAS -->
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:4px" data-profile-label="shelley">Shelley — BAS Payments</div>
-      <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px" id="shelley-bas-sub">Quarterly GST/PAYG instalment payments. These reduce the end-of-year liability.</div>
-      <div style="overflow-x:auto">
-        <table class="bas-table">
-          <thead><tr><th>Quarter</th><th>Period</th><th>Date Paid</th><th>Amount Paid ($)</th></tr></thead>
-          <tbody id="tax-s-bas-body"></tbody>
-        </table>
-      </div>
-      <div id="tax-s-bas-total" style="margin-top:10px;text-align:right;font-size:.82rem;font-weight:700;color:var(--success)"></div>
-    </div>
-
-    <!-- Combined position -->
-    <div class="card">
-      <div class="section-label" style="margin-bottom:14px">Combined Tax Position</div>
-      <div id="tax-combined"></div>
-    </div>
-  </div>
-
   <!-- ═══ SETTINGS ═══ -->
   <div class="page" id="page-settings">
     <div class="page-title">Settings</div>
@@ -1934,7 +1814,6 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/bva.js"></script>
 <script src="js/pages/forecast.js"></script>
 <script src="js/pages/transfers.js"></script>
-<script src="js/pages/tax.js"></script>
 <script src="js/pages/equities.js"></script>
 <script src="js/pages/liabilities.js"></script>
 <script src="js/pages/settings.js"></script>

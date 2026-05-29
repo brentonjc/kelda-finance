@@ -223,16 +223,6 @@ function ctRenderNet(){
       <div style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--primary)">${fmt(grandNow)}</div>
       <div style="min-width:80px;text-align:right;font-size:.76rem"><span style="color:${gd>=0?'var(--success)':'var(--danger)'};font-weight:600">${gd>=0?'+':''}${fmt(gd)}</span></div>
     </div></div>`;
-  // Tax liability deduction
-  var taxOwing = (typeof taxTotalOwing === "function") ? taxTotalOwing() : 0;
-  if (taxOwing > 0) {
-    rows += '<div class="dr" style="background:#2a1020;border-radius:8px;padding:8px 10px;margin-top:6px;border:1px solid #4a1020">'
-      + '<div class="dr-k" style="color:var(--warn)">🧾 Tax Liability (set aside)</div>'
-      + '<div><span style="font-weight:700;color:var(--danger)">-' + fmt(taxOwing) + '</span></div></div>';
-    rows += '<div class="dr" style="background:#1a2a1a;border-radius:8px;padding:8px 10px;margin-top:4px;border:1px solid #1a4a1a">'
-      + '<div class="dr-k" style="color:var(--success);font-weight:700">Net Cash (after tax)</div>'
-      + '<div><span style="font-weight:700;color:var(--success)">' + fmt(grandNow - taxOwing) + '</span></div></div>';
-  }
   el.innerHTML = rows;
 }
 

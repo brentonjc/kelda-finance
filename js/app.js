@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['snapshot','dashboard','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','tax','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['snapshot','dashboard','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -53,7 +53,6 @@ function go(id){
     else if(id==='super')renderSuperPage();
     else if(id==='assets')renderAssets();
     else if(id==='export')renderExportPage();
-    else if(id==='tax')renderTax();
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
     else if(id==='transfers'){if(typeof renderTransfersPage==='function')renderTransfersPage();}
@@ -68,7 +67,7 @@ function go(id){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['dashboard','categories','export','mortgage','liabilities','cash','insurance','super','tax','assets','transfers','forecast'];
+  var stPages=['dashboard','categories','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
   if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
 }
@@ -104,7 +103,7 @@ function goMob(pageId) {
     if (btn) btn.classList.toggle('active', t === pageId);
   });
   // Settings btn active if settings-related page
-  var settingsPages = ['categories','export','mortgage','cash','insurance','super','tax','assets','transfers','forecast'];
+  var settingsPages = ['categories','export','mortgage','cash','insurance','super','assets','transfers','forecast'];
   var settBtn = document.getElementById('tb-settings');
   if (settBtn) settBtn.classList.toggle('active', settingsPages.indexOf(pageId) >= 0);
 }
@@ -239,7 +238,6 @@ function saveUserSettings() {
     if (typeof renderDashboard   === 'function') renderDashboard();
     if (typeof renderInsurance   === 'function') renderInsurance();
     if (typeof renderSuperPage   === 'function') renderSuperPage();
-    if (typeof renderTax         === 'function') renderTax();
   }
   var panel = document.getElementById('user-settings-panel');
   if (panel) panel.style.display = 'none';

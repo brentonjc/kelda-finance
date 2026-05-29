@@ -31,7 +31,6 @@ let LBUDGETS  = load(K.lbudgets) || {}; // { catId: amount }
 let LRULES    = load(K.rules)    || {}; // { merchant: catId }
 let LRECURRING = load(K.recurring) || [];
 let TRANSFERS  = load(K.transfers)  || [];
-let TAX        = load(K.tax)       || {}; // tax liability data per FY
 let USER_CONFIG = load('cff_userconfig') || {};
 let EQUITIES    = load(K.equities)     || []; // [{id,ticker,company,type,qty,costBase,currentPrice,currency,notes,sales:[]}]
 let LIABILITIES = load(K.liabilities) || []; // [{id,type,lender,balance,originalBalance,rate,rateType,fixedExpiry,payment,dueDay,termMonths,creditLimit,notes,addToBills,createdAt}]

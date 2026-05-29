@@ -180,7 +180,6 @@ function calcSuper(){
     if(el)el.textContent=`Current pool for age ${currentAge}: ${pool.label} (${pool.ret}% gross / ${(pool.ret-pool.fees).toFixed(2)}% net)`;
   }
   showSuperResults();renderSuperChart();renderD293Section();
-  if(typeof renderTax==='function')renderTax();
 }
 
 function showSuperResults(){

@@ -108,7 +108,7 @@ body{
 img,svg{display:block;max-width:100%;}
 
 /* ── DM Mono for all currency amounts ── */
-.mono,.sv,.nw-val,.tax-owing,.transfer-amt,.rsu-calculated,
+.mono,.sv,.nw-val,.transfer-amt,.rsu-calculated,
 .stat .sv,.dr-v,.amount-val{font-family:var(--font-mono)!important;}
 .page-title{font-family:var(--font-display);}
 h1,h2,h3,.heading{font-family:var(--font-display);}

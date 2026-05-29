@@ -267,7 +267,7 @@ function renderDashboard(){
     var _bank=_lm?['offset','home','sav1','sav2'].reduce(function(s,a){return s+((CT[a]||{})[_lm]||0);},0):0;
     var _supB=(SUPER.b&&SUPER.b.balance)||0,_supS=(SUPER.s&&SUPER.s.balance)||0;
     var _eqV=(typeof eqTotalEquitiesValue==='function')?eqTotalEquitiesValue():0;
-    var _totalLiab=(typeof liabTotal==='function')?liabTotal():(MORTGAGE.balance||0)+((typeof taxTotalOwing==='function')?taxTotalOwing():0);
+    var _totalLiab=(typeof liabTotal==='function')?liabTotal():(MORTGAGE.balance||0);
     var _nw=_bank+_supB+_supS+(MORTGAGE.homeValue||0)+_eqV-_totalLiab;
     if(_heroNW) _heroNW.textContent=fmt(_nw);
   } catch(e) {}
@@ -559,7 +559,7 @@ function dbRenderNetWorth(){
   const supB=SUPER.b?.balance||0,supS=SUPER.s?.balance||0;
   const homeVal=MORTGAGE.homeValue||0;
   var eqV=(typeof eqTotalEquitiesValue==='function')?eqTotalEquitiesValue():0;
-  var totalLiab=(typeof liabTotal==='function')?liabTotal():(MORTGAGE.balance||0)+((typeof taxTotalOwing==='function')?taxTotalOwing():0);
+  var totalLiab=(typeof liabTotal==='function')?liabTotal():(MORTGAGE.balance||0);
   var assetsTotal=bank+supB+supS+homeVal+eqV;
   const nw=assetsTotal-totalLiab;
   el.innerHTML='<div class="tile-hd" style="margin-bottom:8px"><div class="section-label" style="margin:0">Net Worth</div><a href="#" onclick="go(\'assets\');return false;" class="tile-link">View assets →</a></div>'
@@ -941,15 +941,14 @@ function getNetWorthSnapshot() {
   var supB = SUPER.b ? (SUPER.b.balance || 0) : 0;
   var supS = SUPER.s ? (SUPER.s.balance || 0) : 0;
   var equity = Math.max(0, (MORTGAGE.homeValue || 0) - (MORTGAGE.balance || 0));
-  var taxOwing = (typeof taxTotalOwing === 'function') ? taxTotalOwing() : 0;
   var eqV = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
-  var netWorth = bank + supB + supS + equity + eqV - taxOwing;
+  var netWorth = bank + supB + supS + equity + eqV;
   var assets = bank + supB + supS + (MORTGAGE.homeValue || 0) + eqV;
   var liabilities = MORTGAGE.balance || 0;
   var bankPrev = prevM ? ['offset','home','sav1','sav2'].reduce(function(s,a){
     return s + ((CT[a] || {})[prevM] || 0);
   }, 0) : null;
-  var lastMonthNW = bankPrev !== null ? (bankPrev + supB + supS + equity + eqV - taxOwing) : null;
+  var lastMonthNW = bankPrev !== null ? (bankPrev + supB + supS + equity + eqV) : null;
   return { netWorth: netWorth, assets: assets, liabilities: liabilities, lastMonthNetWorth: lastMonthNW };
 }
 
