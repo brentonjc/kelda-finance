@@ -384,7 +384,16 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- 1. KPI summary cards -->
       <div class="dash-stats-row" id="db-summary-cards"></div>
 
-      <!-- 2. Cash flow — full width -->
+      <!-- 2. 12-month forecast summary -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:14px">
+          <div class="section-label" style="margin:0">&#x1F4C8; 12-Month Cash Flow Forecast</div>
+          <a href="#" onclick="go('forecast');return false;" class="tile-link">Manage forecast &#x2192;</a>
+        </div>
+        <div id="db-forecast-table-wrap"></div>
+      </div>
+
+      <!-- 3. Cash flow — full width -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:10px">
           <div class="section-label" style="margin:0">📈 Cash Flow — Last 12 Months</div>
@@ -1474,129 +1483,132 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ FORECAST ═══ -->
   <div class="page" id="page-forecast">
     <div class="page-title">Cash Flow Forecast</div>
-    <div class="page-sub">Projected income and expenses based on detected recurring patterns.</div>
+    <div class="page-sub">12-month projection built from your transaction history, adjusted to taste.</div>
 
-    <!-- Starting balance bar -->
-    <div class="fc-balance-bar">
+    <!-- Sync bar -->
+    <div class="fc-balance-bar" style="justify-content:space-between">
       <div>
-        <div class="fc-bal-label">Starting Balance (from Cash Tracker)</div>
-        <div id="fc-bal-value" class="fc-bal-value">—</div>
+        <div class="fc-bal-label">Cash Tracker balance</div>
+        <div id="fc2-bal-value" style="font-size:.9rem;color:var(--muted);margin-top:2px">Sync from Cash Tracker to enable cumulative view</div>
+        <div id="fc2-sync-time" style="font-size:.72rem;color:var(--muted);margin-top:2px"></div>
       </div>
-      <div id="fc-bal-warn" class="fc-bal-warn" style="display:none">⚠️ No balance found in Cash Tracker</div>
-      <button class="btn btn-ghost btn-sm" onclick="go('cash')" style="margin-left:auto">Update in Cash Tracker →</button>
+      <button class="btn btn-ghost btn-sm" onclick="fc2SyncBalance()">&#x1F504; Sync from Cash Tracker</button>
     </div>
 
-    <!-- Controls -->
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
-      <div style="display:flex;gap:6px">
-        <button class="fc-range-btn active" id="fc-r-3" onclick="setFcRange(3)">3 Months</button>
-        <button class="fc-range-btn" id="fc-r-1" onclick="setFcRange(1)">1 Month</button>
-        <button class="fc-range-btn" id="fc-r-6" onclick="setFcRange(6)">6 Months</button>
-        <button class="fc-range-btn" id="fc-r-12" onclick="setFcRange(12)">12 Months</button>
+    <!-- KPI strip -->
+    <div class="g4 mb" id="fc2-kpis"></div>
+
+    <!-- Chart card -->
+    <div class="card mb">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div class="section-label" style="margin-bottom:0">&#x1F4C8; 12-Month Projection</div>
+        <div class="fc-view-toggle">
+          <button class="fc-toggle-btn active" id="fc2-bars-btn" onclick="fc2SetChartMode('bars')">Income vs Expenses</button>
+          <button class="fc-toggle-btn" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled>Cumulative Balance</button>
+        </div>
       </div>
-      <div class="fc-view-toggle" style="margin-left:auto">
-        <button class="fc-toggle-btn active" id="fc-v-chart" onclick="setFcView('chart')">📈 Chart</button>
-        <button class="fc-toggle-btn" id="fc-v-table" onclick="setFcView('table')">📋 Table</button>
+      <div class="chart-box" style="height:320px"><canvas id="fc2-chart"></canvas></div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:10px">
+        Solid bars = actuals &nbsp;&#xB7;&nbsp; Faded bars = forecast &nbsp;&#xB7;&nbsp; Dashed amber line = net cash flow
       </div>
     </div>
 
     <!-- Insights -->
-    <div id="fc-insights" class="mb"></div>
+    <div class="section-label mb-sm">&#x1F4A1; Insights</div>
+    <div id="fc2-insights" class="mb"></div>
 
-    <!-- Negative balance warning -->
-    <div id="fc-neg-warn" class="fc-negative-warn" style="display:none">
-      ⚠️ <span id="fc-neg-warn-text"></span>
+    <!-- Month strip -->
+    <div class="section-label mb-sm">&#x1F4C5; Month by Month</div>
+    <div class="fc2-strip-wrap mb">
+      <div class="fc2-strip" id="fc2-strip"></div>
     </div>
 
-    <!-- Chart view -->
-    <div class="card mb" id="fc-chart-panel">
-      <div class="section-label" style="margin-bottom:14px">Running Balance Projection</div>
-      <div class="chart-box" style="height:320px"><canvas id="fc-chart"></canvas></div>
-    </div>
-
-    <!-- Table view -->
-    <div class="card mb" id="fc-table-panel" style="display:none">
-      <div class="section-label" style="margin-bottom:14px">Week-by-Week Forecast</div>
-      <div class="tbl-wrap">
-        <table class="fc-table">
-          <thead><tr>
-            <th>Week of</th><th>Income</th><th>Expenses</th><th>Net</th><th>Running Balance</th>
-          </tr></thead>
-          <tbody id="fc-tbody"></tbody>
-        </table>
-        <div class="empty" id="fc-table-empty" style="display:none"><div class="ei">🔮</div><p>Add recurring patterns to see projections.</p></div>
-      </div>
-    </div>
-
-    <!-- Upcoming 30 days -->
-    <div class="g2 mb">
-      <div class="card">
-        <div class="section-label" style="margin-bottom:14px">📅 Next 30 Days</div>
-        <div id="fc-upcoming"></div>
-      </div>
-      <div class="card">
-        <div class="section-label" style="margin-bottom:14px">💡 Insights</div>
-        <div id="fc-insights-panel"></div>
-      </div>
-    </div>
-
-    <!-- Recurring patterns management -->
+    <!-- Adjustments table -->
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div>
-          <div class="section-label" style="margin-bottom:2px">🔄 Recurring Patterns</div>
-          <div style="font-size:.76rem;color:var(--muted)">Auto-detected from your transactions. Review and confirm each one.</div>
+          <div class="section-label" style="margin-bottom:2px">&#x1F39B;&#xFE0F; Forecast Adjustments</div>
+          <div style="font-size:.76rem;color:var(--muted)">Override the baseline for specific months — one-off events, planned expenses, expected income changes.</div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="detectRecurring();renderForecast()">🔍 Re-scan Transactions</button>
-          <button class="btn btn-primary btn-sm" onclick="openAddRecurring()">+ Add Manually</button>
+        <button class="btn btn-primary btn-sm" onclick="fc2OpenAdjForm(-1)">+ Add</button>
+      </div>
+
+      <!-- Inline add/edit form -->
+      <div id="fc2-adj-form" class="rec-edit-form" style="display:none;margin-bottom:16px">
+        <div class="section-label" style="margin-bottom:12px">Add / Edit Adjustment</div>
+        <div class="form-grid">
+          <div><label class="lbl">Description</label><input type="text" id="fc2-adj-desc" placeholder="e.g. Annual insurance renewal"/></div>
+          <div><label class="lbl">Category</label>
+            <select id="fc2-adj-cat">
+              <option value="">-- Select category --</option>
+              <option value="Tax">Tax</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Asset Purchase">Asset Purchase</option>
+              <option value="Asset Sale">Asset Sale</option>
+              <option value="Holidays">Holidays</option>
+              <option value="Bills">Bills</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Type</label>
+            <select id="fc2-adj-type" onchange="fc2AdjTypeChange()">
+              <option value="oneoff">One-off</option>
+              <option value="recurring">Recurring</option>
+            </select>
+          </div>
+          <div><label class="lbl">Amount (negative = expense, positive = income)</label>
+            <input type="number" id="fc2-adj-amount" placeholder="-1200 or +500" step="0.01" inputmode="decimal"/>
+          </div>
+        </div>
+        <!-- One-off row -->
+        <div id="fc2-adj-oneoff-row" class="form-grid">
+          <div><label class="lbl">Month</label>
+            <select id="fc2-adj-month"><option value="">-- Select month --</option></select>
+          </div>
+          <div></div>
+        </div>
+        <!-- Recurring row -->
+        <div id="fc2-adj-recur-row" style="display:none">
+          <div class="form-grid">
+            <div><label class="lbl">Frequency</label>
+              <select id="fc2-adj-freq">
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="annually">Annually</option>
+              </select>
+            </div>
+            <div><label class="lbl">Start month</label>
+              <select id="fc2-adj-start"><option value="">-- Select month --</option></select>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-top:8px">
+            <div><label class="lbl">End month</label>
+              <select id="fc2-adj-end"><option value="">None (ongoing)</option></select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:22px">
+              <input type="checkbox" id="fc2-adj-ongoing" onchange="fc2AdjOngoingChange()" style="accent-color:var(--primary)"/>
+              <label for="fc2-adj-ongoing" style="font-size:.84rem;color:var(--muted);cursor:pointer">Ongoing (no end date)</label>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="fc2SaveAdj()">&#x1F4BE; Save</button>
+          <button class="btn btn-ghost" onclick="fc2CloseAdjForm()">Cancel</button>
         </div>
       </div>
 
-      <!-- Pending (unconfirmed) patterns -->
-      <div id="fc-pending-list"></div>
-
-      <!-- Confirmed patterns -->
-      <div style="margin-top:6px">
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">✅ Confirmed Patterns</div>
-        <div id="fc-confirmed-list"></div>
+      <!-- Table output -->
+      <div id="fc2-adj-table-wrap">
+        <div class="empty" style="padding:20px 0"><div class="ei">&#x2795;</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>
       </div>
     </div>
+  </div>
 
-    <!-- Add/Edit recurring modal form -->
-    <div id="fc-add-form" class="rec-edit-form" style="display:none">
-      <div class="section-label" style="margin-bottom:12px" id="fc-add-form-title">Add Recurring Item</div>
-      <input type="hidden" id="fc-edit-id"/>
-      <div class="form-grid">
-        <div><label class="lbl">Name / Merchant</label><input type="text" id="fc-add-name" placeholder="e.g. Netflix"/></div>
-        <div><label class="lbl">Amount (AUD)</label><input type="number" id="fc-add-amount" placeholder="19.99" step="0.01" min="0"/></div>
-      </div>
-      <div class="form-grid">
-        <div><label class="lbl">Type</label>
-          <select id="fc-add-type">
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </select>
-        </div>
-        <div><label class="lbl">Frequency</label>
-          <select id="fc-add-freq">
-            <option value="weekly">Weekly</option>
-            <option value="fortnightly">Fortnightly</option>
-            <option value="monthly" selected>Monthly</option>
-            <option value="quarterly">Quarterly</option>
-            <option value="annual">Annual</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-grid">
-        <div><label class="lbl">Next Expected Date</label><input type="date" id="fc-add-next"/></div>
-        <div><label class="lbl">Category</label><select id="fc-add-cat"></select></div>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveRecurringItem()">💾 Save</button>
-        <button class="btn btn-ghost" onclick="closeAddRecurring()">Cancel</button>
-      </div>
-    </div>
+  <!-- Month detail modal -->
+  <div class="modal-overlay" id="fc2-month-overlay" onclick="if(event.target===this)fc2CloseMonthModal()">
+    <div class="modal-box" id="fc2-month-box"></div>
   </div>
 
 

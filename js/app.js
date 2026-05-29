@@ -56,7 +56,7 @@ function go(id){
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
     else if(id==='transfers'){if(typeof renderTransfersPage==='function')renderTransfersPage();}
-    else if(id==='forecast'){detectRecurring();renderForecast();}
+    else if(id==='forecast'){renderForecast();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
   }catch(e){console.warn('render error for page',id,e);}

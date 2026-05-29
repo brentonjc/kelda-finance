@@ -1,562 +1,909 @@
-// FORECAST — RECURRING PATTERN DETECTION & CASH FLOW PROJECTION
+// FORECAST — HISTORICAL BASELINE + ADJUSTMENTS MODEL
 // ══════════════════════════════════════════════════════════════
+// Option B: actuals through end of last month, forecast from 1st of current month forward.
 
-let fcRange  = 3;          // months ahead to project
-let fcView   = 'chart';    // 'chart' | 'table'
-let fcChart  = null;
+var fc2Chart      = null;   // Chart.js instance
+var fc2ChartMode  = 'bars'; // 'bars' | 'cumulative'
+var fc2AdjEditIdx = -1;     // index of adjustment being edited (-1 = new)
+var fc2MonthModal = null;   // currently open month index
 
-// ── Frequency helpers ─────────────────────────────────────────
-const FREQ_DAYS = { weekly:7, fortnightly:14, monthly:30.44, quarterly:91.3, annual:365.25 };
+// ── localStorage keys ─────────────────────────────────────────
+var FC_ADJ_KEY   = 'forecastAdjustments';
+var FC_BAL_KEY   = 'forecastStartingBalance';
+var FC_SYNC_KEY  = 'forecastLastSyncTime';
+var FC_CACHE_KEY = 'forecastBaselineCache';
 
-function freqLabel(f) {
-  return { weekly:'Weekly', fortnightly:'Fortnightly', monthly:'Monthly',
-           quarterly:'Quarterly', annual:'Annual' }[f] || f;
+// ── Safe localStorage helpers ─────────────────────────────────
+function fc2Load(key) {
+  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch(e) { return null; }
+}
+function fc2Save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e) { console.warn('fc2Save failed', key, e); }
 }
 
-function addDays(dateStr, n) {
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setDate(d.getDate() + Math.round(n));
-  return d.toISOString().slice(0, 10);
+// ── Date / month helpers ──────────────────────────────────────
+// Returns YYYY-MM for a given year+month offset from now
+function fc2YearMonth(offsetMonths) {
+  var d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + offsetMonths);
+  var y = d.getFullYear();
+  var m = d.getMonth() + 1;
+  return y + '-' + (m < 10 ? '0' : '') + m;
 }
 
-function daysBetween(a, b) {
-  return (new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000;
+// Format YYYY-MM as "Aug 2026"
+function fc2FmtMonth(ym) {
+  var parts = ym.split('-');
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+  return d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
 }
 
-function guessFrequency(dayGaps) {
-  const avg = dayGaps.reduce((s, d) => s + d, 0) / dayGaps.length;
-  if (avg <= 9)   return 'weekly';
-  if (avg <= 20)  return 'fortnightly';
-  if (avg <= 45)  return 'monthly';
-  if (avg <= 120) return 'quarterly';
-  return 'annual';
+// Format YYYY-MM as "Aug '26"
+function fc2FmtShort(ym) {
+  var parts = ym.split('-');
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+  return d.toLocaleDateString('en-AU', { month: 'short' }) + " '" + parts[0].slice(2);
 }
 
-// ── Get combined cash balance from Cash Tracker ───────────────
-function getCashBalance() {
-  const months = ctAllMonths();
-  if (!months.length) return null;
-  const lm = months[months.length - 1];
-  const total = CT_ACCTS.reduce((s, a) => s + ((CT[a.id] || {})[lm] || 0), 0);
-  return total > 0 ? total : null;
+// Prior year's equivalent YYYY-MM for a given YYYY-MM
+function fc2PriorYear(ym) {
+  var parts = ym.split('-');
+  return (parseInt(parts[0]) - 1) + '-' + parts[1];
 }
 
-// ── Pattern Detection ─────────────────────────────────────────
-function detectRecurring() {
-  const expenses = TX.filter(t => t.type === 'expense').sort((a, b) => a.date.localeCompare(b.date));
-  const income   = TX.filter(t => t.type === 'income').sort((a, b) => a.date.localeCompare(b.date));
+// ── Build monthly actuals map from TX ─────────────────────────
+// Returns { 'YYYY-MM': { income, expenses, net } }
+function fc2BuildActualsMap() {
+  var map = {};
+  var txList = typeof activeTX === 'function' ? activeTX() : TX;
+  txList.forEach(function(t) {
+    if (!t.date) return;
+    var ym = t.date.slice(0, 7);
+    if (!map[ym]) map[ym] = { income: 0, expenses: 0, net: 0 };
+    if (t.type === 'income')   map[ym].income   += Number(t.amount) || 0;
+    if (t.type === 'expense')  map[ym].expenses += Number(t.amount) || 0;
+  });
+  Object.keys(map).forEach(function(ym) {
+    map[ym].net = map[ym].income - map[ym].expenses;
+  });
+  return map;
+}
 
-  // Group by normalised merchant key (first 3 words of description, lowercased)
-  function merchantKey(t) {
-    return (t.description || t.category || 'unknown').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim().split(/\s+/).slice(0, 3).join(' ');
-  }
+// ── Build 12-month forecast baseline array ────────────────────
+// Window: current month (index 0) through +11 months
+// Actuals are used for months that have fully passed (last month and earlier).
+// For months from current month onward → look up same month last year, or avg proxy.
+function fc2BuildBaseline() {
+  var actuals  = fc2BuildActualsMap();
+  var allNets  = Object.values(actuals).map(function(v) { return v.net; });
+  var avgNet   = allNets.length ? allNets.reduce(function(s,v){return s+v;},0) / allNets.length : 0;
 
-  function detectGroup(txList, type) {
-    const groups = {};
-    txList.forEach(t => {
-      const k = merchantKey(t);
-      if (!groups[k]) groups[k] = [];
-      groups[k].push(t);
-    });
+  // Last fully-completed month = one month before current month
+  var now        = new Date();
+  var lastActual = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var lastActualYM = lastActual.getFullYear() + '-' + (lastActual.getMonth() < 9 ? '0' : '') + (lastActual.getMonth() + 1);
 
-    const found = [];
-    Object.entries(groups).forEach(([key, txs]) => {
-      if (txs.length < 2) return;
-      // Amount variance check: all within 10% of median
-      const amounts = txs.map(t => Number(t.amount)).sort((a, b) => a - b);
-      const median  = amounts[Math.floor(amounts.length / 2)];
-      const allClose = amounts.every(a => Math.abs(a - median) / median <= 0.10);
-      if (!allClose) return;
+  var months = [];
+  for (var i = 0; i < 12; i++) {
+    var ym      = fc2YearMonth(i);
+    var isActual = ym <= lastActualYM;
 
-      const avgAmount = amounts.reduce((s, a) => s + a, 0) / amounts.length;
-      const sortedDates = txs.map(t => t.date).sort();
-      const gaps = [];
-      for (let i = 1; i < sortedDates.length; i++) {
-        gaps.push(daysBetween(sortedDates[i - 1], sortedDates[i]));
-      }
-      const avgGap = gaps.reduce((s, d) => s + d, 0) / gaps.length;
-      // All gaps within 30% of average (allows some skipped months etc.)
-      const gapsConsistent = gaps.every(g => Math.abs(g - avgGap) / avgGap <= 0.30);
-      if (!gapsConsistent) return;
-
-      const freq     = guessFrequency(gaps);
-      const lastDate = sortedDates[sortedDates.length - 1];
-      const nextDate = addDays(lastDate, FREQ_DAYS[freq]);
-      const catId    = txs[txs.length - 1].catId || catIdFor(txs[txs.length - 1].category);
-      const cat      = LCATS.find(c => c.id === catId);
-
-      found.push({
-        id:       key + '_' + type,
-        name:     txs[0].description || txs[0].category || key,
-        amount:   Math.round(avgAmount * 100) / 100,
-        type,
-        freq,
-        nextDate,
-        catId,
-        catName:  cat ? cat.name : 'Other',
-        catIcon:  cat ? cat.icon : '📋',
-        catColor: cat ? cat.color : '#8a8095',
-        occurrences: txs.length,
-        status:   'pending', // 'pending' | 'confirmed' | 'dismissed'
-        source:   'detected',
+    if (isActual && actuals[ym]) {
+      months.push({
+        month:       ym,
+        label:       fc2FmtMonth(ym),
+        short:       fc2FmtShort(ym),
+        baseline:    actuals[ym].net,
+        income:      actuals[ym].income,
+        expenses:    actuals[ym].expenses,
+        adjustments: [],
+        net:         actuals[ym].net,
+        isActual:    true,
+        isForecast:  false,
+        isAvgProxy:  false
       });
-    });
-    return found;
-  }
-
-  const detected = [...detectGroup(expenses, 'expense'), ...detectGroup(income, 'income')];
-
-  // Merge into LRECURRING: add new detections as 'pending', keep existing confirmed/dismissed
-  const existingIds = new Set(LRECURRING.map(r => r.id));
-  detected.forEach(d => {
-    if (!existingIds.has(d.id)) {
-      LRECURRING.push(d);
     } else {
-      // Update amount + nextDate for pending items
-      const existing = LRECURRING.find(r => r.id === d.id);
-      if (existing && existing.status === 'pending') {
-        existing.amount   = d.amount;
-        existing.nextDate = d.nextDate;
-        existing.freq     = d.freq;
-      }
+      var pyYM      = fc2PriorYear(ym);
+      var pyData    = actuals[pyYM];
+      var isProxy   = !pyData;
+      var baseline  = pyData ? pyData.net : avgNet;
+      var inc       = pyData ? pyData.income   : (avgNet >= 0 ? avgNet + Math.abs(avgNet)*0.3 : 0);
+      var exp       = pyData ? pyData.expenses : Math.abs(avgNet >= 0 ? avgNet*0.3 : avgNet);
+
+      months.push({
+        month:       ym,
+        label:       fc2FmtMonth(ym),
+        short:       fc2FmtShort(ym),
+        baseline:    baseline,
+        income:      inc,
+        expenses:    exp,
+        adjustments: [],
+        net:         baseline,
+        isActual:    false,
+        isForecast:  true,
+        isAvgProxy:  isProxy
+      });
     }
-  });
-  save(K.recurring, LRECURRING);
-}
-
-// ── Confirm / Dismiss pattern ─────────────────────────────────
-function confirmPattern(id) {
-  const r = LRECURRING.find(x => x.id === id);
-  if (r) { r.status = 'confirmed'; save(K.recurring, LRECURRING); renderForecast(); }
-}
-
-function dismissPattern(id) {
-  const r = LRECURRING.find(x => x.id === id);
-  if (r) { r.status = 'dismissed'; save(K.recurring, LRECURRING); renderForecast(); }
-}
-
-function deleteRecurring(id) {
-  LRECURRING = LRECURRING.filter(x => x.id !== id);
-  save(K.recurring, LRECURRING);
-  renderForecast();
-  toast('🗑️ Removed');
-}
-
-// ── Manual add / edit ─────────────────────────────────────────
-function openAddRecurring(id) {
-  const form = document.getElementById('fc-add-form');
-  if (!form) return;
-  // Populate category select
-  const catSel = document.getElementById('fc-add-cat');
-  if (catSel) catSel.innerHTML = LCATS.map(c => '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>').join('');
-
-  if (id) {
-    const r = LRECURRING.find(x => x.id === id);
-    if (r) {
-      document.getElementById('fc-edit-id').value = id;
-      document.getElementById('fc-add-name').value   = r.name;
-      document.getElementById('fc-add-amount').value = r.amount;
-      document.getElementById('fc-add-type').value   = r.type;
-      document.getElementById('fc-add-freq').value   = r.freq;
-      document.getElementById('fc-add-next').value   = r.nextDate;
-      if (catSel) catSel.value = r.catId || 'other';
-      document.getElementById('fc-add-form-title').textContent = 'Edit Recurring Item';
-    }
-  } else {
-    document.getElementById('fc-edit-id').value = '';
-    document.getElementById('fc-add-name').value   = '';
-    document.getElementById('fc-add-amount').value = '';
-    document.getElementById('fc-add-type').value   = 'expense';
-    document.getElementById('fc-add-freq').value   = 'monthly';
-    document.getElementById('fc-add-next').value   = today();
-    document.getElementById('fc-add-form-title').textContent = 'Add Recurring Item';
   }
-  form.style.display = 'block';
-  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  return months;
 }
 
-function closeAddRecurring() {
-  const form = document.getElementById('fc-add-form');
-  if (form) form.style.display = 'none';
-}
-
-function saveRecurringItem() {
-  const name   = document.getElementById('fc-add-name').value.trim();
-  const amount = parseFloat(document.getElementById('fc-add-amount').value);
-  const type   = document.getElementById('fc-add-type').value;
-  const freq   = document.getElementById('fc-add-freq').value;
-  const next   = document.getElementById('fc-add-next').value;
-  const catId  = document.getElementById('fc-add-cat').value;
-  const editId = document.getElementById('fc-edit-id').value;
-
-  if (!name || !amount || !next) { toast('⚠️ Fill in all fields'); return; }
-  const cat = LCATS.find(c => c.id === catId);
-
-  if (editId) {
-    const r = LRECURRING.find(x => x.id === editId);
-    if (r) {
-      Object.assign(r, { name, amount, type, freq, nextDate: next, catId,
-        catName: cat ? cat.name : 'Other', catIcon: cat ? cat.icon : '📋',
-        catColor: cat ? cat.color : '#8a8095', status: 'confirmed' });
-    }
-  } else {
-    LRECURRING.push({
-      id: 'manual_' + Date.now(), name, amount, type, freq, nextDate: next,
-      catId, catName: cat ? cat.name : 'Other', catIcon: cat ? cat.icon : '📋',
-      catColor: cat ? cat.color : '#8a8095', status: 'confirmed', source: 'manual',
-      occurrences: 0,
-    });
-  }
-  save(K.recurring, LRECURRING);
-  closeAddRecurring();
-  renderForecast();
-  toast('✅ Saved');
-}
-
-// ── Upcoming 30-day list ──────────────────────────────────────
-function getUpcoming(days) {
-  const today_d = today();
-  const endDate = addDays(today_d, days);
-  const confirmed = LRECURRING.filter(r => r.status === 'confirmed');
-  const items = [];
-
-  confirmed.forEach(r => {
-    let d = r.nextDate;
-    // Walk forward from nextDate generating occurrences within window
-    let safety = 0;
-    while (d <= endDate && safety < 60) {
-      safety++;
-      if (d >= today_d) items.push({ ...r, date: d });
-      d = addDays(d, FREQ_DAYS[r.freq]);
-    }
+// ── Apply adjustments to a baseline array ─────────────────────
+function fc2ApplyAdjustments(months, adjs) {
+  // Reset adjustments and recalculate net
+  months.forEach(function(m) {
+    m.adjustments = [];
+    m.net = m.baseline;
   });
 
-  return items.sort((a, b) => a.date.localeCompare(b.date));
-}
+  adjs.forEach(function(adj, idx) {
+    months.forEach(function(m, mi) {
+      if (m.isActual) return; // Don't adjust actuals
+      var applies = false;
 
-// ── Project weekly cash flows ─────────────────────────────────
-function projectCashFlow(startingBalance, months) {
-  const today_d = today();
-  const totalDays = Math.round(months * 30.44);
-  const endDate   = addDays(today_d, totalDays);
-  const confirmed = LRECURRING.filter(r => r.status === 'confirmed');
+      if (adj.type === 'oneoff') {
+        applies = adj.month === m.month;
+      } else if (adj.type === 'recurring') {
+        var inRange = true;
+        if (adj.startMonth && m.month < adj.startMonth) inRange = false;
+        if (adj.endMonth   && m.month > adj.endMonth)   inRange = false;
+        if (!inRange) return;
 
-  // Build week boundaries
-  const weeks = [];
-  let weekStart = today_d;
-  while (weekStart <= endDate) {
-    const weekEnd = addDays(weekStart, 6);
-    weeks.push({ start: weekStart, end: weekEnd < endDate ? weekEnd : endDate, income: 0, expenses: 0 });
-    weekStart = addDays(weekStart, 7);
-  }
-
-  // Distribute recurring items across weeks
-  confirmed.forEach(r => {
-    let d = r.nextDate;
-    let safety = 0;
-    while (d <= endDate && safety < 365) {
-      safety++;
-      if (d >= today_d) {
-        const week = weeks.find(w => d >= w.start && d <= w.end);
-        if (week) {
-          if (r.type === 'income') week.income += r.amount;
-          else week.expenses += r.amount;
+        if (adj.frequency === 'monthly') {
+          applies = true;
+        } else if (adj.frequency === 'quarterly') {
+          // Apply if this month index within the window is 0, 3, 6, 9 from startMonth
+          var startYM  = adj.startMonth || months[0].month;
+          var startParts = startYM.split('-');
+          var mParts     = m.month.split('-');
+          var diffMonths = (parseInt(mParts[0]) - parseInt(startParts[0])) * 12
+                         + (parseInt(mParts[1]) - parseInt(startParts[1]));
+          applies = diffMonths % 3 === 0;
+        } else if (adj.frequency === 'annually') {
+          var startYM2   = adj.startMonth || months[0].month;
+          var sMonth     = startYM2.slice(5, 7);
+          applies        = m.month.slice(5, 7) === sMonth;
         }
       }
-      d = addDays(d, FREQ_DAYS[r.freq]);
+
+      if (applies) {
+        m.adjustments.push({ idx: idx, desc: adj.description, amount: adj.amount, source: adj.source });
+        m.net += Number(adj.amount) || 0;
+        // Also update income/expenses totals for chart
+        var amt = Number(adj.amount) || 0;
+        if (amt >= 0) m.income   += amt;
+        else          m.expenses += Math.abs(amt);
+      }
+    });
+  });
+
+  return months;
+}
+
+// ── Get the full calculated 12-month array ────────────────────
+function fc2GetMonths() {
+  var baseline = fc2BuildBaseline();
+  var adjs     = fc2Load(FC_ADJ_KEY) || [];
+  return fc2ApplyAdjustments(baseline, adjs);
+}
+
+// ── Cash Tracker balance sync ─────────────────────────────────
+function fc2SyncBalance() {
+  var bal = null;
+  try {
+    // CT and CT_ACCTS are global, loaded in data.js
+    var months = typeof ctAllMonths === 'function' ? ctAllMonths() : [];
+    if (months.length) {
+      var lm = months[months.length - 1];
+      var total = CT_ACCTS.reduce(function(s,a){ return s + ((CT[a.id]||{})[lm]||0); }, 0);
+      if (total !== 0) bal = total;
     }
-  });
+  } catch(e) { console.warn('fc2SyncBalance error', e); }
 
-  // Calculate running balance
-  let balance = startingBalance !== null ? startingBalance : 0;
-  const rows = weeks.map(w => {
-    const net = w.income - w.expenses;
-    balance += net;
-    return {
-      start:   w.start,
-      income:  w.income,
-      expenses: w.expenses,
-      net,
-      balance: startingBalance !== null ? balance : null,
-    };
-  });
-
-  return rows;
-}
-
-// ── Controls ──────────────────────────────────────────────────
-function setFcRange(m) {
-  fcRange = m;
-  [1, 3, 6, 12].forEach(r => {
-    const btn = document.getElementById('fc-r-' + r);
-    if (btn) btn.classList.toggle('active', r === m);
-  });
-  renderForecastChart();
-  renderForecastTable();
-}
-
-function setFcView(v) {
-  fcView = v;
-  ['chart', 'table'].forEach(x => {
-    const btn = document.getElementById('fc-v-' + x);
-    if (btn) btn.classList.toggle('active', x === v);
-  });
-  const cp = document.getElementById('fc-chart-panel');
-  const tp = document.getElementById('fc-table-panel');
-  if (cp) cp.style.display = v === 'chart' ? 'block' : 'none';
-  if (tp) tp.style.display = v === 'table'  ? 'block' : 'none';
-}
-
-// ── Main render ───────────────────────────────────────────────
-function renderForecast() {
-  // Starting balance from Cash Tracker
-  const cashBal = getCashBalance();
-  const balEl   = document.getElementById('fc-bal-value');
-  const warnEl  = document.getElementById('fc-bal-warn');
-  if (balEl) balEl.textContent = cashBal !== null ? fmt(cashBal) : '—';
-  if (warnEl) warnEl.style.display = cashBal === null ? 'block' : 'none';
-
-  // Pattern lists
-  renderFcPending();
-  renderFcConfirmed();
-  renderFcUpcoming();
-  renderForecastChart();
-  renderForecastTable();
-  renderFcInsights(cashBal);
-  setFcView(fcView);
-}
-
-function renderFcPending() {
-  const el = document.getElementById('fc-pending-list');
-  if (!el) return;
-  const pending = LRECURRING.filter(r => r.status === 'pending');
-  if (!pending.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--warn);margin-bottom:10px">🔍 Detected — Needs Review (' + pending.length + ')</div>'
-    + pending.map(r => buildRecCard(r, true)).join('');
-}
-
-function renderFcConfirmed() {
-  const el = document.getElementById('fc-confirmed-list');
-  if (!el) return;
-  const confirmed = LRECURRING.filter(r => r.status === 'confirmed');
-  el.innerHTML = confirmed.length
-    ? confirmed.map(r => buildRecCard(r, false)).join('')
-    : '<div class="empty" style="padding:16px 0"><div class="ei">✅</div><p>No confirmed patterns yet. Confirm detected patterns above or add one manually.</p></div>';
-}
-
-function buildRecCard(r, isPending) {
-  const color = r.type === 'income' ? 'var(--success)' : 'var(--primary)';
-  const bg    = r.type === 'income' ? '#1a3020' : '#2a1030';
-  const sign  = r.type === 'income' ? '+' : '-';
-  const nextFmt = new Date(r.nextDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-
-  return '<div class="rec-card' + (isPending ? ' rec-pending' : '') + '">'
-    + '<div class="rec-icon" style="background:' + r.catColor + '33;color:' + r.catColor + '">' + r.catIcon + '</div>'
-    + '<div class="rec-info">'
-    + '<div class="rec-name">' + r.name + '</div>'
-    + '<div class="rec-meta">' + freqLabel(r.freq) + ' · ' + r.catName + ' · Next: ' + nextFmt
-    + (r.occurrences > 0 ? ' · ' + r.occurrences + ' occurrences detected' : '') + '</div>'
-    + '</div>'
-    + '<div class="rec-amt" style="color:' + color + '">' + sign + fmt(r.amount) + '</div>'
-    + '<div class="rec-actions">'
-    + (isPending ? '<button class="btn btn-primary btn-sm" onclick="confirmPattern(\'' + r.id + '\')">✅ Confirm</button>' : '')
-    + (isPending ? '<button class="btn btn-ghost btn-sm" onclick="dismissPattern(\'' + r.id + '\')">✕ Dismiss</button>' : '')
-    + (!isPending ? '<button class="btn btn-ghost btn-sm" onclick="openAddRecurring(\'' + r.id + '\')">✏️</button>' : '')
-    + '<button class="del-btn" onclick="deleteRecurring(\'' + r.id + '\')" title="Delete">🗑</button>'
-    + '</div></div>';
-}
-
-function renderFcUpcoming() {
-  const el = document.getElementById('fc-upcoming');
-  if (!el) return;
-  const items = getUpcoming(30);
-  if (!items.length) {
-    el.innerHTML = '<div class="empty" style="padding:16px 0"><div class="ei">📅</div><p>No confirmed upcoming items in the next 30 days.</p></div>';
+  if (bal === null) {
+    toast('No balance found in Cash Tracker — add balances first');
     return;
   }
-  el.innerHTML = items.map(item => {
-    const dateStr = new Date(item.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
-    const isInc   = item.type === 'income';
-    const daysAway = Math.round(daysBetween(today(), item.date));
-    const daysLbl = daysAway === 0 ? 'Today' : daysAway === 1 ? 'Tomorrow' : 'In ' + daysAway + ' days';
+  fc2Save(FC_BAL_KEY,   bal);
+  fc2Save(FC_SYNC_KEY,  new Date().toISOString());
+  renderForecast();
+  toast('Balance synced: ' + fmt(bal));
+}
 
-    return '<div class="upcoming-row">'
-      + '<div class="upcoming-date">' + dateStr + '<div style="font-size:.68rem;color:var(--muted)">' + daysLbl + '</div></div>'
-      + '<div class="upcoming-name">' + item.name + '<div style="font-size:.72rem;color:var(--muted)">' + freqLabel(item.freq) + '</div></div>'
-      + '<span class="upcoming-cat" style="background:' + item.catColor + '33;color:' + item.catColor + '">' + item.catIcon + ' ' + item.catName + '</span>'
-      + '<div class="' + (isInc ? 'upcoming-amt-pos' : 'upcoming-amt-neg') + '">' + (isInc ? '+' : '-') + fmt(item.amount) + '</div>'
+// ── KPI strip ─────────────────────────────────────────────────
+function fc2RenderKPIs(months) {
+  var el = document.getElementById('fc2-kpis');
+  if (!el) return;
+
+  var actuals  = fc2BuildActualsMap();
+  var allNets  = Object.values(actuals).map(function(v){ return v.net; });
+  var avgMonthly = allNets.length ? allNets.reduce(function(s,v){return s+v;},0) / allNets.length : 0;
+
+  var fcastNets = months.filter(function(m){ return m.isForecast; }).map(function(m){ return m.net; });
+  var bestNet   = fcastNets.length ? Math.max.apply(null, fcastNets) : 0;
+  var worstNet  = fcastNets.length ? Math.min.apply(null, fcastNets) : 0;
+  var worstM    = months.filter(function(m){ return m.isForecast && m.net === worstNet; })[0];
+  var yearEnd   = months.reduce(function(s,m){ return s + m.net; }, 0);
+
+  var worstColor = worstNet < 0 ? 'var(--danger)' : (avgMonthly > 0 && worstNet < avgMonthly * 0.2 ? 'var(--warn)' : 'var(--success)');
+
+  el.innerHTML =
+    '<div class="fc2-kpi">'
+    + '<div class="fc2-kpi-label">Avg Monthly Net</div>'
+    + '<div class="fc2-kpi-val" style="color:' + (avgMonthly >= 0 ? 'var(--success)' : 'var(--danger)') + '">'
+    + fmt(avgMonthly) + '</div>'
+    + '<div class="fc2-kpi-sub">from ' + allNets.length + ' month' + (allNets.length !== 1 ? 's' : '') + ' history</div>'
+    + '</div>'
+
+    + '<div class="fc2-kpi">'
+    + '<div class="fc2-kpi-label">Best Forecast Month</div>'
+    + '<div class="fc2-kpi-val" style="color:var(--success)">' + fmt(bestNet) + '</div>'
+    + '<div class="fc2-kpi-sub">' + (fcastNets.length ? months.filter(function(m){return m.isForecast&&m.net===bestNet;})[0].label : '—') + '</div>'
+    + '</div>'
+
+    + '<div class="fc2-kpi">'
+    + '<div class="fc2-kpi-label">Tightest Month</div>'
+    + '<div class="fc2-kpi-val" style="color:' + worstColor + '">' + fmt(worstNet) + '</div>'
+    + '<div class="fc2-kpi-sub">' + (worstM ? worstM.label : '—') + '</div>'
+    + '</div>'
+
+    + '<div class="fc2-kpi">'
+    + '<div class="fc2-kpi-label">Projected Year-End Net</div>'
+    + '<div class="fc2-kpi-val" style="color:' + (yearEnd >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + fmt(yearEnd) + '</div>'
+    + '<div class="fc2-kpi-sub">sum of all 12 months</div>'
+    + '</div>';
+}
+
+// ── Sync bar ──────────────────────────────────────────────────
+function fc2RenderSyncBar() {
+  var balEl  = document.getElementById('fc2-bal-value');
+  var timeEl = document.getElementById('fc2-sync-time');
+  var togBtn = document.getElementById('fc2-cum-toggle');
+
+  var bal      = fc2Load(FC_BAL_KEY);
+  var syncTime = fc2Load(FC_SYNC_KEY);
+
+  if (balEl) {
+    balEl.textContent = bal !== null ? 'Starting balance: ' + fmt(bal) : 'Sync from Cash Tracker to enable cumulative view';
+    balEl.style.color = bal !== null ? 'var(--text)' : 'var(--muted)';
+  }
+  if (timeEl) {
+    if (syncTime) {
+      var d = new Date(syncTime);
+      timeEl.textContent = 'Synced ' + d.toLocaleDateString('en-AU', {day:'numeric',month:'short'}) + ' at ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    } else {
+      timeEl.textContent = '';
+    }
+  }
+  if (togBtn) {
+    togBtn.disabled = bal === null;
+    togBtn.style.opacity = bal === null ? '0.4' : '1';
+  }
+}
+
+// ── Chart ─────────────────────────────────────────────────────
+function fc2SetChartMode(mode) {
+  fc2ChartMode = mode;
+  var barsBtn = document.getElementById('fc2-bars-btn');
+  var cumBtn  = document.getElementById('fc2-cum-toggle');
+  if (barsBtn) barsBtn.classList.toggle('active', mode === 'bars');
+  if (cumBtn)  cumBtn.classList.toggle('active',  mode === 'cumulative');
+  fc2RenderChart(fc2GetMonths());
+}
+
+function fc2RenderChart(months) {
+  var canvas = document.getElementById('fc2-chart');
+  if (!canvas) return;
+
+  // Destroy existing
+  if (fc2Chart) { try { fc2Chart.destroy(); } catch(e){} fc2Chart = null; }
+
+  var labels    = months.map(function(m){ return m.short; });
+  var nowIdx    = months.findIndex ? months.findIndex(function(m){ return !m.isActual; })
+                : (function(){ for(var i=0;i<months.length;i++){if(!months[i].isActual)return i;} return months.length; })();
+
+  var fcastFrom = nowIdx; // first forecast month index
+
+  var tickColors = months.map(function(m,i){
+    return m.isActual ? '#6278A0' : 'rgba(240,83,138,0.7)';
+  });
+
+  var gridColor = 'rgba(255,255,255,0.06)';
+
+  if (fc2ChartMode === 'cumulative') {
+    var bal      = fc2Load(FC_BAL_KEY) || 0;
+    var cumData  = [];
+    var running  = bal;
+    months.forEach(function(m) {
+      running += m.net;
+      cumData.push(running);
+    });
+
+    // Segment coloring — green above zero, red below
+    fc2Chart = safeChart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Cumulative Balance',
+          data: cumData,
+          borderColor: '#00C896',
+          backgroundColor: 'rgba(0,200,150,0.10)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderWidth: 2.5,
+          segment: {
+            borderColor: function(ctx) {
+              var p0 = ctx.p0.parsed.y;
+              var p1 = ctx.p1.parsed.y;
+              return (p0 < 0 || p1 < 0) ? '#EF4444' : '#00C896';
+            },
+            backgroundColor: function(ctx) {
+              var p0 = ctx.p0.parsed.y;
+              var p1 = ctx.p1.parsed.y;
+              return (p0 < 0 || p1 < 0) ? 'rgba(239,68,68,0.10)' : 'rgba(0,200,150,0.10)';
+            }
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        backgroundColor: 'transparent',
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111830',
+            titleColor: '#F0538A',
+            bodyColor: '#E8EDF5',
+            callbacks: {
+              label: function(c) { return ' Balance: ' + fmt(c.parsed.y); }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: {
+              color: function(ctx) { return tickColors[ctx.index] || '#6278A0'; },
+              font: { family: 'DM Sans', size: 10 }
+            }
+          },
+          y: {
+            grid: { color: gridColor },
+            ticks: {
+              color: '#6278A0',
+              font: { family: 'DM Sans', size: 10 },
+              callback: function(v) { return '$' + Math.round(v/1000) + 'k'; }
+            }
+          }
+        }
+      }
+    });
+    return;
+  }
+
+  // Bars mode
+  var incData  = months.map(function(m){ return m.income; });
+  var expData  = months.map(function(m){ return m.expenses; });
+  var netData  = months.map(function(m){ return m.net; });
+
+  // Actual vs forecast styling
+  var incColors = months.map(function(m){
+    return m.isActual ? 'rgba(0,200,150,0.45)' : 'rgba(0,200,150,0.22)';
+  });
+  var expColors = months.map(function(m){
+    return m.isActual ? 'rgba(240,83,138,0.35)' : 'rgba(240,83,138,0.18)';
+  });
+
+  fc2Chart = safeChart(canvas, {
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Income',
+          data: incData,
+          backgroundColor: incColors,
+          borderColor: '#00C896',
+          borderWidth: 1,
+          borderRadius: 4,
+          yAxisID: 'y'
+        },
+        {
+          type: 'bar',
+          label: 'Expenses',
+          data: expData.map(function(v){ return -v; }),
+          backgroundColor: expColors,
+          borderColor: '#F0538A',
+          borderWidth: 1,
+          borderRadius: 4,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Net',
+          data: netData,
+          borderColor: '#F59E0B',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 4],
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          yAxisID: 'y'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      backgroundColor: 'transparent',
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: 'DM Sans', size: 11 }, padding: 14, color: '#6278A0' }
+        },
+        tooltip: {
+          backgroundColor: '#111830',
+          titleColor: '#F0538A',
+          bodyColor: '#E8EDF5',
+          callbacks: {
+            label: function(c) { return ' ' + c.dataset.label + ': ' + fmt(Math.abs(c.parsed.y)); }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: {
+            color: function(ctx) { return tickColors[ctx.index] || '#6278A0'; },
+            font: { family: 'DM Sans', size: 10 }
+          }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: '#6278A0',
+            font: { family: 'DM Sans', size: 10 },
+            callback: function(v) { return '$' + Math.round(v).toLocaleString('en-AU'); }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── Insights ─────────────────────────────────────────────────
+function fc2RenderInsights(months) {
+  var el = document.getElementById('fc2-insights');
+  if (!el) return;
+
+  var actuals  = fc2BuildActualsMap();
+  var keys     = Object.keys(actuals).sort();
+
+  if (keys.length < 2) {
+    el.innerHTML =
+      '<div class="fc2-insight-card" style="background:var(--card2)">'
+      + '<div class="fc2-insight-icon">📊</div>'
+      + '<div><div class="fc2-insight-title">Not enough data yet</div>'
+      + '<div class="fc2-insight-body">Add more transactions to unlock forecast insights.</div></div>'
+      + '</div>';
+    return;
+  }
+
+  var cards = [];
+  var allNets = keys.map(function(k){ return actuals[k].net; });
+  var avgNet  = allNets.reduce(function(s,v){return s+v;},0) / allNets.length;
+  var proxyMonths = months.filter(function(m){ return m.isAvgProxy; }).length;
+
+  // 1. Average monthly net — always shown
+  cards.push({
+    icon: avgNet >= 0 ? '✅' : '⚠️',
+    bg: avgNet >= 0 ? 'rgba(0,200,150,0.12)' : 'rgba(245,158,11,0.15)',
+    title: 'Average monthly net',
+    body: 'Based on ' + keys.length + ' month' + (keys.length !== 1 ? 's' : '') + ' of history, your average net is '
+      + '<strong>' + fmt(avgNet) + '</strong>/month.'
+      + (proxyMonths > 0 ? ' ' + proxyMonths + ' forecast month' + (proxyMonths !== 1 ? 's' : '') + ' use a historical average proxy (no prior-year data).' : '')
+  });
+
+  // 2. Tight forecast months
+  var tightMonths = months.filter(function(m){
+    return m.isForecast && avgNet > 0 && m.net < avgNet * 0.25;
+  });
+  if (tightMonths.length) {
+    var names = tightMonths.slice(0, 3).map(function(m){ return m.label; }).join(', ');
+    cards.push({
+      icon: '🔴',
+      bg: 'rgba(240,83,138,0.12)',
+      title: 'Tight month' + (tightMonths.length > 1 ? 's' : '') + ' ahead',
+      body: '<strong>' + names + '</strong> project'
+        + (tightMonths.length === 1 ? 's' : '') + ' below 25% of your average net. Lowest: '
+        + '<strong>' + fmt(Math.min.apply(null, tightMonths.map(function(m){return m.net;}))) + '</strong>.'
+    });
+  }
+
+  // 3. Prior-year large category spikes — detect from tx
+  var txList = typeof activeTX === 'function' ? activeTX() : TX;
+  var catMonthly = {}; // { catId: { ym: total } }
+  txList.filter(function(t){ return t.type === 'expense'; }).forEach(function(t) {
+    var cat = t.catId || t.category || 'other';
+    var ym  = t.date ? t.date.slice(0,7) : '';
+    if (!ym) return;
+    if (!catMonthly[cat]) catMonthly[cat] = {};
+    catMonthly[cat][ym] = (catMonthly[cat][ym]||0) + (Number(t.amount)||0);
+  });
+  var spikes = [];
+  Object.keys(catMonthly).forEach(function(cat) {
+    var monthly = catMonthly[cat];
+    var vals    = Object.values(monthly);
+    if (vals.length < 2) return;
+    var avg = vals.reduce(function(s,v){return s+v;},0) / vals.length;
+    Object.keys(monthly).forEach(function(ym) {
+      if (monthly[ym] > avg * 2) {
+        // Is this month coming up in the forecast window?
+        var mmPart = ym.slice(5,7);
+        var upcoming = months.filter(function(m){ return m.isForecast && m.month.slice(5,7) === mmPart; });
+        if (upcoming.length) {
+          spikes.push({ cat: cat, ym: ym, amt: monthly[ym], upcoming: upcoming[0] });
+        }
+      }
+    });
+  });
+  if (spikes.length) {
+    var spike = spikes[0];
+    var catName = (function(){
+      var c = (typeof LCATS !== 'undefined' ? LCATS : []).find(function(c){ return c.id === spike.cat; });
+      return c ? c.icon + ' ' + c.name : spike.cat;
+    })();
+    cards.push({
+      icon: '⚠️',
+      bg: 'rgba(245,158,11,0.15)',
+      title: 'Watch out: ' + catName + ' spike coming',
+      body: 'Last year in ' + fc2FmtMonth(spike.ym) + ', ' + catName + ' was <strong>' + fmt(spike.amt) + '</strong> — over 2x its usual average. '
+        + spike.upcoming.label + ' is in your forecast window.'
+    });
+  }
+
+  // 4. Seasonal income high
+  var incByMonth = {};
+  txList.filter(function(t){ return t.type === 'income'; }).forEach(function(t) {
+    var mm = t.date ? t.date.slice(5,7) : '';
+    if (!mm) return;
+    if (!incByMonth[mm]) incByMonth[mm] = [];
+    incByMonth[mm].push(Number(t.amount)||0);
+  });
+  var allInc = txList.filter(function(t){return t.type==='income';}).reduce(function(s,t){return s+Number(t.amount);},0);
+  var allIncMonths = keys.length || 1;
+  var avgIncMonthly = allInc / allIncMonths;
+  var highInc = Object.keys(incByMonth).filter(function(mm) {
+    var monthAvg = incByMonth[mm].reduce(function(s,v){return s+v;},0) / incByMonth[mm].length;
+    return monthAvg > avgIncMonthly * 1.15 && incByMonth[mm].length >= 2;
+  });
+  if (highInc.length >= 2 && cards.length < 4) {
+    var mmNames = highInc.slice(0,3).map(function(mm){
+      return new Date(2000, parseInt(mm)-1, 1).toLocaleDateString('en-AU',{month:'long'});
+    }).join(', ');
+    cards.push({
+      icon: '📈',
+      bg: 'rgba(0,200,150,0.12)',
+      title: 'Seasonal income lift',
+      body: 'Income in <strong>' + mmNames + '</strong> is consistently 15%+ above your monthly average — positive signal for those forecast months.'
+    });
+  }
+
+  el.innerHTML = cards.slice(0,4).map(function(c) {
+    return '<div class="fc2-insight-card" style="background:' + c.bg + '">'
+      + '<div class="fc2-insight-icon">' + c.icon + '</div>'
+      + '<div><div class="fc2-insight-title">' + c.title + '</div>'
+      + '<div class="fc2-insight-body">' + c.body + '</div></div>'
       + '</div>';
   }).join('');
 }
 
-// ── Chart ─────────────────────────────────────────────────────
-function renderForecastChart() {
-  const canvas = document.getElementById('fc-chart');
-  if (!canvas) return;
-  const cashBal = getCashBalance();
-  const rows    = projectCashFlow(cashBal, fcRange);
+// ── Month strip ───────────────────────────────────────────────
+function fc2RenderStrip(months) {
+  var el = document.getElementById('fc2-strip');
+  if (!el) return;
 
-  const labels  = rows.map(r => new Date(r.start + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }));
-  const balData = rows.map(r => r.balance);
-  const incData = rows.map(r => r.income);
-  const expData = rows.map(r => r.expenses);
-  const hasBalance = cashBal !== null;
+  var avgNet = (function(){
+    var nets = months.map(function(m){return m.net;});
+    return nets.reduce(function(s,v){return s+v;},0)/nets.length;
+  })();
 
-  // Negative balance warning
-  const negWeeks = rows.filter(r => r.balance !== null && r.balance < 0);
-  const negWarnEl = document.getElementById('fc-neg-warn');
-  const negTextEl = document.getElementById('fc-neg-warn-text');
-  if (negWarnEl && negTextEl) {
-    if (negWeeks.length) {
-      const firstNeg = negWeeks[0];
-      const fmtDate  = new Date(firstNeg.start + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
-      negWarnEl.style.display = 'flex';
-      negTextEl.textContent = 'Balance projected to go negative from week of ' + fmtDate + ' (lowest: ' + fmt(Math.min(...negWeeks.map(r => r.balance))) + ')';
+  el.innerHTML = months.map(function(m, i) {
+    var netColor = m.net >= 0 ? 'var(--success)' : 'var(--danger)';
+    var status, statusColor;
+    if (m.isActual) {
+      status = 'Actual'; statusColor = '#6278A0';
+    } else if (m.net < 0) {
+      status = 'Negative'; statusColor = 'var(--danger)';
+    } else if (avgNet > 0 && m.net < avgNet * 0.25) {
+      status = 'Tight'; statusColor = 'var(--warn)';
     } else {
-      negWarnEl.style.display = 'none';
+      status = 'Forecast'; statusColor = 'rgba(240,83,138,0.7)';
     }
-  }
 
-  if (fcChart) { fcChart.destroy(); fcChart = null; }
-
-  const ctx = canvas.getContext('2d');
-  const datasets = [];
-
-  // Income bars
-  datasets.push({
-    type: 'bar', label: 'Income', data: incData, backgroundColor: 'rgba(82,214,138,.4)',
-    borderColor: '#52d68a', borderWidth: 1, borderRadius: 4, yAxisID: 'y',
-  });
-  // Expense bars
-  datasets.push({
-    type: 'bar', label: 'Expenses', data: expData.map(v => -v), backgroundColor: 'rgba(232,69,122,.35)',
-    borderColor: '#e8457a', borderWidth: 1, borderRadius: 4, yAxisID: 'y',
-  });
-  // Balance line
-  if (hasBalance) {
-    datasets.push({
-      type: 'line', label: 'Running Balance', data: balData, borderColor: '#f0a040',
-      backgroundColor: 'rgba(240,160,64,.12)', fill: true, tension: 0.3, pointRadius: 3,
-      pointHoverRadius: 5, borderWidth: 2.5, yAxisID: 'y',
-    });
-  }
-
-  fcChart = safeChart(ctx, {
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 13, color: '#8a8095' } },
-        tooltip: {
-          callbacks: {
-            label: c => ' ' + c.dataset.label + ': ' + fmt(Math.abs(c.parsed.y)),
-          }
-        },
-        annotation: { annotations: {} }, // placeholder
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 }, color: '#8a8095', maxTicksLimit: 12 } },
-        y: { grid: { color: '#2a2535' }, ticks: { font: { family: 'Inter', size: 10 }, color: '#8a8095', callback: v => '$' + Math.round(v).toLocaleString() } },
-      }
-    }
-  });
+    return '<button class="fc2-month-card" onclick="fc2OpenMonthModal(' + i + ')">'
+      + '<div class="fc2-month-lbl">' + m.short + '</div>'
+      + '<div class="fc2-month-net" style="color:' + netColor + '">' + fmt(m.net) + '</div>'
+      + '<div class="fc2-month-status" style="color:' + statusColor + '">' + status + '</div>'
+      + (m.isAvgProxy ? '<div class="fc2-month-proxy">avg proxy</div>' : '')
+      + '</button>';
+  }).join('');
 }
 
-// ── Table ─────────────────────────────────────────────────────
-function renderForecastTable() {
-  const tbody  = document.getElementById('fc-tbody');
-  const empty  = document.getElementById('fc-table-empty');
-  if (!tbody) return;
-  const cashBal = getCashBalance();
-  const rows    = projectCashFlow(cashBal, fcRange);
+// ── Month modal ───────────────────────────────────────────────
+function fc2OpenMonthModal(idx) {
+  fc2MonthModal = idx;
+  var months = fc2GetMonths();
+  var m      = months[idx];
+  if (!m) return;
 
-  if (!rows.length || !LRECURRING.filter(r => r.status === 'confirmed').length) {
-    tbody.innerHTML = '';
-    if (empty) empty.style.display = 'block';
+  var overlay = document.getElementById('fc2-month-overlay');
+  var box     = document.getElementById('fc2-month-box');
+  if (!overlay || !box) return;
+
+  var adjs = m.adjustments;
+  var srcLabel = m.isActual ? 'Actual transactions' : (m.isAvgProxy ? 'Average proxy (no prior-year data)' : 'Prior year ' + fc2FmtMonth(fc2PriorYear(m.month)));
+
+  box.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
+    + '<h3 style="font-family:var(--font-display);font-size:1.2rem;margin:0">' + m.label + '</h3>'
+    + '<button onclick="fc2CloseMonthModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:4px 8px">×</button>'
+    + '</div>'
+
+    + '<div class="fc2-modal-row">'
+    + '<span class="fc2-modal-lbl">Baseline</span>'
+    + '<span style="font-family:var(--font-mono);color:' + (m.baseline>=0?'var(--success)':'var(--danger)') + '">' + fmt(m.baseline) + '</span>'
+    + '</div>'
+    + '<div class="fc2-modal-row">'
+    + '<span class="fc2-modal-lbl">Source</span>'
+    + '<span style="color:var(--muted);font-size:.8rem">' + srcLabel + '</span>'
+    + '</div>'
+
+    + (adjs.length
+      ? '<div style="margin:14px 0 8px"><div class="section-label">Adjustments applied</div>'
+        + adjs.map(function(a){
+          return '<div class="fc2-modal-row">'
+            + '<span>' + (a.desc || 'Adjustment') + '</span>'
+            + '<span style="font-family:var(--font-mono);color:' + (a.amount>=0?'var(--success)':'var(--danger)') + '">'
+            + (a.amount>=0?'+':'') + fmt(a.amount) + '</span>'
+            + '</div>';
+        }).join('') + '</div>'
+      : '<div style="color:var(--muted);font-size:.82rem;margin:14px 0">No adjustments for this month.</div>')
+
+    + '<div class="fc2-modal-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">'
+    + '<span style="font-weight:700">Final net</span>'
+    + '<span style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:' + (m.net>=0?'var(--success)':'var(--danger)') + '">' + fmt(m.net) + '</span>'
+    + '</div>'
+
+    + (m.isActual ? '' :
+      '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:14px" onclick="fc2CloseMonthModal();fc2PrefilledAdj(\'' + m.month + '\')">+ Add adjustment for ' + m.label + '</button>')
+    ;
+
+  overlay.classList.add('open');
+}
+
+function fc2CloseMonthModal() {
+  var overlay = document.getElementById('fc2-month-overlay');
+  if (overlay) overlay.classList.remove('open');
+  fc2MonthModal = null;
+}
+
+function fc2PrefilledAdj(ym) {
+  // Open the add form with month pre-filled
+  fc2OpenAdjForm(-1);
+  var typeEl = document.getElementById('fc2-adj-type');
+  if (typeEl) { typeEl.value = 'oneoff'; fc2AdjTypeChange(); }
+  var mEl = document.getElementById('fc2-adj-month');
+  if (mEl) mEl.value = ym;
+}
+
+// ── Adjustments table ─────────────────────────────────────────
+function fc2RenderAdjs() {
+  var wrap = document.getElementById('fc2-adj-table-wrap');
+  if (!wrap) return;
+
+  var adjs = fc2Load(FC_ADJ_KEY) || [];
+  if (!adjs.length) {
+    if (wrap) wrap.innerHTML = '<div class="empty" style="padding:20px 0"><div class="ei">➕</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>';
     return;
   }
-  if (empty) empty.style.display = 'none';
 
-  tbody.innerHTML = rows.map(r => {
-    const isNeg = r.balance !== null && r.balance < 0;
-    const weekLbl = new Date(r.start + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-    const incStr  = r.income   > 0 ? '<span style="color:var(--success)">+' + fmt(r.income) + '</span>' : '—';
-    const expStr  = r.expenses > 0 ? '<span style="color:var(--danger)">-'  + fmt(r.expenses) + '</span>' : '—';
-    const netStr  = r.net !== 0 ? (r.net > 0 ? '<span style="color:var(--success)">+' + fmt(r.net) + '</span>' : '<span style="color:var(--danger)">-' + fmt(Math.abs(r.net)) + '</span>') : '<span style="color:var(--muted)">—</span>';
-    const balStr  = r.balance !== null ? (r.balance < 0 ? '<span style="color:var(--danger)">' + fmt(r.balance) + '</span>' : '<span style="color:var(--success)">' + fmt(r.balance) + '</span>') : '<span style="color:var(--muted)">—</span>';
-    return '<tr class="' + (isNeg ? 'fc-neg' : '') + '">'
-      + '<td>' + weekLbl + '</td>'
-      + '<td>' + incStr + '</td>'
-      + '<td>' + expStr + '</td>'
-      + '<td>' + netStr + '</td>'
-      + '<td>' + balStr + '</td>'
+  if (wrap) {
+    wrap.innerHTML =
+      '<div class="tbl-wrap"><table class="fc2-adj-table">'
+      + '<thead><tr><th>Description</th><th>Type</th><th>Month(s)</th><th>Category</th><th>Amount</th><th>Source</th><th></th></tr></thead>'
+      + '<tbody id="fc2-adj-tbody"></tbody>'
+      + '</table></div>';
+  }
+
+  var tbody = document.getElementById('fc2-adj-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = adjs.map(function(a, i) {
+    var typeBadge = a.type === 'oneoff'
+      ? '<span class="fc2-badge fc2-badge-grey">One-off</span>'
+      : '<span class="fc2-badge fc2-badge-green">Recurring</span>';
+
+    var monthStr = a.type === 'oneoff'
+      ? fc2FmtMonth(a.month || '')
+      : (function(){
+          var s = (a.frequency || 'monthly');
+          if (a.startMonth) s += ' from ' + fc2FmtMonth(a.startMonth);
+          if (a.endMonth)   s += ' to '   + fc2FmtMonth(a.endMonth);
+          else if (a.startMonth) s += ' (ongoing)';
+          return s;
+        })();
+
+    var amtColor = Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)';
+    var editedTag = a.wasEdited ? '<span class="fc2-edited-tag">Edited</span>' : '';
+
+    return '<tr>'
+      + '<td>' + (a.description || '—') + '</td>'
+      + '<td>' + typeBadge + '</td>'
+      + '<td style="font-size:.8rem;color:var(--muted)">' + monthStr + '</td>'
+      + '<td style="font-size:.8rem;color:var(--muted)">' + (a.category || '—') + '</td>'
+      + '<td style="font-family:var(--font-mono);color:' + amtColor + '">' + (Number(a.amount)>=0?'+':'') + fmt(a.amount) + '</td>'
+      + '<td style="font-size:.78rem;color:var(--muted)">' + (a.source || 'Manual') + '</td>'
+      + '<td style="white-space:nowrap">' + editedTag
+      + '<button class="icon-btn" onclick="fc2OpenAdjForm(' + i + ')" title="Edit">✏️</button>'
+      + '<button class="del-btn" onclick="fc2DeleteAdj(' + i + ')" title="Delete">🗑</button>'
+      + '</td>'
       + '</tr>';
   }).join('');
 }
 
-// ── Insights ─────────────────────────────────────────────────
-function renderFcInsights(cashBal) {
-  const el = document.getElementById('fc-insights-panel');
-  if (!el) return;
-  const confirmed = LRECURRING.filter(r => r.status === 'confirmed');
-  if (!confirmed.length) { el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">💡</div><p>Add recurring patterns to see insights.</p></div>'; return; }
-
-  const insights = [];
-  const expenses = confirmed.filter(r => r.type === 'expense');
-  const income   = confirmed.filter(r => r.type === 'income');
-
-  // 1. Largest recurring expense
-  if (expenses.length) {
-    const monthlyAmt = r => r.amount * (365.25 / FREQ_DAYS[r.freq] / 12);
-    const biggest = expenses.slice().sort((a, b) => monthlyAmt(b) - monthlyAmt(a))[0];
-    insights.push({
-      icon: '💸',
-      text: 'Your largest recurring expense is <strong>' + biggest.name + '</strong> at '
-        + (biggest.freq === 'monthly' ? fmt(biggest.amount) + '/month' : fmt(biggest.amount) + ' ' + biggest.freq.replace('ly',''))
-        + ' (' + fmt(monthlyAmt(biggest)) + '/mo effective).',
-    });
+// ── Build month options HTML for the 12-month forecast window ─
+function fc2MonthOptions(selected) {
+  var html = '<option value="">-- Select month --</option>';
+  for (var i = 0; i < 12; i++) {
+    var ym  = fc2YearMonth(i);
+    var lbl = fc2FmtMonth(ym);
+    html += '<option value="' + ym + '"' + (selected === ym ? ' selected' : '') + '>' + lbl + '</option>';
   }
-
-  // 2. Upcoming in 14 days
-  const next14 = getUpcoming(14).filter(i => i.type === 'expense');
-  if (next14.length) {
-    const total14 = next14.reduce((s, i) => s + i.amount, 0);
-    insights.push({
-      icon: '📅',
-      text: 'You have <strong>' + next14.length + ' expense' + (next14.length > 1 ? 's' : '') + '</strong> totalling <strong>' + fmt(total14) + '</strong> due in the next 14 days.',
-    });
-  }
-
-  // 3. Lowest projected balance date
-  if (cashBal !== null) {
-    const rows = projectCashFlow(cashBal, fcRange);
-    const minRow = rows.filter(r => r.balance !== null).sort((a, b) => a.balance - b.balance)[0];
-    if (minRow) {
-      const minDate = new Date(minRow.start + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long' });
-      const isNeg   = minRow.balance < 0;
-      insights.push({
-        icon: isNeg ? '🚨' : '📉',
-        text: 'Based on current patterns, your balance will be lowest around <strong>' + minDate + '</strong> at <strong style="color:' + (isNeg ? 'var(--danger)' : 'var(--warn)') + '">' + fmt(minRow.balance) + '</strong>.',
-      });
-    }
-  }
-
-  // 4. Monthly net
-  const totalMonthlyInc  = income.reduce((s, r)   => s + r.amount * (365.25 / FREQ_DAYS[r.freq]   / 12), 0);
-  const totalMonthlyExp  = expenses.reduce((s, r) => s + r.amount * (365.25 / FREQ_DAYS[r.freq] / 12), 0);
-  const netMonthly = totalMonthlyInc - totalMonthlyExp;
-  if (totalMonthlyInc > 0 || totalMonthlyExp > 0) {
-    insights.push({
-      icon: netMonthly >= 0 ? '✅' : '⚠️',
-      text: 'Confirmed recurring patterns total <strong style="color:var(--success)">' + fmt(totalMonthlyInc) + '</strong>/mo income and <strong style="color:var(--danger)">' + fmt(totalMonthlyExp) + '</strong>/mo expenses — net <strong style="color:' + (netMonthly >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + fmt(netMonthly) + '</strong>/mo.',
-    });
-  }
-
-  el.innerHTML = insights.map(i =>
-    '<div class="insight-card"><div class="insight-icon">' + i.icon + '</div><div class="insight-text">' + i.text + '</div></div>'
-  ).join('');
+  return html;
 }
 
+// ── Populate all month selects in the adj form ─────────────────
+function fc2PopulateMonthSelects(a) {
+  var mSel     = document.getElementById('fc2-adj-month');
+  var startSel = document.getElementById('fc2-adj-start');
+  var endSel   = document.getElementById('fc2-adj-end');
+  var selMonth = a && a.type === 'oneoff'    ? (a.month      || '') : '';
+  var selStart = a && a.type === 'recurring' ? (a.startMonth || '') : '';
+  var selEnd   = a && a.type === 'recurring' ? (a.endMonth   || '') : '';
+  if (mSel)     mSel.innerHTML     = fc2MonthOptions(selMonth);
+  if (startSel) startSel.innerHTML = fc2MonthOptions(selStart);
+  if (endSel)   endSel.innerHTML   = '<option value="">None (ongoing)</option>' + (function(){
+    var h = '';
+    for (var i = 0; i < 12; i++) {
+      var ym = fc2YearMonth(i);
+      h += '<option value="' + ym + '"' + (selEnd === ym ? ' selected' : '') + '>' + fc2FmtMonth(ym) + '</option>';
+    }
+    return h;
+  })();
+}
+
+// ── Adjustment form ───────────────────────────────────────────
+function fc2OpenAdjForm(idx) {
+  fc2AdjEditIdx = idx;
+  var form = document.getElementById('fc2-adj-form');
+  if (!form) return;
+
+  var adjs = fc2Load(FC_ADJ_KEY) || [];
+  var a    = idx >= 0 ? adjs[idx] : null;
+
+  document.getElementById('fc2-adj-desc').value      = a ? (a.description || '') : '';
+  document.getElementById('fc2-adj-type').value      = a ? (a.type || 'oneoff') : 'oneoff';
+  document.getElementById('fc2-adj-cat').value       = a ? (a.category || '') : '';
+  document.getElementById('fc2-adj-amount').value    = a ? a.amount : '';
+  document.getElementById('fc2-adj-freq').value      = a ? (a.frequency || 'monthly') : 'monthly';
+  document.getElementById('fc2-adj-ongoing').checked = a ? (!!a.ongoing) : false;
+
+  fc2PopulateMonthSelects(a);
+  fc2AdjTypeChange();
+  form.style.display = 'block';
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function fc2CloseAdjForm() {
+  var form = document.getElementById('fc2-adj-form');
+  if (form) form.style.display = 'none';
+  fc2AdjEditIdx = -1;
+}
+
+function fc2AdjTypeChange() {
+  var type = document.getElementById('fc2-adj-type') ? document.getElementById('fc2-adj-type').value : 'oneoff';
+  var oneoffRow  = document.getElementById('fc2-adj-oneoff-row');
+  var recurRow   = document.getElementById('fc2-adj-recur-row');
+  if (oneoffRow) oneoffRow.style.display = type === 'oneoff'    ? '' : 'none';
+  if (recurRow)  recurRow.style.display  = type === 'recurring' ? '' : 'none';
+  // Ensure selects are populated when switching type
+  fc2PopulateMonthSelects(null);
+}
+
+function fc2AdjOngoingChange() {
+  var ongoing = document.getElementById('fc2-adj-ongoing') ? document.getElementById('fc2-adj-ongoing').checked : false;
+  var endEl   = document.getElementById('fc2-adj-end');
+  if (endEl) endEl.disabled = ongoing;
+}
+
+function fc2SaveAdj() {
+  var desc    = document.getElementById('fc2-adj-desc').value.trim();
+  var type    = document.getElementById('fc2-adj-type').value;
+  var cat     = document.getElementById('fc2-adj-cat').value;
+  var amount  = parseFloat(document.getElementById('fc2-adj-amount').value);
+  var month   = document.getElementById('fc2-adj-month') ? document.getElementById('fc2-adj-month').value : '';
+  var freq    = document.getElementById('fc2-adj-freq').value;
+  var start   = document.getElementById('fc2-adj-start') ? document.getElementById('fc2-adj-start').value : '';
+  var end     = document.getElementById('fc2-adj-end')   ? document.getElementById('fc2-adj-end').value   : '';
+  var ongoing = document.getElementById('fc2-adj-ongoing').checked;
+
+  if (!desc) { toast('Enter a description'); return; }
+  if (isNaN(amount)) { toast('Enter a valid amount (use negative for expenses)'); return; }
+  if (type === 'oneoff' && !month) { toast('Select a month'); return; }
+  if (type === 'recurring' && !start) { toast('Select a start month'); return; }
+
+  var adjs  = fc2Load(FC_ADJ_KEY) || [];
+  var isEdit = fc2AdjEditIdx >= 0 && fc2AdjEditIdx < adjs.length;
+  var wasFromHistory = isEdit && adjs[fc2AdjEditIdx].source === 'From history';
+
+  var obj = {
+    description: desc,
+    type:        type,
+    category:    cat,
+    amount:      amount,
+    source:      'Manual',
+    wasEdited:   wasFromHistory
+  };
+  if (type === 'oneoff') {
+    obj.month = month;
+  } else {
+    obj.frequency  = freq;
+    obj.startMonth = start;
+    obj.endMonth   = ongoing ? null : (end || null);
+    obj.ongoing    = ongoing;
+  }
+
+  if (isEdit) {
+    if (wasFromHistory) obj.source = adjs[fc2AdjEditIdx].source;
+    adjs[fc2AdjEditIdx] = obj;
+  } else {
+    adjs.push(obj);
+  }
+
+  fc2Save(FC_ADJ_KEY, adjs);
+  fc2CloseAdjForm();
+  renderForecast();
+  toast('Adjustment saved');
+}
+
+function fc2DeleteAdj(idx) {
+  var adjs = fc2Load(FC_ADJ_KEY) || [];
+  adjs.splice(idx, 1);
+  fc2Save(FC_ADJ_KEY, adjs);
+  renderForecast();
+  toast('Removed');
+}
+
+// ── Master render ─────────────────────────────────────────────
+function renderForecast() {
+  var months = fc2GetMonths();
+  fc2RenderSyncBar();
+  fc2RenderKPIs(months);
+  fc2RenderChart(months);
+  fc2RenderInsights(months);
+  fc2RenderStrip(months);
+  fc2RenderAdjs();
+}
 
 // ══════════════════════════════════════════════════════════════

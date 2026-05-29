@@ -375,6 +375,44 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .fc-negative-warn{background:#2a1020;border:1px solid #4a1028;border-radius:9px;padding:12px 16px;font-size:.82rem;color:var(--danger);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
 .rec-edit-form{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
 
+/* ══ FORECAST v2 — KPI STRIP ══ */
+.fc2-kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;min-width:0;}
+.fc2-kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;}
+.fc2-kpi-val{font-family:var(--font-mono);font-size:1.3rem;font-weight:700;margin-bottom:4px;}
+.fc2-kpi-sub{font-size:.72rem;color:var(--muted);}
+
+/* ══ FORECAST v2 — INSIGHTS ══ */
+.fc2-insight-card{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:12px;margin-bottom:10px;}
+.fc2-insight-icon{font-size:1.4rem;flex-shrink:0;margin-top:1px;}
+.fc2-insight-title{font-weight:700;font-size:.88rem;margin-bottom:4px;font-family:var(--font-display);}
+.fc2-insight-body{font-size:.82rem;color:var(--muted);line-height:1.6;}
+.fc2-insight-body strong{color:var(--text);}
+
+/* ══ FORECAST v2 — MONTH STRIP ══ */
+.fc2-strip-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
+.fc2-strip{display:flex;gap:10px;min-width:max-content;padding:2px 2px 4px;}
+.fc2-month-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;min-width:100px;text-align:center;cursor:pointer;transition:border-color .18s,transform .12s;flex-shrink:0;}
+.fc2-month-card:hover{border-color:var(--primary);transform:translateY(-2px);}
+.fc2-month-lbl{font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px;white-space:nowrap;}
+.fc2-month-net{font-family:var(--font-mono);font-size:.96rem;font-weight:700;margin-bottom:4px;}
+.fc2-month-status{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.fc2-month-proxy{font-size:.62rem;color:var(--warn);margin-top:3px;font-weight:600;}
+
+/* ══ FORECAST v2 — ADJUSTMENTS TABLE ══ */
+.fc2-adj-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.fc2-adj-table th{text-align:left;padding:9px 12px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap;}
+.fc2-adj-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.fc2-adj-table tr:hover td{background:rgba(255,255,255,.02);}
+.fc2-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;}
+.fc2-badge-grey{background:rgba(98,120,160,.18);color:#6278A0;}
+.fc2-badge-green{background:rgba(0,200,150,.15);color:#00C896;}
+.fc2-edited-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;color:var(--warn);background:rgba(245,158,11,.15);margin-right:6px;vertical-align:middle;}
+
+/* ══ FORECAST v2 — MONTH MODAL ══ */
+.fc2-modal-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);gap:12px;font-size:.86rem;}
+.fc2-modal-row:last-child{border-bottom:none;}
+.fc2-modal-lbl{color:var(--muted);font-size:.78rem;font-weight:600;flex-shrink:0;}
+
 /* ══ EXPORT ══ */
 .export-section-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap;}
 .export-section-row:last-child{border-bottom:none;}

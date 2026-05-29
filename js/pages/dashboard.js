@@ -284,6 +284,63 @@ function renderDashboard(){
   dbRenderGoals();
   dbRenderInsurance();
   dbRenderTransferStat();
+  dbRenderForecastTable();
+}
+
+function dbRenderForecastTable() {
+  var el = document.getElementById('db-forecast-table-wrap');
+  if (!el) return;
+
+  // Use forecast functions if available
+  if (typeof fc2GetMonths !== 'function' || typeof fc2FmtMonth !== 'function') {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 0">Forecast data unavailable.</div>';
+    return;
+  }
+
+  var months = fc2GetMonths();
+  if (!months || !months.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 0">No forecast data yet.</div>';
+    return;
+  }
+
+  var totalInc = 0, totalExp = 0, totalNet = 0;
+  var rows = '';
+  months.forEach(function(m) {
+    totalInc += m.income   || 0;
+    totalExp += m.expenses || 0;
+    totalNet += m.net      || 0;
+    var netColor  = m.net >= 0 ? 'var(--success)' : 'var(--danger)';
+    var statusDot = m.isActual ? '' : (m.net < 0 ? '<span style="color:var(--danger)">&#x25CF;</span> ' : '');
+    var adjCount  = m.adjustments && m.adjustments.length ? '<span style="font-size:.68rem;color:var(--primary);margin-left:4px">+' + m.adjustments.length + ' adj</span>' : '';
+    rows += '<tr>'
+      + '<td style="white-space:nowrap">' + statusDot + m.label + adjCount + '</td>'
+      + '<td style="text-align:right;font-family:var(--font-mono);color:var(--success)">' + (m.income > 0 ? fmt(m.income) : '—') + '</td>'
+      + '<td style="text-align:right;font-family:var(--font-mono);color:var(--danger)">'  + (m.expenses > 0 ? fmt(m.expenses) : '—') + '</td>'
+      + '<td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:' + netColor + '">' + (m.net >= 0 ? '+' : '') + fmt(m.net) + '</td>'
+      + '<td style="text-align:right"><span class="fc2-badge ' + (m.isActual ? 'fc2-badge-grey' : 'fc2-badge-green') + '">' + (m.isActual ? 'Actual' : 'Forecast') + '</span></td>'
+      + '</tr>';
+  });
+
+  var footerNetColor = totalNet >= 0 ? 'var(--success)' : 'var(--danger)';
+
+  el.innerHTML = '<div class="tbl-wrap"><table style="width:100%;border-collapse:collapse;font-size:.82rem">'
+    + '<thead><tr>'
+    + '<th style="text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border)">Month</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border)">Income</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border)">Expenses</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border)">Net</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border)"></th>'
+    + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '<tfoot><tr style="border-top:1.5px solid var(--border)">'
+    + '<td style="padding:9px 10px;font-weight:700;font-size:.82rem">Total</td>'
+    + '<td style="text-align:right;padding:9px 10px;font-family:var(--font-mono);font-weight:700;color:var(--success)">' + fmt(totalInc) + '</td>'
+    + '<td style="text-align:right;padding:9px 10px;font-family:var(--font-mono);font-weight:700;color:var(--danger)">'  + fmt(totalExp) + '</td>'
+    + '<td style="text-align:right;padding:9px 10px;font-family:var(--font-mono);font-weight:700;color:' + footerNetColor + '">' + (totalNet >= 0 ? '+' : '') + fmt(totalNet) + '</td>'
+    + '<td></td>'
+    + '</tr></tfoot>'
+    + '</table></div>'
+    + '<div style="font-size:.72rem;color:var(--muted);margin-top:8px">Actuals through last month &nbsp;&#xB7;&nbsp; Forecast from this month forward &nbsp;&#xB7;&nbsp; Adjustments included</div>';
 }
 
 function dbRenderSummaryCards(){
