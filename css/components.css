@@ -375,6 +375,43 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .fc-negative-warn{background:#2a1020;border:1px solid #4a1028;border-radius:9px;padding:12px 16px;font-size:.82rem;color:var(--danger);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
 .rec-edit-form{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
 
+/* ══ FORECAST v2 (fc2-*) ══ */
+.fc2-sync-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px 18px!important;}
+.fc2-kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.fc2-kpi{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.fc2-kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px;}
+.fc2-kpi-val{font-family:var(--font-mono);font-size:1.15rem;font-weight:700;margin-bottom:3px;}
+.fc2-kpi-sub{font-size:.72rem;color:var(--muted);}
+.fc2-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+.fc2-month-card{flex:0 0 auto;width:110px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font-body);-webkit-tap-highlight-color:transparent;}
+.fc2-month-card:hover{border-color:var(--primary);background:rgba(240,83,138,.08);}
+.fc2-month-lbl{font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
+.fc2-month-net{font-family:var(--font-mono);font-size:.95rem;font-weight:700;margin-bottom:4px;}
+.fc2-month-status{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.fc2-month-proxy{font-size:.6rem;color:var(--muted);margin-top:3px;}
+.fc2-insight-card{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:10px;}
+.fc2-insight-card:last-child{margin-bottom:0;}
+.fc2-insight-icon{font-size:1.3rem;flex-shrink:0;margin-top:2px;}
+.fc2-insight-title{font-weight:700;font-size:.88rem;margin-bottom:4px;}
+.fc2-insight-body{font-size:.8rem;line-height:1.6;color:var(--muted);}
+.fc2-insight-body strong{color:var(--text);}
+.fc2-modal-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);}
+.fc2-modal-row:last-child{border-bottom:none;}
+.fc2-modal-lbl{font-size:.8rem;color:var(--muted);}
+.fc2-badge{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:20px;}
+.fc2-badge-grey{background:rgba(98,120,160,.18);color:#6278A0;}
+.fc2-badge-green{background:rgba(0,200,150,.15);color:var(--success);}
+.fc2-edited-tag{font-size:.66rem;color:var(--warn);font-weight:700;margin-right:6px;vertical-align:middle;}
+.fc2-adj-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.fc2-adj-table th{text-align:left;padding:9px 12px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap;}
+.fc2-adj-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.fc2-adj-table tr:last-child td{border-bottom:none;}
+.fc2-adj-table tr:hover td{background:rgba(255,255,255,.03);}
+@media(max-width:680px){
+  .fc2-kpi-strip{grid-template-columns:repeat(2,1fr);}
+  .fc2-sync-bar{flex-direction:column;align-items:flex-start;}
+}
+
 /* ══ EXPORT ══ */
 .export-section-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap;}
 .export-section-row:last-child{border-bottom:none;}
