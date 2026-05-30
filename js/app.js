@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['snapshot','dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -42,7 +42,9 @@ function go(id){
     if(nv) nv.classList.toggle('active',p===id);
   });
   try{
-    if(id==='dashboard')renderDashboard();
+    if(id==='snapshot'){if(typeof renderSnapshot==='function')renderSnapshot();}
+    else if(id==='dashboard')renderDashboard();
+    else if(id==='insights'){if(typeof renderInsights==='function')renderInsights();}
     else if(id==='transactions'){renderTx();populateTxCatSelect();}
     else if(id==='bills')renderBills();
     else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
@@ -67,7 +69,7 @@ function go(id){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['dashboard','categories','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
+  var stPages=['dashboard','insights','categories','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
   if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
 }

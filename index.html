@@ -343,7 +343,9 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
   <ul>
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏠</span>Overview</li>
-    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('snapshot')" id="n-snapshot" class="active"><span class="ni">⚡</span><span class="nav-lbl">Snapshot</span></a></li>
+    <li><a onclick="go('dashboard')" id="n-dashboard"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('insights')" id="n-insights"><span class="ni">✨</span><span class="nav-lbl">Insights</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">💳</span>Spend</li>
     <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
@@ -392,70 +394,44 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Your financial snapshot · All amounts in AUD</div>
 
-    <!-- Time period selector -->
-    <div class="dash-period-bar">
-      <div class="dash-mode-toggle">
-        <button class="dash-mode-btn active" id="db-mode-month" onclick="dbSetMode('month')">Monthly</button>
-        <button class="dash-mode-btn" id="db-mode-year" onclick="dbSetMode('year')">Yearly</button>
-      </div>
-      <div class="dash-nav">
-        <button class="dash-nav-btn" onclick="dbNav(-1)">&#8249;</button>
-        <div class="dash-period-lbl" id="db-period-lbl">—</div>
-        <button class="dash-nav-btn" onclick="dbNav(1)">&#8250;</button>
-      </div>
-      <button class="dash-today-btn" onclick="dbGoToday()">Today</button>
-      <button class="dash-today-btn" onclick="renderDashboard();toast('✅ Dashboard refreshed')" style="margin-left:8px;border-color:var(--primary);color:var(--primary)" title="Refresh all dashboard data">↻ Refresh</button>
-    </div>
-
-    <!-- ── DASHBOARD FLEX LAYOUT ── -->
     <div class="db-layout">
 
-      <!-- 1. KPI summary cards -->
+      <!-- 1. Net Worth hero — full width -->
+      <div class="card">
+        <div id="db-networth"></div>
+      </div>
+
+      <!-- 2. KPI 3-chip row — current month -->
       <div class="dash-stats-row" id="db-summary-cards"></div>
 
-      <!-- 2. Cash flow — full width -->
-      <div class="card">
-        <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0">📈 Cash Flow — Last 12 Months</div>
-          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
-        </div>
-        <div class="db-chart-fill"><canvas id="db-cashflow-chart"></canvas></div>
-      </div>
-
-      <!-- 3. Period comparison — full width -->
+      <!-- 3. Account Balances — full width -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0">📊 Income vs Expenses — Period Comparison</div>
-          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+          <div class="section-label" style="margin:0">🏦 Account Balances</div>
+          <a href="#" onclick="go('cash');return false;" class="tile-link">View tracker →</a>
         </div>
-        <div class="db-chart-fill" style="min-height:200px"><canvas id="db-compare-chart"></canvas></div>
-        <div id="db-compare-deltas" style="margin-top:14px"></div>
+        <div id="db-accounts"></div>
       </div>
 
-      <!-- 4. Spending vs Budget — full width -->
+      <!-- 4. Budget Alerts — alert-only view -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0">🎯 Spending vs Budget</div>
+          <div class="section-label" style="margin:0">🎯 Budget Alerts</div>
           <a href="#" onclick="go('bva');return false;" class="tile-link">View full report →</a>
         </div>
         <div id="db-budget-bars"></div>
       </div>
 
-      <!-- 5. Account balances + Net worth -->
-      <div class="db-row">
-        <div class="card">
-          <div class="tile-hd" style="margin-bottom:12px">
-            <div class="section-label" style="margin:0">🏦 Account Balances</div>
-            <a href="#" onclick="go('cash');return false;" class="tile-link">View tracker →</a>
-          </div>
-          <div id="db-accounts"></div>
+      <!-- 5. Upcoming Bills -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:12px">
+          <div class="section-label" style="margin:0">📅 Upcoming Bills</div>
+          <a href="#" onclick="go('bills');return false;" class="tile-link">View all →</a>
         </div>
-        <div class="card">
-          <div class="nw-hero" id="db-networth"></div>
-        </div>
+        <div id="db-upcoming-bills"></div>
       </div>
 
-      <!-- 6. Mortgage + Super -->
+      <!-- 6. Mortgage + Savings Goals — 2-col on desktop, stacked on mobile -->
       <div class="db-row">
         <div class="card">
           <div class="tile-hd" style="margin-bottom:10px">
@@ -464,83 +440,96 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
           <div id="db-mortgage"></div>
         </div>
-        <div class="card">
-          <div class="tile-hd" style="margin-bottom:12px">
-            <div class="section-label" style="margin:0">💼 Superannuation</div>
-            <a href="#" onclick="go('super');return false;" class="tile-link">View details →</a>
+        <div class="card" id="db-goals-card">
+          <div class="tile-hd" style="margin-bottom:10px">
+            <div class="section-label" style="margin:0">🎯 Savings Goals</div>
+            <a href="#" onclick="go('goals');return false;" class="tile-link">View all →</a>
           </div>
-          <div id="db-super"></div>
+          <div id="db-goals"></div>
         </div>
       </div>
 
-      <!-- 5. Tax liabilities (full width, conditionally rendered) -->
+    </div><!-- /db-layout -->
+  </div>
 
-      <!-- 5b. Total Liabilities tile -->
-      <div class="card" id="db-liabilities-tile" onclick="go('liabilities')" style="cursor:pointer">
-        <div id="db-liabilities"></div>
+  <!-- ═══ INSIGHTS ═══ -->
+  <div class="page" id="page-insights">
+    <div class="page-title">Insights</div>
+    <div class="page-sub">Trends, patterns and spending analysis · All amounts in AUD</div>
+
+    <!-- Period controls -->
+    <div class="dash-period-bar">
+      <div class="dash-mode-toggle">
+        <button class="dash-mode-btn active" id="ins-mode-month" onclick="insSetMode('month')">Monthly</button>
+        <button class="dash-mode-btn" id="ins-mode-year" onclick="insSetMode('year')">Yearly</button>
       </div>
+      <div class="dash-nav">
+        <button class="dash-nav-btn" onclick="insNav(-1)">&#8249;</button>
+        <div class="dash-period-lbl" id="ins-period-lbl">—</div>
+        <button class="dash-nav-btn" onclick="insNav(1)">&#8250;</button>
+      </div>
+      <button class="dash-today-btn" onclick="insGoToday()">Today</button>
+    </div>
 
-      <!-- Goals widget (full width) -->
-      <div class="card" id="db-goals-card">
+    <div class="db-layout">
+
+      <!-- Cash Flow Trend -->
+      <div class="card">
         <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0">🎯 Savings Goals</div>
-          <a href="#" onclick="go('goals');return false;" class="tile-link">View all →</a>
+          <div class="section-label" style="margin:0">📈 Cash Flow — Last 12 Months</div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
-        <div id="db-goals"></div>
+        <div class="db-chart-fill"><canvas id="ins-cashflow-chart"></canvas></div>
       </div>
-      <!-- Upcoming bills (hidden placeholder, kept for render functions) -->
-      <div style="display:none"><div id="db-upcoming-bills"></div><div id="db-bills-rate"></div></div>
 
-      <!-- 8. Income Flow Sankey (full width, content-driven height) -->
-      <div class="card" id="db-sankey-row" style="position:relative">
+      <!-- Period Comparison -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:12px">
+          <div class="section-label" style="margin:0">📊 Income vs Expenses — Period Comparison</div>
+          <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div class="db-chart-fill" style="min-height:200px"><canvas id="ins-compare-chart"></canvas></div>
+        <div id="ins-compare-deltas" style="margin-top:14px"></div>
+      </div>
+
+      <!-- Income Flow Sankey -->
+      <div class="card" id="ins-sankey-row" style="position:relative">
         <div class="tile-hd" style="margin-bottom:12px">
           <div class="section-label" style="margin:0">💸 Income Flow</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
-        <div id="db-sankey-container"></div>
-        <div id="db-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
+        <div id="ins-sankey-container"></div>
+        <div id="ins-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
       </div>
 
-      <!-- 9. Spending by Category (full width, height driven by bar count) -->
+      <!-- Spending by Category -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px">
             <div class="section-label" style="margin:0">📊 Spending by Category</div>
-            <div id="db-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+            <div id="ins-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
-        <div id="db-cat-chart-wrap"><canvas id="db-cat-chart"></canvas></div>
-        <div id="db-cat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-cat-chart-wrap"><canvas id="ins-cat-chart"></canvas></div>
+        <div id="ins-cat-breakdown" style="margin-top:16px"></div>
       </div>
 
-      <!-- 10. Spending by Subcategory (full width, height driven by bar count) -->
+      <!-- Spending by Subcategory -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <div class="section-label" style="margin:0">🔎 Spending by Subcategory</div>
-            <select id="db-subcat-filter-cat" onchange="dbRenderSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+            <select id="ins-subcat-filter-cat" onchange="insRenderSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
               <option value="">All Categories</option>
             </select>
-            <div id="db-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+            <div id="ins-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
-        <div id="db-subcat-chart-wrap"><canvas id="db-subcat-chart"></canvas></div>
-        <div id="db-subcat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-subcat-chart-wrap"><canvas id="ins-subcat-chart"></canvas></div>
+        <div id="ins-subcat-breakdown" style="margin-top:16px"></div>
       </div>
-
-      <!-- 11. Insurance status (full width) -->
-      <div class="card">
-        <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0">🛡️ Insurance Status</div>
-          <a href="#" onclick="go('insurance');return false;" class="tile-link">View policies →</a>
-        </div>
-        <div id="db-insurance"></div>
-      </div>
-
-      <!-- Transfer summary (conditionally rendered, full width) -->
-      <div id="db-transfer-stat"></div>
 
     </div><!-- /db-layout -->
   </div>
@@ -1814,6 +1803,8 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/app.js"></script>
 <!-- Pages -->
 <script src="js/pages/dashboard.js"></script>
+<script src="js/pages/insights.js"></script>
+<script src="js/pages/snapshot.js"></script>
 <script src="js/pages/transactions.js"></script>
 <script src="js/pages/bills.js"></script>
 <script src="js/pages/goals.js"></script>
