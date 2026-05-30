@@ -93,8 +93,6 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="mob-menu-label">💳 Spend</div>
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('transfers')"><span>🔄</span>Transfers</button>
-      <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
-      <button class="mob-menu-item" onclick="goMob('forecast')"><span>🔮</span>Forecast</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -102,7 +100,6 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
       <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Assets</button>
-      <button class="mob-menu-item" onclick="goMob('equities')"><span>📈</span>Equities</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -117,6 +114,9 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('super')"><span>💼</span>Super</button>
       <button class="mob-menu-item" onclick="goMob('insurance')"><span>🛡️</span>Insurance</button>
+      <button class="mob-menu-item" onclick="goMob('equities')"><span>📈</span>Equities</button>
+      <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
+      <button class="mob-menu-item" onclick="goMob('forecast')"><span>🔮</span>Forecast</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -349,14 +349,11 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
     <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
     <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
-    <li><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
-    <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">💰</span>Save</li>
     <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
     <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
     <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Total Assets</span></a></li>
-    <li><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏦</span>Borrow</li>
     <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
@@ -365,6 +362,9 @@ window.addEventListener('unhandledrejection',function(e){
     <li class="nav-group-hdr"><span class="nav-gh-icon">📋</span>Plan</li>
     <li><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
     <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Insurance</span></a></li>
+    <li><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
+    <li><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
+    <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Settings</li>
     <li><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
