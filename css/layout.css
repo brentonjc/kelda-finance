@@ -17,6 +17,14 @@
 .nav-logo h1 span{color:var(--primary);}
 .nav-logo p{font-size:.7rem;color:var(--muted);margin-top:2px;}
 #nav ul{list-style:none;padding:8px 0;flex:1;overflow-y:auto;}
+.nav-group-hdr{
+  display:flex;align-items:center;gap:6px;
+  padding:14px 20px 5px;
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);pointer-events:none;user-select:none;list-style:none;
+}
+.nav-group-hdr:first-child{padding-top:8px;}
+.nav-gh-icon{font-size:.85rem;}
 #nav ul li a{
   display:flex;align-items:center;gap:10px;padding:12px 20px;
   color:rgba(255,255,255,.6);font-size:.84rem;font-weight:500;

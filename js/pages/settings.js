@@ -88,7 +88,22 @@ function renderSettings() {
   html += '</div>';
 
   // ════════════════════════════════════════════════════════════
-  // 3D — SETUP WIZARD
+  // 3D — APPEARANCE
+  // ════════════════════════════════════════════════════════════
+  html += '<div class="card mb">';
+  html += '<div class="section-label" style="margin-bottom:14px">Appearance</div>';
+  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Choose a colour theme for the app.</p>';
+  html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+  html += '<button class="theme-btn t-dark"  onclick="setTheme(\'dark\')"  title="Dark"></button>';
+  html += '<button class="theme-btn t-light" onclick="setTheme(\'light\')" title="Light"></button>';
+  html += '<button class="theme-btn t-mint"  onclick="setTheme(\'mint\')"  title="Mint"></button>';
+  html += '<button class="theme-btn t-ocean" onclick="setTheme(\'ocean\')" title="Ocean"></button>';
+  html += '<span style="font-size:.78rem;color:var(--muted)">Select theme</span>';
+  html += '</div>';
+  html += '</div>';
+
+  // ════════════════════════════════════════════════════════════
+  // 3E — SETUP WIZARD
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
   html += '<div class="section-label" style="margin-bottom:10px">Setup Wizard</div>';
@@ -97,7 +112,7 @@ function renderSettings() {
   html += '</div>';
 
   // ════════════════════════════════════════════════════════════
-  // 3E — DANGER ZONE
+  // 3F — DANGER ZONE
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb" style="border:1px solid rgba(239,68,68,.35)">';
   html += '<div class="section-label" style="margin-bottom:12px;color:var(--danger)">Danger Zone</div>';
@@ -248,6 +263,10 @@ function settingsResetPIN(profileId, displayName) {
 }
 
 function settingsResetCategories() {
+  if (typeof _BUILT_IN_CATS === 'undefined') {
+    toast('⚠️ Cannot reset — categories not loaded');
+    return;
+  }
   if (!confirm('Reset all categories to defaults?\n\nYour transactions will NOT be deleted, but any custom categories you created will be removed.')) {
     return;
   }
@@ -290,9 +309,7 @@ function settingsEraseAll() {
 }
 
 function settingsRunWizard() {
-  if (!confirm("Re-run the setup wizard?
-
-This will lock the app and walk you through setup again. Your financial data will NOT be deleted.")) return;
+  if (!confirm("Re-run the setup wizard?\n\nThis will lock the app and walk you through setup again. Your financial data will NOT be deleted.")) return;
   if (typeof wzRestart === "function") wzRestart();
-  else location.reload();
+  else { toast('⚠️ Wizard not available — reload the app'); }
 }
