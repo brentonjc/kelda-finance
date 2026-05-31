@@ -27,13 +27,13 @@
 .nav-gh-icon{font-size:.85rem;}
 #nav ul li a{
   display:flex;align-items:center;gap:10px;padding:12px 20px;
-  color:rgba(255,255,255,.6);font-size:.84rem;font-weight:500;
+  color:var(--nav-text);font-size:.84rem;font-weight:500;
   cursor:pointer;border-left:3px solid transparent;
   transition:all .18s;text-decoration:none;
   -webkit-tap-highlight-color:transparent;
   min-height:44px;
 }
-#nav ul li a:hover,#nav ul li a.active{color:#fff;background:rgba(232,69,122,.15);border-left-color:var(--primary);}
+#nav ul li a:hover,#nav ul li a.active{color:var(--text);background:rgba(240,83,138,.12);border-left-color:var(--primary);}
 #nav ul li a .ni{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
 .nav-footer{padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;}
 .nav-lock-btn{

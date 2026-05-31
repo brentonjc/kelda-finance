@@ -120,7 +120,7 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">⚙️ Settings</div>
+    <div class="mob-menu-label">⚙️ Controls</div>
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('categories')"><span>🏷️</span>Categories</button>
       <button class="mob-menu-item" onclick="goMob('export')"><span>⬇️</span>Export</button>
@@ -343,8 +343,7 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
   <ul>
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏠</span>Overview</li>
-    <li><a onclick="go('snapshot')" id="n-snapshot" class="active"><span class="ni">⚡</span><span class="nav-lbl">Snapshot</span></a></li>
-    <li><a onclick="go('dashboard')" id="n-dashboard"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
     <li><a onclick="go('insights')" id="n-insights"><span class="ni">✨</span><span class="nav-lbl">Insights</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">💳</span>Spend</li>
@@ -368,7 +367,7 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
     <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Settings</li>
+    <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Controls</li>
     <li><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
     <li><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
     <li><a onclick="go('settings')" id="n-settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></a></li>
@@ -391,8 +390,15 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ DASHBOARD ═══ -->
   <div class="page active" id="page-dashboard">
-    <div class="page-title">Dashboard</div>
-    <div class="page-sub">Your financial snapshot · All amounts in AUD</div>
+
+    <!-- Greeting banner -->
+    <div id="db-greeting-banner" style="margin-bottom:20px">
+      <div id="db-hero-greeting" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:3px">GOOD MORNING</div>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <div id="db-greeting-name" style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--text)"></div>
+      </div>
+      <div id="db-greeting-date" style="font-size:.84rem;color:var(--muted);margin-top:3px"></div>
+    </div>
 
     <div class="db-layout">
 
@@ -741,8 +747,12 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ BILLS ═══ -->
   <div class="page" id="page-bills">
-    <div class="page-title">Bills & Due Dates</div>
+    <div class="page-title">Bills &amp; Due Dates</div>
     <div class="page-sub">Track recurring bills and mark them paid</div>
+
+    <!-- Auto-detected suggestions -->
+    <div id="bills-suggestions"></div>
+
     <div class="g2 mb">
       <div class="card">
         <div class="section-label">Add Bill</div>
@@ -752,13 +762,22 @@ window.addEventListener('unhandledrejection',function(e){
           <div><label class="lbl">Due Day of Month</label><input type="number" id="bill-due" placeholder="15" min="1" max="31" inputmode="numeric"/></div>
         </div>
         <div class="form-grid">
+          <div><label class="lbl">Frequency</label>
+            <select id="bill-frequency">
+              <option value="monthly">Monthly</option>
+              <option value="fortnightly">Fortnightly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
           <div><label class="lbl">Icon / Type</label>
             <select id="bill-icon">
               <option value="💡">💡 Electricity</option><option value="💧">💧 Water</option>
               <option value="📡">📡 Internet</option><option value="📱">📱 Phone</option>
               <option value="🏠">🏠 Rent/Mortgage</option><option value="🚗">🚗 Car Insurance</option>
-              <option value="❤️">❤️ Health Insurance</option><option value="🎬">🎬 Streaming</option>
-              <option value="🧾">🧾 Other</option>
+              <option value="❤️">❤️ Health Insurance</option><option value="👶">👶 Childcare</option>
+              <option value="🎬">🎬 Streaming</option><option value="🧾">🧾 Other</option>
             </select>
           </div>
         </div>
@@ -778,8 +797,15 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ MORTGAGE ═══ -->
   <div class="page" id="page-mortgage">
-    <div class="page-title">Mortgage & Home</div>
-    <div class="page-sub">Track your mortgage, offset account and home equity</div>
+    <div class="page-title">Mortgage &amp; Home</div>
+    <div class="page-sub">Track your mortgages, offset accounts and home equity</div>
+
+    <!-- Property tabs -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <div id="mortgage-tabs" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
+      <button class="btn btn-ghost btn-sm" onclick="mortgageAddProperty()">+ Add Property</button>
+    </div>
+
     <div class="g2 mb">
       <div class="card">
         <div class="section-label">Mortgage Details</div>
@@ -1163,21 +1189,8 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="super-ass-row"><label>SGC Rate (%)</label><input type="number" id="sb-sgc" value="11.5" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="sb-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="sb-inflation" value="2.5" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
-        <!-- ART Lifecycle badge -->
-        <div style="margin-top:14px;background:#1a1020;border:1px solid #5a2a50;border-radius:10px;padding:12px 14px">
-          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);margin-bottom:8px">
-            🔄 ART Lifecycle Investment Strategy
-          </div>
-          <div style="font-size:.76rem;color:var(--muted);line-height:1.6;margin-bottom:10px">
-            Returns automatically adjust by age based on ART's Lifecycle pools:<br/>
-            <span style="color:var(--text)">Under 50 → High Growth:</span> ~8.5% p.a. (85% growth assets)<br/>
-            <span style="color:var(--text)">50–55 → Transitioning:</span> ~7.0% p.a. (mixed)<br/>
-            <span style="color:var(--text)">55–60 → Balanced mix:</span> ~5.5% p.a. (~70% growth)<br/>
-            <span style="color:var(--text)">60+ → Balanced/Cash:</span> ~4.5% p.a. (defensive)<br/>
-            <span style="color:var(--muted);font-size:.7rem">Fees: 0.67% p.a. (ART Super Savings). Source: ART 10yr return to Sep 2024.</span>
-          </div>
-          <div id="sb-lifecycle-current" style="font-size:.76rem;font-weight:600;color:var(--pink-light)"></div>
-        </div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.)</label><input type="number" id="sb-return" value="7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="sb-fees" value="0.8" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <div id="sb-result" style="margin-top:14px"></div>
       </div>
       <!-- Shelley -->
@@ -1804,7 +1817,6 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- Pages -->
 <script src="js/pages/dashboard.js"></script>
 <script src="js/pages/insights.js"></script>
-<script src="js/pages/snapshot.js"></script>
 <script src="js/pages/transactions.js"></script>
 <script src="js/pages/bills.js"></script>
 <script src="js/pages/goals.js"></script>

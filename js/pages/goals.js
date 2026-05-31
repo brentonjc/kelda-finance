@@ -2,7 +2,42 @@
 // GOALS PAGE
 // ══════════════════════════════════════════════════════════════
 
-function _goalCurrent(g){ return Number(g.currentAmount)||Number(g.saved)||0; }
+// Build account select HTML with live CT balances as hints
+function _goalAccountSelect(selectedVal) {
+  var accts = [
+    { id: 'offset', def: 'Offset Account' },
+    { id: 'home',   def: 'Home Transaction' },
+    { id: 'sav1',   def: 'Savings Account 1' },
+    { id: 'sav2',   def: 'Savings Account 2' }
+  ];
+  var html = '<select id="g-account"><option value="">— None —</option>';
+  accts.forEach(function(a) {
+    var name = typeof getAccountName === 'function' ? getAccountName(a.id) : a.def;
+    var bal  = _goalCtBalance(a.id);
+    var hint = bal !== null ? ' · ' + Number(bal).toLocaleString('en-AU', {style:'currency',currency:'AUD'}) : '';
+    var sel  = (selectedVal === a.id) ? ' selected' : '';
+    html += '<option value="' + a.id + '"' + sel + '>' + name + hint + '</option>';
+  });
+  html += '</select>';
+  return html;
+}
+
+// Get current balance — prefer live CT balance when a linked account is set
+function _goalCtBalance(acctId) {
+  if (!acctId) return null;
+  try {
+    var months = typeof ctAllMonths === 'function' ? ctAllMonths() : [];
+    if (!months.length) return null;
+    var lm = months[months.length - 1];
+    var bal = (CT[acctId] || {})[lm];
+    return (bal !== undefined && bal !== null) ? Number(bal) : null;
+  } catch(e) { return null; }
+}
+function _goalCurrent(g) {
+  var ctBal = _goalCtBalance(g.linkedAccount);
+  if (ctBal !== null) return ctBal;
+  return Number(g.currentAmount) || Number(g.saved) || 0;
+}
 function _goalTarget(g){ return Number(g.targetAmount)||Number(g.target)||0; }
 
 function renderGoalsPage(){
@@ -36,14 +71,8 @@ function renderGoalsPage(){
         <div><label class="lbl">Target Date (optional)</label><input type="date" id="g-date"/></div>
       </div>
       <div class="form-grid">
-        <div><label class="lbl">Linked Account</label>
-          <select id="g-account">
-            <option value="">— None —</option>
-            <option value="offset">Offset</option>
-            <option value="home">Home Transaction</option>
-            <option value="brenton">Brenton Savings</option>
-            <option value="shelley">Shelley Savings</option>
-          </select>
+        <div><label class="lbl">Linked Account <span style="font-size:.7rem;color:var(--muted)">(balance syncs from Cash Tracker)</span></label>
+          ${_goalAccountSelect()}
         </div>
       </div>
       <button class="btn btn-primary" onclick="addGoalFromPage()">➕ Add Goal</button>
@@ -64,11 +93,13 @@ function renderGoalCards(){
     const rem=Math.max(0,target-current);
     const barCls=pct>=100?'over':pct>=75?'warn':'';
     const proj=_goalProjection(g,current,target);
+    var isCtLinked = g.linkedAccount && _goalCtBalance(g.linkedAccount) !== null;
+    var acctName = isCtLinked && typeof getAccountName === 'function' ? getAccountName(g.linkedAccount) : '';
     return`<div class="goal-card" style="margin-bottom:12px">
       <div class="goal-hd">
         <div>
           <div class="goal-name">${g.icon||'🎯'} ${pct>=100?'✅ ':''}${g.name}</div>
-          <div style="font-size:.74rem;color:var(--muted);margin-top:2px;font-family:var(--font-mono)">${fmtAUD(current)} saved of ${fmtAUD(target)}</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-top:2px;font-family:var(--font-mono)">${fmtAUD(current)} saved of ${fmtAUD(target)}${isCtLinked?' · <span style="color:var(--success);font-size:.7rem">🔗 '+acctName+'</span>':''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="goal-pct">${pct.toFixed(0)}%</div>

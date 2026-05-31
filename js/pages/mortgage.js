@@ -1,4 +1,113 @@
 // ══════════════════════════════════════════════════════════════
+// MULTI-PROPERTY SUPPORT
+// ══════════════════════════════════════════════════════════════
+
+var _mortgagePropIdx = 0; // active property tab index
+
+// Ensure MORTGAGE has a properties array; migrate legacy flat object on first call
+function _mortgageEnsureProps() {
+  if (!MORTGAGE.properties || !Array.isArray(MORTGAGE.properties)) {
+    // Migrate: wrap existing flat MORTGAGE fields as property 0
+    var legacy = {
+      id: Date.now(),
+      name: 'Primary Property',
+      balance:    MORTGAGE.balance    || 0,
+      original:   MORTGAGE.original   || 0,
+      rate:       MORTGAGE.rate       || 0,
+      years:      MORTGAGE.years      || 0,
+      homeValue:  MORTGAGE.homeValue  || 0,
+      reptype:    MORTGAGE.reptype    || 'pi',
+      offset:     MORTGAGE.offset     || 0,
+      offsetName: MORTGAGE.offsetName || 'Offset Account'
+    };
+    MORTGAGE.properties = [legacy];
+    try { save(K.mortgage, MORTGAGE); } catch(e) {}
+  }
+  return MORTGAGE.properties;
+}
+
+function _mortgageActiveProp() {
+  var props = _mortgageEnsureProps();
+  if (_mortgagePropIdx >= props.length) _mortgagePropIdx = 0;
+  return props[_mortgagePropIdx] || props[0];
+}
+
+function mortgageRenderTabs() {
+  var el = document.getElementById('mortgage-tabs');
+  if (!el) return;
+  var props = _mortgageEnsureProps();
+  el.innerHTML = props.map(function(p, i) {
+    var active = i === _mortgagePropIdx;
+    return '<button class="btn btn-sm ' + (active ? 'btn-primary' : 'btn-ghost') + '" '
+      + 'onclick="mortgageSwitchProp(' + i + ')" style="position:relative">'
+      + p.name
+      + (props.length > 1 && active
+          ? ' <span onclick="event.stopPropagation();mortgageDeleteProp(' + i + ')" '
+            + 'style="margin-left:6px;font-size:.8rem;opacity:.7">×</span>'
+          : '')
+      + '</button>';
+  }).join('');
+}
+
+function mortgageSwitchProp(idx) {
+  // Save current form values to current property first
+  _mortgageSaveActive();
+  _mortgagePropIdx = idx;
+  renderMortgage();
+  mortgageRenderTabs();
+}
+
+function mortgageAddProperty() {
+  var props = _mortgageEnsureProps();
+  var newProp = {
+    id: Date.now(),
+    name: 'Property ' + (props.length + 1),
+    balance: 0, original: 0, rate: 0, years: 0,
+    homeValue: 0, reptype: 'pi', offset: 0, offsetName: 'Offset Account'
+  };
+  props.push(newProp);
+  try { save(K.mortgage, MORTGAGE); } catch(e) {}
+  _mortgagePropIdx = props.length - 1;
+  renderMortgage();
+  mortgageRenderTabs();
+  // Let user rename the property
+  var newName = window.prompt('Name this property:', newProp.name);
+  if (newName && newName.trim()) {
+    props[_mortgagePropIdx].name = newName.trim();
+    try { save(K.mortgage, MORTGAGE); } catch(e) {}
+    mortgageRenderTabs();
+  }
+}
+
+function mortgageDeleteProp(idx) {
+  var props = _mortgageEnsureProps();
+  if (props.length <= 1) { toast('Cannot delete the only property'); return; }
+  var p = props[idx];
+  if (!window.confirm('Delete "' + p.name + '"?\n\nAll data for this property will be removed.')) return;
+  props.splice(idx, 1);
+  if (_mortgagePropIdx >= props.length) _mortgagePropIdx = props.length - 1;
+  try { save(K.mortgage, MORTGAGE); } catch(e) {}
+  renderMortgage();
+  mortgageRenderTabs();
+}
+
+// Save current form state to the active property object (before switching tabs)
+function _mortgageSaveActive() {
+  var props = _mortgageEnsureProps();
+  if (!props[_mortgagePropIdx]) return;
+  var p = props[_mortgagePropIdx];
+  var g = function(id) { var e = document.getElementById(id); return e ? e.value : ''; };
+  p.balance    = parseFloat(g('m-balance'))    || p.balance;
+  p.original   = parseFloat(g('m-original'))   || p.original;
+  p.rate       = parseFloat(g('m-rate'))        || p.rate;
+  p.years      = parseInt(g('m-years'))         || p.years;
+  p.homeValue  = parseFloat(g('m-homevalue'))   || p.homeValue;
+  p.reptype    = g('m-reptype')                 || p.reptype;
+  p.offset     = parseFloat(g('m-offset'))      || p.offset;
+  p.offsetName = g('m-offset-name')             || p.offsetName;
+}
+
+// ══════════════════════════════════════════════════════════════
 function calcRepayment(principal,rate,years){
   if(!principal||!rate||!years)return 0;
   const r=rate/100/12,n=years*12;
@@ -14,6 +123,7 @@ function calcMonthsPayoff(principal,rate,pmt){
 function fmtMonths(m){if(!isFinite(m)||m<=0)return'—';const y=Math.floor(m/12),mo=Math.round(m%12);return y===0?mo+'mo':mo===0?y+'yr':y+'yr '+mo+'mo';}
 
 function saveMortgage(){
+  var props = _mortgageEnsureProps();
   // Auto-sync: use typed offset if provided, otherwise pull from Cash Tracker
   const typedOffset=parseFloat(document.getElementById('m-offset').value)||0;
   const{balance:ctOff}=getLatestCTOffset();
@@ -21,17 +131,23 @@ function saveMortgage(){
   if(ctOff>0&&typedOffset===0){
     document.getElementById('m-offset').value=resolvedOffset;
   }
-  MORTGAGE={
-    balance:parseFloat(document.getElementById('m-balance').value)||0,
-    original:parseFloat(document.getElementById('m-original').value)||0,
-    rate:parseFloat(document.getElementById('m-rate').value)||0,
-    years:parseInt(document.getElementById('m-years').value)||0,
-    homeValue:parseFloat(document.getElementById('m-homevalue').value)||0,
-    reptype:document.getElementById('m-reptype').value||'pi',
-    offset:resolvedOffset,
-    offsetName:document.getElementById('m-offset-name').value.trim()||'Offset Account',
-  };
-  save(K.mortgage,MORTGAGE);
+  // Write to the active property
+  var p = props[_mortgagePropIdx] || props[0];
+  p.balance    = parseFloat(document.getElementById('m-balance').value)||0;
+  p.original   = parseFloat(document.getElementById('m-original').value)||0;
+  p.rate       = parseFloat(document.getElementById('m-rate').value)||0;
+  p.years      = parseInt(document.getElementById('m-years').value)||0;
+  p.homeValue  = parseFloat(document.getElementById('m-homevalue').value)||0;
+  p.reptype    = document.getElementById('m-reptype').value||'pi';
+  p.offset     = resolvedOffset;
+  p.offsetName = document.getElementById('m-offset-name').value.trim()||'Offset Account';
+  // Also update legacy flat fields from first property for backward compat with other pages
+  if (_mortgagePropIdx === 0) {
+    MORTGAGE.balance=p.balance;MORTGAGE.original=p.original;MORTGAGE.rate=p.rate;
+    MORTGAGE.years=p.years;MORTGAGE.homeValue=p.homeValue;MORTGAGE.reptype=p.reptype;
+    MORTGAGE.offset=p.offset;MORTGAGE.offsetName=p.offsetName;
+  }
+  try { save(K.mortgage, MORTGAGE); } catch(e) {}
   renderMortgage();
   renderPaydownChart();
   renderRateSensitivity();
@@ -89,7 +205,10 @@ function updateCTOffsetBanner(balance,month){
 }
 
 function renderMortgage(){
-  const m=MORTGAGE;
+  mortgageRenderTabs();
+  // Load active property into form fields
+  var p=_mortgageActiveProp();
+  var m=p; // alias so remaining code below still works
   if(m.balance)document.getElementById('m-balance').value=m.balance;
   if(m.original)document.getElementById('m-original').value=m.original;
   if(m.rate)document.getElementById('m-rate').value=m.rate;

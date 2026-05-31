@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['snapshot','dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -42,8 +42,7 @@ function go(id){
     if(nv) nv.classList.toggle('active',p===id);
   });
   try{
-    if(id==='snapshot'){if(typeof renderSnapshot==='function')renderSnapshot();}
-    else if(id==='dashboard')renderDashboard();
+    if(id==='dashboard')renderDashboard();
     else if(id==='insights'){if(typeof renderInsights==='function')renderInsights();}
     else if(id==='transactions'){renderTx();populateTxCatSelect();}
     else if(id==='bills')renderBills();

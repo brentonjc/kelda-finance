@@ -8,12 +8,8 @@ function renderSuperPage(){
   if(d.b){
     ['balance','age','retire','salary','sgc','extra'].forEach(f=>fill('sb-'+f,d.b[f]));
     fill('sb-inflation',d.b.inflation);
-    const age=d.b.age;
-    if(age){
-      const pool=artLifecycleReturn(age);
-      const el=document.getElementById('sb-lifecycle-current');
-      if(el)el.textContent=`Current pool for age ${age}: ${pool.label} (${pool.ret}% gross / ${(pool.ret-pool.fees).toFixed(2)}% net)`;
-    }
+    fill('sb-return', d.b.ret !== undefined ? d.b.ret : 7);
+    fill('sb-fees',   d.b.fees !== undefined ? d.b.fees : 0.8);
   }
   if(d.s){
     ['balance','age','retire','salary','sgc','extra'].forEach(f=>fill('ss-'+f,d.s[f]));

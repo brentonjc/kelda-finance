@@ -47,9 +47,23 @@ function renderDashboard() {
   const _heroInc   = document.getElementById('db-hero-inc');
   const _heroExp   = document.getElementById('db-hero-exp');
   const _heroSaved = document.getElementById('db-hero-saved');
-  const _hr        = new Date().getHours();
+  const _now       = new Date();
+  const _hr        = _now.getHours();
   const _greet     = _hr < 12 ? 'GOOD MORNING' : _hr < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
   if (_heroGreet) _heroGreet.textContent = _greet;
+  // Greeting name
+  var _gnEl = document.getElementById('db-greeting-name');
+  if (_gnEl) {
+    var _gname = typeof getUserName === 'function' ? getUserName(activeProfile) : activeProfile;
+    _gnEl.textContent = (_gname && _gname !== 'joint') ? _gname : 'Welcome back';
+  }
+  // Greeting date — "Sunday, 1 June 2026 · June 2026"
+  var _gdEl = document.getElementById('db-greeting-date');
+  if (_gdEl) {
+    var _dayStr  = _now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    var _monStr  = _now.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
+    _gdEl.textContent = _dayStr + ' · showing ' + _monStr;
+  }
   const _pfx  = dbPeriodStr();
   const _inc  = activeTX().filter(t => t.type === 'income'  && t.date.startsWith(_pfx)).reduce((s, t) => s + Number(t.amount), 0);
   const _exp  = activeTX().filter(t => t.type === 'expense' && t.date.startsWith(_pfx)).reduce((s, t) => s + Number(t.amount), 0);

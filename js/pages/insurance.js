@@ -168,17 +168,11 @@ function projectSuper(d){
 function calcSuper(){
   const g=(id)=>parseFloat(document.getElementById(id)?.value)||0;
   SUPER.b={balance:g('sb-balance'),age:g('sb-age'),retire:g('sb-retire'),salary:g('sb-salary'),
-    sgc:g('sb-sgc'),extra:g('sb-extra'),inflation:g('sb-inflation'),useLifecycle:true};
+    sgc:g('sb-sgc'),extra:g('sb-extra'),inflation:g('sb-inflation'),
+    ret:g('sb-return')||7, fees:g('sb-fees')||0.8};
   SUPER.s={balance:g('ss-balance'),age:g('ss-age'),retire:g('ss-retire'),salary:g('ss-salary'),
     sgc:g('ss-sgc'),extra:g('ss-extra'),ret:g('ss-return'),fees:g('ss-fees'),inflation:g('ss-inflation')};
   save(K.superdata,SUPER);
-  // Update ART lifecycle current pool badge
-  const currentAge=g('sb-age');
-  if(currentAge){
-    const pool=artLifecycleReturn(currentAge);
-    const el=document.getElementById('sb-lifecycle-current');
-    if(el)el.textContent=`Current pool for age ${currentAge}: ${pool.label} (${pool.ret}% gross / ${(pool.ret-pool.fees).toFixed(2)}% net)`;
-  }
   showSuperResults();renderSuperChart();renderD293Section();
 }
 
@@ -187,10 +181,10 @@ function showSuperResults(){
     const d=SUPER[p];const el=document.getElementById('s'+p+'-result');if(!el)return;
     if(!d?.age||!d?.retire||!d?.salary){el.innerHTML='';return;}
     // Use lifecycle projection for Brenton, standard for Shelley
-    const rows=p==='b'&&d.useLifecycle?projectSuperLifecycle(d):projectSuper(d);
+    const rows=projectSuper(d);
     const final=rows[rows.length-1];
     const sgcAmt=(d.salary||0)*(d.sgc||11.5)/100;
-    const methodNote=p==='b'?'ART Lifecycle (age-adjusted returns)':'Standard projection';
+    const methodNote='Standard projection';
     el.innerHTML=`<div style="text-align:center;padding:10px;background:var(--primary-bg);border-radius:10px;margin-bottom:10px">
       <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">At age ${d.retire}</div>
       <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--primary)">${fmt(final.nominal)}</div>
@@ -202,7 +196,7 @@ function showSuperResults(){
 }
 
 function renderSuperChart(){
-  const rowsB=SUPER.b?.age?(SUPER.b.useLifecycle?projectSuperLifecycle(SUPER.b):projectSuper(SUPER.b)):[];
+  const rowsB=SUPER.b?.age?projectSuper(SUPER.b):[];
   const rowsS=SUPER.s?.age?projectSuper(SUPER.s):[];
   const now=new Date().getFullYear();
   const maxLen=Math.max(rowsB.length,rowsS.length);
