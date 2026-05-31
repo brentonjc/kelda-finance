@@ -397,11 +397,20 @@ window.addEventListener('unhandledrejection',function(e){
       <div id="db-greeting-date" style="font-size:.84rem;color:var(--muted);margin-top:3px"></div>
     </div>
 
+    <!-- Gamification row: streaks + nudge (above main layout) -->
+    <div id="db-gamification" style="margin-bottom:0">
+      <div id="db-streaks-row" class="streaks-row"></div>
+      <div id="db-nudge-wrap"></div>
+    </div>
+
     <div class="db-layout">
 
       <!-- 1. Net Worth hero — full width -->
       <div class="card">
-        <div id="db-networth"></div>
+        <div class="nw-health-wrap">
+          <div id="db-networth"></div>
+          <div id="db-health-score"></div>
+        </div>
       </div>
 
       <!-- 2. KPI 3-chip row — current month -->
@@ -1875,5 +1884,16 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 </script>
+
+<!-- Celebration overlay (singleton, shared by all triggers) -->
+<div class="celebration-overlay" id="celebration-overlay">
+  <div class="celebration-toast" id="celebration-toast">
+    <div class="toast-icon" id="toast-icon">🎉</div>
+    <div>
+      <div class="toast-title" id="toast-title"></div>
+      <div class="toast-sub" id="toast-sub"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
