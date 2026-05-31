@@ -34,3 +34,19 @@ let TRANSFERS  = load(K.transfers)  || [];
 let USER_CONFIG = load('cff_userconfig') || {};
 let EQUITIES    = load(K.equities)     || []; // [{id,ticker,company,type,qty,costBase,currentPrice,currency,notes,sales:[]}]
 let LIABILITIES = load(K.liabilities) || []; // [{id,type,lender,balance,originalBalance,rate,rateType,fixedExpiry,payment,dueDay,termMonths,creditLimit,notes,addToBills,createdAt}]
+// ACCOUNTS — [{id,name,icon,currency,location,color,isCore}]
+// Migrates from USER_CONFIG on first load. Never stores BSB/account numbers/bank names.
+var ACCOUNTS = (function() {
+  var stored = load(K.accounts);
+  if (stored && stored.length) return stored;
+  // Migrate names from USER_CONFIG (acct_* keys) — no sensitive data ever stored
+  var uc = USER_CONFIG || {};
+  var a = [
+    { id:'offset', name: uc.acct_offset || 'Offset Account',    icon:'🏦', currency:'AUD', location:'Australia', color:'#e8457a', isCore:true },
+    { id:'home',   name: uc.acct_home   || 'Joint Transaction',  icon:'🏠', currency:'AUD', location:'Australia', color:'#7c5cbf', isCore:true },
+    { id:'sav1',   name: uc.acct_sav1   || 'Savings Account 1', icon:'💰', currency:'AUD', location:'Australia', color:'#f07aaa', isCore:true },
+    { id:'sav2',   name: uc.acct_sav2   || 'Savings Account 2', icon:'💎', currency:'AUD', location:'Australia', color:'#a29bfe', isCore:true }
+  ];
+  try { localStorage.setItem(K.accounts, JSON.stringify(a)); } catch(e) {}
+  return a;
+})();

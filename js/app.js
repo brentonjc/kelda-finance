@@ -144,6 +144,11 @@ function getUserIcon(profileId) {
   return '👤';
 }
 function getAccountName(acctId) {
+  // Check ACCOUNTS first (covers custom + renamed core accounts)
+  if (typeof ACCOUNTS !== 'undefined' && ACCOUNTS) {
+    var acct = ACCOUNTS.find(function(a){ return a.id === acctId; });
+    if (acct && acct.name) return acct.name;
+  }
   var defaults = {offset:'Offset Account',home:'Home Transaction',sav1:'Savings Account 1',sav2:'Savings Account 2'};
   return USER_CONFIG['acct_' + acctId] || CTCFG[acctId + 'Lbl'] || defaults[acctId] || acctId;
 }

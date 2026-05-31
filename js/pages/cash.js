@@ -1,12 +1,31 @@
 // ══════════════════════════════════════════════════════════════
 // CASH TRACKER
 // ══════════════════════════════════════════════════════════════
-const CT_ACCTS=[
+// CT_ACCTS — built dynamically from ACCOUNTS (data.js) so new accounts appear automatically.
+// Falls back to the original 4 if ACCOUNTS is unavailable.
+var _CT_ACCTS_DEFAULTS = [
   {id:'offset',icon:'🏦',color:'#e8457a',light:'#2a1030',owner:'shared',def:'Offset Account'},
   {id:'home',  icon:'🏠',color:'#7c5cbf',light:'#1e1535',owner:'shared',def:'Home Transaction'},
   {id:'sav1',  icon:'💰',color:'#f07aaa',light:'#261225',owner:'brenton',def:'Brenton Savings'},
-  {id:'sav2',  icon:'💎',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Shelley Savings'},
+  {id:'sav2',  icon:'💎',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Shelley Savings'}
 ];
+function _buildCTAccts() {
+  if (typeof ACCOUNTS !== 'undefined' && ACCOUNTS && ACCOUNTS.length) {
+    return ACCOUNTS.map(function(a) {
+      var def = _CT_ACCTS_DEFAULTS.find(function(d){ return d.id === a.id; }) || {};
+      return {
+        id:    a.id,
+        icon:  a.icon  || def.icon  || '🏦',
+        color: a.color || def.color || '#e8457a',
+        light: def.light || '#2a1030',
+        owner: a.owner || def.owner || 'shared',
+        def:   a.name  || def.def   || a.id
+      };
+    });
+  }
+  return _CT_ACCTS_DEFAULTS;
+}
+var CT_ACCTS = _buildCTAccts();
 
 function ctLabel(a){
   return getAccountName(a.id) || a.def;

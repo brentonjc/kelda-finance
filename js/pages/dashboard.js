@@ -1094,12 +1094,16 @@ function dbRenderAcctTiles() {
     return;
   }
 
-  var accts = [
-    { id:'offset', label: (CTCFG.offsetLbl || 'Offset Account'),  icon:'🏦', color:'#F0538A' },
-    { id:'home',   label: (CTCFG.homeLbl   || 'Joint Account'),   icon:'🏠', color:'#818CF8' },
-    { id:'sav1',   label: (CTCFG.sav1Lbl   || (typeof getUserName==='function' ? getUserName('brenton') : 'Savings 1') + ' Savings'), icon:'💰', color:'#00C896' },
-    { id:'sav2',   label: (CTCFG.sav2Lbl   || (typeof getUserName==='function' ? getUserName('shelley') : 'Savings 2') + ' Savings'), icon:'💎', color:'#F59E0B' }
-  ];
+  // Build from ACCOUNTS (supports custom accounts)
+  var _acctColors = ['#F0538A','#818CF8','#00C896','#F59E0B','#38BDF8','#FB923C','#A78BFA','#34D399'];
+  var accts = (typeof ACCOUNTS !== 'undefined' && ACCOUNTS && ACCOUNTS.length ? ACCOUNTS : [
+    { id:'offset', name:'Offset Account',    icon:'🏦' },
+    { id:'home',   name:'Joint Transaction', icon:'🏠' },
+    { id:'sav1',   name:'Savings 1',         icon:'💰' },
+    { id:'sav2',   name:'Savings 2',         icon:'💎' }
+  ]).map(function(a, i) {
+    return { id: a.id, label: a.name || a.id, icon: a.icon || '🏦', color: a.color || _acctColors[i % _acctColors.length] };
+  });
 
   var dateLbl = new Date(lm + '-02').toLocaleString('en-AU', { month: 'long', year: 'numeric' });
   var tilesHtml = '';

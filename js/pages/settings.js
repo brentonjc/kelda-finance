@@ -67,24 +67,28 @@ function renderSettings() {
   // 3C — ACCOUNTS
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
-  html += '<div class="section-label" style="margin-bottom:18px">Accounts</div>';
-  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">These names appear across Cash Tracker, Dashboard and reports.</p>';
-
-  var _accts = [
-    { id:'offset', icon:'🏦', label:'Offset / Main Account',          def:'Offset Account'    },
-    { id:'home',   icon:'🏠', label:'Joint Transaction Account',       def:'Home Transaction'  },
-    { id:'sav1',   icon:'💰', label:'Savings Account 1 (Profile 1)',   def:'Savings Account 1' },
-    { id:'sav2',   icon:'💎', label:'Savings Account 2 (Profile 2)',   def:'Savings Account 2' }
-  ];
-  for (var _ai = 0; _ai < _accts.length; _ai++) {
-    var _a = _accts[_ai];
-    html += '<div class="settings-row"' + (_ai > 0 ? ' style="margin-top:10px"' : '') + '>';
-    html += '<label class="lbl">' + _a.icon + ' ' + _a.label + '</label>';
-    html += '<input type="text" id="s-acct-' + _a.id + '" value="' + _settEsc(getAccountName(_a.id)) + '" placeholder="' + _settEsc(_a.def) + '" style="font-size:16px"/>';
-    html += '</div>';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">';
+  html += '<div class="section-label" style="margin:0">Accounts</div>';
+  if (ACCOUNTS.length < 8) {
+    html += '<button class="btn btn-ghost btn-sm" onclick="settAcctShowAdd()">+ Add Account</button>';
   }
+  html += '</div>';
 
-  html += '<button class="btn btn-primary btn-sm" onclick="settingsSaveAccounts()" style="margin-top:14px">Save Accounts</button>';
+  // Privacy notice
+  html += '<div class="sett-privacy-notice">'
+    + '<div class="sett-privacy-icon">🔒</div>'
+    + '<div>'
+    + '<div class="sett-privacy-title">Privacy protected</div>'
+    + '<div class="sett-privacy-body">Only account nicknames are stored — never BSBs, account numbers or bank names. All data stays on your device and is never transmitted.</div>'
+    + '</div>'
+    + '</div>';
+
+  // Account list
+  html += '<div id="sett-accts-list">' + _settAcctsList() + '</div>';
+
+  // Add form placeholder
+  html += '<div id="sett-acct-add-form" style="display:none">' + _settAcctAddForm() + '</div>';
+
   html += '</div>';
 
   // ════════════════════════════════════════════════════════════
@@ -222,29 +226,179 @@ function settingsSaveProfiles() {
   renderSettings();
 }
 
-function settingsSaveAccounts() {
-  var g = function(id) {
-    var el = document.getElementById(id);
-    return el ? el.value.trim() : '';
-  };
-  USER_CONFIG.acct_offset = g('s-acct-offset') || 'Offset Account';
-  USER_CONFIG.acct_home   = g('s-acct-home')   || 'Home Transaction';
-  USER_CONFIG.acct_sav1   = g('s-acct-sav1')   || 'Savings Account 1';
-  USER_CONFIG.acct_sav2   = g('s-acct-sav2')   || 'Savings Account 2';
-  saveUserConfig();
-  applyUserConfig();
-  // Sync mob-menu panel inputs too
-  var sync2 = {
-    'usc-acct-offset': USER_CONFIG.acct_offset,
-    'usc-acct-home':   USER_CONFIG.acct_home,
-    'usc-acct-sav1':   USER_CONFIG.acct_sav1,
-    'usc-acct-sav2':   USER_CONFIG.acct_sav2
-  };
-  Object.keys(sync2).forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.value = sync2[id];
-  });
+// ── Account management helpers ───────────────────────────────
+var _CURRENCIES = ['AUD','USD','GBP','EUR','NZD','SGD','HKD','JPY','CAD','CHF'];
+var _LOCATIONS  = ['Australia','New Zealand','United States','United Kingdom','Europe','Asia','Singapore','Canada','Other'];
+
+function _settAcctCurrSel(cur) {
+  var html = '<select id="sett-acct-cur">';
+  for (var i = 0; i < _CURRENCIES.length; i++) {
+    html += '<option value="' + _CURRENCIES[i] + '"' + (_CURRENCIES[i] === cur ? ' selected' : '') + '>' + _CURRENCIES[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+function _settAcctLocSel(loc) {
+  var html = '<select id="sett-acct-loc">';
+  for (var i = 0; i < _LOCATIONS.length; i++) {
+    html += '<option value="' + _LOCATIONS[i] + '"' + (_LOCATIONS[i] === loc ? ' selected' : '') + '>' + _LOCATIONS[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+function _settAcctCurrSelFor(id, cur) {
+  var html = '<select id="sett-acct-cur-' + id + '">';
+  for (var i = 0; i < _CURRENCIES.length; i++) {
+    html += '<option value="' + _CURRENCIES[i] + '"' + (_CURRENCIES[i] === cur ? ' selected' : '') + '>' + _CURRENCIES[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+function _settAcctLocSelFor(id, loc) {
+  var html = '<select id="sett-acct-loc-' + id + '">';
+  for (var i = 0; i < _LOCATIONS.length; i++) {
+    html += '<option value="' + _LOCATIONS[i] + '"' + (_LOCATIONS[i] === loc ? ' selected' : '') + '>' + _LOCATIONS[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+
+function _settAcctsList() {
+  if (!ACCOUNTS || !ACCOUNTS.length) return '<p style="color:var(--muted);font-size:.82rem">No accounts yet.</p>';
+  var html = '';
+  for (var i = 0; i < ACCOUNTS.length; i++) {
+    var a = ACCOUNTS[i];
+    html += '<div class="sett-acct-row" id="sett-acct-row-' + _settEsc(a.id) + '">'
+      + '<div class="sett-acct-icon">' + (a.icon || '🏦') + '</div>'
+      + '<div class="sett-acct-info">'
+      + '<div class="sett-acct-name">' + _settEsc(a.name) + '</div>'
+      + '<div class="sett-acct-meta">' + (a.currency || 'AUD') + ' &middot; ' + (a.location || 'Australia') + (a.isCore ? '' : ' &middot; <span style="color:var(--muted);font-size:.68rem">Custom</span>') + '</div>'
+      + '</div>'
+      + '<div class="sett-acct-actions">'
+      + '<button class="btn btn-ghost btn-sm" onclick="settAcctEdit(\'' + _settEsc(a.id) + '\')">Edit</button>'
+      + (!a.isCore ? '<button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger)" onclick="settAcctDelete(\'' + _settEsc(a.id) + '\')">Delete</button>' : '')
+      + '</div>'
+      + '</div>';
+  }
+  return html;
+}
+
+function _settAcctAddForm() {
+  return '<div class="sett-acct-form">'
+    + '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px">New Account</div>'
+    + '<div class="form-grid" style="grid-template-columns:56px 1fr">'
+    + '<div><label class="lbl">Icon</label><input type="text" id="sett-acct-new-icon" value="🏦" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>'
+    + '<div><label class="lbl">Nickname</label><input type="text" id="sett-acct-new-name" placeholder="e.g. US Investment Account" style="font-size:16px"/></div>'
+    + '</div>'
+    + '<div class="form-grid">'
+    + '<div><label class="lbl">Currency</label>' + _settAcctCurrSel('AUD') + '</div>'
+    + '<div><label class="lbl">Country / Region</label>' + _settAcctLocSel('Australia') + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn btn-primary btn-sm" onclick="settAcctAdd()">Add Account</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="settAcctCancelAdd()">Cancel</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function settAcctShowAdd() {
+  var f = document.getElementById('sett-acct-add-form');
+  if (f) { f.style.display = 'block'; f.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+function settAcctCancelAdd() {
+  var f = document.getElementById('sett-acct-add-form');
+  if (f) f.style.display = 'none';
+}
+
+function settAcctAdd() {
+  if (ACCOUNTS.length >= 8) { toast('Maximum 8 accounts reached'); return; }
+  var name = (document.getElementById('sett-acct-new-name') || {}).value.trim();
+  if (!name) { toast('Please enter an account nickname'); return; }
+  var icon = (document.getElementById('sett-acct-new-icon') || {}).value.trim() || '🏦';
+  var cur  = (document.getElementById('sett-acct-cur') || {}).value || 'AUD';
+  var loc  = (document.getElementById('sett-acct-loc') || {}).value || 'Australia';
+  var newId = 'acct_' + Date.now().toString(36);
+  ACCOUNTS.push({ id:newId, name:name, icon:icon, currency:cur, location:loc, color:'#818CF8', isCore:false });
+  save(K.accounts, ACCOUNTS);
+  _settAcctsRefresh();
+  settAcctCancelAdd();
+  CT_ACCTS = _buildCTAccts();
+  toast('✅ Account added');
+}
+
+function settAcctEdit(id) {
+  var a = ACCOUNTS.find(function(x){ return x.id === id; });
+  if (!a) return;
+  var row = document.getElementById('sett-acct-row-' + id);
+  if (!row) return;
+  row.innerHTML = '<div class="sett-acct-form" style="width:100%">'
+    + '<div class="form-grid" style="grid-template-columns:56px 1fr">'
+    + '<div><label class="lbl">Icon</label><input type="text" id="sett-edit-icon-' + _settEsc(id) + '" value="' + _settEsc(a.icon||'🏦') + '" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>'
+    + '<div><label class="lbl">Nickname</label><input type="text" id="sett-edit-name-' + _settEsc(id) + '" value="' + _settEsc(a.name) + '" placeholder="Account nickname" style="font-size:16px"/></div>'
+    + '</div>'
+    + '<div class="form-grid">'
+    + '<div><label class="lbl">Currency</label>' + _settAcctCurrSelFor(id, a.currency||'AUD') + '</div>'
+    + '<div><label class="lbl">Country / Region</label>' + _settAcctLocSelFor(id, a.location||'Australia') + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn btn-primary btn-sm" onclick="settAcctSave(\'' + _settEsc(id) + '\')">Save</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="settAcctCancel()">Cancel</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function settAcctSave(id) {
+  var a = ACCOUNTS.find(function(x){ return x.id === id; });
+  if (!a) return;
+  var nameEl = document.getElementById('sett-edit-name-' + id);
+  var iconEl = document.getElementById('sett-edit-icon-' + id);
+  var curEl  = document.getElementById('sett-acct-cur-' + id);
+  var locEl  = document.getElementById('sett-acct-loc-' + id);
+  if (nameEl) a.name = nameEl.value.trim() || a.name;
+  if (iconEl) a.icon = iconEl.value.trim() || a.icon;
+  if (curEl)  a.currency = curEl.value;
+  if (locEl)  a.location = locEl.value;
+  save(K.accounts, ACCOUNTS);
+  // Keep USER_CONFIG in sync for core accounts
+  if (a.isCore) {
+    USER_CONFIG['acct_' + id] = a.name;
+    saveUserConfig();
+    applyUserConfig();
+  }
+  _settAcctsRefresh();
+  CT_ACCTS = _buildCTAccts();
   if (typeof renderCashTracker === 'function') renderCashTracker();
+  toast('✅ Account updated');
+}
+
+function settAcctCancel() {
+  _settAcctsRefresh();
+}
+
+function settAcctDelete(id) {
+  var a = ACCOUNTS.find(function(x){ return x.id === id; });
+  if (!a || a.isCore) return;
+  if (!confirm('Delete "' + a.name + '"?\n\nAny balance data for this account will also be removed.')) return;
+  ACCOUNTS = ACCOUNTS.filter(function(x){ return x.id !== id; });
+  // Clean up CT balance data
+  if (typeof CT !== 'undefined' && CT) {
+    delete CT[id];
+    save(K.ct, CT);
+  }
+  save(K.accounts, ACCOUNTS);
+  _settAcctsRefresh();
+  CT_ACCTS = _buildCTAccts();
+  if (typeof renderCashTracker === 'function') renderCashTracker();
+  toast('✅ Account removed');
+}
+
+function _settAcctsRefresh() {
+  var el = document.getElementById('sett-accts-list');
+  if (el) el.innerHTML = _settAcctsList();
+}
+
+function settingsSaveAccounts() {
+  // Legacy shim — kept for any external callers
   toast('✅ Accounts saved');
 }
 
