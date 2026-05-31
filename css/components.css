@@ -649,3 +649,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .db-glance-goal-name{font-size:.78rem;color:var(--text);margin-bottom:4px;display:flex;justify-content:space-between;}
 .db-glance-goal-pct{font-family:var(--font-mono);font-size:.72rem;font-weight:600;}
 @media(max-width:600px){.db-kpi-row{grid-template-columns:1fr 1fr;}.db-glance-row{grid-template-columns:1fr;}.db-hero-val{font-size:2rem;}}
+
+/* ── DASHBOARD ZONE 1 ENHANCEMENTS ── */
+.db-hero-period{font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--muted);margin:2px 0 6px;letter-spacing:.01em;}
+.db-acct-tiles-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.db-acct-tile{background:var(--card2);border-radius:var(--radius-sm);padding:11px 13px;min-width:0;}
+.db-acct-tile-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.db-acct-tile-val{font-family:var(--font-mono);font-size:.98rem;font-weight:700;line-height:1.2;}
+@media(max-width:700px){.db-acct-tiles-strip{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:420px){.db-acct-tiles-strip{grid-template-columns:repeat(2,1fr);}}

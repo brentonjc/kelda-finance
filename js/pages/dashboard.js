@@ -496,7 +496,79 @@ function generateNudges() {
     }
   }
 
-  // Rule 8: Fallback
+  // Rule 8: Prior month savings performance
+  if (nudges.length < 3) {
+    var priorD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    var priorPfx = priorD.getFullYear() + '-' + String(priorD.getMonth()+1).padStart(2,'0');
+    var priorMonLabel = priorD.toLocaleString('en-AU', { month: 'long' });
+    var priorTx = activeTX().filter(function(t){ return t.date && t.date.startsWith(priorPfx); });
+    var priorInc = priorTx.filter(function(t){return t.type==='income';}).reduce(function(s,t){return s+Number(t.amount);},0);
+    var priorExp = priorTx.filter(function(t){return t.type==='expense';}).reduce(function(s,t){return s+Number(t.amount);},0);
+    if (priorInc > 0) {
+      var priorSaved   = priorInc - priorExp;
+      var priorSavePct = Math.round((priorSaved / priorInc) * 100);
+      if (priorSaved > 0 && priorSavePct >= 20) {
+        nudges.push({ icon: '📈', text: '<strong>' + priorMonLabel + ':</strong> You saved <strong>' + fmt(priorSaved) + '</strong> (' + priorSavePct + '% of income). Great momentum — keep it going this month!' });
+      } else if (priorSaved < 0) {
+        nudges.push({ icon: '⚡', text: '<strong>' + priorMonLabel + ':</strong> spending exceeded income by <strong>' + fmt(Math.abs(priorSaved)) + '</strong>. This month is a chance to reset — focus on cutting back.' });
+      } else if (priorSavePct < 10) {
+        nudges.push({ icon: '📊', text: '<strong>' + priorMonLabel + ':</strong> savings rate was <strong>' + priorSavePct + '%</strong>. Aiming for 20% this month (' + fmt(Math.round(priorInc * 0.20)) + ') would make a real difference.' });
+      }
+    }
+  }
+
+  // Rule 9: Prior month budget performance
+  if (nudges.length < 3) {
+    var priorD2 = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    var priorPfx2 = priorD2.getFullYear() + '-' + String(priorD2.getMonth()+1).padStart(2,'0');
+    var priorMonLabel2 = priorD2.toLocaleString('en-AU', { month: 'long' });
+    var budgKeys3 = Object.keys(LBUDGETS || {});
+    var overCount = 0;
+    var topOver = null;
+    for (var bi3 = 0; bi3 < budgKeys3.length; bi3++) {
+      var catId3   = budgKeys3[bi3];
+      var limit3   = Number(LBUDGETS[catId3]) || 0;
+      if (!limit3) continue;
+      var cat3     = LCATS.find(function(c){ return c.id === catId3; });
+      var catName3 = cat3 ? cat3.name : catId3;
+      var priorSpent = activeTX().filter(function(t){
+        return t.type==='expense' && t.date && t.date.startsWith(priorPfx2) && (t.catId===catId3 || t.category===catName3);
+      }).reduce(function(s,t){ return s+Number(t.amount); },0);
+      if (priorSpent > limit3) {
+        overCount++;
+        var overAmt = priorSpent - limit3;
+        if (!topOver || overAmt > topOver.amt) topOver = { name: catName3, amt: overAmt };
+      }
+    }
+    if (budgKeys3.length > 0) {
+      if (overCount === 0) {
+        nudges.push({ icon: '🏆', text: '<strong>' + priorMonLabel2 + ':</strong> all budgets stayed on track. Clean sweep — great discipline going into this month!' });
+      } else if (topOver) {
+        nudges.push({ icon: '⚠️', text: '<strong>' + priorMonLabel2 + ':</strong> <strong>' + overCount + ' categor' + (overCount===1?'y':'ies') + '</strong> went over budget. <strong>' + topOver.name + '</strong> was the biggest overspend (' + fmt(topOver.amt) + ' over). Watch it this month.' });
+      }
+    }
+  }
+
+  // Rule 10: Goals vs spending alignment
+  if (nudges.length < 3 && GOALS && GOALS.length) {
+    var totalPct = 0, goalCount = 0;
+    for (var gi2 = 0; gi2 < GOALS.length; gi2++) {
+      var g2  = GOALS[gi2];
+      var cur2 = (typeof _goalCurrent==='function') ? _goalCurrent(g2) : (Number(g2.currentAmount)||Number(g2.saved)||0);
+      var tgt2 = Number(g2.targetAmount)||Number(g2.target)||0;
+      if (tgt2 > 0) { totalPct += (cur2/tgt2)*100; goalCount++; }
+    }
+    if (goalCount > 0) {
+      var avgGoalPct = Math.round(totalPct / goalCount);
+      if (avgGoalPct < 40 && savRate < 0.10 && inc > 0) {
+        nudges.push({ icon: '🎯', text: 'Your goals are <strong>' + avgGoalPct + '% funded</strong> on average and savings rate is low this month. Even redirecting <strong>' + fmt(Math.round(inc * 0.05)) + '</strong> more to savings would accelerate your goals.' });
+      } else if (avgGoalPct >= 60) {
+        nudges.push({ icon: '🌟', text: 'Your goals are <strong>' + avgGoalPct + '% funded</strong> on average — you\'re well on track. Keep the momentum going!' });
+      }
+    }
+  }
+
+  // Rule 11: Fallback
   if (!nudges.length) {
     nudges.push({ icon: '✅', text: 'Everything looks on track this month. Keep up the good habits!' });
   }
@@ -684,6 +756,7 @@ function renderDashboard() {
   // ── New layout renders ───────────────────────────────────────
   dbRenderHero();
   dbRenderKpiRow();
+  dbRenderAcctTiles();
   dbRenderGlanceMetrics();
 }
 
@@ -704,7 +777,33 @@ function _dbSparkline(values, color) {
     + '</svg>';
 }
 
-// ── Hero: Net Worth value + YTD trend ─────────────────────────
+// ── Full-width area sparkline (NW history) ────────────────────
+function _dbNWSparkline(values, color) {
+  if (!values || values.length < 2) return '';
+  var min = Math.min.apply(null, values);
+  var max = Math.max.apply(null, values);
+  var range = (max - min) || 1;
+  var W = 400, H = 56;
+  var pts = values.map(function(v, i) {
+    return {
+      x: ((i / (values.length - 1)) * W).toFixed(1),
+      y: (H - 4 - ((v - min) / range) * (H - 12)).toFixed(1)
+    };
+  });
+  var lineStr = pts.map(function(p){ return p.x + ',' + p.y; }).join(' ');
+  var fillStr = lineStr + ' ' + pts[pts.length-1].x + ',' + (H+2) + ' ' + pts[0].x + ',' + (H+2);
+  var gradId  = 'nwGrad_' + Date.now();
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:56px;display:block">'
+    + '<defs><linearGradient id="' + gradId + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.22"/>'
+    + '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>'
+    + '</linearGradient></defs>'
+    + '<polygon points="' + fillStr + '" fill="url(#' + gradId + ')"/>'
+    + '<polyline points="' + lineStr + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg>';
+}
+
+// ── Hero: Net Worth value + period label + wide sparkline ─────
 function dbRenderHero() {
   try {
     var months    = ctAllMonths();
@@ -720,25 +819,47 @@ function dbRenderHero() {
     var nwEl = document.getElementById('db-hero-nw');
     if (nwEl) nwEl.textContent = fmt(nw);
 
-    // YTD trend from nw history
+    // Period label — e.g. "June 2026"
+    var periodEl = document.getElementById('db-hero-period');
+    if (periodEl) {
+      var _now = new Date();
+      periodEl.textContent = _now.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+    }
+
+    // YTD delta label (below period)
     var trendEl = document.getElementById('db-hero-trend');
+    var hist = [];
+    try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
+    var yrStart = new Date().getFullYear() + '-01';
+    var ytdEntry = null;
+    for (var hi = 0; hi < hist.length; hi++) {
+      if (hist[hi].date && hist[hi].date.startsWith(yrStart)) { ytdEntry = hist[hi]; break; }
+    }
+    var delta = ytdEntry ? nw - ytdEntry.netWorth : null;
+    var trendColor = delta === null ? 'var(--muted)' : (delta >= 0 ? 'var(--success)' : 'var(--danger)');
+    var trendLbl   = delta === null ? 'Tracking net worth' : ((delta >= 0 ? '&#8593; ' : '&#8595; ') + fmt(Math.abs(delta)) + ' this year');
     if (trendEl) {
-      var yrStart = new Date().getFullYear() + '-01';
-      var hist    = [];
-      try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
-      var ytdEntry = null;
-      for (var hi = 0; hi < hist.length; hi++) {
-        if (hist[hi].date && hist[hi].date.startsWith(yrStart)) { ytdEntry = hist[hi]; break; }
+      trendEl.innerHTML = '<span class="db-hero-trend-lbl" style="color:' + trendColor + '">' + trendLbl + '</span>';
+    }
+
+    // Full-width area sparkline (monthly snapshots, last 12)
+    var sparkEl = document.getElementById('db-hero-sparkline');
+    if (sparkEl) {
+      // One value per month — take the last entry of each distinct month from history
+      var moMap = {};
+      for (var si = 0; si < hist.length; si++) {
+        var hEntry = hist[si];
+        if (hEntry.date) {
+          var mKey = hEntry.date.slice(0,7);
+          moMap[mKey] = hEntry.netWorth; // last entry per month wins
+        }
       }
-      var delta   = ytdEntry ? nw - ytdEntry.netWorth : null;
-      var sparkVals = hist.slice(-8).map(function(h){ return h.netWorth; });
-      var sparkSvg  = _dbSparkline(sparkVals, delta !== null && delta < 0 ? '#EF4444' : '#00C896');
-      var trendColor = delta === null ? 'var(--muted)' : (delta >= 0 ? 'var(--success)' : 'var(--danger)');
-      var trendLbl   = delta === null ? '' : ((delta >= 0 ? '&#8593; ' : '&#8595; ') + fmt(Math.abs(delta)) + ' this year');
-      trendEl.innerHTML = '<div class="db-hero-trend">'
-        + (sparkSvg ? '<span>' + sparkSvg + '</span>' : '')
-        + (trendLbl ? '<span class="db-hero-trend-lbl" style="color:' + trendColor + '">' + trendLbl + '</span>' : '')
-        + '</div>';
+      var moKeys = Object.keys(moMap).sort();
+      var sparkVals = moKeys.slice(-12).map(function(k){ return moMap[k]; });
+      var sparkColor = delta !== null && delta < 0 ? '#EF4444' : '#00C896';
+      sparkEl.innerHTML = sparkVals.length >= 2
+        ? _dbNWSparkline(sparkVals, sparkColor)
+        : '<div style="height:56px"></div>';
     }
   } catch(e) { console.warn('dbRenderHero', e); }
 }
@@ -780,6 +901,53 @@ function dbRenderKpiRow() {
     + '<div class="db-kpi-bar"><div class="db-kpi-bar-fill" style="width:' + saveClip + '%;background:' + (savePct < 0 ? 'var(--danger)' : savePct < 20 ? 'var(--warn)' : 'var(--success)') + '"></div></div>'
     + '<div class="db-kpi-sub">' + savePct + '% savings rate</div>'
     + '</div>';
+}
+
+// ── Zone 1: Account balance tiles with sparklines ─────────────
+function dbRenderAcctTiles() {
+  var el = document.getElementById('db-acct-tiles');
+  if (!el) return;
+  var allMonths = ctAllMonths();
+  var last6     = allMonths.slice(-6);
+  var lm        = last6.length ? last6[last6.length - 1] : null;
+
+  if (!lm) {
+    el.innerHTML = '<div style="font-size:.75rem;color:var(--muted);padding:4px 0">No cash tracker data. <a href="#" onclick="go(\'cash\');return false;" style="color:var(--primary)">Add balances →</a></div>';
+    return;
+  }
+
+  var accts = [
+    { id:'offset', label: (CTCFG.offsetLbl || 'Offset Account'),  icon:'🏦', color:'#F0538A' },
+    { id:'home',   label: (CTCFG.homeLbl   || 'Joint Account'),   icon:'🏠', color:'#818CF8' },
+    { id:'sav1',   label: (CTCFG.sav1Lbl   || (typeof getUserName==='function' ? getUserName('brenton') : 'Savings 1') + ' Savings'), icon:'💰', color:'#00C896' },
+    { id:'sav2',   label: (CTCFG.sav2Lbl   || (typeof getUserName==='function' ? getUserName('shelley') : 'Savings 2') + ' Savings'), icon:'💎', color:'#F59E0B' }
+  ];
+
+  var dateLbl = new Date(lm + '-02').toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+  var tilesHtml = '';
+  for (var ai = 0; ai < accts.length; ai++) {
+    var a       = accts[ai];
+    var currBal = ((CT[a.id] || {})[lm] || 0);
+    var prevM   = last6.length >= 2 ? last6[last6.length - 2] : null;
+    var prevBal = prevM ? ((CT[a.id] || {})[prevM] || 0) : null;
+    var delta   = prevBal !== null ? currBal - prevBal : null;
+    var sparkVals = last6.map(function(m){ return (CT[a.id] || {})[m] || 0; });
+    var deltaHtml = delta !== null && delta !== 0
+      ? '<div style="font-size:.65rem;font-weight:600;color:' + (delta >= 0 ? 'var(--success)' : 'var(--danger)') + ';margin-top:1px">'
+        + (delta >= 0 ? '&#8593;' : '&#8595;') + ' ' + fmt(Math.abs(delta))
+        + '</div>'
+      : '';
+    tilesHtml += '<div class="db-acct-tile">'
+      + '<div class="db-acct-tile-lbl">' + a.icon + ' ' + a.label + '</div>'
+      + '<div class="db-acct-tile-val" style="color:' + a.color + '">' + fmt(currBal) + '</div>'
+      + deltaHtml
+      + '<div style="margin-top:7px">' + _dbSparkline(sparkVals, a.color) + '</div>'
+      + '</div>';
+  }
+
+  el.innerHTML = '<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Key Account Balances · ' + dateLbl + '</div>'
+    + '<div class="db-acct-tiles-strip">' + tilesHtml + '</div>'
+    + '<div style="margin-top:6px;text-align:right"><a href="#" onclick="go(\'cash\');return false;" style="font-size:.7rem;color:var(--primary);text-decoration:none;font-weight:600">View cash tracker →</a></div>';
 }
 
 // ── Zone 4: Glanceable Metrics ────────────────────────────────
@@ -841,10 +1009,12 @@ function _dbRenderGlanceBudget() {
       + '<div class="db-glance-prog"><div class="db-glance-prog-fill" style="width:' + Math.min(pct,100) + '%;background:' + barColor + '"></div></div>';
   }).join('');
 
+  var budgetMonLabel = new Date().toLocaleString('en-AU', { month: 'long', year: 'numeric' });
   el.innerHTML = '<div class="db-glance-hd">'
-    + '<div class="db-glance-title">📊 Monthly Budget</div>'
+    + '<div class="db-glance-title">📊 Budget</div>'
     + (rows.length ? '<span class="db-glance-badge ' + badgeCls + '">' + overallPct + '%  ' + badgeTxt + '</span>' : '')
     + '</div>'
+    + '<div style="font-size:.68rem;color:var(--muted);margin:-6px 0 10px;font-weight:600">' + budgetMonLabel + '</div>'
     + emptyMsg
     + (shown.length ? '<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px">'
       + '<canvas id="db-budget-donut" width="70" height="70" style="flex-shrink:0"></canvas>'
