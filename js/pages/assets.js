@@ -134,7 +134,9 @@ function renderAssets() {
   }
 
   // ── Totals & net ──────────────────────────────────────────
-  var grossAssets = bankTotal + supTotal + Math.max(0, eq) + eqVal;
+  // grossAssets = full property value (hv), not net equity.
+  // Mortgage is already captured in totalLiab — deducting it here would double-count.
+  var grossAssets = bankTotal + supTotal + hv + eqVal;
   var netAssets   = grossAssets - totalLiab;
   var liabRatio   = grossAssets > 0 ? Math.min(100, (totalLiab / grossAssets) * 100) : 0;
   var netColor    = netAssets >= 0 ? 'var(--success)' : 'var(--danger)';
@@ -178,21 +180,21 @@ function renderAssets() {
   if (typeof renderEquitiesList === 'function') renderEquitiesList();
 
   // ── Charts ────────────────────────────────────────────────
-  _assetsRenderAssetsDonut(bankTotal, supTotal, eq, eqVal);
+  _assetsRenderAssetsDonut(bankTotal, supTotal, hv, eqVal);
   _assetsRenderLiabDonut(liabSegs, totalLiab);
 }
 
 // ── Chart 1: Assets breakdown donut ──────────────────────────
-function _assetsRenderAssetsDonut(bankTotal, supTotal, eq, eqVal) {
+function _assetsRenderAssetsDonut(bankTotal, supTotal, propertyValue, eqVal) {
   var canvas = document.getElementById('assets-chart');
   if (!canvas) return;
   if (assetsChart) { try { assetsChart.destroy(); } catch(e){} assetsChart = null; }
 
   var data = [
-    { label: 'Bank',       value: Math.max(0, bankTotal), color: '#F0538A' },
-    { label: 'Super',      value: Math.max(0, supTotal),  color: '#818CF8' },
-    { label: 'Property',   value: Math.max(0, eq),        color: '#F07AAA' },
-    { label: 'Equities',   value: Math.max(0, eqVal),     color: '#52D68A' }
+    { label: 'Bank',       value: Math.max(0, bankTotal),      color: '#F0538A' },
+    { label: 'Super',      value: Math.max(0, supTotal),       color: '#818CF8' },
+    { label: 'Property',   value: Math.max(0, propertyValue),  color: '#F07AAA' },
+    { label: 'Equities',   value: Math.max(0, eqVal),          color: '#52D68A' }
   ].filter(function(d) { return d.value > 0; });
 
   var muted = asToken('--muted');
