@@ -7,7 +7,8 @@ const K={
   ins:'cff_ins',superdata:'cff_super',pins:'cff_pins',
   categories:'ledger_categories',lbudgets:'ledger_budgets',rules:'ledger_rules',
   recurring:'ledger_recurring',transfers:'cff_transfers',equities:'cff_equities',userconfig:'cff_userconfig',liabilities:'cff_liabilities',
-  accounts:'cff_accounts'
+  accounts:'cff_accounts',
+  ctdates:'cff_ct_dates'
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}

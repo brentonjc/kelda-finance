@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kelda Finance — Borrowing Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+<style>
+:root{
+  --navy-950:#080C18;--navy-900:#0D1225;--navy-800:#111830;
+  --navy-700:#18213E;--navy-600:#1E2A4A;--navy-300:#6278A0;
+  --pink-500:#F0538A;--pink-400:#F56CA0;
+  --green-500:#00C896;--green-400:#22D9A9;
+  --amber-500:#F59E0B;--red-500:#EF4444;
+  --text-primary:#E8EDF5;--text-secondary:#9AAAC4;
+  --border:rgba(98,120,160,0.18);--card-bg:#111830;--input-bg:#18213E;
+  --radius-lg:16px;--radius-md:12px;--radius-sm:8px;--radius-pill:999px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--navy-950);color:var(--text-primary);font-size:15px;line-height:1.6;min-height:100vh}
+.app-shell{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--navy-900);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s}
+.sidebar-logo{padding:0 22px 24px;border-bottom:1px solid var(--border)}
+.app-name{font-family:'Sora',sans-serif;font-size:11px;font-weight:600;color:var(--navy-300);letter-spacing:.1em;text-transform:uppercase}
+.tool-name{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:var(--text-primary);margin-top:3px}
+.tool-name span{color:var(--pink-500)}
+.sidebar-nav{padding:16px 0;flex:1;overflow-y:auto}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-300);padding:0 22px;margin-bottom:4px;margin-top:18px}
+.nav-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 22px;cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(240,83,138,.07);color:var(--text-primary)}
+.nav-item.active{color:var(--pink-500);background:rgba(240,83,138,.1);border-left-color:var(--pink-500)}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.sidebar-footer{padding:16px 22px;border-top:1px solid var(--border)}
+.disc{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--amber-500);line-height:1.5}
+.main{margin-left:260px;flex:1;padding:36px;max-width:1140px}
+.section{display:none}
+.section.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:24px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--pink-500);margin-bottom:4px}
+h1{font-family:'Sora',sans-serif;font-size:24px;font-weight:700}
+.page-header p{color:var(--text-secondary);margin-top:4px;max-width:620px;font-size:13px}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:18px}
+.card-title{font-family:'Sora',sans-serif;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:16px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.icon{font-size:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:10px;font-weight:600;color:var(--pink-400);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+.field input[type=number],.mono{font-family:'DM Mono',monospace!important}
+.field input:focus,.field select:focus{border-color:var(--pink-500);box-shadow:0 0 0 3px rgba(240,83,138,.1)}
+.field select option{background:var(--navy-700)}
+.field .helper{font-size:11px;color:var(--navy-300);margin-top:3px}
+.pfx{position:relative}
+.pfx span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-family:'DM Mono',monospace;font-size:13px;pointer-events:none}
+.pfx input{padding-left:22px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--radius-pill);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;min-height:42px}
+.btn-primary{background:var(--pink-500);color:#fff}
+.btn-primary:hover{background:var(--pink-400);transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
+.btn-secondary:hover{background:rgba(255,255,255,.04);color:var(--text-primary)}
+.btn-success{background:var(--green-500);color:var(--navy-950)}
+.btn-success:hover{background:var(--green-400)}
+.btn-amber{background:rgba(245,158,11,.12);color:var(--amber-500);border:1px solid rgba(245,158,11,.25)}
+.btn-sm{padding:6px 12px;font-size:12px;min-height:34px}
+.btn-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.sc{background:var(--navy-700);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px}
+.sc .sl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:6px}
+.sc .sv{font-family:'DM Mono',monospace;font-size:19px;font-weight:500}
+.sc .ss{font-size:11px;color:var(--text-secondary);margin-top:3px}
+.green{color:var(--green-500)}.amber{color:var(--amber-500)}.red{color:var(--red-500)}.pink{color:var(--pink-500)}.muted{color:var(--text-secondary)}
+/* Hero result */
+.hero{background:linear-gradient(135deg,#1E2A4A 0%,#18213E 55%,#1a1630 100%);border:1px solid rgba(240,83,138,.25);border-radius:var(--radius-lg);padding:26px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(240,83,138,.09) 0%,transparent 70%);pointer-events:none}
+.res-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:5px}
+.res-amt{font-family:'DM Mono',monospace;font-size:36px;font-weight:500;color:var(--green-500);line-height:1;margin-bottom:5px}
+.res-sub{color:var(--text-secondary);font-size:12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:600}
+.c-green{background:rgba(0,200,150,.09);color:var(--green-500);border:1px solid rgba(0,200,150,.2)}
+.c-amber{background:rgba(245,158,11,.09);color:var(--amber-500);border:1px solid rgba(245,158,11,.2)}
+.c-red{background:rgba(239,68,68,.09);color:var(--red-500);border:1px solid rgba(239,68,68,.2)}
+.c-pink{background:rgba(240,83,138,.09);color:var(--pink-400);border:1px solid rgba(240,83,138,.2)}
+.c-blue{background:rgba(98,120,160,.12);color:#8AA6CF;border:1px solid rgba(98,120,160,.25)}
+/* Table */
+.dt{width:100%;border-collapse:collapse;font-size:12px}
+.dt th{text-align:left;padding:8px 10px;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-secondary);border-bottom:1px solid var(--border)}
+.dt td{padding:10px 10px;border-bottom:1px solid rgba(98,120,160,.08);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt .tr td{font-weight:600;border-top:1px solid var(--border);border-bottom:none;padding-top:12px}
+/* Gauge */
+.gauge-bar{width:100%;height:9px;border-radius:var(--radius-pill);background:linear-gradient(to right,var(--green-500) 0%,var(--green-500) 33%,var(--amber-500) 33%,var(--amber-500) 66%,var(--red-500) 66%,var(--red-500) 100%);position:relative;margin:9px 0}
+.gauge-ptr{position:absolute;top:-5px;width:19px;height:19px;background:white;border:3px solid var(--navy-950);border-radius:50%;transform:translateX(-50%);transition:left .6s ease;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);font-weight:600}
+.divider{height:1px;background:var(--border);margin:18px 0}
+/* Inline rows */
+.ir{display:grid;gap:10px;align-items:end;margin-bottom:10px}
+.ir3{grid-template-columns:2fr 1fr auto}
+.ir4{grid-template-columns:2fr 1fr 1fr auto}
+.ir5{grid-template-columns:2fr 1fr 1fr 1fr auto}
+.del{background:none;border:none;color:var(--red-500);cursor:pointer;font-size:12px;padding:4px 7px;border-radius:var(--radius-sm);opacity:.6;transition:opacity .15s}
+.del:hover{opacity:1;background:rgba(239,68,68,.1)}
+/* Source badge */
+.src-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--radius-pill);font-size:10px;font-weight:600;background:rgba(0,200,150,.1);color:var(--green-500);border:1px solid rgba(0,200,150,.2)}
+.src-manual{background:rgba(98,120,160,.12);color:#8AA6CF;border:1px solid rgba(98,120,160,.25)}
+/* Import banner */
+.import-banner{background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;font-size:13px}
+.import-banner .ib-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.import-banner .ib-title{font-weight:600;color:var(--green-500);margin-bottom:3px;font-size:13px}
+.import-banner .ib-sub{color:var(--text-secondary);font-size:12px;line-height:1.5}
+/* Mobile */
+.hamburger{display:none;position:fixed;top:13px;left:13px;z-index:200;background:var(--navy-800);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 11px;cursor:pointer;font-size:16px;color:var(--text-primary)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
+.overlay.open{display:block}
+/* Print */
+.print-hdr{display:none;padding:0 0 18px;border-bottom:3px solid var(--pink-500);margin-bottom:24px}
+@media print{
+  .sidebar,.hamburger,.btn-row,.no-print,.overlay{display:none!important}
+  .main{margin-left:0!important;padding:20px!important}
+  body{background:#fff!important;color:#111!important}
+  .card,.hero{background:#f8f9fb!important;border:1px solid #ddd!important;break-inside:avoid}
+  .sc{background:#f0f0f0!important;border:1px solid #ccc!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .section{display:block!important}
+  .print-hdr{display:block!important}
+  .page-break{page-break-before:always}
+  .res-amt{color:#00a878!important}.green{color:#00a878!important}.amber{color:#d97706!important}.red{color:#dc2626!important}.pink{color:#e11d73!important}
+}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:16px;padding-top:60px}
+  .hamburger{display:flex;align-items:center}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .ir3,.ir4,.ir5{grid-template-columns:1fr}
+  .res-amt{font-size:26px}
+}
+</style>
+</head>
+<body>
+<button class="hamburger" onclick="toggleSB()">☰</button>
+<div class="overlay" id="overlay" onclick="toggleSB()"></div>
+<div class="app-shell">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="app-name">Kelda Finance</div>
+    <div class="tool-name">Borrowing <span>Calculator</span></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-label">Application</div>
+    <div class="nav-item active" onclick="go('review')"><span class="nav-icon">🔄</span> Review Imported Data</div>
+    <div class="nav-item" onclick="go('income')"><span class="nav-icon">💰</span> Income</div>
+    <div class="nav-item" onclick="go('expenses')"><span class="nav-icon">🧾</span> Living Expenses</div>
+    <div class="nav-item" onclick="go('assets')"><span class="nav-icon">🏦</span> Assets</div>
+    <div class="nav-item" onclick="go('liabilities')"><span class="nav-icon">📋</span> Liabilities</div>
+    <div class="nav-item" onclick="go('loandetails')"><span class="nav-icon">🏠</span> Loan Details</div>
+    <div class="nav-label">Output</div>
+    <div class="nav-item" onclick="go('results');generateReport()"><span class="nav-icon">📊</span> Affordability Report</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="disc">⚠️ Estimate only. Not financial advice. Consult a licensed mortgage broker.</div>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ======= REVIEW (landing screen) ======= -->
+<div class="section active" id="sec-review">
+  <div class="page-header">
+    <div class="eyebrow">Step 1 — Data Review</div>
+    <h1>Review Imported Data</h1>
+    <p>Data has been automatically pulled from your Kelda Finance app. Review each section, correct anything that looks wrong, then proceed through the remaining steps.</p>
+  </div>
+
+  <div id="review-banner"></div>
+  <div id="review-content"></div>
+
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn btn-primary" onclick="go('income')">Looks good — Review Income →</button>
+    <button class="btn btn-secondary" onclick="importFromPFM()">🔄 Re-import from App</button>
+  </div>
+</div>
+
+<!-- ======= INCOME ======= -->
+<div class="section" id="sec-income">
+  <div class="page-header">
+    <div class="eyebrow">Step 2 of 6</div>
+    <h1>Income</h1>
+    <p>Imported from your transaction history. Irregular income (overtime, bonuses, rental) is shaded at 80% by most lenders. Adjust any figures that don't look right.</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">💼</span> Employment Income — Borrower 1</div>
+    <div class="g3">
+      <div class="field"><label>Base Salary (gross p.a.) <span class="src-badge" id="b1sal-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="b1_salary" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div></div>
+      <div class="field"><label>Overtime / Allowances (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="b1_overtime" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">Assessed at 80%</div></div>
+      <div class="field"><label>Bonuses / Commissions (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="b1_bonus" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">Assessed at 80%</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">💼</span> Employment Income — Borrower 2</div>
+    <div class="g3">
+      <div class="field"><label>Base Salary (gross p.a.) <span class="src-badge" id="b2sal-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="b2_salary" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div></div>
+      <div class="field"><label>Overtime / Allowances (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="b2_overtime" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">Assessed at 80%</div></div>
+      <div class="field"><label>Bonuses / Commissions (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="b2_bonus" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">Assessed at 80%</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🏘️</span> Other Income</div>
+    <div class="g3">
+      <div class="field"><label>Rental Income (p.a.) <span class="src-badge" id="rental-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="rental_income" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">Assessed at 80%</div></div>
+      <div class="field"><label>Dividends / Investments (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="invest_income" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div></div>
+      <div class="field"><label>Government Payments (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="gov_income" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">FTB, Centrelink etc.</div></div>
+      <div class="field"><label>Other Income (p.a.)</label><div class="pfx"><span>$</span><input type="number" id="other_income" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div></div>
+      <div class="field"><label>HECS-HELP Balance</label><div class="pfx"><span>$</span><input type="number" id="hecs" class="mono" placeholder="0" min="0" oninput="save();calcIncome()"></div><div class="helper">Monthly repayment deducted from capacity</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="g4" id="income-summary"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">👤</span> Borrower Details</div>
+    <div class="g2">
+      <div class="field"><label>Borrower 1 Name</label><input type="text" id="b1_name" placeholder="e.g. Alex Smith" oninput="save()"></div>
+      <div class="field"><label>Borrower 2 Name (if applicable)</label><input type="text" id="b2_name" placeholder="Leave blank if single applicant" oninput="save()"></div>
+      <div class="field"><label>B1 Employment Type</label>
+        <select id="b1_emp" onchange="save()"><option value="paye">PAYG / Salaried</option><option value="self">Self-Employed</option><option value="contractor">Contractor</option><option value="casual">Casual</option><option value="part">Part-Time</option></select>
+      </div>
+      <div class="field"><label>B2 Employment Type</label>
+        <select id="b2_emp" onchange="save()"><option value="none">Not Applicable</option><option value="paye">PAYG / Salaried</option><option value="self">Self-Employed</option><option value="contractor">Contractor</option><option value="casual">Casual</option><option value="part">Part-Time</option></select>
+      </div>
+      <div class="field"><label>Dependants</label>
+        <select id="dependants" onchange="save()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4+</option></select>
+      </div>
+      <div class="field"><label>Location</label>
+        <select id="location" onchange="save()"><option value="major">Major City (Syd/Mel/Bris)</option><option value="other_city">Other Capital City</option><option value="regional">Regional</option><option value="rural">Rural / Remote</option></select>
+      </div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="go('review')">← Back</button>
+    <button class="btn btn-primary" onclick="go('expenses')">Next: Living Expenses →</button>
+  </div>
+</div>
+
+<!-- ======= EXPENSES ======= -->
+<div class="section" id="sec-expenses">
+  <div class="page-header">
+    <div class="eyebrow">Step 3 of 6</div>
+    <h1>Living Expenses</h1>
+    <p>Imported from your transaction categories. Banks use the <strong>higher</strong> of your declared expenses or the HEM benchmark. Figures shown are your last 3-month average.</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🛒</span> HEM — Absolute Basics <span class="chip c-blue" style="font-size:10px;margin-left:6px">Median spend used as floor</span></div>
+    <div class="g3">
+      <div class="field"><label>Groceries (monthly) <span class="src-badge" id="gr-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_groceries" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Utilities — Power, Gas, Water <span class="src-badge" id="ut-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_utilities" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Phone &amp; Internet <span class="src-badge" id="ph-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_comms" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Transport — Fuel, Rego, PT <span class="src-badge" id="tr-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_transport" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Children's Clothing</label><div class="pfx"><span>$</span><input type="number" id="exp_kids_clothing" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Personal Care &amp; Health <span class="src-badge" id="pc-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_personal" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🍽️</span> HEM — Discretionary Basics <span class="chip c-amber" style="font-size:10px;margin-left:6px">25th percentile used as floor</span></div>
+    <div class="g3">
+      <div class="field"><label>Dining Out &amp; Takeaway <span class="src-badge" id="di-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_dining" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Entertainment &amp; Leisure <span class="src-badge" id="en-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_entertainment" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Adult Clothing &amp; Footwear <span class="src-badge" id="cl-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_clothing" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Alcohol &amp; Tobacco <span class="src-badge" id="al-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_alcohol" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Childcare / School Fees <span class="src-badge" id="ch-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_childcare" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Subscriptions &amp; Streaming <span class="src-badge" id="su-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_subs" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">📌</span> Committed Expenses <span class="chip c-pink" style="font-size:10px;margin-left:6px">Always included — above HEM</span></div>
+    <div class="g3">
+      <div class="field"><label>Health &amp; Life Insurance <span class="src-badge" id="ins-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="exp_insurance" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Private School Fees</label><div class="pfx"><span>$</span><input type="number" id="exp_school" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+      <div class="field"><label>Other Committed Expenses</label><div class="pfx"><span>$</span><input type="number" id="exp_other" class="mono" placeholder="0" min="0" oninput="save();calcHEM()"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">📏</span> HEM Benchmark Comparison</div>
+    <div id="hem-content"><p class="muted" style="font-size:13px">Enter expenses above to see comparison.</p></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="go('income')">← Back</button>
+    <button class="btn btn-primary" onclick="go('assets')">Next: Assets →</button>
+  </div>
+</div>
+
+<!-- ======= ASSETS ======= -->
+<div class="section" id="sec-assets">
+  <div class="page-header">
+    <div class="eyebrow">Step 4 of 6</div>
+    <h1>Assets</h1>
+    <p>Imported from your Cash Tracker, Mortgage, and Super tabs. Review and adjust as needed.</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🏦</span> Savings &amp; Investments</div>
+    <div class="g3">
+      <div class="field"><label>Cash &amp; Savings <span class="src-badge" id="cash-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="a_cash" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div></div>
+      <div class="field"><label>Term Deposits</label><div class="pfx"><span>$</span><input type="number" id="a_term" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div></div>
+      <div class="field"><label>Shares / ETFs / Crypto</label><div class="pfx"><span>$</span><input type="number" id="a_shares" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div></div>
+      <div class="field"><label>Superannuation (total) <span class="src-badge" id="super-src">manual</span></label><div class="pfx"><span>$</span><input type="number" id="a_super" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div><div class="helper">Not used in borrowing calc — shown for net worth</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🏠</span> Property Assets</div>
+    <div id="property-list"></div>
+    <button class="btn btn-secondary btn-sm no-print" onclick="addProperty()" style="margin-top:10px">+ Add Property</button>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🚗</span> Other Assets</div>
+    <div class="g3">
+      <div class="field"><label>Motor Vehicles</label><div class="pfx"><span>$</span><input type="number" id="a_vehicles" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div></div>
+      <div class="field"><label>Household Contents</label><div class="pfx"><span>$</span><input type="number" id="a_contents" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div></div>
+      <div class="field"><label>Business Interests</label><div class="pfx"><span>$</span><input type="number" id="a_business" class="mono" placeholder="0" min="0" oninput="save();calcAssets()"></div></div>
+    </div>
+    <div class="divider"></div>
+    <div id="asset-totals"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="go('expenses')">← Back</button>
+    <button class="btn btn-primary" onclick="go('liabilities')">Next: Liabilities →</button>
+  </div>
+</div>
+
+<!-- ======= LIABILITIES ======= -->
+<div class="section" id="sec-liabilities">
+  <div class="page-header">
+    <div class="eyebrow">Step 5 of 6</div>
+    <h1>Liabilities</h1>
+    <p>Imported from your bills and mortgage data. Credit card <em>limits</em> (not balances) are assessed at 3% per month by lenders.</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">💳</span> Credit Cards</div>
+    <div id="cc-list"></div>
+    <button class="btn btn-secondary btn-sm no-print" onclick="addCC()" style="margin-top:10px">+ Add Credit Card</button>
+    <div class="helper" style="margin-top:8px">⚠️ Banks assess 3% of total credit limit monthly — regardless of balance owed.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🚗</span> Personal &amp; Vehicle Loans</div>
+    <div id="loan-list"></div>
+    <button class="btn btn-secondary btn-sm no-print" onclick="addLoan()" style="margin-top:10px">+ Add Loan</button>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🏠</span> Existing Mortgages <span class="src-badge" style="margin-left:6px" id="mort-src">manual</span></div>
+    <div id="mortgage-list"></div>
+    <button class="btn btn-secondary btn-sm no-print" onclick="addMortgage()" style="margin-top:10px">+ Add Existing Mortgage</button>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">📊</span> Liabilities Summary</div>
+    <div id="liab-summary"><p class="muted" style="font-size:13px">Add liabilities above.</p></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="go('assets')">← Back</button>
+    <button class="btn btn-primary" onclick="go('loandetails')">Next: Loan Details →</button>
+  </div>
+</div>
+
+<!-- ======= LOAN DETAILS ======= -->
+<div class="section" id="sec-loandetails">
+  <div class="page-header">
+    <div class="eyebrow">Step 6 of 6</div>
+    <h1>Loan Details</h1>
+    <p>Enter the proposed loan. The APRA 3% serviceability buffer is applied automatically.</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🏠</span> Property &amp; Loan Parameters</div>
+    <div class="g3">
+      <div class="field"><label>Target Property Value</label><div class="pfx"><span>$</span><input type="number" id="property_value" class="mono" placeholder="0" min="0" oninput="save();calcLoan()"></div></div>
+      <div class="field"><label>Deposit / Equity Available</label><div class="pfx"><span>$</span><input type="number" id="deposit" class="mono" placeholder="0" min="0" oninput="save();calcLoan()"></div></div>
+      <div class="field"><label>Proposed Loan Amount</label><div class="pfx"><span>$</span><input type="number" id="loan_amount" class="mono" placeholder="0" min="0" oninput="save();calcLoan()"></div><div class="helper">Or auto: property − deposit</div></div>
+      <div class="field"><label>Interest Rate (% p.a.)</label><input type="number" id="interest_rate" class="mono" value="6.50" min="0" max="20" step="0.01" oninput="save();calcLoan()"><div class="helper">+3% APRA buffer → assessed at <span id="buf-display">9.50%</span></div></div>
+      <div class="field"><label>Loan Term</label>
+        <select id="loan_term" onchange="save();calcLoan()"><option value="30">30 years</option><option value="25">25 years</option><option value="20">20 years</option><option value="15">15 years</option><option value="10">10 years</option></select>
+      </div>
+      <div class="field"><label>Repayment Type</label>
+        <select id="repay_type" onchange="save();calcLoan()"><option value="pi">Principal &amp; Interest</option><option value="io">Interest Only</option></select>
+      </div>
+      <div class="field"><label>State / Territory</label>
+        <select id="state" onchange="save();calcLoan()">
+          <option value="NSW">New South Wales</option><option value="VIC">Victoria</option><option value="QLD">Queensland</option>
+          <option value="WA">Western Australia</option><option value="SA">South Australia</option><option value="TAS">Tasmania</option>
+          <option value="ACT">ACT</option><option value="NT">Northern Territory</option>
+        </select>
+      </div>
+      <div class="field"><label>First Home Buyer?</label>
+        <select id="fhb" onchange="save();calcLoan()"><option value="no">No</option><option value="yes">Yes</option></select>
+      </div>
+      <div class="field"><label>Application Purpose</label>
+        <select id="purpose" onchange="save()"><option value="owner_occ">Owner Occupied — P&I</option><option value="owner_io">Owner Occupied — IO</option><option value="invest_pi">Investment — P&I</option><option value="invest_io">Investment — IO</option><option value="refinance">Refinance</option></select>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🧮</span> Loan Calculations</div>
+    <div id="loan-calc-content"><p class="muted" style="font-size:13px">Enter property value and interest rate above.</p></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="go('liabilities')">← Back</button>
+    <button class="btn btn-primary" onclick="go('results');generateReport()">View Affordability Report →</button>
+  </div>
+</div>
+
+<!-- ======= RESULTS ======= -->
+<div class="section" id="sec-results">
+  <div class="print-hdr">
+    <div style="font-family:'Sora',sans-serif;font-size:19px;font-weight:700">Kelda Finance — Mortgage Affordability Report</div>
+    <div style="font-size:12px;color:#666;margin-top:3px" id="print-date-line"></div>
+    <div style="font-size:11px;color:#999;margin-top:5px">General estimate only. Not financial advice. For discussion with a licensed mortgage broker or lender.</div>
+  </div>
+  <div class="page-header no-print">
+    <div class="eyebrow">Affordability Report</div>
+    <h1>Borrowing Snapshot</h1>
+    <p>Based on APRA 3% buffer, HEM benchmarks, and your Kelda Finance data.</p>
+  </div>
+  <div class="btn-row no-print" style="margin-bottom:18px">
+    <button class="btn btn-success" onclick="exportPDF()">🖨️ Export PDF</button>
+    <button class="btn btn-amber" onclick="exportExcel()">📊 Export Excel</button>
+    <button class="btn btn-secondary" onclick="generateReport()">🔄 Recalculate</button>
+    <button class="btn btn-secondary" onclick="go('review')">← Edit Details</button>
+  </div>
+  <div id="report-content"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ============================================================
+// PFM APP LOCALSTORAGE KEYS (matches kelda-finance.html)
+// ============================================================
+var PFM = {
+  // Original keys (early version)
+  tx:          'ff_transactions',
+  budgets:     'ff_budgets',
+  goals:       'ff_goals',
+  bills:       'ff_bills',
+  mortgage:    'ff_mortgage',
+  // Extended keys (current version)
+  categories:  'ledger_categories',
+  cash:        'ff_cash',        // cash tracker accounts
+  insurance:   'ff_insurance',
+  super_data:  'ff_super',
+  assets_data: 'ff_assets',
+  // Also try kelda-specific keys
+  cff_tx:      'cff_transactions',
+  cff_mortgage:'cff_mortgage',
+  cff_goals:   'cff_goals',
+  cff_cash:    'cff_cash',
+  cff_super:   'cff_super',
+};
+
+// Our own key
+var MY_KEY = 'kf_borrowing';
+
+// ============================================================
+// STATE
+// ============================================================
+var ST = {};
+var properties = [];
+var creditCards = [];
+var loans = [];
+var existingMortgages = [];
+var importLog = []; // track what was imported
+
+function pfmRead(key) {
+  try { return JSON.parse(localStorage.getItem(key)||'null'); } catch(e) { return null; }
+}
+
+function load() {
+  try { var r = localStorage.getItem(MY_KEY); if (r) ST = JSON.parse(r); } catch(e) { ST = {}; }
+}
+
+var FIELDS = ['b1_name','b1_dob','b1_emp','b2_name','b2_dob','b2_emp','dependants','location','purpose',
+  'b1_salary','b1_overtime','b1_bonus','b2_salary','b2_overtime','b2_bonus',
+  'rental_income','invest_income','gov_income','other_income','hecs',
+  'exp_groceries','exp_utilities','exp_comms','exp_transport','exp_kids_clothing','exp_personal',
+  'exp_dining','exp_entertainment','exp_clothing','exp_alcohol','exp_childcare','exp_subs',
+  'exp_insurance','exp_school','exp_other',
+  'a_cash','a_term','a_shares','a_super','a_vehicles','a_contents','a_business',
+  'property_value','deposit','loan_amount','interest_rate','loan_term','repay_type','state','fhb'];
+
+function save() {
+  FIELDS.forEach(function(id){var el=document.getElementById(id);if(el)ST[id]=el.value;});
+  ST.properties=properties.filter(Boolean);
+  ST.creditCards=creditCards.filter(Boolean);
+  ST.loans=loans.filter(Boolean);
+  ST.mortgages=existingMortgages.filter(Boolean);
+  ST.importLog=importLog;
+  try{localStorage.setItem(MY_KEY,JSON.stringify(ST));}catch(e){}
+}
+
+function restore() {
+  FIELDS.forEach(function(id){var el=document.getElementById(id);if(el&&ST[id]!==undefined)el.value=ST[id];});
+  if(ST.properties)ST.properties.forEach(function(p){addProperty(p);});
+  if(ST.creditCards)ST.creditCards.forEach(function(c){addCC(c);});
+  if(ST.loans)ST.loans.forEach(function(l){addLoan(l);});
+  if(ST.mortgages)ST.mortgages.forEach(function(m){addMortgage(m);});
+  if(ST.importLog)importLog=ST.importLog;
+  calcIncome();calcHEM();calcAssets();calcLiabs();calcLoan();
+}
+
+// ============================================================
+// PFM IMPORT ENGINE
+// ============================================================
+function importFromPFM() {
+  importLog = [];
+  var imported = {};
+
+  // ---- TRANSACTIONS: read from multiple possible keys ----
+  var txRaw = pfmRead(PFM.tx) || pfmRead(PFM.cff_tx) || [];
+  if (!Array.isArray(txRaw)) txRaw = [];
+
+  // Filter to last 3 months for expense averaging
+  var now = new Date();
+  var threeMonthsAgo = new Date(now.getFullYear(), now.getMonth()-3, 1);
+  var recentTx = txRaw.filter(function(t){
+    try { return new Date(t.date) >= threeMonthsAgo; } catch(e){ return false; }
+  });
+
+  // Calculate income by person from transactions (last 12 months)
+  var twelveMonthsAgo = new Date(now.getFullYear()-1, now.getMonth(), 1);
+  var incomeTx = txRaw.filter(function(t){
+    try { return new Date(t.date) >= twelveMonthsAgo && (t.type==='income' || t.amount>0); } catch(e){ return false; }
+  });
+
+  // Sum income by person
+  var b1Inc=0, b2Inc=0;
+  incomeTx.forEach(function(t){
+    var amt = Math.abs(parseFloat(t.amount)||0);
+    // person field may be 'brenton','b1','person1','shelley','b2','person2'
+    var p = (t.person||'').toLowerCase();
+    if(p==='brenton'||p==='b1'||p==='person1') b1Inc+=amt;
+    else if(p==='shelley'||p==='b2'||p==='person2') b2Inc+=amt;
+    else b1Inc+=amt; // default to b1
+  });
+
+  // Category mapping: PFM categories -> HEM categories
+  // Uses both the structured category system and keyword fallbacks
+  var catMap = {
+    // food_eating_out -> groceries + dining
+    groceries:     ['groceries','food','supermarket','woolworths','coles','aldi','igloo','harris farm'],
+    utilities:     ['utilities','electricity','power','gas','water','council','rates','energy','origin','agl'],
+    comms:         ['phone','internet','mobile','telstra','optus','vodafone','aussie broadband','nbn'],
+    transport:     ['transport','fuel','petrol','rego','registration','uber','taxi','public transport','opal','go card','toll','car'],
+    personal:      ['personal care','health','pharmacy','chemist','medical','doctor','gym','fitness'],
+    dining:        ['dining','restaurant','cafe','takeaway','delivery','uber eats','doordash','menulog','coffee'],
+    entertainment: ['entertainment','netflix','spotify','cinema','movie','ticketek','concert','sport','amazon prime','disney','apple'],
+    clothing:      ['clothing','fashion','apparel','myer','david jones','target','kmart','zara','h&m'],
+    alcohol:       ['alcohol','bar','pub','bottle shop','wine','beer','liquor','dan murphy'],
+    childcare:     ['childcare','school','education','kids','children','nanny','daycare','kinder'],
+    subs:          ['subscription','subscriptions','streaming','software','saas'],
+    insurance:     ['insurance','life insurance','health insurance','car insurance','home insurance','income protection'],
+  };
+
+  // Calculate monthly averages from recent transactions (3-month)
+  var months = 3;
+  var catTotals = {};
+  Object.keys(catMap).forEach(function(k){catTotals[k]=0;});
+
+  recentTx.forEach(function(t){
+    var amt = Math.abs(parseFloat(t.amount)||0);
+    if(t.type==='income'||t.amount>0) return; // skip income
+
+    var cat = ((t.category||t.cat||t.subcategory||t.description||'')+'').toLowerCase();
+    var desc = ((t.description||t.name||t.merchant||'')+'').toLowerCase();
+    var combined = cat+' '+desc;
+
+    Object.keys(catMap).forEach(function(k){
+      catMap[k].forEach(function(keyword){
+        if(combined.indexOf(keyword)!==-1) catTotals[k]+=amt;
+      });
+    });
+  });
+
+  // Set monthly averages
+  var expFields = {
+    exp_groceries:catTotals.groceries/months,
+    exp_utilities:catTotals.utilities/months,
+    exp_comms:catTotals.comms/months,
+    exp_transport:catTotals.transport/months,
+    exp_personal:catTotals.personal/months,
+    exp_dining:catTotals.dining/months,
+    exp_entertainment:catTotals.entertainment/months,
+    exp_clothing:catTotals.clothing/months,
+    exp_alcohol:catTotals.alcohol/months,
+    exp_childcare:catTotals.childcare/months,
+    exp_subs:catTotals.subs/months,
+    exp_insurance:catTotals.insurance/months,
+  };
+
+  var expSrcBadges = {
+    exp_groceries:'gr-src', exp_utilities:'ut-src', exp_comms:'ph-src',
+    exp_transport:'tr-src', exp_personal:'pc-src', exp_dining:'di-src',
+    exp_entertainment:'en-src', exp_clothing:'cl-src', exp_alcohol:'al-src',
+    exp_childcare:'ch-src', exp_subs:'su-src', exp_insurance:'ins-src'
+  };
+
+  var expImported = 0;
+  Object.keys(expFields).forEach(function(field){
+    var val = Math.round(expFields[field]);
+    if(val>0){
+      ST[field] = val;
+      expImported++;
+      var badgeId = expSrcBadges[field];
+      imported[field] = {val:val, src:'transactions'};
+    }
+  });
+
+  if(expImported>0){
+    importLog.push({type:'success',msg:'Imported '+expImported+' expense categories from '+recentTx.length+' transactions (3-month average)'});
+  } else if(txRaw.length>0){
+    importLog.push({type:'warning',msg:'Found '+txRaw.length+' transactions but could not match categories. Category names may differ — please enter expenses manually.'});
+  } else {
+    importLog.push({type:'info',msg:'No transactions found in the PFM app yet. Enter expenses manually below.'});
+  }
+
+  // Income from transactions
+  if(b1Inc>0||b2Inc>0){
+    // Annualise from 12-month data
+    if(b1Inc>0){ ST['b1_salary']=Math.round(b1Inc); imported['b1_salary']={val:Math.round(b1Inc),src:'transactions (12-mo)'}; }
+    if(b2Inc>0){ ST['b2_salary']=Math.round(b2Inc); imported['b2_salary']={val:Math.round(b2Inc),src:'transactions (12-mo)'}; }
+    importLog.push({type:'success',msg:'Imported income from transactions: B1 '+fmt(b1Inc)+' / B2 '+fmt(b2Inc)+' (annual, last 12 months)'});
+  }
+
+  // ---- MORTGAGE ----
+  var mort = pfmRead(PFM.mortgage) || pfmRead(PFM.cff_mortgage);
+  if(mort && typeof mort === 'object'){
+    var mortBal  = parseFloat(mort.balance||mort.remaining_balance||mort.remainingBalance||0);
+    var mortPay  = parseFloat(mort.payment||mort.monthly_payment||mort.monthlyPayment||0);
+    var mortRate = parseFloat(mort.rate||mort.interest_rate||mort.interestRate||6.5);
+    var homeVal  = parseFloat(mort.home_value||mort.homeValue||mort.propertyValue||mort.value||0);
+
+    if(mortBal>0){
+      // Add as existing mortgage
+      existingMortgages = [];
+      var mortItem = {property:'Current Home', balance:mortBal, repayment:mortPay, rate:mortRate};
+      existingMortgages.push(mortItem);
+      imported['mortgage']={val:mortBal,src:'mortgage tab'};
+      importLog.push({type:'success',msg:'Imported existing mortgage: balance '+fmt(mortBal)+', repayment '+fmt(mortPay)+'/mo at '+mortRate+'%'});
+    }
+    if(homeVal>0){
+      // Add as property asset
+      properties = [];
+      properties.push({address:'Current Home', value:homeVal, mortgage:mortBal});
+      imported['home']={val:homeVal,src:'mortgage tab'};
+      importLog.push({type:'success',msg:'Imported home value: '+fmt(homeVal)+' (equity: '+fmt(homeVal-mortBal)+')'});
+    }
+  }
+
+  // ---- CASH TRACKER / SAVINGS ----
+  var cashData = pfmRead(PFM.cash) || pfmRead(PFM.cff_cash);
+  var totalCash = 0;
+  if(cashData){
+    // Could be array of accounts or object
+    if(Array.isArray(cashData)){
+      cashData.forEach(function(acc){
+        totalCash += parseFloat(acc.balance||acc.amount||acc.value||0);
+      });
+    } else if(typeof cashData === 'object'){
+      // Try common field names
+      var fields = ['balance','total','cash','savings','offset','everyday','highInterest','emergency'];
+      fields.forEach(function(f){ totalCash += parseFloat(cashData[f]||0); });
+    }
+    if(totalCash>0){
+      ST['a_cash'] = Math.round(totalCash);
+      imported['a_cash']={val:Math.round(totalCash),src:'cash tracker'};
+      importLog.push({type:'success',msg:'Imported cash/savings: '+fmt(totalCash)+' from Cash Tracker'});
+    }
+  }
+
+  // Also try summing from transactions if no cash tracker
+  if(totalCash===0 && txRaw.length>0){
+    // Running balance from all transactions
+    var balance = txRaw.reduce(function(sum,t){
+      return sum + (parseFloat(t.amount)||0);
+    },0);
+    if(balance>0){
+      ST['a_cash'] = Math.round(balance);
+      imported['a_cash']={val:Math.round(balance),src:'transaction balance'};
+      importLog.push({type:'info',msg:'Cash estimated from transaction balance: '+fmt(balance)});
+    }
+  }
+
+  // ---- SUPERANNUATION ----
+  var superData = pfmRead(PFM.super_data) || pfmRead(PFM.cff_super);
+  if(superData && typeof superData === 'object'){
+    var b1Super = parseFloat(superData.brenton_balance||superData.b1_balance||superData.balance1||superData.brenton||0);
+    var b2Super = parseFloat(superData.shelley_balance||superData.b2_balance||superData.balance2||superData.shelley||0);
+    var totalSuper = b1Super + b2Super;
+    if(totalSuper===0){
+      // Try generic fields
+      totalSuper = parseFloat(superData.balance||superData.total||superData.current||0);
+    }
+    if(totalSuper>0){
+      ST['a_super'] = Math.round(totalSuper);
+      imported['a_super']={val:Math.round(totalSuper),src:'super tab'};
+      importLog.push({type:'success',msg:'Imported superannuation: '+fmt(totalSuper)});
+    }
+  }
+
+  // ---- GOALS: savings goals as assets ----
+  var goalsData = pfmRead(PFM.goals) || pfmRead(PFM.cff_goals) || [];
+  if(Array.isArray(goalsData) && goalsData.length>0){
+    var totalSaved = goalsData.reduce(function(s,g){ return s+(parseFloat(g.current||g.saved||g.amount||0)); },0);
+    if(totalSaved>0){
+      var existingCash = parseFloat(ST['a_cash']||0);
+      if(existingCash===0){ ST['a_cash']=Math.round(totalSaved); imported['a_cash']={val:Math.round(totalSaved),src:'savings goals'}; }
+      importLog.push({type:'info',msg:'Found '+goalsData.length+' savings goals with '+fmt(totalSaved)+' saved — included if no cash data found'});
+    }
+  }
+
+  // ---- BILLS: recurring bills (not liabilities, just FYI) ----
+  var billsData = pfmRead(PFM.bills) || [];
+  if(Array.isArray(billsData)&&billsData.length>0){
+    var billTotal = billsData.reduce(function(s,b){return s+(parseFloat(b.amount||0));},0);
+    importLog.push({type:'info',msg:'Found '+billsData.length+' recurring bills totalling '+fmt(billTotal)+'/mo — review in Committed Expenses above'});
+  }
+
+  // ---- INSURANCE ----
+  var insData = pfmRead(PFM.insurance);
+  if(insData && typeof insData === 'object'){
+    var insPremium = parseFloat(insData.premium||insData.monthly||insData.total_premium||0);
+    if(insPremium>0){
+      ST['exp_insurance'] = Math.round(insPremium);
+      imported['exp_insurance']={val:Math.round(insPremium),src:'insurance tab'};
+      importLog.push({type:'success',msg:'Imported insurance premiums: '+fmt(insPremium)+'/mo from Insurance tab'});
+    }
+  }
+
+  // Summary
+  var importedCount = Object.keys(imported).length;
+  if(importedCount===0){
+    importLog.push({type:'warning',msg:'No data found in your PFM app yet. This calculator works best once you have transactions, mortgage, and cash tracker data entered in Kelda Finance.'});
+  }
+
+  // Persist and restore UI
+  ST._imported = imported;
+  save();
+  restore();
+
+  // Rebuild lists
+  if(existingMortgages.length){
+    document.getElementById('mortgage-list').innerHTML='';
+    existingMortgages.forEach(function(m){addMortgage(m);});
+  }
+  if(properties.length){
+    document.getElementById('property-list').innerHTML='';
+    properties.forEach(function(p){addProperty(p);});
+  }
+
+  renderReview();
+  renderBadges();
+}
+
+function renderBadges(){
+  var imported = ST._imported || {};
+  // Source badges
+  var badgeMap = {
+    'b1_salary':'b1sal-src','b2_salary':'b2sal-src','rental_income':'rental-src',
+    'exp_groceries':'gr-src','exp_utilities':'ut-src','exp_comms':'ph-src',
+    'exp_transport':'tr-src','exp_personal':'pc-src','exp_dining':'di-src',
+    'exp_entertainment':'en-src','exp_clothing':'cl-src','exp_alcohol':'al-src',
+    'exp_childcare':'ch-src','exp_subs':'su-src','exp_insurance':'ins-src',
+    'a_cash':'cash-src','a_super':'super-src','mortgage':'mort-src'
+  };
+  Object.keys(badgeMap).forEach(function(field){
+    var el=document.getElementById(badgeMap[field]); if(!el)return;
+    if(imported[field]){
+      el.textContent='from '+imported[field].src;
+      el.className='src-badge';
+    } else {
+      el.textContent='enter manually';
+      el.className='src-badge src-manual';
+    }
+  });
+}
+
+function renderReview(){
+  var imported = ST._imported || {};
+  var bannerEl = document.getElementById('review-banner');
+  var contentEl = document.getElementById('review-content');
+
+  // Build banner
+  var hasImports = Object.keys(imported).length > 0;
+  if(bannerEl){
+    bannerEl.innerHTML = '<div class="import-banner">' +
+      '<div class="ib-icon">'+(hasImports?'✅':'⚠️')+'</div>' +
+      '<div><div class="ib-title">'+(hasImports?'Data imported from Kelda Finance':'No PFM data found yet')+'</div>' +
+      '<div class="ib-sub">'+importLog.map(function(l){
+        var icon = l.type==='success'?'✓':l.type==='warning'?'⚠':'ℹ';
+        return icon+' '+l.msg;
+      }).join('<br>')+'</div></div></div>';
+  }
+
+  // Build review table
+  if(!contentEl)return;
+
+  var rows = [
+    {label:'Income — Borrower 1', field:'b1_salary', src:imported['b1_salary']},
+    {label:'Income — Borrower 2', field:'b2_salary', src:imported['b2_salary']},
+    {label:'Rental Income', field:'rental_income', src:imported['rental_income']},
+    {label:'Monthly Groceries', field:'exp_groceries', src:imported['exp_groceries']},
+    {label:'Monthly Utilities', field:'exp_utilities', src:imported['exp_utilities']},
+    {label:'Monthly Transport', field:'exp_transport', src:imported['exp_transport']},
+    {label:'Monthly Dining', field:'exp_dining', src:imported['exp_dining']},
+    {label:'Monthly Entertainment', field:'exp_entertainment', src:imported['exp_entertainment']},
+    {label:'Monthly Insurance', field:'exp_insurance', src:imported['exp_insurance']},
+    {label:'Cash & Savings', field:'a_cash', src:imported['a_cash']},
+    {label:'Superannuation', field:'a_super', src:imported['a_super']},
+    {label:'Home Value', field:'_homeValue', src:imported['home']},
+    {label:'Mortgage Balance', field:'_mortBal', src:imported['mortgage']},
+  ];
+
+  var homeVal = properties.length && properties[0] ? (properties[0].value||0) : 0;
+  var mortBal = existingMortgages.length && existingMortgages[0] ? (existingMortgages[0].balance||0) : 0;
+
+  var tableRows = rows.map(function(r){
+    var val = 0;
+    if(r.field==='_homeValue') val=homeVal;
+    else if(r.field==='_mortBal') val=mortBal;
+    else val = parseFloat(ST[r.field]||0);
+    var badge = r.src
+      ? '<span class="src-badge">from '+r.src.src+'</span>'
+      : '<span class="src-badge src-manual">not found — enter manually</span>';
+    var dispVal = val>0 ? ('<span class="green mono">'+fmt(val)+'</span>') : ('<span class="muted">—</span>');
+    return '<tr><td>'+r.label+'</td><td>'+badge+'</td><td style="text-align:right;font-family:DM Mono,monospace">'+dispVal+'</td></tr>';
+  }).join('');
+
+  contentEl.innerHTML = '<div class="card"><div class="card-title"><span class="icon">📋</span> Imported Data Summary — Review Before Proceeding</div>' +
+    '<table class="dt">' +
+    '<tr><th>Field</th><th>Source</th><th style="text-align:right">Value</th></tr>' +
+    tableRows +
+    '</table>' +
+    '<div style="margin-top:14px;padding:12px;background:var(--navy-700);border-radius:var(--radius-md);font-size:12px;color:var(--text-secondary)">' +
+    '💡 <strong style="color:var(--text-primary)">How to use this:</strong> Green values were imported automatically. Items marked "not found" need to be entered manually in the relevant step. ' +
+    'All figures are editable — click any step in the sidebar to review and adjust.' +
+    '</div></div>';
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function go(id){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var sec=document.getElementById('sec-'+id); if(sec)sec.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').indexOf("'"+id+"'")!==-1)n.classList.add('active');
+  });
+  if(window.innerWidth<=768){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('open');}
+  window.scrollTo(0,0);
+}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('open');}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n){if(!n||isNaN(n))n=0;return '$'+Math.round(n).toLocaleString('en-AU');}
+function fmtPct(n){return(isNaN(n)?0:n).toFixed(1)+'%';}
+function v(id){var el=document.getElementById(id);return el?(parseFloat(el.value)||0):0;}
+function s(id){var el=document.getElementById(id);return el?(el.value||''):'';  }
+function setBadge(id,imported){var el=document.getElementById(id);if(!el)return;if(imported){el.textContent='imported';el.className='src-badge';}else{el.textContent='manual';el.className='src-badge src-manual';}}
+
+// ============================================================
+// CALCS
+// ============================================================
+function calcIncome(){
+  var total=v('b1_salary')+v('b1_overtime')*.8+v('b1_bonus')*.8+v('b2_salary')+v('b2_overtime')*.8+v('b2_bonus')*.8+v('rental_income')*.8+v('invest_income')+v('gov_income')+v('other_income');
+  var gross=v('b1_salary')+v('b2_salary');
+  var hr=0;if(gross>120000)hr=.10;else if(gross>100000)hr=.085;else if(gross>80000)hr=.07;else if(gross>60000)hr=.05;else if(gross>47014)hr=.01;
+  var hm=v('hecs')>0?gross*hr/12:0;
+  var el=document.getElementById('income-summary');if(!el)return;
+  el.innerHTML='<div class="sc"><div class="sl">Total Assessed (p.a.)</div><div class="sv green">'+fmt(total)+'</div><div class="ss">After shading</div></div>'+
+    '<div class="sc"><div class="sl">Monthly Gross</div><div class="sv">'+fmt(total/12)+'</div></div>'+
+    '<div class="sc"><div class="sl">HECS Repayment</div><div class="sv amber">'+fmt(hm)+'</div><div class="ss">per month</div></div>'+
+    '<div class="sc"><div class="sl">Net Monthly</div><div class="sv">'+fmt(total/12-hm)+'</div><div class="ss">After HECS</div></div>';
+}
+
+function getHEM(){
+  var deps=parseInt(s('dependants'))||0;var loc=s('location')||'major';
+  var couple=s('b2_emp')!=='none'&&s('b2_emp')!=='';
+  var bm=couple?{groceries:900,utilities:280,comms:180,transport:600,personal:250,dining:500,entertainment:300,clothing:300,childcare:0}
+    :{groceries:600,utilities:220,comms:120,transport:400,personal:180,dining:300,entertainment:200,clothing:200,childcare:0};
+  bm.groceries+=deps*120;bm.transport+=deps*80;bm.childcare+=deps*800;bm.clothing+=deps*80;
+  var m={major:1,other_city:.92,regional:.82,rural:.75}[loc]||1;
+  Object.keys(bm).forEach(function(k){bm[k]=Math.round(bm[k]*m);});
+  return bm;
+}
+
+function calcHEM(){
+  var bm=getHEM();
+  var cats=[
+    {lbl:'🛒 Groceries',id:'exp_groceries',bv:bm.groceries},{lbl:'⚡ Utilities',id:'exp_utilities',bv:bm.utilities},
+    {lbl:'📱 Phone & Internet',id:'exp_comms',bv:bm.comms},{lbl:'🚗 Transport',id:'exp_transport',bv:bm.transport},
+    {lbl:'🧴 Personal Care',id:'exp_personal',bv:bm.personal},{lbl:'🍽️ Dining',id:'exp_dining',bv:bm.dining},
+    {lbl:'🎬 Entertainment',id:'exp_entertainment',bv:bm.entertainment},{lbl:'👗 Clothing',id:'exp_clothing',bv:bm.clothing},
+    {lbl:'👶 Childcare',id:'exp_childcare',bv:bm.childcare},
+  ];
+  var declB=v('exp_groceries')+v('exp_utilities')+v('exp_comms')+v('exp_transport')+v('exp_kids_clothing')+v('exp_personal');
+  var hemB=bm.groceries+bm.utilities+bm.comms+bm.transport+bm.personal;
+  var declD=v('exp_dining')+v('exp_entertainment')+v('exp_clothing')+v('exp_alcohol')+v('exp_childcare')+v('exp_subs');
+  var hemD=bm.dining+bm.entertainment+bm.clothing+bm.childcare;
+  var committed=v('exp_insurance')+v('exp_school')+v('exp_other');
+  var totalUsed=Math.max(declB,hemB)+Math.max(declD,hemD)+committed;
+  var rows=cats.map(function(c){
+    var d=v(c.id);var used=Math.max(d,c.bv);
+    var badge=d<c.bv?'<span class="chip c-amber" style="font-size:10px;padding:2px 7px">HEM floor</span>':
+      (d>0?'<span class="chip c-green" style="font-size:10px;padding:2px 7px">Your figure</span>':'');
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(98,120,160,.08);font-size:12px">'+
+      '<div style="color:var(--text-secondary);display:flex;align-items:center;gap:7px"><span>'+c.lbl+'</span>'+badge+'</div>'+
+      '<div style="text-align:right"><div class="mono" style="font-size:13px">'+fmt(used)+'</div><div style="font-size:10px;color:var(--navy-300)">Benchmark: '+fmt(c.bv)+'</div></div></div>';
+  }).join('');
+  var el=document.getElementById('hem-content');if(!el)return;
+  el.innerHTML=rows+'<div class="divider"></div><div class="g3">'+
+    '<div class="sc"><div class="sl">Your Declared Total</div><div class="sv">'+fmt(declB+declD+committed)+'</div><div class="ss">per month</div></div>'+
+    '<div class="sc"><div class="sl">HEM Benchmark</div><div class="sv amber">'+fmt(hemB+hemD)+'</div><div class="ss">per month</div></div>'+
+    '<div class="sc"><div class="sl">Used in Assessment</div><div class="sv pink">'+fmt(totalUsed)+'</div><div class="ss">Higher of both + committed</div></div></div>';
+}
+
+function addProperty(data){
+  var idx=properties.length;var item=data||{address:'',value:0,mortgage:0};properties.push(item);
+  var el=document.getElementById('property-list');var div=document.createElement('div');
+  div.id='prop-'+idx;div.className='ir ir4';div.style.marginBottom='10px';
+  div.innerHTML='<div class="field" style="margin:0"><label>Address / Description</label><input type="text" placeholder="e.g. 12 Smith St, Sydney" onchange="properties['+idx+'].address=this.value;save()"'+(item.address?' value="'+item.address+'"':'')+' ></div>'+
+    '<div class="field" style="margin:0"><label>Estimated Value</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="properties['+idx+'].value=parseFloat(this.value)||0;calcAssets();save()"'+(item.value?' value="'+item.value+'"':'')+' ></div></div>'+
+    '<div class="field" style="margin:0"><label>Outstanding Mortgage</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="properties['+idx+'].mortgage=parseFloat(this.value)||0;calcAssets();save()"'+(item.mortgage?' value="'+item.mortgage+'"':'')+' ></div></div>'+
+    '<button class="del" onclick="rmItem(\'prop\','+idx+',properties,calcAssets)">✕</button>';
+  el.appendChild(div);calcAssets();
+}
+
+function calcAssets(){
+  var cash=v('a_cash')+v('a_term')+v('a_shares');
+  var propV=0;properties.forEach(function(p){if(p)propV+=parseFloat(p.value)||0;});
+  var other=v('a_vehicles')+v('a_contents')+v('a_business');
+  var sup=v('a_super');var exSup=cash+propV+other;
+  var el=document.getElementById('asset-totals');if(!el)return;
+  el.innerHTML='<div class="g4"><div class="sc"><div class="sl">Cash & Investments</div><div class="sv green">'+fmt(cash)+'</div></div>'+
+    '<div class="sc"><div class="sl">Property Value</div><div class="sv">'+fmt(propV)+'</div></div>'+
+    '<div class="sc"><div class="sl">Other Assets</div><div class="sv">'+fmt(other)+'</div></div>'+
+    '<div class="sc"><div class="sl">Total Assets (excl. Super)</div><div class="sv pink">'+fmt(exSup)+'</div></div></div>';
+}
+
+function addCC(data){
+  var idx=creditCards.length;var item=data||{name:'',limit:0};creditCards.push(item);
+  var el=document.getElementById('cc-list');var div=document.createElement('div');
+  div.id='cc-'+idx;div.className='ir ir3';div.style.marginBottom='10px';
+  div.innerHTML='<div class="field" style="margin:0"><label>Card Name / Bank</label><input type="text" placeholder="e.g. ANZ Visa" onchange="creditCards['+idx+'].name=this.value;save()"'+(item.name?' value="'+item.name+'"':'')+' ></div>'+
+    '<div class="field" style="margin:0"><label>Credit Limit</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="creditCards['+idx+'].limit=parseFloat(this.value)||0;calcLiabs();save()"'+(item.limit?' value="'+item.limit+'"':'')+' ></div><div class="helper">3%/month assessed</div></div>'+
+    '<button class="del" onclick="rmItem(\'cc\','+idx+',creditCards,calcLiabs)">✕</button>';
+  el.appendChild(div);calcLiabs();
+}
+
+function addLoan(data){
+  var idx=loans.length;var item=data||{name:'',balance:0,repayment:0};loans.push(item);
+  var el=document.getElementById('loan-list');var div=document.createElement('div');
+  div.id='loan-'+idx;div.className='ir ir4';div.style.marginBottom='10px';
+  div.innerHTML='<div class="field" style="margin:0"><label>Description</label><input type="text" placeholder="e.g. Car Loan" onchange="loans['+idx+'].name=this.value;save()"'+(item.name?' value="'+item.name+'"':'')+' ></div>'+
+    '<div class="field" style="margin:0"><label>Balance</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="loans['+idx+'].balance=parseFloat(this.value)||0;calcLiabs();save()"'+(item.balance?' value="'+item.balance+'"':'')+' ></div></div>'+
+    '<div class="field" style="margin:0"><label>Monthly Repayment</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="loans['+idx+'].repayment=parseFloat(this.value)||0;calcLiabs();save()"'+(item.repayment?' value="'+item.repayment+'"':'')+' ></div></div>'+
+    '<button class="del" onclick="rmItem(\'loan\','+idx+',loans,calcLiabs)">✕</button>';
+  el.appendChild(div);calcLiabs();
+}
+
+function addMortgage(data){
+  var idx=existingMortgages.length;var item=data||{property:'',balance:0,repayment:0,rate:0};existingMortgages.push(item);
+  var el=document.getElementById('mortgage-list');var div=document.createElement('div');
+  div.id='emort-'+idx;div.className='ir ir5';div.style.marginBottom='10px';
+  div.innerHTML='<div class="field" style="margin:0"><label>Property</label><input type="text" placeholder="e.g. Current Home" onchange="existingMortgages['+idx+'].property=this.value;save()"'+(item.property?' value="'+item.property+'"':'')+' ></div>'+
+    '<div class="field" style="margin:0"><label>Balance Owing</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="existingMortgages['+idx+'].balance=parseFloat(this.value)||0;calcLiabs();save()"'+(item.balance?' value="'+item.balance+'"':'')+' ></div></div>'+
+    '<div class="field" style="margin:0"><label>Monthly Repayment</label><div class="pfx"><span>$</span><input type="number" class="mono" placeholder="0" onchange="existingMortgages['+idx+'].repayment=parseFloat(this.value)||0;calcLiabs();save()"'+(item.repayment?' value="'+item.repayment+'"':'')+' ></div></div>'+
+    '<div class="field" style="margin:0"><label>Rate (% p.a.)</label><input type="number" class="mono" placeholder="6.50" step="0.01" onchange="existingMortgages['+idx+'].rate=parseFloat(this.value)||0;save()"'+(item.rate?' value="'+item.rate+'"':'')+' ></div>'+
+    '<button class="del" onclick="rmItem(\'emort\','+idx+',existingMortgages,calcLiabs)">✕</button>';
+  el.appendChild(div);calcLiabs();
+}
+
+function rmItem(pfx,idx,arr,fn){var el=document.getElementById(pfx+'-'+idx);if(el)el.remove();arr[idx]=null;fn();save();}
+
+function calcLiabs(){
+  var ccL=0,ccM=0;creditCards.forEach(function(c){if(c){ccL+=parseFloat(c.limit)||0;ccM+=(parseFloat(c.limit)||0)*.03;}});
+  var lB=0,lR=0;loans.forEach(function(l){if(l){lB+=parseFloat(l.balance)||0;lR+=parseFloat(l.repayment)||0;}});
+  var mB=0,mR=0;existingMortgages.forEach(function(m){if(m){mB+=parseFloat(m.balance)||0;mR+=parseFloat(m.repayment)||0;}});
+  var el=document.getElementById('liab-summary');if(!el)return;
+  el.innerHTML='<div class="g4"><div class="sc"><div class="sl">CC Assessment (monthly)</div><div class="sv red">'+fmt(ccM)+'</div><div class="ss">3% of '+fmt(ccL)+' limits</div></div>'+
+    '<div class="sc"><div class="sl">Loan Repayments</div><div class="sv amber">'+fmt(lR)+'</div><div class="ss">per month</div></div>'+
+    '<div class="sc"><div class="sl">Existing Mortgage Repayments</div><div class="sv amber">'+fmt(mR)+'</div><div class="ss">per month</div></div>'+
+    '<div class="sc"><div class="sl">Total Monthly Commitments</div><div class="sv pink">'+fmt(ccM+lR+mR)+'</div></div></div>';
+}
+
+function calcLoan(){
+  var rate=v('interest_rate')||6.5;var buf=rate+3;
+  var bd=document.getElementById('buf-display');if(bd)bd.textContent=buf.toFixed(2)+'%';
+  var pv=v('property_value');var dep=v('deposit');var la=v('loan_amount')||(pv-dep);
+  var term=parseInt(s('loan_term'))||30;var type=s('repay_type');var n=term*12;
+  var el=document.getElementById('loan-calc-content');if(!el)return;
+  if(la<=0||rate<=0){el.innerHTML='<p class="muted" style="font-size:12px">Enter property value and interest rate above.</p>';return;}
+  var r=rate/100/12;var rB=buf/100/12;
+  var ma=type==='io'?la*r:la*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  var mb=type==='io'?la*rB:la*(rB*Math.pow(1+rB,n))/(Math.pow(1+rB,n)-1);
+  var lvr=pv>0?la/pv*100:0;var sd=calcSD(pv,s('state'),s('fhb')==='yes');
+  var lc=lvr>90?'red':lvr>80?'amber':'green';
+  el.innerHTML='<div class="g3">'+
+    '<div class="sc"><div class="sl">Proposed Loan</div><div class="sv">'+fmt(la)+'</div></div>'+
+    '<div class="sc"><div class="sl">LVR</div><div class="sv '+lc+'">'+fmtPct(lvr)+'</div><div class="ss">'+(lvr>80?'⚠️ LMI may apply':'✓ No LMI required')+'</div></div>'+
+    '<div class="sc"><div class="sl">Monthly Repayment</div><div class="sv">'+fmt(ma)+'</div><div class="ss">at contract rate</div></div>'+
+    '<div class="sc"><div class="sl">Assessed Repayment</div><div class="sv amber">'+fmt(mb)+'</div><div class="ss">at APRA buffer rate</div></div>'+
+    '<div class="sc"><div class="sl">Total Interest</div><div class="sv">'+fmt(ma*n-la)+'</div><div class="ss">over '+term+' years</div></div>'+
+    '<div class="sc"><div class="sl">Est. Stamp Duty</div><div class="sv pink">'+fmt(sd)+'</div><div class="ss">'+s('state')+(s('fhb')==='yes'?' FHB':'')+'</div></div></div>';
+}
+
+// Stamp duty
+function calcSD(val,st,fhb){
+  if(!val||val<=0)return 0;var d=0;
+  if(st==='NSW'){d=nsw(val);if(fhb&&val<=800000)d=0;else if(fhb&&val<=1000000)d=d*(val-800000)/200000;}
+  else if(st==='VIC'){d=vic(val);if(fhb&&val<=600000)d=0;else if(fhb&&val<=750000)d=d*(val-600000)/150000;}
+  else if(st==='QLD'){d=qld(val);if(fhb&&val<=500000)d=Math.max(0,d-8750);}
+  else if(st==='WA')d=wa(val);else d=val*.03;
+  return Math.max(0,Math.round(d));
+}
+function nsw(v){if(v<=14000)return v*.0125;if(v<=32000)return 175+(v-14000)*.015;if(v<=85000)return 445+(v-32000)*.0175;if(v<=319000)return 1372.5+(v-85000)*.035;if(v<=1064000)return 9612.5+(v-319000)*.045;if(v<=3131000)return 43117.5+(v-1064000)*.055;return 156853.5+(v-3131000)*.07;}
+function vic(v){if(v<=25000)return v*.014;if(v<=130000)return 350+(v-25000)*.024;if(v<=440000)return 2870+(v-130000)*.05;if(v<=550000)return 18370+(v-440000)*.06;return 24970+(v-550000)*.065;}
+function qld(v){if(v<=5000)return 0;if(v<=75000)return(v-5000)*.015;if(v<=540000)return 1050+(v-75000)*.035;if(v<=1000000)return 17325+(v-540000)*.045;return 38025+(v-1000000)*.0575;}
+function wa(v){if(v<=120000)return v*.019;if(v<=150000)return 2280+(v-120000)*.0285;if(v<=360000)return 3135+(v-150000)*.038;if(v<=725000)return 11115+(v-360000)*.0475;return 28453+(v-725000)*.051;}
+
+// ============================================================
+// CAPACITY CALC
+// ============================================================
+function getCapacity(){
+  var totalInc=v('b1_salary')+v('b1_overtime')*.8+v('b1_bonus')*.8+v('b2_salary')+v('b2_overtime')*.8+v('b2_bonus')*.8+v('rental_income')*.8+v('invest_income')+v('gov_income')+v('other_income');
+  var gross=v('b1_salary')+v('b2_salary');
+  var hr=0;if(gross>120000)hr=.10;else if(gross>100000)hr=.085;else if(gross>80000)hr=.07;else if(gross>60000)hr=.05;else if(gross>47014)hr=.01;
+  var hm=v('hecs')>0?gross*hr/12:0;
+  var mthInc=totalInc/12;
+  var bm=getHEM();
+  var declB=v('exp_groceries')+v('exp_utilities')+v('exp_comms')+v('exp_transport')+v('exp_kids_clothing')+v('exp_personal');
+  var hemB=bm.groceries+bm.utilities+bm.comms+bm.transport+bm.personal;
+  var declD=v('exp_dining')+v('exp_entertainment')+v('exp_clothing')+v('exp_alcohol')+v('exp_childcare')+v('exp_subs');
+  var hemD=bm.dining+bm.entertainment+bm.clothing+bm.childcare;
+  var committed=v('exp_insurance')+v('exp_school')+v('exp_other');
+  var totalExp=Math.max(declB,hemB)+Math.max(declD,hemD)+committed;
+  var ccM=0;creditCards.forEach(function(c){if(c)ccM+=(parseFloat(c.limit)||0)*.03;});
+  var lR=0;loans.forEach(function(l){if(l)lR+=parseFloat(l.repayment)||0;});
+  var mR=0;existingMortgages.forEach(function(m){if(m)mR+=parseFloat(m.repayment)||0;});
+  var totalCommit=totalExp+ccM+lR+mR+hm;
+  var available=Math.max(0,Math.min(mthInc*.35,mthInc-totalCommit));
+  var rate=v('interest_rate')||6.5;var buf=rate+3;var term=parseInt(s('loan_term'))||30;var n=term*12;
+  var rB=buf/100/12;var type=s('repay_type');
+  var maxLoan=0;
+  if(available>0&&rB>0){maxLoan=type==='io'?available/rB:available*(Math.pow(1+rB,n)-1)/(rB*Math.pow(1+rB,n));}
+  var dtiCap=totalInc*6;var cappedDTI=maxLoan>dtiCap;maxLoan=Math.min(maxLoan,dtiCap);
+  var pv=v('property_value');var dep=v('deposit');var la=v('loan_amount')||(pv-dep);
+  var r=rate/100/12;
+  var ma=type==='io'?la*r:(la>0&&r>0?la*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1):0);
+  var mb=type==='io'?la*rB:(la>0&&rB>0?la*(rB*Math.pow(1+rB,n))/(Math.pow(1+rB,n)-1):0);
+  var dsr=mthInc>0?(totalCommit+mb)/mthInc*100:0;
+  var totalAssets=v('a_cash')+v('a_term')+v('a_shares')+v('a_vehicles')+v('a_contents')+v('a_business');
+  properties.forEach(function(p){if(p)totalAssets+=parseFloat(p.value)||0;});
+  var totalLiabs=0;
+  creditCards.forEach(function(c){if(c)totalLiabs+=parseFloat(c.limit)||0;});
+  loans.forEach(function(l){if(l)totalLiabs+=parseFloat(l.balance)||0;});
+  existingMortgages.forEach(function(m){if(m)totalLiabs+=parseFloat(m.balance)||0;});
+  return {totalInc:totalInc,mthInc:mthInc,hm:hm,totalExp:totalExp,ccM:ccM,lR:lR,mR:mR,totalCommit:totalCommit,available:available,
+    maxLoan:maxLoan,cappedDTI:cappedDTI,rate:rate,buf:buf,term:term,n:n,type:type,pv:pv,dep:dep,la:la,ma:ma,mb:mb,dsr:dsr,
+    totalAssets:totalAssets,totalLiabs:totalLiabs,netWorth:totalAssets-totalLiabs};
+}
+
+// ============================================================
+// REPORT
+// ============================================================
+function generateReport(){
+  var r=getCapacity();
+  var lvr=r.pv>0?r.la/r.pv*100:0;var lmi=lvr>80;
+  var sd=calcSD(r.pv,s('state'),s('fhb')==='yes');
+  var totalCash=r.dep+sd+2500+800+1000+(lmi?r.la*.02:0);
+  var affPct=r.maxLoan>0?Math.min(110,r.la/r.maxLoan*100):0;
+  var gPos=Math.min(95,affPct);
+  var affLbl,affCls;
+  if(affPct<=60){affLbl='✓ Comfortable';affCls='c-green';}
+  else if(affPct<=85){affLbl='⚠ Moderate';affCls='c-amber';}
+  else if(affPct<=100){affLbl='⚠ Near Limit';affCls='c-amber';}
+  else{affLbl='✗ Exceeds Est. Capacity';affCls='c-red';}
+  var dsrC=r.dsr<30?'green':r.dsr<45?'amber':'red';
+  var lvrC=lvr>90?'red':lvr>80?'amber':'green';
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  var pdl=document.getElementById('print-date-line');
+  if(pdl)pdl.textContent='Prepared: '+dateStr+' | Applicant(s): '+(s('b1_name')||'Borrower 1')+(s('b2_name')?' & '+s('b2_name'):'');
+  var purpMap={owner_occ:'Owner Occupied — P&I',owner_io:'Owner Occupied — IO',invest_pi:'Investment — P&I',invest_io:'Investment — IO',refinance:'Refinance'};
+  var empL=function(v){return{paye:'PAYG / Salaried',self:'Self-Employed',contractor:'Contractor',casual:'Casual',part:'Part-Time',none:'N/A'}[v]||v;};
+  var locL=function(v){return{major:'Major City',other_city:'Other Capital City',regional:'Regional',rural:'Rural'}[v]||v;};
+  var b2bit=s('b2_name')&&s('b2_emp')!=='none'?'<br>Borrower 2: <strong>'+s('b2_name')+'</strong> — '+empL(s('b2_emp')):'';
+  var ccRows='';creditCards.forEach(function(c){if(c)ccRows+='<tr><td>'+c.name+'</td><td class="mono" style="text-align:right">'+fmt(parseFloat(c.limit)||0)+'</td><td class="mono amber" style="text-align:right">'+fmt((parseFloat(c.limit)||0)*.03)+'/mo</td></tr>';});
+  var lRows='';loans.forEach(function(l){if(l)lRows+='<tr><td>'+l.name+'</td><td class="mono" style="text-align:right">'+fmt(parseFloat(l.balance)||0)+'</td><td class="mono amber" style="text-align:right">'+fmt(parseFloat(l.repayment)||0)+'/mo</td></tr>';});
+  var mRows='';existingMortgages.forEach(function(m){if(m)mRows+='<tr><td>'+m.property+'</td><td class="mono" style="text-align:right">'+fmt(parseFloat(m.balance)||0)+'</td><td class="mono amber" style="text-align:right">'+fmt(parseFloat(m.repayment)||0)+'/mo</td></tr>';});
+  var pRows='';properties.forEach(function(p){if(p)pRows+='<tr><td>'+p.address+'</td><td class="mono" style="text-align:right">'+fmt(parseFloat(p.value)||0)+'</td><td class="mono muted" style="text-align:right">'+fmt(parseFloat(p.mortgage)||0)+'</td></tr>';});
+
+  // Import summary line for report
+  var importSummary='';
+  if(importLog.length){
+    importSummary='<div style="font-size:11px;color:var(--text-secondary);margin-top:10px;padding:10px 12px;background:rgba(0,200,150,.05);border-radius:var(--radius-sm);border:1px solid rgba(0,200,150,.12)">'+
+      '<strong style="color:var(--green-500)">Data sourced from Kelda Finance app</strong> · '+
+      importLog.filter(function(l){return l.type==='success';}).length+' data sets auto-imported. All figures reviewed and confirmed by applicant.</div>';
+  }
+
+  var html=
+    '<div class="hero">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">'+
+        '<div><div class="res-label">ESTIMATED MAXIMUM BORROWING CAPACITY</div>'+
+        '<div class="res-amt">'+fmt(r.maxLoan)+'</div>'+
+        '<div class="res-sub">APRA 3% buffer at '+r.buf.toFixed(2)+'% assessment rate'+(r.cappedDTI?' · DTI cap (6× income) applied':'')+' · '+r.term+'-year loan</div></div>'+
+        '<div style="text-align:right"><div class="res-label">REQUESTED LOAN</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:22px;font-weight:500">'+fmt(r.la)+'</div>'+
+          '<span class="chip '+affCls+'" style="margin-top:5px">'+affLbl+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="chips">'+
+        '<span class="chip c-blue">📅 '+dateStr+'</span>'+
+        '<span class="chip c-blue">🏦 '+s('state')+'</span>'+
+        '<span class="chip c-blue">📊 '+r.rate.toFixed(2)+'% contract rate</span>'+
+        '<span class="chip c-blue">⏱ '+r.term+' years</span>'+
+        (lmi?'<span class="chip c-amber">⚠️ LMI may apply ('+lvr.toFixed(0)+'% LVR)</span>':'<span class="chip c-green">✓ No LMI required ('+lvr.toFixed(0)+'% LVR)</span>')+
+        (s('fhb')==='yes'?'<span class="chip c-pink">🏡 First Home Buyer</span>':'')+
+      '</div>'+
+      importSummary+
+    '</div>'+
+
+    '<div class="card"><div class="card-title"><span class="icon">🎯</span> Affordability Position</div>'+
+      '<div style="padding:4px 0">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px">'+
+          '<span>Requested loan vs. estimated maximum capacity</span>'+
+          '<span class="'+(affPct<=100?'green':'red')+'" style="font-family:DM Mono,monospace;font-weight:600">'+affPct.toFixed(0)+'%</span>'+
+        '</div>'+
+        '<div class="gauge-bar"><div class="gauge-ptr" style="left:'+gPos+'%"></div></div>'+
+        '<div class="gauge-lbl"><span>Conservative (&lt;60%)</span><span>Moderate (60–85%)</span><span>Near limit (&gt;85%)</span></div>'+
+      '</div>'+
+      '<div style="margin-top:14px;padding:13px;background:var(--navy-700);border-radius:var(--radius-md);display:flex;gap:28px;flex-wrap:wrap">'+
+        '<div><div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Debt Serviceability Ratio</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:19px" class="'+dsrC+'">'+r.dsr.toFixed(1)+'%</div>'+
+          '<div style="font-size:11px;color:var(--text-secondary)">Total commitments ÷ gross income. Lenders prefer &lt;40%</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Available for New Mortgage</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:19px" class="green">'+fmt(r.available)+'/mo</div>'+
+          '<div style="font-size:11px;color:var(--text-secondary)">After all existing commitments</div></div>'+
+        '<div><div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Monthly Repayment (Contract)</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:19px">'+fmt(r.ma)+'</div>'+
+          '<div style="font-size:11px;color:var(--text-secondary)">At '+r.rate.toFixed(2)+'% — tested at '+r.buf.toFixed(2)+'% ('+fmt(r.mb)+')</div></div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="card"><div class="card-title"><span class="icon">👤</span> Applicant Details</div>'+
+      '<div style="font-size:13px;color:var(--text-secondary);line-height:2">'+
+        'Borrower 1: <strong style="color:var(--text-primary)">'+(s('b1_name')||'—')+'</strong> — '+empL(s('b1_emp'))+b2bit+'<br>'+
+        'Household: <strong>'+['0','1','2','3','4+'][parseInt(s('dependants'))||0]+' dependant(s)</strong> · Location: <strong>'+locL(s('location'))+'</strong><br>'+
+        'Purpose: <strong>'+(purpMap[s('purpose')]||'—')+'</strong> · State: <strong>'+s('state')+'</strong>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="g2">'+
+      '<div class="card"><div class="card-title"><span class="icon">💰</span> Income Summary</div>'+
+        '<table class="dt"><tr><th>Source</th><th style="text-align:right">Annual (gross)</th><th style="text-align:right">Assessed</th></tr>'+
+        '<tr><td>B1 Base Salary</td><td class="mono" style="text-align:right">'+fmt(v('b1_salary'))+'</td><td class="mono green" style="text-align:right">'+fmt(v('b1_salary'))+'</td></tr>'+
+        (v('b1_overtime')>0?'<tr><td>B1 Overtime</td><td class="mono" style="text-align:right">'+fmt(v('b1_overtime'))+'</td><td class="mono" style="text-align:right">'+fmt(v('b1_overtime')*.8)+' <span class="muted" style="font-size:10px">(80%)</span></td></tr>':'')+
+        (v('b1_bonus')>0?'<tr><td>B1 Bonus</td><td class="mono" style="text-align:right">'+fmt(v('b1_bonus'))+'</td><td class="mono" style="text-align:right">'+fmt(v('b1_bonus')*.8)+' <span class="muted" style="font-size:10px">(80%)</span></td></tr>':'')+
+        (v('b2_salary')>0?'<tr><td>B2 Base Salary</td><td class="mono" style="text-align:right">'+fmt(v('b2_salary'))+'</td><td class="mono green" style="text-align:right">'+fmt(v('b2_salary'))+'</td></tr>':'')+
+        (v('rental_income')>0?'<tr><td>Rental Income</td><td class="mono" style="text-align:right">'+fmt(v('rental_income'))+'</td><td class="mono" style="text-align:right">'+fmt(v('rental_income')*.8)+' <span class="muted" style="font-size:10px">(80%)</span></td></tr>':'')+
+        (v('invest_income')+v('gov_income')+v('other_income')>0?'<tr><td>Other Income</td><td class="mono" style="text-align:right">'+fmt(v('invest_income')+v('gov_income')+v('other_income'))+'</td><td class="mono" style="text-align:right">'+fmt(v('invest_income')+v('gov_income')+v('other_income'))+'</td></tr>':'')+
+        '<tr class="tr"><td><strong>Total Assessed (p.a.)</strong></td><td></td><td class="mono green" style="text-align:right"><strong>'+fmt(r.totalInc)+'</strong></td></tr>'+
+        '<tr class="tr"><td><strong>Monthly Gross</strong></td><td></td><td class="mono green" style="text-align:right"><strong>'+fmt(r.mthInc)+'</strong></td></tr>'+
+        '</table></div>'+
+
+      '<div class="card"><div class="card-title"><span class="icon">🧾</span> Monthly Commitments</div>'+
+        '<table class="dt"><tr><th>Item</th><th style="text-align:right">Monthly</th></tr>'+
+        '<tr><td>Living Expenses (HEM-adjusted)</td><td class="mono amber" style="text-align:right">'+fmt(r.totalExp)+'</td></tr>'+
+        '<tr><td>Credit Card Assessment (3% of limits)</td><td class="mono red" style="text-align:right">'+fmt(r.ccM)+'</td></tr>'+
+        '<tr><td>Personal Loan Repayments</td><td class="mono amber" style="text-align:right">'+fmt(r.lR)+'</td></tr>'+
+        '<tr><td>Existing Mortgage Repayments</td><td class="mono amber" style="text-align:right">'+fmt(r.mR)+'</td></tr>'+
+        '<tr><td>HECS-HELP (estimated)</td><td class="mono amber" style="text-align:right">'+fmt(r.hm)+'</td></tr>'+
+        '<tr class="tr"><td><strong>Total Commitments</strong></td><td class="mono red" style="text-align:right"><strong>'+fmt(r.totalCommit)+'</strong></td></tr>'+
+        '<tr class="tr"><td><strong>Available for New Mortgage</strong></td><td class="mono green" style="text-align:right"><strong>'+fmt(r.available)+'</strong></td></tr>'+
+        '</table></div>'+
+    '</div>'+
+
+    '<div class="card"><div class="card-title"><span class="icon">🏠</span> Proposed Loan Snapshot</div>'+
+      '<div class="g4">'+
+        '<div class="sc"><div class="sl">Property Value</div><div class="sv">'+fmt(r.pv)+'</div></div>'+
+        '<div class="sc"><div class="sl">Deposit</div><div class="sv green">'+fmt(r.dep)+'</div></div>'+
+        '<div class="sc"><div class="sl">Proposed Loan</div><div class="sv">'+fmt(r.la)+'</div></div>'+
+        '<div class="sc"><div class="sl">LVR</div><div class="sv '+lvrC+'">'+fmtPct(lvr)+'</div><div class="ss">'+(lmi?'⚠️ LMI may apply':'✓ No LMI required')+'</div></div>'+
+        '<div class="sc"><div class="sl">Contract Rate</div><div class="sv">'+r.rate.toFixed(2)+'%</div><div class="ss">per annum</div></div>'+
+        '<div class="sc"><div class="sl">Assessment Rate</div><div class="sv amber">'+r.buf.toFixed(2)+'%</div><div class="ss">+3% APRA buffer</div></div>'+
+        '<div class="sc"><div class="sl">Monthly Repayment</div><div class="sv">'+fmt(r.ma)+'</div><div class="ss">at contract rate</div></div>'+
+        '<div class="sc"><div class="sl">Assessed Repayment</div><div class="sv amber">'+fmt(r.mb)+'</div><div class="ss">at buffer rate</div></div>'+
+      '</div></div>'+
+
+    '<div class="page-break"></div>'+
+    '<div class="g2">'+
+      '<div class="card"><div class="card-title"><span class="icon">🏦</span> Assets</div>'+
+        '<table class="dt"><tr><th>Asset</th><th style="text-align:right">Value</th></tr>'+
+        '<tr><td>Cash & Savings</td><td class="mono" style="text-align:right">'+fmt(v('a_cash'))+'</td></tr>'+
+        '<tr><td>Term Deposits</td><td class="mono" style="text-align:right">'+fmt(v('a_term'))+'</td></tr>'+
+        '<tr><td>Shares / ETFs / Crypto</td><td class="mono" style="text-align:right">'+fmt(v('a_shares'))+'</td></tr>'+
+        (pRows?'<tr><td colspan="2" style="font-size:10px;color:var(--text-secondary);padding-top:8px">PROPERTY</td></tr>'+pRows:'')+
+        '<tr><td>Motor Vehicles</td><td class="mono" style="text-align:right">'+fmt(v('a_vehicles'))+'</td></tr>'+
+        '<tr><td>Superannuation</td><td class="mono muted" style="text-align:right">'+fmt(v('a_super'))+' <span style="font-size:10px">(excl.)</span></td></tr>'+
+        '<tr class="tr"><td><strong>Total Assets (excl. Super)</strong></td><td class="mono green" style="text-align:right"><strong>'+fmt(r.totalAssets)+'</strong></td></tr>'+
+        '</table></div>'+
+
+      '<div class="card"><div class="card-title"><span class="icon">📋</span> Liabilities</div>'+
+        '<table class="dt"><tr><th>Liability</th><th style="text-align:right">Balance</th><th style="text-align:right">Commitment</th></tr>'+
+        (ccRows?ccRows:'<tr><td colspan="3" class="muted" style="font-size:11px">No credit cards entered</td></tr>')+
+        (lRows||'')+(mRows||'')+
+        '<tr class="tr"><td><strong>Total Liabilities</strong></td><td class="mono red" style="text-align:right"><strong>'+fmt(r.totalLiabs)+'</strong></td><td></td></tr>'+
+        '</table>'+
+        '<div class="divider"></div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<span style="font-size:13px;font-weight:600">Net Worth</span>'+
+          '<span style="font-family:DM Mono,monospace;font-size:17px" class="'+(r.netWorth>=0?'green':'red')+'">'+fmt(r.netWorth)+'</span>'+
+        '</div></div>'+
+    '</div>'+
+
+    '<div class="card"><div class="card-title"><span class="icon">🧮</span> Estimated Purchase Costs</div>'+
+      '<table class="dt" style="max-width:400px">'+
+        '<tr><td>Property Price</td><td class="mono" style="text-align:right">'+fmt(r.pv)+'</td></tr>'+
+        '<tr><td>Stamp Duty ('+s('state')+(s('fhb')==='yes'?' — FHB':'')+')' +'</td><td class="mono amber" style="text-align:right">'+fmt(sd)+'</td></tr>'+
+        '<tr><td>Legal / Conveyancing</td><td class="mono" style="text-align:right">$2,500</td></tr>'+
+        '<tr><td>Building & Pest Inspection</td><td class="mono" style="text-align:right">$800</td></tr>'+
+        '<tr><td>Lender / Application Fees</td><td class="mono" style="text-align:right">$1,000</td></tr>'+
+        (lmi?'<tr><td>LMI (LVR '+lvr.toFixed(0)+'%)</td><td class="mono red" style="text-align:right">~'+fmt(r.la*.02)+'</td></tr>':'')+
+        '<tr class="tr"><td><strong>Total Cash Required</strong></td><td class="mono pink" style="text-align:right"><strong>'+fmt(totalCash)+'</strong></td></tr>'+
+      '</table></div>'+
+
+    '<div class="card" style="border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.03)">'+
+      '<div style="font-size:12px;color:var(--amber-500);font-weight:600;margin-bottom:5px">⚠️ Important Disclaimer</div>'+
+      '<div style="font-size:11px;color:var(--text-secondary);line-height:1.7">'+
+        'This report is a general estimate only and does not constitute financial advice. Income, expenses, and asset figures have been sourced from Kelda Finance and reviewed by the applicant. '+
+        'Borrowing capacity is calculated using the APRA 3% serviceability buffer and HEM benchmarks (Melbourne Institute). Actual borrowing capacity varies by lender. '+
+        'Stamp duty figures are approximate. LMI estimates are indicative only. '+
+        '<strong>Speak with a licensed mortgage broker or financial adviser before making property decisions. Report prepared: '+dateStr+'</strong>'+
+      '</div></div>';
+
+  var el=document.getElementById('report-content');if(el)el.innerHTML=html;
+}
+
+// ============================================================
+// EXPORTS
+// ============================================================
+function exportPDF(){generateReport();setTimeout(function(){window.print();},300);}
+
+function exportExcel(){
+  if(typeof XLSX==='undefined'){alert('XLSX library not loaded.');return;}
+  var r=getCapacity();var sd=calcSD(r.pv,s('state'),s('fhb')==='yes');var lvr=r.pv>0?r.la/r.pv*100:0;
+  var now=new Date().toLocaleDateString('en-AU');var wb=XLSX.utils.book_new();
+  var importSrc=importLog.filter(function(l){return l.type==='success';}).map(function(l){return l.msg;}).join('; ');
+
+  var sum=[
+    ['Kelda Finance — Mortgage Affordability Report','',''],
+    ['Prepared',now,''],['Applicants',(s('b1_name')||'')+(s('b2_name')?' & '+s('b2_name'):''),''],
+    ['Data Source','Auto-imported from Kelda Finance + applicant review',''],
+    ['Import Summary',importSrc||'Manual entry',''],['','',''],
+    ['BORROWING CAPACITY','',''],
+    ['Estimated Maximum Borrowing Capacity',r.maxLoan,''],['Requested Loan Amount',r.la,''],
+    ['Assessment Rate',r.buf+'%',''],['DTI Cap Applied',r.cappedDTI?'Yes':'No',''],['Debt Serviceability Ratio',r.dsr.toFixed(1)+'%',''],['','',''],
+    ['INCOME (Annual Assessed)','',''],
+    ['B1 Base Salary',v('b1_salary'),''],['B1 Overtime (gross)',v('b1_overtime'),'80% assessed: '+Math.round(v('b1_overtime')*.8)],
+    ['B1 Bonus (gross)',v('b1_bonus'),'80% assessed: '+Math.round(v('b1_bonus')*.8)],
+    ['B2 Base Salary',v('b2_salary'),''],['B2 Overtime (gross)',v('b2_overtime'),'80% assessed: '+Math.round(v('b2_overtime')*.8)],
+    ['Rental Income (gross)',v('rental_income'),'80% assessed: '+Math.round(v('rental_income')*.8)],
+    ['Other Income',v('invest_income')+v('gov_income')+v('other_income'),''],
+    ['TOTAL ASSESSED INCOME',r.totalInc,''],['Monthly Gross',r.mthInc,''],['','',''],
+    ['MONTHLY COMMITMENTS','',''],
+    ['Living Expenses (HEM-adjusted)',r.totalExp,''],['Credit Card Assessment',r.ccM,'3% of limits'],
+    ['Loan Repayments',r.lR,''],['Existing Mortgage Repayments',r.mR,''],['HECS-HELP Repayment',r.hm,''],
+    ['TOTAL COMMITMENTS',r.totalCommit,''],['Available for New Mortgage',r.available,''],['','',''],
+    ['PROPOSED LOAN','',''],
+    ['Property Value',r.pv,''],['Deposit',r.dep,''],['Loan Amount',r.la,''],
+    ['LVR',lvr.toFixed(1)+'%',''],['Interest Rate',r.rate+'%',''],['Assessment Rate',r.buf+'%',''],
+    ['Loan Term',s('loan_term')+' years',''],['Repayment Type',s('repay_type')==='pi'?'P&I':'Interest Only',''],
+    ['Monthly Repayment (contract)',r.ma,''],['Assessed Repayment (buffer)',r.mb,''],['Stamp Duty',sd,''],['','',''],
+    ['NET WORTH','',''],['Total Assets',r.totalAssets,''],['Total Liabilities',r.totalLiabs,''],['Net Worth',r.netWorth,''],['','',''],
+    ['DISCLAIMER','',''],['General estimate only. Not financial advice. Verified by applicant after auto-import from Kelda Finance.','',''],
+  ];
+  var ws1=XLSX.utils.aoa_to_sheet(sum);ws1['!cols']=[{wch:42},{wch:22},{wch:34}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Affordability Report');
+
+  var bm=getHEM();
+  var expRows=[
+    ['Category','Declared (monthly)','HEM Benchmark','Used in Assessment','Source'],
+    ['Groceries',v('exp_groceries'),bm.groceries,Math.max(v('exp_groceries'),bm.groceries),(ST._imported||{})['exp_groceries']?'Auto-imported':'Manual'],
+    ['Utilities',v('exp_utilities'),bm.utilities,Math.max(v('exp_utilities'),bm.utilities),(ST._imported||{})['exp_utilities']?'Auto-imported':'Manual'],
+    ['Phone & Internet',v('exp_comms'),bm.comms,Math.max(v('exp_comms'),bm.comms),(ST._imported||{})['exp_comms']?'Auto-imported':'Manual'],
+    ['Transport',v('exp_transport'),bm.transport,Math.max(v('exp_transport'),bm.transport),(ST._imported||{})['exp_transport']?'Auto-imported':'Manual'],
+    ['Personal Care',v('exp_personal'),bm.personal,Math.max(v('exp_personal'),bm.personal),(ST._imported||{})['exp_personal']?'Auto-imported':'Manual'],
+    ['Dining & Takeaway',v('exp_dining'),bm.dining,Math.max(v('exp_dining'),bm.dining),(ST._imported||{})['exp_dining']?'Auto-imported':'Manual'],
+    ['Entertainment',v('exp_entertainment'),bm.entertainment,Math.max(v('exp_entertainment'),bm.entertainment),(ST._imported||{})['exp_entertainment']?'Auto-imported':'Manual'],
+    ['Clothing',v('exp_clothing'),bm.clothing,Math.max(v('exp_clothing'),bm.clothing),(ST._imported||{})['exp_clothing']?'Auto-imported':'Manual'],
+    ['Childcare',v('exp_childcare'),bm.childcare,Math.max(v('exp_childcare'),bm.childcare),(ST._imported||{})['exp_childcare']?'Auto-imported':'Manual'],
+    ['Insurance',v('exp_insurance'),'N/A',v('exp_insurance'),(ST._imported||{})['exp_insurance']?'Auto-imported':'Manual'],
+    ['Private School',v('exp_school'),'N/A',v('exp_school'),'Manual'],
+    ['Other Committed',v('exp_other'),'N/A',v('exp_other'),'Manual'],
+  ];
+  var ws2=XLSX.utils.aoa_to_sheet(expRows);ws2['!cols']=[{wch:25},{wch:20},{wch:20},{wch:20},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Living Expenses (HEM)');
+
+  XLSX.writeFile(wb,'Kelda-Borrowing-Report-'+new Date().toISOString().split('T')[0]+'.xlsx');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',function(){
+  load();
+
+  // First load: try to import from PFM automatically
+  var hasOwnData = ST && Object.keys(ST).length > 0;
+  if(hasOwnData){
+    restore();
+    if(ST.importLog)importLog=ST.importLog;
+    renderReview();
+    renderBadges();
+  } else {
+    // Fresh start — auto-import
+    importFromPFM();
+  }
+
+  var ir=document.getElementById('interest_rate');
+  if(ir&&!ir.value)ir.value='6.50';
+  calcLoan();
+});
+</script>
+</body>
+</html>

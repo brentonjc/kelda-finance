@@ -974,9 +974,60 @@ window.addEventListener('unhandledrejection',function(e){
 
   <div class="page" id="page-cash">
     <div class="page-title">Cash Balance Tracker</div>
-    <div class="page-sub">Monthly balances across all four accounts</div>
+    <div class="page-sub">Record your account closing balances each month — update any time, not just month-end</div>
+
+    <!-- How to use explainer -->
+    <div class="card mb ct-explainer" id="ct-explainer">
+      <div class="ct-exp-hd" onclick="ctToggleExplainer()">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.2rem">📖</span>
+          <div>
+            <div style="font-weight:700;font-size:.9rem;color:var(--text)">How to use Cash Tracker</div>
+            <div style="font-size:.74rem;color:var(--muted)">Manual monthly balance snapshots — tap to expand</div>
+          </div>
+        </div>
+        <span id="ct-exp-chevron" style="font-size:1rem;color:var(--muted);transition:transform .2s">▼</span>
+      </div>
+      <div id="ct-exp-body" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+        <div class="ct-exp-grid">
+          <div class="ct-exp-item">
+            <div class="ct-exp-icon">📅</div>
+            <div>
+              <div class="ct-exp-title">When to update</div>
+              <div class="ct-exp-text">Record your balance whenever you check your accounts — you don't need to wait until month-end. Each entry is stored against a <strong>month</strong> (e.g. May 2025) but the <strong>date updated</strong> field lets you record exactly when you logged it.</div>
+            </div>
+          </div>
+          <div class="ct-exp-item">
+            <div class="ct-exp-icon">💡</div>
+            <div>
+              <div class="ct-exp-title">What balance to enter</div>
+              <div class="ct-exp-text">Enter the <strong>closing balance</strong> — whatever the account shows when you log in. An entry mid-month is better than no entry. You can edit it later if you check again at month-end.</div>
+            </div>
+          </div>
+          <div class="ct-exp-item">
+            <div class="ct-exp-icon">📊</div>
+            <div>
+              <div class="ct-exp-title">Why it matters</div>
+              <div class="ct-exp-text">Monthly snapshots power your <strong>Net Worth trend</strong>, Health Score calculations, and year-on-year comparisons on the Dashboard. Each account's history is shown as a trend line on the chart below.</div>
+            </div>
+          </div>
+          <div class="ct-exp-item">
+            <div class="ct-exp-icon">🔧</div>
+            <div>
+              <div class="ct-exp-title">Managing accounts</div>
+              <div class="ct-exp-text">Add, rename or remove accounts in <strong>Settings → Accounts</strong>. New accounts automatically appear here. To rename labels quickly, use the fields in the Account Labels section below.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account label config (legacy, still useful for quick rename) -->
     <div class="card mb">
-      <div class="section-label">Account Labels & People</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div class="section-label" style="margin:0">Account Labels</div>
+        <a href="#" onclick="go('settings');return false;" style="font-size:.74rem;color:var(--primary);font-weight:600;text-decoration:none">Manage in Settings →</a>
+      </div>
       <div class="form-grid">
         <div><label class="lbl">Offset Label</label><input type="text" id="ct-offset-lbl" placeholder="Offset Account" oninput="saveCTConfig()"/></div>
         <div><label class="lbl">Home Transaction Label</label><input type="text" id="ct-home-lbl" placeholder="Home Transaction" oninput="saveCTConfig()"/></div>
@@ -984,11 +1035,16 @@ window.addEventListener('unhandledrejection',function(e){
         <div><label class="lbl">Profile 2 Savings Label</label><input type="text" id="ct-sav2-lbl" placeholder="Savings Account 2" oninput="saveCTConfig()"/></div>
       </div>
     </div>
+
     <div class="g4 mb" id="ct-summary"></div>
-    <div id="ct-acct-offset" class="acct-card"></div>
-    <div id="ct-acct-home" class="acct-card"></div>
-    <div id="ct-acct-sav1" class="acct-card"></div>
-    <div id="ct-acct-sav2" class="acct-card"></div>
+
+    <!-- Account cards — built dynamically by renderCashTracker() -->
+    <div id="ct-accts-container">
+      <div id="ct-acct-offset" class="acct-card"></div>
+      <div id="ct-acct-home" class="acct-card"></div>
+      <div id="ct-acct-sav1" class="acct-card"></div>
+      <div id="ct-acct-sav2" class="acct-card"></div>
+    </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div class="section-label" style="margin:0">📈 Combined Balances Over Time</div>

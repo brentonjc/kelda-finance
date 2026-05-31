@@ -34,6 +34,8 @@ let TRANSFERS  = load(K.transfers)  || [];
 let USER_CONFIG = load('cff_userconfig') || {};
 let EQUITIES    = load(K.equities)     || []; // [{id,ticker,company,type,qty,costBase,currentPrice,currency,notes,sales:[]}]
 let LIABILITIES = load(K.liabilities) || []; // [{id,type,lender,balance,originalBalance,rate,rateType,fixedExpiry,payment,dueDay,termMonths,creditLimit,notes,addToBills,createdAt}]
+// Entry dates for cash tracker: { acctId: { 'YYYY-MM': 'YYYY-MM-DD' } }
+var CT_DATES = load(K.ctdates) || {};
 // ACCOUNTS — [{id,name,icon,currency,location,color,isCore}]
 // Migrates from USER_CONFIG on first load. Never stores BSB/account numbers/bank names.
 var ACCOUNTS = (function() {

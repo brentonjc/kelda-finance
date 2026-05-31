@@ -52,98 +52,181 @@ function ctAllMonths(){
   return[...s].sort();
 }
 
+// Local YYYY-MM string — avoids the toISOString() UTC timezone trap
+// (e.g. in AEST +10, midnight May 1 = April 30 UTC → wrong month stored)
+function ctYM(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function ctTodayYM() { return ctYM(new Date()); }
+function ctTodayISO() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 function ctMonthOpts(sel){
   const now=new Date();
   let o='';
   for(let i=0;i<36;i++){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const v=d.toISOString().slice(0,7);
-    const l=d.toLocaleString('default',{month:'long',year:'numeric'});
-    o+=`<option value="${v}" ${v===sel?'selected':''}>${l}</option>`;
+    const v=ctYM(d); // FIX: was d.toISOString().slice(0,7) — wrong in UTC+10/11
+    const l=d.toLocaleString('en-AU',{month:'long',year:'numeric'});
+    o+='<option value="'+v+'"'+(v===sel?' selected':'')+'>'+l+'</option>';
   }
   return o;
 }
 
-function ctSaveEntry(acctId,month,value){
-  if(!CT[acctId])CT[acctId]={};
-  const v=parseFloat(value);
-  if(!isNaN(v))CT[acctId][month]=v;else delete CT[acctId][month];
-  save(K.ct,CT);ctRenderSummary();ctRenderChart();ctRenderNet();ctGoalStatus();
-  // Auto-sync offset to mortgage tab whenever offset account is updated
-  if(acctId==='offset')syncOffsetToMortgage();
+function ctSaveEntry(acctId, month, value, entryDate) {
+  if (!CT[acctId]) CT[acctId] = {};
+  var v = parseFloat(value);
+  if (!isNaN(v)) {
+    CT[acctId][month] = v;
+    // Save the entry date (when the user actually logged this balance)
+    if (!CT_DATES[acctId]) CT_DATES[acctId] = {};
+    CT_DATES[acctId][month] = entryDate || ctTodayISO();
+    save(K.ctdates, CT_DATES);
+  } else {
+    delete CT[acctId][month];
+    if (CT_DATES[acctId]) delete CT_DATES[acctId][month];
+    save(K.ctdates, CT_DATES);
+  }
+  save(K.ct, CT);
+  ctRenderSummary(); ctRenderChart(); ctRenderNet(); ctGoalStatus();
+  if (acctId === 'offset') syncOffsetToMortgage();
 }
 
-function ctDelEntry(acctId,month){
-  if(CT[acctId])delete CT[acctId][month];
-  save(K.ct,CT);renderCashTracker();
+function ctDelEntry(acctId, month) {
+  if (CT[acctId]) delete CT[acctId][month];
+  if (CT_DATES[acctId]) delete CT_DATES[acctId][month];
+  save(K.ct, CT);
+  save(K.ctdates, CT_DATES);
+  renderCashTracker();
 }
 
-function ctAddMonth(id){
-  const mSel=document.getElementById('ct-add-m-'+id);
-  const bInp=document.getElementById('ct-add-b-'+id);
-  if(!mSel||!bInp)return;
-  const m=mSel.value,b=parseFloat(bInp.value);
-  if(!m||isNaN(b)){toast('⚠️ Select month and enter balance');return;}
-  ctSaveEntry(id,m,b);bInp.value='';renderCashTracker();toast('✅ Saved');
+function ctAddMonth(id) {
+  var mSel = document.getElementById('ct-add-m-' + id);
+  var bInp = document.getElementById('ct-add-b-' + id);
+  var dInp = document.getElementById('ct-add-d-' + id);
+  if (!mSel || !bInp) return;
+  var m = mSel.value;
+  var b = parseFloat(bInp.value);
+  if (!m || isNaN(b)) { toast('⚠️ Select month and enter balance'); return; }
+  var entryDate = (dInp && dInp.value) ? dInp.value : ctTodayISO();
+  ctSaveEntry(id, m, b, entryDate);
+  bInp.value = '';
+  renderCashTracker();
+  toast('✅ Saved');
 }
 
-function renderCashTracker(){
-  // Populate config fields
-  const cfg=CTCFG;
-  const f=(id,v)=>{const el=document.getElementById(id);if(el&&!el.matches(':focus'))el.value=v||'';};
-  f('ct-offset-lbl',cfg.offsetLbl);f('ct-home-lbl',cfg.homeLbl);
-  f('ct-sav1-lbl',cfg.sav1Lbl);f('ct-sav2-lbl',cfg.sav2Lbl);
-  // Goal fields
-  const ga=document.getElementById('ct-goal-amt');
-  const gf=document.getElementById('ct-goal-freq');
-  const gs=document.getElementById('ct-goal-start');
-  if(ga&&!ga.matches(':focus')&&cfg.goalAmt)ga.value=cfg.goalAmt;
-  if(gf&&cfg.goalFreq)gf.value=cfg.goalFreq;
-  if(gs&&!gs.matches(':focus')&&cfg.goalStart)gs.value=cfg.goalStart;
+function renderCashTracker() {
+  // Rebuild CT_ACCTS from ACCOUNTS in case accounts were added/removed in Settings
+  CT_ACCTS = _buildCTAccts();
 
-  CT_ACCTS.forEach(a=>ctRenderAcct(a));
-  ctRenderSummary();ctRenderChart();ctRenderNet();ctGoalStatus();
+  // Config fields (legacy labels — still sync for backward compat)
+  var cfg = CTCFG;
+  var f = function(id, v) { var el = document.getElementById(id); if (el && !el.matches(':focus')) el.value = v || ''; };
+  f('ct-offset-lbl', cfg.offsetLbl); f('ct-home-lbl', cfg.homeLbl);
+  f('ct-sav1-lbl', cfg.sav1Lbl); f('ct-sav2-lbl', cfg.sav2Lbl);
+  var ga = document.getElementById('ct-goal-amt');
+  var gf = document.getElementById('ct-goal-freq');
+  var gs = document.getElementById('ct-goal-start');
+  if (ga && !ga.matches(':focus') && cfg.goalAmt) ga.value = cfg.goalAmt;
+  if (gf && cfg.goalFreq) gf.value = cfg.goalFreq;
+  if (gs && !gs.matches(':focus') && cfg.goalStart) gs.value = cfg.goalStart;
+
+  // Dynamically ensure a card div exists for every account (supports custom accounts)
+  var container = document.getElementById('ct-accts-container');
+  if (container) {
+    CT_ACCTS.forEach(function(a) {
+      if (!document.getElementById('ct-acct-' + a.id)) {
+        var div = document.createElement('div');
+        div.id = 'ct-acct-' + a.id;
+        div.className = 'acct-card';
+        container.appendChild(div);
+      }
+    });
+    // Remove cards for deleted accounts
+    var cards = container.querySelectorAll('[id^="ct-acct-"]');
+    cards.forEach(function(el) {
+      var acctId = el.id.replace('ct-acct-', '');
+      if (!CT_ACCTS.find(function(a) { return a.id === acctId; })) {
+        container.removeChild(el);
+      }
+    });
+  }
+
+  CT_ACCTS.forEach(function(a) { ctRenderAcct(a); });
+  ctRenderSummary(); ctRenderChart(); ctRenderNet(); ctGoalStatus();
 }
 
-function ctRenderAcct(a){
-  const el=document.getElementById('ct-acct-'+a.id);if(!el)return;
-  const data=CT[a.id]||{};
-  const months=Object.keys(data).sort();
-  const label=ctLabel(a);
-  const latest=months.length?data[months[months.length-1]]:0;
-  const nowYM=new Date().toISOString().slice(0,7);
+function ctRenderAcct(a) {
+  var el = document.getElementById('ct-acct-' + a.id);
+  if (!el) return;
+  var data   = CT[a.id] || {};
+  var dates  = CT_DATES[a.id] || {};
+  var months = Object.keys(data).sort();
+  var label  = ctLabel(a);
+  var latest = months.length ? data[months[months.length - 1]] : 0;
+  var nowYM  = ctTodayYM(); // FIX: was new Date().toISOString().slice(0,7) — UTC offset bug
 
-  let rows='';
-  if(!months.length)rows='<div class="empty" style="padding:16px 0"><div class="ei">📅</div><p>Add your first month below</p></div>';
-  else months.forEach((m,i)=>{
-    const bal=data[m];
-    const prev=i>0?data[months[i-1]]:null;
-    const diff=prev!==null?bal-prev:null;
-    const cls=diff===null?'':diff>0?'up':'dn';
-    const dt=diff===null?'':((diff>=0?'+':'')+fmt(diff));
-    const ml=new Date(m+'-02').toLocaleString('default',{month:'short',year:'numeric'});
-    rows+=`<div class="mo-row">
-      <div class="mo-lbl">${ml}</div>
-      <input class="mo-inp" type="number" step="100" value="${bal}" onchange="ctSaveEntry('${a.id}','${m}',this.value)"/>
-      <div class="mo-ch ${cls}">${dt}</div>
-      <button class="del-btn" onclick="ctDelEntry('${a.id}','${m}')">🗑</button>
-    </div>`;
-  });
+  var rows = '';
+  if (!months.length) {
+    rows = '<div class="empty" style="padding:16px 0"><div class="ei">📅</div><p>No entries yet — add your first balance below.</p></div>';
+  } else {
+    for (var i = 0; i < months.length; i++) {
+      var m    = months[i];
+      var bal  = data[m];
+      var prev = i > 0 ? data[months[i - 1]] : null;
+      var diff = prev !== null ? bal - prev : null;
+      var cls  = diff === null ? '' : diff > 0 ? 'up' : 'dn';
+      var dt   = diff === null ? '' : ((diff >= 0 ? '+' : '') + fmt(diff));
+      // Month label — use +'-02' to avoid UTC offset misread of the month key itself
+      var ml   = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
+      // Entry date — when the user logged this balance
+      var entryDateRaw = dates[m] || null;
+      var entryDateLbl = '';
+      if (entryDateRaw) {
+        var ed = new Date(entryDateRaw + 'T12:00:00'); // noon local to avoid UTC bleed
+        entryDateLbl = '<span class="mo-entry-date">Updated '
+          + ed.toLocaleString('en-AU', { day:'numeric', month:'short' })
+          + '</span>';
+      }
+      rows += '<div class="mo-row">'
+        + '<div class="mo-lbl">' + ml + entryDateLbl + '</div>'
+        + '<input class="mo-inp" type="number" step="100" value="' + bal + '"'
+        + ' onchange="ctSaveEntry(\'' + a.id + '\',\'' + m + '\',this.value)"'
+        + ' inputmode="decimal"/>'
+        + '<div class="mo-ch ' + cls + '">' + dt + '</div>'
+        + '<button class="del-btn" onclick="ctDelEntry(\'' + a.id + '\',\'' + m + '\')">🗑</button>'
+        + '</div>';
+    }
+  }
 
-  el.innerHTML=`
-    <div class="acct-hd" style="background:${a.light}">
-      <div class="acct-ic" style="background:${a.color}">${a.icon}</div>
-      <div class="acct-meta"><div class="acct-title" style="color:${a.color}">${label}</div>
-        <div class="acct-sub" style="color:${a.color}">${a.id==='sav1'?getUserName('brenton'):a.id==='sav2'?getUserName('shelley'):'Shared'}</div></div>
-      <div class="acct-total" style="color:${a.color}">${fmt(latest)}</div>
-    </div>
-    <div class="acct-body">${rows}
-      <div class="add-mo-row">
-        <div><label class="lbl" style="font-size:.68rem">Month</label><select id="ct-add-m-${a.id}">${ctMonthOpts(nowYM)}</select></div>
-        <div><label class="lbl" style="font-size:.68rem">Balance</label><input type="number" id="ct-add-b-${a.id}" placeholder="e.g. 85000" step="100" style="width:140px" onkeydown="if(event.key==='Enter')ctAddMonth('${a.id}')"/></div>
-        <button class="btn btn-primary btn-sm" onclick="ctAddMonth('${a.id}')" style="margin-top:20px">＋ Add</button>
-      </div>
-    </div>`;
+  // Owner label
+  var ownerLbl = a.id === 'sav1' ? getUserName('brenton')
+               : a.id === 'sav2' ? getUserName('shelley')
+               : (a.owner === 'shared' ? 'Shared' : (a.owner || 'Shared'));
+
+  el.innerHTML = '<div class="acct-hd" style="background:' + a.light + '">'
+    + '<div class="acct-ic" style="background:' + a.color + '">' + a.icon + '</div>'
+    + '<div class="acct-meta">'
+    + '<div class="acct-title" style="color:' + a.color + '">' + label + '</div>'
+    + '<div class="acct-sub" style="color:' + a.color + '">' + ownerLbl + '</div>'
+    + '</div>'
+    + '<div class="acct-total" style="color:' + a.color + '">' + fmt(latest) + '</div>'
+    + '</div>'
+    + '<div class="acct-body">' + rows
+    + '<div class="add-mo-row">'
+    + '<div><label class="lbl" style="font-size:.68rem">Month</label>'
+    + '<select id="ct-add-m-' + a.id + '">' + ctMonthOpts(nowYM) + '</select></div>'
+    + '<div><label class="lbl" style="font-size:.68rem">Closing Balance</label>'
+    + '<input type="number" id="ct-add-b-' + a.id + '" placeholder="e.g. 85000" step="100"'
+    + ' style="width:140px" inputmode="decimal"'
+    + ' onkeydown="if(event.key===\'Enter\')ctAddMonth(\'' + a.id + '\')" /></div>'
+    + '<div><label class="lbl" style="font-size:.68rem">Date Updated</label>'
+    + '<input type="date" id="ct-add-d-' + a.id + '" value="' + ctTodayISO() + '" style="width:145px"/></div>'
+    + '<button class="btn btn-primary btn-sm" onclick="ctAddMonth(\'' + a.id + '\')" style="margin-top:20px">＋ Add</button>'
+    + '</div>'
+    + '</div>';
 }
 
 function ctRenderSummary(){
@@ -243,6 +326,15 @@ function ctRenderNet(){
       <div style="min-width:80px;text-align:right;font-size:.76rem"><span style="color:${gd>=0?'var(--success)':'var(--danger)'};font-weight:600">${gd>=0?'+':''}${fmt(gd)}</span></div>
     </div></div>`;
   el.innerHTML = rows;
+}
+
+function ctToggleExplainer() {
+  var body    = document.getElementById('ct-exp-body');
+  var chevron = document.getElementById('ct-exp-chevron');
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 function ctExportCSV(){
