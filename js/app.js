@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings','health'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -60,6 +60,7 @@ function go(id){
     else if(id==='forecast'){detectRecurring();renderForecast();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
+    else if(id==='health'){if(typeof renderHealthPage==='function')renderHealthPage();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar

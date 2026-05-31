@@ -658,3 +658,39 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .db-acct-tile-val{font-family:var(--font-mono);font-size:.98rem;font-weight:700;line-height:1.2;}
 @media(max-width:700px){.db-acct-tiles-strip{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:420px){.db-acct-tiles-strip{grid-template-columns:repeat(2,1fr);}}
+
+/* ── ACTION CARDS (Zone 3 Smart Insights) ── */
+.action-card-item{display:flex;align-items:flex-start;gap:12px;background:var(--card2);border-radius:var(--radius-sm);padding:14px 14px 14px 12px;margin-bottom:8px;border:1px solid var(--border);border-left:3px solid var(--primary);}
+.action-card-item:last-child{margin-bottom:0;}
+.ac-num{font-family:var(--font-mono);font-size:.72rem;font-weight:700;color:var(--muted);background:var(--card3);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.ac-icon{font-size:20px;flex-shrink:0;line-height:1;margin-top:1px;}
+.ac-body{flex:1;min-width:0;}
+.ac-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);margin-bottom:3px;}
+.ac-title{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.3;}
+.ac-desc{font-size:.76rem;color:var(--muted);line-height:1.4;margin-bottom:6px;}
+.ac-link{font-size:.72rem;font-weight:700;color:var(--primary);text-decoration:none;}
+.ac-status{flex-shrink:0;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:99px;white-space:nowrap;margin-top:2px;}
+
+/* ── YTD STREAK DOTS ── */
+.ytd-dots-row{display:flex;gap:4px;align-items:flex-end;margin-top:8px;flex-wrap:nowrap;}
+.ytd-dot-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;}
+.ytd-dot{width:100%;aspect-ratio:1/1;max-width:18px;border-radius:4px;transition:background .2s;}
+.ytd-dot-lbl{font-size:7px;color:var(--muted);font-weight:600;letter-spacing:.02em;}
+
+/* ── FINANCIAL HEALTH PAGE ── */
+.fh-factor-card{margin-bottom:12px;padding:16px 18px;}
+.fh-factor-hd{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.fh-factor-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.fh-factor-meta{flex:1;min-width:0;}
+.fh-factor-name{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.fh-factor-wt{font-size:.68rem;font-weight:600;color:var(--muted);margin-left:6px;text-transform:uppercase;letter-spacing:.05em;}
+.fh-factor-explain{font-size:.76rem;color:var(--muted);line-height:1.45;}
+.fh-factor-score{font-family:var(--font-mono);font-size:1.6rem;font-weight:700;flex-shrink:0;line-height:1;margin-top:2px;}
+.fh-bar-track{height:5px;background:var(--card3);border-radius:3px;margin-bottom:6px;}
+.fh-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.fh-factor-status{font-size:.72rem;font-weight:600;margin-bottom:10px;}
+.fh-actions-hd{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.fh-actions-list{padding-left:16px;margin:0;}
+.fh-action-item{font-size:.78rem;color:var(--text);margin-bottom:6px;line-height:1.4;}
+.fh-action-item:last-child{margin-bottom:0;}
+.fh-on-track{font-size:.78rem;color:var(--success);font-weight:600;}

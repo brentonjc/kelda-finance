@@ -199,7 +199,7 @@ function renderHealthScore(sd) {
   }
 
   el.innerHTML = '<div class="health-score-widget">'
-    + '<div class="score-ring-wrap" onclick="toggleScoreTooltip()">'
+    + '<div class="score-ring-wrap" onclick="go(\'health\')" title="View Financial Health details">'
     + '<svg class="score-ring-svg" viewBox="0 0 90 90">'
     + '<circle class="score-ring-bg" cx="45" cy="45" r="36"/>'
     + '<circle id="scoreRingFill" class="score-ring-fill" cx="45" cy="45" r="36" stroke="' + ringColor + '" style="filter:drop-shadow(0 0 6px ' + ringColor + ')"/>'
@@ -211,7 +211,8 @@ function renderHealthScore(sd) {
     + '</div>'
     + '<div class="health-score-label">Score</div>'
     + subHtml
-    + '<div id="scoreTooltip" class="score-tooltip">'
+    + '<div style="font-size:.65rem;color:var(--primary);font-weight:600;margin-top:2px;cursor:pointer" onclick="go(\'health\')">Details &rarr;</div>'
+    + '<div id="scoreTooltip" class="score-tooltip" style="display:none">'
     + '<div class="score-tooltip-title">Score breakdown</div>'
     + scoreRow('Cash flow',        sd.cashFlow)
     + scoreRow('Savings rate',     sd.savingsRate)
@@ -264,51 +265,84 @@ function _dbPastMonthPfx(monthsBack) {
 }
 
 function calculateSavingsStreak() {
-  var txns   = activeTX();
-  var months = [];
+  var txns    = activeTX();
+  var now     = new Date();
+  var yr      = now.getFullYear();
+  var currMo  = now.getMonth() + 1; // 1-12
+
+  // YTD dot for each month Jan–Dec (null = future/current)
+  var yearDots = [];
   for (var m = 1; m <= 12; m++) {
-    var pfx  = _dbPastMonthPfx(m);
-    var moTx = txns.filter(function(t){ return t.date && t.date.startsWith(pfx); });
-    var inc  = moTx.filter(function(t){return t.type==='income';}).reduce(function(s,t){return s+Number(t.amount);},0);
-    var exp  = moTx.filter(function(t){return t.type==='expense';}).reduce(function(s,t){return s+Number(t.amount);},0);
-    months.unshift(inc > exp); // oldest first
+    if (m >= currMo) { yearDots.push(null); continue; }
+    var pfx = yr + '-' + String(m).padStart(2,'0');
+    var inc = txns.filter(function(t){return t.type==='income'&&t.date&&t.date.startsWith(pfx);}).reduce(function(s,t){return s+Number(t.amount);},0);
+    var exp = txns.filter(function(t){return t.type==='expense'&&t.date&&t.date.startsWith(pfx);}).reduce(function(s,t){return s+Number(t.amount);},0);
+    yearDots.push(inc > exp);
   }
+
+  // Streak: consecutive hits from last complete month backwards
   var count = 0;
-  for (var i = months.length - 1; i >= 0; i--) {
-    if (months[i]) { count++; } else { break; }
+  for (var i = currMo - 2; i >= 0; i--) {
+    if (yearDots[i] === true) { count++; } else { break; }
   }
-  return { count: count, months: months.slice(-8) };
+  return { count: count, months: yearDots.slice(0, currMo-1).slice(-8), yearDots: yearDots };
 }
 
 function calculateBudgetStreak() {
-  var txns      = activeTX();
-  var budgKeys  = Object.keys(LBUDGETS || {});
-  var months    = [];
+  var txns     = activeTX();
+  var budgKeys = Object.keys(LBUDGETS || {});
+  var now      = new Date();
+  var yr       = now.getFullYear();
+  var currMo   = now.getMonth() + 1;
+
+  var yearDots = [];
   for (var m = 1; m <= 12; m++) {
-    var pfx   = _dbPastMonthPfx(m);
+    if (m >= currMo) { yearDots.push(null); continue; }
+    var pfx   = yr + '-' + String(m).padStart(2,'0');
     var moTx  = txns.filter(function(t){ return t.date && t.date.startsWith(pfx); });
-    var allOk = true;
-    if (!budgKeys.length) { allOk = false; }
-    else {
-      for (var bi = 0; bi < budgKeys.length; bi++) {
-        var catId   = budgKeys[bi];
-        var limit   = Number(LBUDGETS[catId]) || 0;
-        if (!limit) continue;
-        var cat     = LCATS.find(function(c){ return c.id === catId; });
-        var catName = cat ? cat.name : catId;
-        var spent   = moTx.filter(function(t){
-          return t.type === 'expense' && (t.catId === catId || t.category === catName);
-        }).reduce(function(s,t){ return s + Number(t.amount); }, 0);
-        if (spent > limit) { allOk = false; break; }
-      }
+    var allOk = budgKeys.length > 0;
+    for (var bi = 0; bi < budgKeys.length; bi++) {
+      var catId   = budgKeys[bi];
+      var limit   = Number(LBUDGETS[catId]) || 0;
+      if (!limit) continue;
+      var cat     = LCATS.find(function(c){ return c.id === catId; });
+      var catName = cat ? cat.name : catId;
+      var spent   = moTx.filter(function(t){
+        return t.type==='expense' && (t.catId===catId || t.category===catName);
+      }).reduce(function(s,t){ return s+Number(t.amount); },0);
+      if (spent > limit) { allOk = false; break; }
     }
-    months.unshift(allOk);
+    yearDots.push(allOk);
   }
+
   var count = 0;
-  for (var i = months.length - 1; i >= 0; i--) {
-    if (months[i]) { count++; } else { break; }
+  for (var i = currMo - 2; i >= 0; i--) {
+    if (yearDots[i] === true) { count++; } else { break; }
   }
-  return { count: count, months: months.slice(-8) };
+  return { count: count, months: yearDots.slice(0, currMo-1).slice(-8), yearDots: yearDots };
+}
+
+// ── YTD dot grid helper ───────────────────────────────────────
+function _dbYtdDots(yearDots, hitColor) {
+  var MON = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  var html = '<div class="ytd-dots-row">';
+  for (var i = 0; i < 12; i++) {
+    var v = yearDots[i];
+    var dotStyle;
+    if (v === true) {
+      dotStyle = 'background:' + hitColor + ';box-shadow:0 0 5px ' + hitColor + '55';
+    } else if (v === false) {
+      dotStyle = 'background:rgba(98,120,160,0.18)';
+    } else {
+      dotStyle = 'background:rgba(98,120,160,0.06)';
+    }
+    html += '<div class="ytd-dot-wrap">'
+      + '<div class="ytd-dot" style="' + dotStyle + '"></div>'
+      + '<div class="ytd-dot-lbl">' + MON[i] + '</div>'
+      + '</div>';
+  }
+  html += '</div>';
+  return html;
 }
 
 // ── Render Streaks ─────────────────────────────────────────────
@@ -328,23 +362,20 @@ function renderStreaks(sav, bud) {
     if (c >= 1) return ['amber','Building'];
     return ['muted','Start today'];
   }
-  function dots(arr, colorClass) {
-    return arr.map(function(v){
-      return '<div class="streak-dot' + (v ? ' ' + colorClass : '') + '"></div>';
-    }).join('');
-  }
 
   var sb = savBadge(sav.count);
   var bb = budBadge(bud.count);
   var savClick = sav.count >= 3 ? 'onclick="triggerCelebration(\'Savings streak! 🔥\',\'' + sav.count + ' months of positive savings\')"' : '';
+  var savYtd = sav.yearDots || sav.months.map(function(v){return v;});
+  var budYtd = bud.yearDots || bud.months.map(function(v){return v;});
 
   el.innerHTML = '<div class="streak-card savings-streak" ' + savClick + '>'
     + '<div class="streak-icon">🔥</div>'
     + '<div class="streak-content">'
     + '<div class="streak-title">Savings Streak</div>'
     + '<div class="streak-count" id="sav-streak-count">0</div>'
-    + '<div class="streak-desc">months in a row</div>'
-    + '<div class="streak-dots">' + dots(sav.months, 'filled-green') + '</div>'
+    + '<div class="streak-desc">months income &gt; expenses</div>'
+    + _dbYtdDots(savYtd, '#00C896')
     + '</div>'
     + '<div class="streak-badge ' + sb[0] + '">' + sb[1] + '</div>'
     + '</div>'
@@ -353,13 +384,12 @@ function renderStreaks(sav, bud) {
     + '<div class="streak-content">'
     + '<div class="streak-title">Budget Streak</div>'
     + '<div class="streak-count" id="bud-streak-count">0</div>'
-    + '<div class="streak-desc">months under budget</div>'
-    + '<div class="streak-dots">' + dots(bud.months, 'filled-amber') + '</div>'
+    + '<div class="streak-desc">months all budgets under</div>'
+    + _dbYtdDots(budYtd, '#F59E0B')
     + '</div>'
     + '<div class="streak-badge ' + bb[0] + '">' + bb[1] + '</div>'
     + '</div>';
 
-  // Animate counts
   function animateCount(elId, target) {
     var numEl = document.getElementById(elId);
     if (!numEl) return;
@@ -372,6 +402,148 @@ function renderStreaks(sav, bud) {
     }, 80);
   }
   setTimeout(function(){ animateCount('sav-streak-count', sav.count); animateCount('bud-streak-count', bud.count); }, 200);
+}
+
+// ── Action Cards (static 3-item priority list) ────────────────
+function generateActionCards() {
+  var now = new Date();
+  var yr  = now.getFullYear();
+  var mo  = now.getMonth() + 1;
+  var pfx = yr + '-' + String(mo).padStart(2,'0');
+  var txns = activeTX();
+  var cards = [];
+
+  // ── Card 1: Top Goal ─────────────────────────────────────────
+  var activeGoals = (GOALS || []).filter(function(g) {
+    var tgt = Number(g.targetAmount) || Number(g.target) || 0;
+    var cur = (typeof _goalCurrent==='function') ? _goalCurrent(g) : (Number(g.currentAmount)||Number(g.saved)||0);
+    return tgt > 0 && cur < tgt;
+  });
+  activeGoals.sort(function(a, b) {
+    var ap = ((typeof _goalCurrent==='function'?_goalCurrent(a):(Number(a.currentAmount)||Number(a.saved)||0)) / (Number(a.targetAmount)||Number(a.target)||1));
+    var bp = ((typeof _goalCurrent==='function'?_goalCurrent(b):(Number(b.currentAmount)||Number(b.saved)||0)) / (Number(b.targetAmount)||Number(b.target)||1));
+    return bp - ap;
+  });
+  if (activeGoals.length) {
+    var g1   = activeGoals[0];
+    var tgt1 = Number(g1.targetAmount) || Number(g1.target) || 0;
+    var cur1 = (typeof _goalCurrent==='function') ? _goalCurrent(g1) : (Number(g1.currentAmount)||Number(g1.saved)||0);
+    var pct1 = Math.round((cur1/tgt1)*100);
+    var need1 = tgt1 - cur1;
+    cards.push({
+      num: 1, icon: g1.icon || '🎯', label: 'SAVINGS GOAL',
+      title: g1.name,
+      body: pct1 + '% complete · ' + fmt(need1) + ' to go',
+      status: pct1 >= 80 ? 'green' : pct1 >= 40 ? 'amber' : 'pink',
+      statusTxt: pct1 + '%',
+      link: "go('goals')", linkTxt: 'View Goal →'
+    });
+  } else {
+    cards.push({ num:1, icon:'🎯', label:'SAVINGS GOAL', title:'No active goals',
+      body:'Set a target to track your savings progress.',
+      status:'muted', statusTxt:'Set up', link:"go('goals')", linkTxt:'Add Goal →' });
+  }
+
+  // ── Card 2: Budget status ─────────────────────────────────────
+  var budgKeys = Object.keys(LBUDGETS || {});
+  var topAlert = null;
+  for (var bi = 0; bi < budgKeys.length; bi++) {
+    var catId  = budgKeys[bi];
+    var limit  = Number(LBUDGETS[catId]) || 0;
+    if (!limit) continue;
+    var cat    = LCATS.find(function(c){ return c.id === catId; });
+    var cName  = cat ? cat.name : catId;
+    var spent  = txns.filter(function(t){
+      return t.type==='expense' && t.date.startsWith(pfx) && (t.catId===catId||t.category===cName);
+    }).reduce(function(s,t){return s+Number(t.amount);},0);
+    var pctB = limit > 0 ? (spent/limit)*100 : 0;
+    if (pctB >= 70) {
+      if (!topAlert || pctB > topAlert.pct) topAlert = { name:cName, pct:pctB, limit:limit, spent:spent };
+    }
+  }
+  if (topAlert) {
+    var over = topAlert.pct >= 100;
+    cards.push({
+      num:2, icon:'📊', label:'BUDGET CHECK — ' + now.toLocaleString('en-AU',{month:'long'}).toUpperCase(),
+      title: topAlert.name + (over ? ' over budget' : ' approaching limit'),
+      body: Math.round(topAlert.pct) + '% of ' + fmt(topAlert.limit) + ' used'
+        + (over ? ' · ' + fmt(topAlert.spent - topAlert.limit) + ' over' : ' this month'),
+      status: over ? 'pink' : 'amber', statusTxt: Math.round(topAlert.pct) + '%',
+      link:"go('bva')", linkTxt:'Budget Report →'
+    });
+  } else if (budgKeys.length) {
+    cards.push({ num:2, icon:'✅', label:'BUDGET CHECK — ' + now.toLocaleString('en-AU',{month:'long'}).toUpperCase(),
+      title:'All budgets on track', body:budgKeys.length + ' categories within limit this month.',
+      status:'green', statusTxt:'On track', link:"go('bva')", linkTxt:'View Budgets →' });
+  } else {
+    cards.push({ num:2, icon:'📊', label:'BUDGET CHECK',
+      title:'No budgets configured', body:'Set monthly limits to track your category spending.',
+      status:'muted', statusTxt:'Set up', link:"go('bva')", linkTxt:'Set Budgets →' });
+  }
+
+  // ── Card 3: Months to hit top goal ───────────────────────────
+  var savArr = [];
+  for (var mi2 = 1; mi2 <= 3; mi2++) {
+    var md  = new Date(yr, mo - 1 - mi2, 1);
+    var mp2 = md.getFullYear() + '-' + String(md.getMonth()+1).padStart(2,'0');
+    var mInc = txns.filter(function(t){return t.type==='income'&&t.date&&t.date.startsWith(mp2);}).reduce(function(s,t){return s+Number(t.amount);},0);
+    var mExp = txns.filter(function(t){return t.type==='expense'&&t.date&&t.date.startsWith(mp2);}).reduce(function(s,t){return s+Number(t.amount);},0);
+    if (mInc > 0 || mExp > 0) savArr.push(mInc - mExp);
+  }
+  var avgSav = savArr.length ? savArr.reduce(function(a,b){return a+b;},0)/savArr.length : 0;
+  if (activeGoals.length && avgSav > 0) {
+    var g3   = activeGoals[activeGoals.length - 1]; // pick least-progressed goal
+    var tgt3 = Number(g3.targetAmount)||Number(g3.target)||0;
+    var cur3 = (typeof _goalCurrent==='function') ? _goalCurrent(g3) : (Number(g3.currentAmount)||Number(g3.saved)||0);
+    var mos  = Math.ceil(Math.max(0, tgt3 - cur3) / avgSav);
+    var projD = new Date(now.getFullYear(), now.getMonth() + mos, 1);
+    var projS = projD.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+    cards.push({ num:3, icon:'📅', label:'GOAL PROJECTION',
+      title: g3.name + ' — ~' + mos + ' month' + (mos!==1?'s':'') + ' away',
+      body: 'At avg savings of ' + fmt(Math.round(avgSav)) + '/mo, you\'ll reach this around ' + projS + '.',
+      status: mos <= 6 ? 'green' : mos <= 18 ? 'amber' : 'pink',
+      statusTxt: mos + 'mo',
+      link:"go('goals')", linkTxt:'View Goals →' });
+  } else if (activeGoals.length) {
+    cards.push({ num:3, icon:'📅', label:'GOAL PROJECTION',
+      title:'Increase savings to project',
+      body:'Your avg savings over the last 3 months is ' + fmt(Math.round(avgSav)) + '. Positive savings unlocks goal projections.',
+      status:'pink', statusTxt:'Off track', link:"go('transactions')", linkTxt:'Review Spending →' });
+  } else {
+    cards.push({ num:3, icon:'📅', label:'GOAL PROJECTION',
+      title:'Add a goal to see your projection',
+      body:'Once you have a savings goal we\'ll show exactly how long it will take at your current rate.',
+      status:'muted', statusTxt:'Coming soon', link:"go('goals')", linkTxt:'Add Goal →' });
+  }
+  return cards;
+}
+
+function renderActionCards(cards) {
+  var el = document.getElementById('db-nudge-wrap');
+  if (!el) return;
+  var sc = {
+    green: { bg:'rgba(0,200,150,0.12)', color:'var(--success)', bdr:'rgba(0,200,150,0.25)' },
+    amber: { bg:'rgba(245,158,11,0.12)', color:'var(--warn)', bdr:'rgba(245,158,11,0.25)' },
+    pink:  { bg:'rgba(240,83,138,0.12)', color:'var(--primary)', bdr:'rgba(240,83,138,0.25)' },
+    muted: { bg:'rgba(98,120,160,0.1)', color:'var(--muted)', bdr:'rgba(98,120,160,0.2)' }
+  };
+  var html = '';
+  for (var ci = 0; ci < cards.length; ci++) {
+    var c  = cards[ci];
+    var s  = sc[c.status] || sc.muted;
+    html += '<div class="action-card-item">'
+      + '<div class="ac-num">' + c.num + '</div>'
+      + '<div class="ac-icon">' + c.icon + '</div>'
+      + '<div class="ac-body">'
+      + '<div class="ac-label">' + c.label + '</div>'
+      + '<div class="ac-title">' + c.title + '</div>'
+      + '<div class="ac-desc">' + c.body + '</div>'
+      + '<a href="#" onclick="' + c.link + ';return false;" class="ac-link">' + c.linkTxt + '</a>'
+      + '</div>'
+      + '<div class="ac-status" style="background:' + s.bg + ';color:' + s.color + ';border:1px solid ' + s.bdr + '">' + c.statusTxt + '</div>'
+      + '</div>';
+  }
+  el.innerHTML = html;
 }
 
 // ── Nudge generation ───────────────────────────────────────────
@@ -731,9 +903,7 @@ function renderDashboard() {
   try { _savStreak = calculateSavingsStreak(); } catch(e) { _savStreak = { count:0, months:[] }; }
   try { _budStreak = calculateBudgetStreak(); } catch(e) { _budStreak = { count:0, months:[] }; }
   try { renderStreaks(_savStreak, _budStreak); } catch(e) {}
-  var _nudges;
-  try { _nudges = generateNudges(); } catch(e) { _nudges = [{ icon:'✅', text:'Everything looks on track this month.' }]; }
-  try { renderNudges(_nudges); } catch(e) {}
+  try { renderActionCards(generateActionCards()); } catch(e) { console.warn('action cards', e); }
 
   // ── Greeting ────────────────────────────────────────────────
   var _now  = new Date();
@@ -864,40 +1034,46 @@ function dbRenderHero() {
   } catch(e) { console.warn('dbRenderHero', e); }
 }
 
-// ── KPI row: Income / Expenses / Saved ───────────────────────
+// ── KPI row: Income / Expenses / Saved — LAST MONTH ──────────
 function dbRenderKpiRow() {
   var el = document.getElementById('db-kpi-row');
   if (!el) return;
-  var pfx = dbPeriodStr();
   var txns = activeTX();
+
+  // Use LAST month's data — current month is always incomplete
+  var now   = new Date();
+  var lastD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var pfx   = lastD.getFullYear() + '-' + String(lastD.getMonth()+1).padStart(2,'0');
+  var moLbl = lastD.toLocaleString('en-AU', { month: 'long' });
+
   var inc = txns.filter(function(t){return t.type==='income' && t.date.startsWith(pfx);}).reduce(function(s,t){return s+Number(t.amount);},0);
   var exp = txns.filter(function(t){return t.type==='expense' && t.date.startsWith(pfx);}).reduce(function(s,t){return s+Number(t.amount);},0);
   var saved    = inc - exp;
   var savePct  = inc > 0 ? Math.round((saved / inc) * 100) : 0;
   var saveClip = Math.min(Math.max(savePct, 0), 100);
 
-  // Last 6 months of income / expenses for sparklines
+  // Last 6 months ending at last month for sparklines
   var incVals = [], expVals = [];
   for (var mi = 5; mi >= 0; mi--) {
-    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - mi);
-    var mp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    var sd = new Date(now.getFullYear(), now.getMonth() - 1 - mi, 1);
+    var mp = sd.getFullYear() + '-' + String(sd.getMonth()+1).padStart(2,'0');
     incVals.push(txns.filter(function(t){return t.type==='income'&&t.date.startsWith(mp);}).reduce(function(s,t){return s+Number(t.amount);},0));
     expVals.push(txns.filter(function(t){return t.type==='expense'&&t.date.startsWith(mp);}).reduce(function(s,t){return s+Number(t.amount);},0));
   }
 
   el.innerHTML = '<div class="db-kpi-card">'
-    + '<div class="db-kpi-lbl">Income</div>'
+    + '<div class="db-kpi-lbl">Income &ndash; ' + moLbl + '</div>'
     + '<div class="db-kpi-val" style="color:var(--success)">+' + fmt(inc) + '</div>'
     + _dbSparkline(incVals, '#00C896')
     + '</div>'
     + '<div class="db-kpi-card">'
-    + '<div class="db-kpi-lbl">Expenses</div>'
+    + '<div class="db-kpi-lbl">Expenses &ndash; ' + moLbl + '</div>'
     + '<div class="db-kpi-val" style="color:var(--primary)">-' + fmt(exp) + '</div>'
     + _dbSparkline(expVals, '#F0538A')
     + '</div>'
     + '<div class="db-kpi-card">'
-    + '<div class="db-kpi-lbl">Saved</div>'
-    + '<div class="db-kpi-val" style="color:' + (saved >= 0 ? 'var(--text)' : 'var(--danger)') + '">' + fmt(Math.abs(saved)) + '</div>'
+    + '<div class="db-kpi-lbl">Saved &ndash; ' + moLbl + '</div>'
+    + '<div class="db-kpi-val" style="color:' + (saved >= 0 ? 'var(--text)' : 'var(--danger)') + '">' + (saved < 0 ? '-' : '') + fmt(Math.abs(saved)) + '</div>'
     + '<div class="db-kpi-bar"><div class="db-kpi-bar-fill" style="width:' + saveClip + '%;background:' + (savePct < 0 ? 'var(--danger)' : savePct < 20 ? 'var(--warn)' : 'var(--success)') + '"></div></div>'
     + '<div class="db-kpi-sub">' + savePct + '% savings rate</div>'
     + '</div>';

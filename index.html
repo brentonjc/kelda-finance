@@ -120,6 +120,12 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
   </div>
   <div class="mob-menu-section">
+    <div class="mob-menu-label">🛠️ Tools</div>
+    <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('health')"><span>💪</span>Financial Health</button>
+    </div>
+  </div>
+  <div class="mob-menu-section">
     <div class="mob-menu-label">⚙️ Controls</div>
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('categories')"><span>🏷️</span>Categories</button>
@@ -364,6 +370,9 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
     <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
 
+    <li class="nav-group-hdr"><span class="nav-gh-icon">🛠️</span>Tools</li>
+    <li><a onclick="go('health')" id="n-health"><span class="ni">💪</span><span class="nav-lbl">Financial Health</span></a></li>
+
     <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Controls</li>
     <li><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
     <li><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
@@ -431,6 +440,16 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card" id="db-glance-goals"></div>
     </div>
 
+  </div>
+
+  <!-- ═══ FINANCIAL HEALTH ═══ -->
+  <div class="page" id="page-health">
+    <div class="page-title">Financial Health</div>
+    <div class="page-sub">Your personalised financial score with clear actions to improve</div>
+    <div class="card" style="margin-bottom:14px">
+      <div id="fh-ring-wrap"></div>
+    </div>
+    <div id="fh-factors"></div>
   </div>
 
   <!-- ═══ INSIGHTS ═══ -->
@@ -1828,6 +1847,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/equities.js"></script>
 <script src="js/pages/liabilities.js"></script>
 <script src="js/pages/settings.js"></script>
+<script src="js/pages/health.js"></script>
 <script src="js/wizard.js"></script>
 <!-- Init -->
 <script>
