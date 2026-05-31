@@ -641,15 +641,16 @@ function dbDaysInPeriod() {
 // MAIN RENDER
 // ══════════════════════════════════════════════════════════════
 
+var _dbBudgetChart = null;
+
 function renderDashboard() {
-  // Always reset to current month so dashboard is a "right now" view
   dbMode  = 'month';
   dbYear  = new Date().getFullYear();
   dbMonth = new Date().getMonth() + 1;
 
   migrateTxCategories();
 
-  // ── Gamification sequence (steps 1–8) ──────────────────────
+  // ── Gamification sequence ───────────────────────────────────
   try { recordNetWorthSnapshot(); } catch(e) { console.warn('nw snapshot', e); }
   var _scoreData;
   try { _scoreData = calculateHealthScore(); } catch(e) { _scoreData = null; }
@@ -662,286 +663,257 @@ function renderDashboard() {
   try { _nudges = generateNudges(); } catch(e) { _nudges = [{ icon:'✅', text:'Everything looks on track this month.' }]; }
   try { renderNudges(_nudges); } catch(e) {}
 
-  // Hero greeting + figures (used by snapshot hero card if present)
-  const _heroGreet = document.getElementById('db-hero-greeting');
-  const _heroNW    = document.getElementById('db-hero-nw');
-  const _heroInc   = document.getElementById('db-hero-inc');
-  const _heroExp   = document.getElementById('db-hero-exp');
-  const _heroSaved = document.getElementById('db-hero-saved');
-  const _now       = new Date();
-  const _hr        = _now.getHours();
-  const _greet     = _hr < 12 ? 'GOOD MORNING' : _hr < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
-  if (_heroGreet) _heroGreet.textContent = _greet;
-  // Greeting name
+  // ── Greeting ────────────────────────────────────────────────
+  var _now  = new Date();
+  var _hr   = _now.getHours();
+  var _greetText = _hr < 12 ? 'GOOD MORNING' : _hr < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  var _hgEl = document.getElementById('db-hero-greeting');
+  if (_hgEl) _hgEl.textContent = _greetText;
   var _gnEl = document.getElementById('db-greeting-name');
   if (_gnEl) {
     var _gname = typeof getUserName === 'function' ? getUserName(activeProfile) : activeProfile;
     _gnEl.textContent = (_gname && _gname !== 'joint') ? _gname : 'Welcome back';
   }
-  // Greeting date — "Sunday, 1 June 2026 · June 2026"
   var _gdEl = document.getElementById('db-greeting-date');
   if (_gdEl) {
-    var _dayStr  = _now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-    var _monStr  = _now.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
+    var _dayStr = _now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    var _monStr = _now.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
     _gdEl.textContent = _dayStr + ' · showing ' + _monStr;
   }
-  const _pfx  = dbPeriodStr();
-  const _inc  = activeTX().filter(t => t.type === 'income'  && t.date.startsWith(_pfx)).reduce((s, t) => s + Number(t.amount), 0);
-  const _exp  = activeTX().filter(t => t.type === 'expense' && t.date.startsWith(_pfx)).reduce((s, t) => s + Number(t.amount), 0);
-  if (_heroInc)   _heroInc.textContent   = '+' + fmt(_inc);
-  if (_heroExp)   _heroExp.textContent   = '-' + fmt(_exp);
-  if (_heroSaved) _heroSaved.textContent = ((_inc - _exp) >= 0 ? '+' : '-') + fmt(Math.abs(_inc - _exp));
-  try {
-    const _months = ctAllMonths(), _lm = _months.length ? _months[_months.length - 1] : null;
-    const _bank   = _lm ? ['offset', 'home', 'sav1', 'sav2'].reduce((s, a) => s + ((CT[a] || {})[_lm] || 0), 0) : 0;
-    const _supB   = (SUPER.b && SUPER.b.balance) || 0;
-    const _supS   = (SUPER.s && SUPER.s.balance) || 0;
-    const _eqV    = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
-    const _totalLiab = (typeof liabTotal === 'function') ? liabTotal() : (MORTGAGE.balance || 0);
-    const _nw     = _bank + _supB + _supS + (MORTGAGE.homeValue || 0) + _eqV - _totalLiab;
-    if (_heroNW) _heroNW.textContent = fmt(_nw);
-  } catch (e) {}
 
-  dbRenderNetWorth();
-  dbRenderSummaryCards();
-  dbRenderAccounts();
-  dbRenderBudgetBars();
-  dbRenderUpcomingBills();
-  dbRenderMortgage();
-  dbRenderGoals();
+  // ── New layout renders ───────────────────────────────────────
+  dbRenderHero();
+  dbRenderKpiRow();
+  dbRenderGlanceMetrics();
 }
 
-// ══════════════════════════════════════════════════════════════
-// KPI SUMMARY CARDS — Income / Expenses / Surplus (current month)
-// ══════════════════════════════════════════════════════════════
-
-function dbRenderSummaryCards() {
-  const el = document.getElementById('db-summary-cards');
-  if (!el) return;
-  const pfx    = dbPeriodStr();
-  const incTx  = activeTX().filter(t => t.type === 'income'  && t.date.startsWith(pfx));
-  const expTx  = activeTX().filter(t => t.type === 'expense' && t.date.startsWith(pfx));
-  const inc    = incTx.reduce((s, t) => s + Number(t.amount), 0);
-  const exp    = expTx.reduce((s, t) => s + Number(t.amount), 0);
-  const net    = inc - exp;
-  el.innerHTML = ''
-    + '<div class="dash-stat ds-income"><div class="ds-lbl">Income</div><div class="ds-val">' + fmt(inc) + '</div><div class="ds-sub">' + dbPeriodLabel() + '</div></div>'
-    + '<div class="dash-stat ds-expense"><div class="ds-lbl">Expenses</div><div class="ds-val">' + fmt(exp) + '</div><div class="ds-sub">' + expTx.length + ' transaction' + (expTx.length !== 1 ? 's' : '') + '</div></div>'
-    + '<div class="dash-stat ds-net"><div class="ds-lbl">' + (net >= 0 ? 'Surplus' : 'Deficit') + '</div><div class="ds-val">' + fmt(Math.abs(net)) + '</div><div class="ds-sub">' + (net >= 0 ? 'Income over expenses' : 'Expenses over income') + '</div></div>';
-}
-
-// ══════════════════════════════════════════════════════════════
-// BUDGET ALERTS — alert-only view (red / yellow categories only)
-// ══════════════════════════════════════════════════════════════
-
-function dbRenderBudgetBars() {
-  const el = document.getElementById('db-budget-bars');
-  if (!el) return;
-  const pfx  = dbPeriodStr();
-  const rows = [];
-
-  Object.entries(LBUDGETS).forEach(([catId, ml]) => {
-    const cat   = LCATS.find(c => c.id === catId);
-    const name  = cat ? cat.name : catId;
-    const lim   = ml; // always monthly on dashboard
-    const spent = activeTX().filter(t =>
-      t.type === 'expense' && t.date.startsWith(pfx) &&
-      (t.catId === catId || t.category === name)
-    ).reduce((s, t) => s + Number(t.amount), 0);
-    rows.push({ name, icon: cat ? cat.icon : '', color: cat ? cat.color : 'var(--primary)', lim, spent });
+// ── SVG sparkline helper ──────────────────────────────────────
+function _dbSparkline(values, color) {
+  if (!values || values.length < 2) return '';
+  var min = Math.min.apply(null, values);
+  var max = Math.max.apply(null, values);
+  var range = (max - min) || 1;
+  var w = 72, h = 24;
+  var pts = values.map(function(v, i) {
+    var x = (i / (values.length - 1)) * w;
+    var y = h - 2 - ((v - min) / range) * (h - 4);
+    return x.toFixed(1) + ',' + y.toFixed(1);
   });
-
-  if (!rows.length) {
-    el.innerHTML = '<div class="empty"><div class="ei">🎯</div><p>Set budgets to see alerts. <a href="#" onclick="go(\'bva\');return false;" style="color:var(--primary)">Configure budgets →</a></p></div>';
-    return;
-  }
-
-  // Only show categories at 70%+ (warn or over) — alert-only mode
-  const alerts = rows
-    .filter(r => r.lim > 0 && (r.spent / r.lim) >= 0.7)
-    .sort((a, b) => (b.spent / b.lim) - (a.spent / a.lim));
-
-  if (!alerts.length) {
-    el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:6px 0">'
-      + '<span style="font-size:1.4rem">✅</span>'
-      + '<div><div style="font-weight:600;font-size:.9rem">All budgets on track</div>'
-      + '<div style="font-size:.76rem;color:var(--muted);margin-top:2px">' + rows.length + ' categor' + (rows.length === 1 ? 'y' : 'ies') + ' within budget this month</div></div>'
-      + '</div>';
-    return;
-  }
-
-  el.innerHTML = alerts.map(r => {
-    const pct = Math.min((r.spent / r.lim) * 100, 100);
-    const cls = pct >= 100 ? 'over' : 'warn';
-    const rem = r.lim - r.spent;
-    return '<div class="prog-wrap">'
-      + '<div class="prog-hd"><span class="prog-lbl">' + (r.icon ? r.icon + ' ' : '') + r.name + '</span>'
-      + '<span class="prog-val">' + fmt(r.spent) + ' / ' + fmt(r.lim) + '</span></div>'
-      + '<div class="prog-track"><div class="prog-fill ' + cls + '" style="width:' + pct.toFixed(0) + '%"></div></div>'
-      + '<div style="display:flex;justify-content:space-between;margin-top:3px;font-size:.7rem">'
-      + '<span style="color:var(--muted)">' + pct.toFixed(0) + '%</span>'
-      + '<span style="color:' + (rem < 0 ? 'var(--danger)' : 'var(--warn)') + ';font-weight:600">'
-      + (rem < 0 ? 'Over by ' + fmt(Math.abs(rem)) : fmt(rem) + ' left') + '</span></div></div>';
-  }).join('');
+  return '<svg width="' + w + '" height="' + h + '" style="overflow:visible;display:block">'
+    + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>'
+    + '</svg>';
 }
 
-// ══════════════════════════════════════════════════════════════
-// ACCOUNT BALANCES
-// ══════════════════════════════════════════════════════════════
+// ── Hero: Net Worth value + YTD trend ─────────────────────────
+function dbRenderHero() {
+  try {
+    var months    = ctAllMonths();
+    var lm        = months.length ? months[months.length - 1] : null;
+    var bank      = lm ? ['offset','home','sav1','sav2'].reduce(function(s,a){return s+((CT[a]||{})[lm]||0);},0) : 0;
+    var supB      = (SUPER.b && SUPER.b.balance) ? Number(SUPER.b.balance) : 0;
+    var supS      = (SUPER.s && SUPER.s.balance) ? Number(SUPER.s.balance) : 0;
+    var homeVal   = Number(MORTGAGE.homeValue) || 0;
+    var eqV       = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
+    var totLiab   = (typeof liabTotal === 'function') ? liabTotal() : (Number(MORTGAGE.balance) || 0);
+    var nw        = bank + supB + supS + homeVal + eqV - totLiab;
 
-function dbRenderAccounts() {
-  const el = document.getElementById('db-accounts');
-  if (!el) return;
-  const months  = ctAllMonths();
-  const lm      = months.length ? months[months.length - 1] : null;
-  const accts   = [
-    { id: 'offset', label: CTCFG.offsetLbl || 'Offset Account',     icon: '🏦' },
-    { id: 'home',   label: CTCFG.homeLbl   || 'Home Transaction',    icon: '🏠' },
-    { id: 'sav1',   label: CTCFG.sav1Lbl   || getUserName('brenton') + ' Savings', icon: '💰' },
-    { id: 'sav2',   label: CTCFG.sav2Lbl   || getUserName('shelley') + ' Savings', icon: '💎' },
-  ];
-  const vals    = accts.map(a => lm ? ((CT[a.id] || {})[lm] || 0) : 0);
-  const total   = vals.reduce((s, v) => s + v, 0);
-  const dateLbl = lm ? new Date(lm + '-02').toLocaleString('en-AU', { month: 'long', year: 'numeric' }) : 'No data yet';
-  el.innerHTML  = '<div class="acct-strip">'
-    + accts.map((a, i) => '<div class="acct-strip-item"><div class="acct-strip-lbl">' + a.icon + ' ' + a.label + '</div><div class="acct-strip-val">' + fmt(vals[i]) + '</div></div>').join('')
-    + '<div class="acct-strip-item acct-strip-total"><div class="acct-strip-lbl" style="color:var(--warn)">Combined</div><div class="acct-strip-val" style="color:var(--warn)">' + fmt(total) + '</div></div>'
-    + '</div><div style="font-size:.7rem;color:var(--muted);margin-top:8px">As at ' + dateLbl + '</div>';
+    var nwEl = document.getElementById('db-hero-nw');
+    if (nwEl) nwEl.textContent = fmt(nw);
+
+    // YTD trend from nw history
+    var trendEl = document.getElementById('db-hero-trend');
+    if (trendEl) {
+      var yrStart = new Date().getFullYear() + '-01';
+      var hist    = [];
+      try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
+      var ytdEntry = null;
+      for (var hi = 0; hi < hist.length; hi++) {
+        if (hist[hi].date && hist[hi].date.startsWith(yrStart)) { ytdEntry = hist[hi]; break; }
+      }
+      var delta   = ytdEntry ? nw - ytdEntry.netWorth : null;
+      var sparkVals = hist.slice(-8).map(function(h){ return h.netWorth; });
+      var sparkSvg  = _dbSparkline(sparkVals, delta !== null && delta < 0 ? '#EF4444' : '#00C896');
+      var trendColor = delta === null ? 'var(--muted)' : (delta >= 0 ? 'var(--success)' : 'var(--danger)');
+      var trendLbl   = delta === null ? '' : ((delta >= 0 ? '&#8593; ' : '&#8595; ') + fmt(Math.abs(delta)) + ' this year');
+      trendEl.innerHTML = '<div class="db-hero-trend">'
+        + (sparkSvg ? '<span>' + sparkSvg + '</span>' : '')
+        + (trendLbl ? '<span class="db-hero-trend-lbl" style="color:' + trendColor + '">' + trendLbl + '</span>' : '')
+        + '</div>';
+    }
+  } catch(e) { console.warn('dbRenderHero', e); }
 }
 
-// ══════════════════════════════════════════════════════════════
-// NET WORTH HERO
-// ══════════════════════════════════════════════════════════════
-
-function dbRenderNetWorth() {
-  const el = document.getElementById('db-networth');
+// ── KPI row: Income / Expenses / Saved ───────────────────────
+function dbRenderKpiRow() {
+  var el = document.getElementById('db-kpi-row');
   if (!el) return;
-  const months      = ctAllMonths();
-  const lm          = months.length ? months[months.length - 1] : null;
-  const prevM       = months.length >= 2 ? months[months.length - 2] : null;
-  const bank        = lm ? ['offset', 'home', 'sav1', 'sav2'].reduce((s, a) => s + ((CT[a] || {})[lm] || 0), 0) : 0;
-  const bankPrev    = prevM ? ['offset', 'home', 'sav1', 'sav2'].reduce((s, a) => s + ((CT[a] || {})[prevM] || 0), 0) : null;
-  const supB        = SUPER.b?.balance || 0;
-  const supS        = SUPER.s?.balance || 0;
-  const homeVal     = MORTGAGE.homeValue || 0;
-  const eqV         = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
-  const totalLiab   = (typeof liabTotal === 'function') ? liabTotal() : (MORTGAGE.balance || 0);
-  const assetsTotal = bank + supB + supS + homeVal + eqV;
-  const nw          = assetsTotal - totalLiab;
-  const prevNW      = bankPrev !== null ? bankPrev + supB + supS + homeVal + eqV - totalLiab : null;
-  const delta       = prevNW !== null ? nw - prevNW : null;
-  const deltaHtml   = delta !== null
-    ? '<div style="font-size:.8rem;font-weight:600;color:' + (delta >= 0 ? 'var(--success)' : 'var(--danger)') + ';margin-top:4px">'
-      + (delta >= 0 ? '↑' : '↓') + ' ' + fmt(Math.abs(delta)) + ' vs last month</div>'
-    : '';
+  var pfx = dbPeriodStr();
+  var txns = activeTX();
+  var inc = txns.filter(function(t){return t.type==='income' && t.date.startsWith(pfx);}).reduce(function(s,t){return s+Number(t.amount);},0);
+  var exp = txns.filter(function(t){return t.type==='expense' && t.date.startsWith(pfx);}).reduce(function(s,t){return s+Number(t.amount);},0);
+  var saved    = inc - exp;
+  var savePct  = inc > 0 ? Math.round((saved / inc) * 100) : 0;
+  var saveClip = Math.min(Math.max(savePct, 0), 100);
 
-  el.innerHTML = '<div class="tile-hd" style="margin-bottom:8px">'
-    + '<div class="section-label" style="margin:0">Net Worth</div>'
-    + '<a href="#" onclick="go(\'assets\');return false;" class="tile-link">View assets →</a>'
+  // Last 6 months of income / expenses for sparklines
+  var incVals = [], expVals = [];
+  for (var mi = 5; mi >= 0; mi--) {
+    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - mi);
+    var mp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    incVals.push(txns.filter(function(t){return t.type==='income'&&t.date.startsWith(mp);}).reduce(function(s,t){return s+Number(t.amount);},0));
+    expVals.push(txns.filter(function(t){return t.type==='expense'&&t.date.startsWith(mp);}).reduce(function(s,t){return s+Number(t.amount);},0));
+  }
+
+  el.innerHTML = '<div class="db-kpi-card">'
+    + '<div class="db-kpi-lbl">Income</div>'
+    + '<div class="db-kpi-val" style="color:var(--success)">+' + fmt(inc) + '</div>'
+    + _dbSparkline(incVals, '#00C896')
     + '</div>'
-    + '<div class="nw-val">' + fmt(nw) + '</div>'
-    + deltaHtml
-    + '<div class="nw-sub" style="margin-top:6px">Assets ' + fmt(assetsTotal) + ' − Liabilities ' + fmt(totalLiab) + '</div>'
-    + '<div style="font-size:.68rem;color:var(--muted);margin-top:2px;margin-bottom:10px">Assets − Liabilities · <a href="#" onclick="go(\'liabilities\');return false;" style="color:var(--primary)">View liabilities →</a></div>'
-    + '<div class="nw-breakdown">'
-    + '<div class="nw-item"><div class="nw-item-lbl">Bank</div><div class="nw-item-val" style="color:var(--primary)">' + fmt(bank) + '</div></div>'
-    + '<div class="nw-item"><div class="nw-item-lbl">Super</div><div class="nw-item-val" style="color:var(--purple)">' + fmt(supB + supS) + '</div></div>'
-    + '<div class="nw-item"><div class="nw-item-lbl">Home Value</div><div class="nw-item-val" style="color:var(--success)">' + fmt(homeVal) + '</div></div>'
-    + (eqV > 0 ? '<div class="nw-item"><div class="nw-item-lbl">Equities</div><div class="nw-item-val" style="color:var(--success)">' + fmt(eqV) + '</div></div>' : '')
-    + '<div class="nw-item"><div class="nw-item-lbl">All Liabilities</div><div class="nw-item-val" style="color:var(--danger)">-' + fmt(totalLiab) + '</div></div>'
+    + '<div class="db-kpi-card">'
+    + '<div class="db-kpi-lbl">Expenses</div>'
+    + '<div class="db-kpi-val" style="color:var(--primary)">-' + fmt(exp) + '</div>'
+    + _dbSparkline(expVals, '#F0538A')
+    + '</div>'
+    + '<div class="db-kpi-card">'
+    + '<div class="db-kpi-lbl">Saved</div>'
+    + '<div class="db-kpi-val" style="color:' + (saved >= 0 ? 'var(--text)' : 'var(--danger)') + '">' + fmt(Math.abs(saved)) + '</div>'
+    + '<div class="db-kpi-bar"><div class="db-kpi-bar-fill" style="width:' + saveClip + '%;background:' + (savePct < 0 ? 'var(--danger)' : savePct < 20 ? 'var(--warn)' : 'var(--success)') + '"></div></div>'
+    + '<div class="db-kpi-sub">' + savePct + '% savings rate</div>'
     + '</div>';
 }
 
-// ══════════════════════════════════════════════════════════════
-// MORTGAGE SNAPSHOT
-// ══════════════════════════════════════════════════════════════
+// ── Zone 4: Glanceable Metrics ────────────────────────────────
+function dbRenderGlanceMetrics() {
+  _dbRenderGlanceBudget();
+  _dbRenderGlanceGoals();
+}
 
-function dbRenderMortgage() {
-  const el = document.getElementById('db-mortgage');
+function _dbRenderGlanceBudget() {
+  var el = document.getElementById('db-glance-budget');
   if (!el) return;
-  if (!MORTGAGE.balance) {
-    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">🏡</div><p>No mortgage data.</p></div>';
-    return;
+  var pfx  = dbPeriodStr();
+  var txns = activeTX();
+  var budgKeys = Object.keys(LBUDGETS || {});
+
+  // Build rows: spent vs limit per category
+  var rows = [];
+  for (var bi = 0; bi < budgKeys.length; bi++) {
+    var catId   = budgKeys[bi];
+    var limit   = Number(LBUDGETS[catId]) || 0;
+    if (!limit) continue;
+    var cat     = LCATS.find(function(c){ return c.id === catId; });
+    var catName = cat ? cat.name : catId;
+    var catColor = cat ? (cat.color || 'var(--primary)') : 'var(--primary)';
+    var spent   = txns.filter(function(t){
+      return t.type==='expense' && t.date.startsWith(pfx) && (t.catId===catId || t.category===catName);
+    }).reduce(function(s,t){ return s+Number(t.amount); },0);
+    rows.push({ name: catName, limit: limit, spent: spent, color: catColor });
   }
-  const m      = MORTGAGE;
-  const equity = Math.max(0, (m.homeValue || 0) - (m.balance || 0));
-  const eqPct  = m.homeValue ? (equity / m.homeValue * 100).toFixed(1) : 0;
-  const isIO   = m.reptype === 'io';
-  const effBal = Math.max(0, (m.balance || 0) - (m.offset || 0));
-  const r      = (m.rate || 0) / 100 / 12;
-  const n      = (m.years || 0) * 12;
-  const repmt  = isIO ? m.balance * r : (r && n ? m.balance * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : 0);
-  const np     = new Date(); np.setMonth(np.getMonth() + 1); np.setDate(1);
-  const npStr  = np.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-  el.innerHTML = '<div class="mort-snap">'
-    + '<div class="mort-snap-item"><div class="mort-snap-lbl">Balance</div><div class="mort-snap-val" style="color:var(--danger)">' + fmt(m.balance) + '</div></div>'
-    + '<div class="mort-snap-item"><div class="mort-snap-lbl">Equity</div><div class="mort-snap-val" style="color:var(--success)">' + fmt(equity) + '</div><div style="font-size:.68rem;color:var(--muted);margin-top:2px">' + eqPct + '% of value</div></div>'
-    + '<div class="mort-snap-item"><div class="mort-snap-lbl">Next Payment</div><div class="mort-snap-val" style="font-size:.9rem">' + npStr + '</div></div>'
+
+  var totalBudget = rows.reduce(function(s,r){ return s+r.limit; }, 0);
+  var totalSpent  = rows.reduce(function(s,r){ return s+r.spent; }, 0);
+  var overallPct  = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  var badgeCls    = overallPct >= 100 ? 'pink' : overallPct >= 80 ? 'amber' : 'green';
+  var badgeTxt    = overallPct >= 100 ? 'Over budget' : overallPct >= 80 ? 'Watch out' : 'On track';
+
+  // Sort by pct desc, show top 4
+  rows.sort(function(a,b){ return (b.spent/b.limit) - (a.spent/a.limit); });
+  var shown = rows.slice(0, 4);
+
+  // Donut data
+  var donutColors  = ['#F0538A','#818CF8','#00C896','#F59E0B','#F07AAA','#52D68A','#38BDF8','#FB923C'];
+  var donutLabels  = shown.map(function(r){ return r.name; });
+  var donutValues  = shown.map(function(r){ return Math.max(r.spent, 0.1); });
+  var donutClrs    = shown.map(function(r,i){ return r.color || donutColors[i % donutColors.length]; });
+
+  var emptyMsg = rows.length === 0
+    ? '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No budgets set. <a href="#" onclick="go(\'bva\');return false;" style="color:var(--primary)">Add budgets →</a></div>'
+    : '';
+
+  var catRowsHtml = shown.map(function(r) {
+    var pct = r.limit > 0 ? Math.round((r.spent / r.limit) * 100) : 0;
+    var barColor = pct >= 100 ? 'var(--danger)' : pct >= 80 ? 'var(--warn)' : 'var(--success)';
+    var pctColor = pct >= 100 ? 'var(--danger)' : pct >= 80 ? 'var(--warn)' : 'var(--text)';
+    return '<div class="db-glance-cat-row">'
+      + '<span class="db-glance-cat-name">' + r.name + '</span>'
+      + '<span class="db-glance-cat-pct" style="color:' + pctColor + '">' + pct + '%</span>'
+      + '</div>'
+      + '<div class="db-glance-prog"><div class="db-glance-prog-fill" style="width:' + Math.min(pct,100) + '%;background:' + barColor + '"></div></div>';
+  }).join('');
+
+  el.innerHTML = '<div class="db-glance-hd">'
+    + '<div class="db-glance-title">📊 Monthly Budget</div>'
+    + (rows.length ? '<span class="db-glance-badge ' + badgeCls + '">' + overallPct + '%  ' + badgeTxt + '</span>' : '')
     + '</div>'
-    + (m.offset ? '<div style="margin-top:10px;font-size:.76rem;padding:7px 12px;background:var(--primary-bg);border-radius:8px;color:var(--pink-light)">Offset: <strong>' + fmt(m.offset) + '</strong> · Effective balance: <strong>' + fmt(effBal) + '</strong></div>' : '');
+    + emptyMsg
+    + (shown.length ? '<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px">'
+      + '<canvas id="db-budget-donut" width="70" height="70" style="flex-shrink:0"></canvas>'
+      + '<div style="flex:1;min-width:0">' + catRowsHtml + '</div>'
+      + '</div>' : '')
+    + '<div style="margin-top:4px"><a href="#" onclick="go(\'bva\');return false;" style="font-size:.72rem;color:var(--primary);text-decoration:none;font-weight:600">Full budget report →</a></div>';
+
+  // Draw donut after DOM paint
+  if (shown.length) {
+    setTimeout(function() {
+      var canvas = document.getElementById('db-budget-donut');
+      if (!canvas) return;
+      if (_dbBudgetChart) { try { _dbBudgetChart.destroy(); } catch(e){} _dbBudgetChart = null; }
+      var muted = dbToken('--muted');
+      var cardBg = dbToken('--card2');
+      _dbBudgetChart = safeChart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: donutLabels,
+          datasets: [{ data: donutValues, backgroundColor: donutClrs, borderWidth: 2, borderColor: cardBg }]
+        },
+        options: {
+          responsive: false, cutout: '70%',
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ return ' ' + c.label + ': ' + Math.round((c.parsed / donutValues.reduce(function(a,b){return a+b;},0)) * 100) + '%'; } } } }
+        }
+      });
+    }, 50);
+  }
 }
 
-// ══════════════════════════════════════════════════════════════
-// UPCOMING BILLS
-// ══════════════════════════════════════════════════════════════
-
-function dbRenderUpcomingBills() {
-  const el = document.getElementById('db-upcoming-bills');
+function _dbRenderGlanceGoals() {
+  var el = document.getElementById('db-glance-goals');
   if (!el) return;
-  const todayNum = new Date().getDate();
-  // Show bills due in the next 14 days (or overdue but unpaid)
-  const upcoming = BILLS.filter(b => !b.paid && b.due - todayNum >= -2 && b.due - todayNum <= 14)
-                        .sort((a, b) => a.due - b.due);
-  if (!upcoming.length) {
-    el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:6px 0">'
-      + '<span style="font-size:1.4rem">✅</span>'
-      + '<div><div style="font-weight:600;font-size:.9rem">No bills due soon</div>'
-      + '<div style="font-size:.76rem;color:var(--muted);margin-top:2px">Nothing due in the next 14 days</div></div>'
-      + '</div>';
+
+  if (!GOALS || !GOALS.length) {
+    el.innerHTML = '<div class="db-glance-hd"><div class="db-glance-title">🎯 Savings Goals</div></div>'
+      + '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No goals yet. <a href="#" onclick="go(\'goals\');return false;" style="color:var(--primary)">Add a goal →</a></div>';
     return;
   }
-  // Show up to 3 bills; link to all if more
-  const shown = upcoming.slice(0, 3);
-  el.innerHTML = shown.map(b => {
-    const daysUntil  = b.due - todayNum;
-    const pillClass  = daysUntil <= 0 ? 'days-today' : daysUntil <= 3 ? 'days-soon' : 'days-ok';
-    const daysLbl    = daysUntil <= 0 ? (daysUntil === 0 ? 'Today!' : 'Overdue') : daysUntil === 1 ? 'Tomorrow' : 'In ' + daysUntil + 'd';
-    return '<div class="upcoming-bill-row">'
-      + '<div style="font-size:1.2rem">' + b.icon + '</div>'
-      + '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.86rem">' + b.name + '</div>'
-      + '<div style="font-size:.72rem;color:var(--muted)">Due ' + b.due + ord(b.due) + '</div></div>'
-      + '<span class="bill-days-pill ' + pillClass + '">' + daysLbl + '</span>'
-      + '<div style="font-family:var(--font-mono);font-weight:700;font-size:1rem;flex-shrink:0">' + fmt(b.amount) + '</div>'
-      + '</div>';
-  }).join('')
-    + (upcoming.length > 3 ? '<div style="font-size:.75rem;color:var(--muted);margin-top:8px">+' + (upcoming.length - 3) + ' more — <a href="#" onclick="go(\'bills\');return false;" style="color:var(--primary)">view all →</a></div>' : '');
-}
 
-// ══════════════════════════════════════════════════════════════
-// SAVINGS GOALS — top 2 priority goals
-// ══════════════════════════════════════════════════════════════
+  var goalRows = GOALS.map(function(g) {
+    var cur = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
+    var tgt = Number(g.targetAmount) || Number(g.target) || 0;
+    var pct = tgt > 0 ? Math.min(Math.round((cur / tgt) * 100), 100) : 0;
+    return { name: g.name, icon: g.icon || '🎯', pct: pct, done: pct >= 100 };
+  });
 
-function dbRenderGoals() {
-  const el = document.getElementById('db-goals');
-  if (!el) return;
-  if (!GOALS.length) {
-    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">🎯</div><p>No goals yet — <a href="#" onclick="go(\'goals\');return false;" style="color:var(--primary)">add your first goal →</a></p></div>';
-    return;
-  }
-  const shown = GOALS.slice(0, 2);
-  el.innerHTML = shown.map(g => {
-    const current = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
-    const target  = (typeof _goalTarget  === 'function') ? _goalTarget(g)  : (Number(g.targetAmount)  || Number(g.target)  || 0);
-    const p       = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-    const cls     = p >= 100 ? 'over' : p >= 75 ? 'warn' : '';
-    return '<div class="prog-wrap">'
-      + '<div class="prog-hd"><span class="prog-lbl">' + (g.icon || '🎯') + ' ' + (p >= 100 ? '✅ ' : '') + g.name + '</span>'
-      + '<span class="prog-val" style="font-family:var(--font-mono)">' + fmt(current) + ' / ' + fmt(target) + '</span></div>'
-      + '<div class="prog-track"><div class="prog-fill ' + cls + '" style="width:' + p.toFixed(0) + '%"></div></div>'
-      + '<div style="font-size:.7rem;color:var(--muted);margin-top:3px">' + p.toFixed(0) + '% · ' + (p >= 100 ? 'Goal reached!' : fmt(Math.max(0, target - current)) + ' to go') + '</div>'
+  var doneCount  = goalRows.filter(function(g){ return g.done; }).length;
+  var overBudget = goalRows.some(function(g){ return !g.done && g.pct === 0; });
+  var badgeCls   = doneCount === goalRows.length ? 'green' : overBudget ? 'pink' : 'green';
+  var badgeTxt   = doneCount === goalRows.length ? 'All done!' : doneCount + ' / ' + goalRows.length + ' complete';
+
+  var rowsHtml = goalRows.slice(0, 5).map(function(g) {
+    var barColor = g.done ? 'var(--success)' : g.pct >= 80 ? 'var(--warn)' : 'var(--success)';
+    return '<div class="db-glance-goal-row">'
+      + '<div class="db-glance-goal-name">'
+      + '<span>' + g.icon + ' ' + g.name + '</span>'
+      + '<span class="db-glance-goal-pct" style="color:' + (g.done ? 'var(--success)' : 'var(--muted)') + '">' + g.pct + '%</span>'
+      + '</div>'
+      + '<div class="db-glance-prog"><div class="db-glance-prog-fill" style="width:' + g.pct + '%;background:' + barColor + '"></div></div>'
       + '</div>';
-  }).join('')
-    + (GOALS.length > 2 ? '<div style="font-size:.75rem;color:var(--muted);margin-top:8px">+' + (GOALS.length - 2) + ' more — <a href="#" onclick="go(\'goals\');return false;" style="color:var(--primary)">view all →</a></div>' : '');
+  }).join('');
+
+  el.innerHTML = '<div class="db-glance-hd">'
+    + '<div class="db-glance-title">🎯 Savings Goals</div>'
+    + '<span class="db-glance-badge ' + badgeCls + '">' + badgeTxt + '</span>'
+    + '</div>'
+    + rowsHtml
+    + '<div style="margin-top:4px"><a href="#" onclick="go(\'goals\');return false;" style="font-size:.72rem;color:var(--primary);text-decoration:none;font-weight:600">View all goals →</a></div>';
 }
 
 function ord(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
