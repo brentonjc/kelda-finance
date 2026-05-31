@@ -99,7 +99,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="mob-menu-label">💰 Save</div>
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
-      <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Assets</button>
+      <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Net Assets</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -351,7 +351,7 @@ window.addEventListener('unhandledrejection',function(e){
     <li class="nav-group-hdr"><span class="nav-gh-icon">💰</span>Save</li>
     <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
     <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
-    <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Total Assets</span></a></li>
+    <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Assets</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏦</span>Borrow</li>
     <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
@@ -1227,26 +1227,51 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
   </div>
 
-  <!-- ═══ TOTAL ASSETS ═══ -->
+  <!-- ═══ NET ASSETS ═══ -->
   <div class="page" id="page-assets">
-    <div class="page-title">Total Assets</div>
-    <div class="page-sub">Complete net worth — bank, super, property, and equity holdings</div>
+    <div class="page-title">Net Assets</div>
+    <div class="page-sub">Total assets minus total liabilities — your true financial position</div>
 
-    <!-- Summary stats -->
+    <!-- Summary KPI strip -->
     <div class="g4 mb" id="assets-stats"></div>
 
-    <!-- Bank + Super + Property + Chart -->
+    <!-- Main two-column layout -->
     <div class="g2 mb">
+
+      <!-- Left: asset & liability breakdowns -->
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="card"><div class="section-label">🏦 Bank Balances (Latest)</div><div id="assets-bank"></div></div>
+        <div class="card"><div class="section-label">🏦 Bank Balances</div><div id="assets-bank"></div></div>
         <div class="card"><div class="section-label">💼 Superannuation</div><div id="assets-super"></div></div>
         <div class="card"><div class="section-label">🏡 Property Equity</div><div id="assets-property"></div></div>
         <div class="card"><div class="section-label">📈 Equity Holdings</div><div id="assets-equities-summary"></div></div>
+        <div class="card"><div class="section-label">⚖️ Liabilities</div><div id="assets-liabilities-summary"></div></div>
       </div>
-      <div class="card">
-        <div class="section-label">Asset Breakdown</div>
-        <div class="chart-box"><canvas id="assets-chart"></canvas></div>
-        <div id="assets-note" style="margin-top:12px;font-size:.72rem;color:var(--muted);text-align:center"></div>
+
+      <!-- Right: three donuts + net position panel -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Net Position hero -->
+        <div class="card" id="assets-net-position"></div>
+
+        <!-- Assets donut -->
+        <div class="card">
+          <div class="section-label" style="margin-bottom:10px">Assets Breakdown</div>
+          <div style="height:220px"><canvas id="assets-chart"></canvas></div>
+        </div>
+
+        <!-- Liabilities donut -->
+        <div class="card">
+          <div class="section-label" style="margin-bottom:10px">Liabilities Breakdown</div>
+          <div style="height:220px"><canvas id="assets-liab-chart"></canvas></div>
+        </div>
+
+        <!-- Net Assets donut -->
+        <div class="card">
+          <div class="section-label" style="margin-bottom:10px">Net Assets Position</div>
+          <div style="height:220px"><canvas id="assets-net-chart"></canvas></div>
+        </div>
+
+        <div id="assets-note" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px 0"></div>
       </div>
     </div>
 
