@@ -330,11 +330,13 @@ function _dbYtdDots(yearDots, hitColor) {
     var v = yearDots[i];
     var dotStyle;
     if (v === true) {
-      dotStyle = 'background:' + hitColor + ';box-shadow:0 0 5px ' + hitColor + '55';
+      dotStyle = 'background:' + hitColor + ';box-shadow:0 0 6px ' + hitColor + '88';
     } else if (v === false) {
-      dotStyle = 'background:rgba(98,120,160,0.18)';
+      // Missed month — clearly unfilled (solid dim)
+      dotStyle = 'background:rgba(98,120,160,0.30);border:1px solid rgba(98,120,160,0.15)';
     } else {
-      dotStyle = 'background:rgba(98,120,160,0.06)';
+      // Future month — faint placeholder
+      dotStyle = 'background:rgba(98,120,160,0.08)';
     }
     html += '<div class="ytd-dot-wrap">'
       + '<div class="ytd-dot" style="' + dotStyle + '"></div>'

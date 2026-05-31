@@ -25,17 +25,18 @@
 .form-grid>*{flex:1 1 150px;min-width:0;}
 label.lbl{display:block;font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;}
 input,select,textarea{
-  width:100%;padding:11px 13px;background:#13111a;border:1.5px solid var(--border);
+  width:100%;padding:11px 13px;background:var(--input-bg);border:1.5px solid var(--input-border);
   border-radius:9px;color:var(--text);font-family:var(--font-body);font-size:16px;
   outline:none;transition:border-color .18s,box-shadow .18s;
   -webkit-appearance:none;appearance:none;
 }
 input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(232,69,122,.18);}
 select{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a8095'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236278A0'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center;padding-right:28px;
+  background-color:var(--input-bg);
 }
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:#2a2535;outline:none;cursor:pointer;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:var(--card3);outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--primary);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer;}
 input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--primary);border:3px solid #fff;cursor:pointer;}
 
@@ -256,7 +257,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .rate-badge .rb-delta{font-size:.72rem;font-weight:700;margin-top:3px;}
 
 /* ══ CSV IMPORT ══ */
-.csv-drop{border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#13111a;}
+.csv-drop{border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--input-bg);}
 .csv-drop:hover,.csv-drop.drag-over{border-color:var(--primary);background:#2a1030;}
 .csv-drop .cd-icon{font-size:2rem;margin-bottom:8px;}
 .csv-drop p{color:var(--muted);font-size:.82rem;margin-bottom:4px;}
@@ -672,10 +673,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .ac-status{flex-shrink:0;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:99px;white-space:nowrap;margin-top:2px;}
 
 /* ── YTD STREAK DOTS ── */
-.ytd-dots-row{display:flex;gap:4px;align-items:flex-end;margin-top:8px;flex-wrap:nowrap;}
-.ytd-dot-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;}
-.ytd-dot{width:100%;aspect-ratio:1/1;max-width:18px;border-radius:4px;transition:background .2s;}
-.ytd-dot-lbl{font-size:7px;color:var(--muted);font-weight:600;letter-spacing:.02em;}
+.ytd-dots-row{display:flex;gap:3px;align-items:flex-start;margin-top:8px;flex-wrap:nowrap;}
+.ytd-dot-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:18px;}
+.ytd-dot{width:14px;height:14px;border-radius:3px;flex-shrink:0;transition:background .2s;}
+.ytd-dot-lbl{font-size:7px;color:var(--muted);font-weight:600;letter-spacing:.01em;}
 
 /* ── FINANCIAL HEALTH PAGE ── */
 .fh-factor-card{margin-bottom:12px;padding:16px 18px;}
