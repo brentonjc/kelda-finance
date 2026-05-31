@@ -1,11 +1,10 @@
 // ══════════════════════════════════════════════════════════════
 // NET ASSETS PAGE
-// Three donut charts: Assets · Liabilities · Net Position
+// Two donut charts: Assets · Liabilities
 // ══════════════════════════════════════════════════════════════
 
 var assetsChart    = null;
 var assetsLiabChart = null;
-var assetsNetChart  = null;
 
 function asToken(n) {
   return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '';
@@ -181,7 +180,6 @@ function renderAssets() {
   // ── Charts ────────────────────────────────────────────────
   _assetsRenderAssetsDonut(bankTotal, supTotal, eq, eqVal);
   _assetsRenderLiabDonut(liabSegs, totalLiab);
-  _assetsRenderNetDonut(grossAssets, totalLiab, netAssets);
 }
 
 // ── Chart 1: Assets breakdown donut ──────────────────────────
@@ -266,57 +264,3 @@ function _assetsRenderLiabDonut(liabSegs, totalLiab) {
   });
 }
 
-// ── Chart 3: Net Assets position donut ───────────────────────
-function _assetsRenderNetDonut(grossAssets, totalLiab, netAssets) {
-  var canvas = document.getElementById('assets-net-chart');
-  if (!canvas) return;
-  if (assetsNetChart) { try { assetsNetChart.destroy(); } catch(e){} assetsNetChart = null; }
-
-  var muted = asToken('--muted');
-  var card  = asToken('--card');
-
-  if (!grossAssets && !totalLiab) {
-    var ctx2d = canvas.getContext('2d');
-    if (ctx2d) {
-      ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-      ctx2d.fillStyle = muted || '#6278A0';
-      ctx2d.font = '13px DM Sans';
-      ctx2d.textAlign = 'center';
-      ctx2d.fillText('No data yet', canvas.width / 2, canvas.height / 2);
-    }
-    return;
-  }
-
-  // Positive: show Net Assets (green) vs Liabilities (red)
-  // If net assets negative: show abs(netAssets) as red vs gross
-  var data, colors, labels;
-  if (netAssets >= 0) {
-    data   = [netAssets, totalLiab];
-    labels = ['Net Assets', 'Liabilities'];
-    colors = ['#00C896', '#EF4444'];
-  } else {
-    data   = [grossAssets, Math.abs(netAssets) - grossAssets];
-    labels = ['Gross Assets', 'Excess Debt'];
-    colors = ['#F59E0B', '#EF4444'];
-  }
-
-  // Filter out zeros
-  var filtered = [];
-  data.forEach(function(v, i) { if (v > 0) filtered.push({ label: labels[i], value: v, color: colors[i] }); });
-  if (!filtered.length) return;
-
-  assetsNetChart = safeChart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: filtered.map(function(d) { return d.label; }),
-      datasets: [{ data: filtered.map(function(d) { return d.value; }), backgroundColor: filtered.map(function(d) { return d.color; }), borderWidth: 3, borderColor: card, hoverOffset: 6 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, padding: 12, color: muted } },
-        tooltip: { callbacks: { label: function(c) { return ' ' + c.label + ': ' + fmt(c.parsed); } } }
-      }
-    }
-  });
-}
