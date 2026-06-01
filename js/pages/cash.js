@@ -235,11 +235,17 @@ function ctRenderSummary(){
   const lm=months.length?months[months.length-1]:null;
   const tots=CT_ACCTS.map(a=>lm?((CT[a.id]||{})[lm]||0):0);
   const grand=tots.reduce((s,v)=>s+v,0);
-  el.innerHTML=''
-    +'<div class="stat stat-pink"><div class="sl">Combined Total</div><div class="sv">'+fmt(grand)+'</div><div class="ss">All 4 accounts</div></div>'
-    +'<div class="stat stat-purple"><div class="sl">Shared Accounts</div><div class="sv">'+fmt(tots[0]+tots[1])+'</div><div class="ss">Offset + Home</div></div>'
-    +'<div class="stat stat-rose"><div class="sl">'+getUserName('brenton')+' Savings</div><div class="sv">'+fmt(tots[2])+'</div><div class="ss">'+ctLabel(CT_ACCTS[2])+'</div></div>'
-    +'<div class="stat stat-dark"><div class="sl">'+getUserName('shelley')+' Savings</div><div class="sv">'+fmt(tots[3])+'</div><div class="ss">'+ctLabel(CT_ACCTS[3])+'</div></div>';
+  // Dynamic breakdown by owner: sum all accounts, then by owner type
+  const byOwner={shared:0,brenton:0,shelley:0,other:0};
+  CT_ACCTS.forEach((a,i)=>{
+    const owner=a.owner||'other';
+    byOwner[owner]=(byOwner[owner]||0)+tots[i];
+  });
+  let html='<div class="stat stat-pink"><div class="sl">Combined Total</div><div class="sv">'+fmt(grand)+'</div><div class="ss">All '+CT_ACCTS.length+' accounts</div></div>';
+  if(byOwner.shared>0){html+='<div class="stat stat-purple"><div class="sl">Shared</div><div class="sv">'+fmt(byOwner.shared)+'</div><div class="ss">Shared accounts</div></div>';}
+  if(byOwner.brenton>0){html+='<div class="stat stat-rose"><div class="sl">'+getUserName('brenton')+'</div><div class="sv">'+fmt(byOwner.brenton)+'</div><div class="ss">'+getUserName('brenton')+' accounts</div></div>';}
+  if(byOwner.shelley>0){html+='<div class="stat stat-dark"><div class="sl">'+getUserName('shelley')+'</div><div class="sv">'+fmt(byOwner.shelley)+'</div><div class="ss">'+getUserName('shelley')+' accounts</div></div>';}
+  el.innerHTML=html;
 }
 
 let ctChart=null;
