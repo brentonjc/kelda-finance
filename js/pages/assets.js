@@ -90,29 +90,8 @@ function renderAssets() {
       + '<span class="dr-v" style="color:var(--primary)">' + fmt(eq) + '</span></div>'
     : '<div class="empty" style="padding:12px 0"><p>Add mortgage details</p></div>';
 
-  // ── Equities ──────────────────────────────────────────────
+  // eqVal still used in grossAssets calculation — equities tile removed from page view
   var eqVal = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
-  var eqSummEl = document.getElementById('assets-equities-summary');
-  if (eqSummEl) {
-    if (eqVal > 0) {
-      var rsuVal = EQUITIES.filter(function(h){return h.type==='rsu'||h.type==='option';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
-      var stkVal = EQUITIES.filter(function(h){return h.type==='stock';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
-      var etfVal = EQUITIES.filter(function(h){return h.type==='etf';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
-      var cryVal = EQUITIES.filter(function(h){return h.type==='crypto';}).reduce(function(s,h){return s+eqHoldingValue(h);},0);
-      var rows = '';
-      if (rsuVal > 0) rows += '<div class="dr"><span class="dr-k">RSU / Options</span><span class="dr-v">' + fmt(rsuVal) + '</span></div>';
-      if (stkVal > 0) rows += '<div class="dr"><span class="dr-k">Shares</span><span class="dr-v">' + fmt(stkVal) + '</span></div>';
-      if (etfVal > 0) rows += '<div class="dr"><span class="dr-k">ETFs</span><span class="dr-v">' + fmt(etfVal) + '</span></div>';
-      if (cryVal > 0) rows += '<div class="dr"><span class="dr-k">Crypto</span><span class="dr-v">' + fmt(cryVal) + '</span></div>';
-      eqSummEl.innerHTML = rows
-        + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
-        + '<span class="dr-k" style="font-weight:700">Total Equities</span>'
-        + '<span class="dr-v" style="color:var(--primary)">' + fmt(eqVal) + '</span></div>'
-        + '<div style="margin-top:10px"><a href="#" onclick="go(\'equities\');return false;" style="font-size:.8rem;color:var(--primary);text-decoration:none;font-weight:600">View Holdings →</a></div>';
-    } else {
-      eqSummEl.innerHTML = '<div class="empty" style="padding:10px 0"><p>No equity holdings. <a href="#" onclick="go(\'equities\');return false;" style="color:var(--primary)">Add →</a></p></div>';
-    }
-  }
 
   // ── Liabilities summary card ──────────────────────────────
   var liabSegs  = _assetsLiabSegments();
@@ -175,9 +154,6 @@ function renderAssets() {
       ? 'Bank data as at ' + new Date(lm + '-02').toLocaleString('default', { month: 'long', year: 'numeric' })
       : 'Add cash tracker data to see bank balances';
   }
-
-  // Render equities list
-  if (typeof renderEquitiesList === 'function') renderEquitiesList();
 
   // ── Charts ────────────────────────────────────────────────
   _assetsRenderAssetsDonut(bankTotal, supTotal, hv, eqVal);

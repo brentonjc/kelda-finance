@@ -10,10 +10,11 @@ var BILL_FREQ_LABELS = {
 function addBill(){
   var name=document.getElementById('bill-name').value.trim();
   var amount=parseFloat(document.getElementById('bill-amount').value);
-  var due=parseInt(document.getElementById('bill-due').value);
+  var dueDateVal=document.getElementById('bill-due').value; // YYYY-MM-DD from date picker
+  var due=dueDateVal?parseInt(dueDateVal.split('-')[2])||1:0;
   var icon=document.getElementById('bill-icon').value;
   var frequency=(document.getElementById('bill-frequency')||{}).value||'monthly';
-  if(!name||!amount||!due){toast('⚠️ Fill in all fields');return;}
+  if(!name||!amount||!due){toast('⚠️ Fill in name, amount and due date');return;}
   try{BILLS.push({id:Date.now(),name,amount,due,icon,frequency,paid:false});save(K.bills,BILLS);}catch(e){toast('⚠️ Could not save');return;}
   document.getElementById('bill-name').value='';document.getElementById('bill-amount').value='';document.getElementById('bill-due').value='';
   renderBills();toast('✅ Bill added');
@@ -47,31 +48,62 @@ function billSuggestIcon(name, cat) {
 function suggestBillsFromRecurring() {
   var el = document.getElementById('bills-suggestions');
   if (!el) return;
-  var recurring = typeof LRECURRING !== 'undefined' ? LRECURRING : [];
-  var candidates = recurring.filter(function(r) {
-    if (!r.description && !r.merchant) return false;
-    var nm = ((r.description || r.merchant || r.name || '')).toLowerCase();
+
+  // Source 1: LRECURRING (from forecast detection)
+  var fromRecurring = (typeof LRECURRING !== 'undefined' ? LRECURRING : []).filter(function(r) {
+    var nm  = ((r.description || r.merchant || r.name || '')).toLowerCase();
     var cat = (r.catId || r.category || '').toLowerCase();
-    var catMatch = BILL_SUGGEST_CATS.some(function(c){ return cat.indexOf(c) !== -1; });
-    var kwMatch  = BILL_SUGGEST_KWORDS.some(function(k){ return nm.indexOf(k) !== -1; });
-    return catMatch || kwMatch;
+    return BILL_SUGGEST_CATS.some(function(c){ return cat.indexOf(c) !== -1; })
+        || BILL_SUGGEST_KWORDS.some(function(k){ return nm.indexOf(k) !== -1; });
+  }).map(function(r) {
+    return { description: r.description || r.merchant || r.name, amount: r.avgAmount || r.amount || 0,
+             catId: r.catId || r.category, frequency: r.frequency || 'monthly', _src: 'recurring' };
   });
-  // Filter out ones already in BILLS (by name similarity)
-  candidates = candidates.filter(function(r) {
-    var nm = (r.description || r.merchant || r.name || '').toLowerCase();
+
+  // Source 2: scan TX directly for keyword matches (catches bills not yet in LRECURRING)
+  var seen = {};
+  var fromTx = (typeof TX !== 'undefined' ? TX : []).filter(function(t) {
+    if (t.type !== 'expense') return false;
+    var nm  = ((t.description || t.category || t.name || '')).toLowerCase();
+    var cat = (t.catId || t.category || '').toLowerCase();
+    var match = BILL_SUGGEST_CATS.some(function(c){ return cat.indexOf(c) !== -1; })
+             || BILL_SUGGEST_KWORDS.some(function(k){ return nm.indexOf(k) !== -1; });
+    if (!match) return false;
+    var key = nm.slice(0, 12);
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  }).map(function(t) {
+    return { description: t.description || t.category, amount: Math.abs(Number(t.amount)),
+             catId: t.catId || t.category, frequency: 'monthly', _src: 'tx' };
+  });
+
+  // Merge, deduplicate against each other
+  var allSeenNames = {};
+  fromRecurring.forEach(function(r){ allSeenNames[((r.description||'').slice(0,8)).toLowerCase()] = true; });
+  var txExtra = fromTx.filter(function(t){
+    return !allSeenNames[((t.description||'').slice(0,8)).toLowerCase()];
+  });
+  var combined = fromRecurring.concat(txExtra);
+
+  // Filter out bills already added
+  var candidates = combined.filter(function(r) {
+    var nm = (r.description || '').toLowerCase();
     return !BILLS.some(function(b){ return b.name.toLowerCase().indexOf(nm.slice(0,6)) !== -1; });
   });
+
   if (!candidates.length) { el.innerHTML = ''; return; }
+
   var html = '<div class="card mb">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
   html += '<div><div class="section-label" style="margin-bottom:2px">💡 Suggested Bills</div>';
-  html += '<div style="font-size:.74rem;color:var(--muted)">Detected from your recurring transactions — click to add</div></div>';
+  html += '<div style="font-size:.74rem;color:var(--muted)">Detected from your transactions — click to add</div></div>';
   html += '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px">';
   candidates.slice(0, 8).forEach(function(r, i) {
-    var nm   = r.description || r.merchant || r.name || 'Unknown';
-    var amt  = r.avgAmount || r.amount || 0;
-    var icon = billSuggestIcon(nm, r.catId || r.category);
+    var nm   = r.description || 'Unknown';
+    var amt  = r.amount || 0;
+    var icon = billSuggestIcon(nm, r.catId);
     var freq = r.frequency || 'monthly';
     html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card2);border-radius:10px;gap:10px">';
     html += '<div style="display:flex;align-items:center;gap:10px">';

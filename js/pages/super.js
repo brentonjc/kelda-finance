@@ -2,6 +2,25 @@
 // SUPERANNUATION PAGE
 // ══════════════════════════════════════════════════════════════
 
+// ASFA-aligned growth scenarios (net return after fees shown; fees split separately)
+var SUPER_SCENARIOS = {
+  conservative: { ret: 4.7,  fees: 1.2,  label: 'Conservative' },
+  balanced:     { ret: 6.4,  fees: 0.9,  label: 'Balanced' },
+  growth:       { ret: 7.7,  fees: 0.7,  label: 'Growth' },
+  highgrowth:   { ret: 9.2,  fees: 0.7,  label: 'High Growth' }
+};
+
+function superApplyScenario(profile, scenario) {
+  if (!scenario || !SUPER_SCENARIOS[scenario]) return;
+  var s   = SUPER_SCENARIOS[scenario];
+  var pfx = profile === 'b' ? 'sb' : 'ss';
+  var retEl  = document.getElementById(pfx + '-return');
+  var feesEl = document.getElementById(pfx + '-fees');
+  if (retEl)  retEl.value  = s.ret;
+  if (feesEl) feesEl.value = s.fees;
+  calcSuper();
+}
+
 function renderSuperPage(){
   const fill=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined&&v!==null&&!e.matches(':focus'))e.value=v;};
   const d=SUPER;

@@ -721,3 +721,13 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .ct-exp-text strong{color:var(--text);}
 .mo-entry-date{display:block;font-size:.65rem;color:var(--muted);font-weight:400;margin-top:2px;}
 @media(max-width:600px){.ct-exp-grid{grid-template-columns:1fr;}}
+
+/* ── HOW-TO GUIDE CARDS ── */
+.how-to-card{padding:14px 16px;}
+.how-to-hd{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.how-to-body{display:none;}
+.how-to-item{display:flex;align-items:flex-start;gap:10px;}
+.how-to-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
+.how-to-title{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.how-to-text{font-size:.73rem;color:var(--muted);line-height:1.5;}
+@media(max-width:600px){.how-to-body{grid-template-columns:1fr!important;}}

@@ -64,7 +64,10 @@ function renderGoalsPage(){
       <div class="section-label">Add New Goal</div>
       <div class="form-grid">
         <div><label class="lbl">Goal Name</label><input type="text" id="g-name" placeholder="e.g. Emergency Fund"/></div>
-        <div><label class="lbl">Icon</label><input type="text" id="g-icon" placeholder="🏖️" maxlength="4" style="max-width:80px"/></div>
+        <div><label class="lbl">Icon</label>
+          <input type="text" id="g-icon" placeholder="🎯" maxlength="4" style="max-width:70px"/>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px" id="g-icon-presets"></div>
+        </div>
       </div>
       <div class="form-grid">
         <div><label class="lbl">Target Amount (AUD)</label><input type="number" id="g-target" placeholder="10000" min="0" step="100" inputmode="decimal"/></div>
@@ -78,6 +81,14 @@ function renderGoalsPage(){
       <button class="btn btn-primary" onclick="addGoalFromPage()">➕ Add Goal</button>
     </div>`;
   renderGoalCards();
+  // Populate icon preset row (avoids template-literal nesting)
+  var presetsEl = document.getElementById('g-icon-presets');
+  if (presetsEl) {
+    var GOAL_EMOJIS = ['🎯','🏖️','🏠','🚗','💍','✈️','🎓','🏋️','🐕','📱','💰','🌟','🏕️','🛡️','🎉','💎'];
+    presetsEl.innerHTML = GOAL_EMOJIS.map(function(e) {
+      return '<span style="cursor:pointer;font-size:1.1rem;padding:3px 4px;border-radius:5px;background:var(--card2)" onclick="document.getElementById(\'g-icon\').value=\'' + e + '\'">' + e + '</span>';
+    }).join('');
+  }
 }
 
 function renderGoalCards(){
@@ -86,33 +97,87 @@ function renderGoalCards(){
     el.innerHTML='<div class="empty"><div class="ei">🎯</div><p>No goals yet — add your first goal below.</p></div>';
     return;
   }
-  el.innerHTML=GOALS.map((g,i)=>{
-    const current=_goalCurrent(g);
-    const target=_goalTarget(g);
-    const pct=target>0?Math.min((current/target)*100,100):0;
-    const rem=Math.max(0,target-current);
-    const barCls=pct>=100?'over':pct>=75?'warn':'';
-    const proj=_goalProjection(g,current,target);
+  el.innerHTML = GOALS.map(function(g, i) {
+    var current = _goalCurrent(g);
+    var target  = _goalTarget(g);
+    var pct     = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+    var rem     = Math.max(0, target - current);
+    var barCls  = pct >= 100 ? 'over' : pct >= 75 ? 'warn' : '';
+    var proj    = _goalProjection(g, current, target);
     var isCtLinked = g.linkedAccount && _goalCtBalance(g.linkedAccount) !== null;
     var acctName = isCtLinked && typeof getAccountName === 'function' ? getAccountName(g.linkedAccount) : '';
-    return`<div class="goal-card" style="margin-bottom:12px">
-      <div class="goal-hd">
-        <div>
-          <div class="goal-name">${g.icon||'🎯'} ${pct>=100?'✅ ':''}${g.name}</div>
-          <div style="font-size:.74rem;color:var(--muted);margin-top:2px;font-family:var(--font-mono)">${fmtAUD(current)} saved of ${fmtAUD(target)}${isCtLinked?' · <span style="color:var(--success);font-size:.7rem">🔗 '+acctName+'</span>':''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="goal-pct">${pct.toFixed(0)}%</div>
-          <button class="del-btn" onclick="delGoalItem(${g.id})">🗑</button>
-        </div>
-      </div>
-      <div class="prog-track" style="height:10px"><div class="prog-fill ${barCls}" style="width:${pct.toFixed(0)}%"></div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:.75rem;color:var(--muted)">${pct>=100?'🎉 Goal reached!':(rem>0?fmtAUD(rem)+' to go':'')}${proj?' · '+proj:''}</div>
-        <button class="btn btn-ghost btn-sm" onclick="openGoalModal(${i})">✏️ Update</button>
-      </div>
-    </div>`;
+    return '<div class="goal-card" style="margin-bottom:12px" id="goal-card-' + i + '">'
+      + '<div class="goal-hd">'
+      + '<div>'
+      + '<div class="goal-name">' + (g.icon || '🎯') + ' ' + (pct >= 100 ? '✅ ' : '') + g.name + '</div>'
+      + '<div style="font-size:.74rem;color:var(--muted);margin-top:2px;font-family:var(--font-mono)">'
+      + fmtAUD(current) + ' saved of ' + fmtAUD(target)
+      + (isCtLinked ? ' · <span style="color:var(--success);font-size:.7rem">🔗 ' + acctName + '</span>' : '')
+      + '</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px">'
+      + '<div class="goal-pct">' + pct.toFixed(0) + '%</div>'
+      + '<button class="btn btn-ghost btn-sm" onclick="toggleGoalEdit(' + i + ')">✏️ Edit</button>'
+      + '<button class="del-btn" onclick="delGoalItem(' + g.id + ')">🗑</button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="prog-track" style="height:10px"><div class="prog-fill ' + barCls + '" style="width:' + pct.toFixed(0) + '%"></div></div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px">'
+      + '<div style="font-size:.75rem;color:var(--muted)">' + (pct >= 100 ? '🎉 Goal reached!' : (rem > 0 ? fmtAUD(rem) + ' to go' : '')) + (proj ? ' · ' + proj : '') + '</div>'
+      + '</div>'
+      + '<div id="goal-edit-' + i + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
+      + _goalEditForm(g, i)
+      + '</div>'
+      + '</div>';
   }).join('');
+}
+
+function _goalEditForm(g, i) {
+  var acctSel = _goalAccountSelect(g.linkedAccount || '').replace('id="g-account"', 'id="ge-account-' + i + '"');
+  return '<div class="form-grid">'
+    + '<div><label class="lbl">Goal Name</label><input type="text" id="ge-name-' + i + '" value="' + (g.name || '').replace(/"/g, '&quot;') + '" placeholder="Goal name"/></div>'
+    + '<div><label class="lbl">Icon</label>'
+    + '<input type="text" id="ge-icon-' + i + '" value="' + (g.icon || '🎯') + '" maxlength="4" style="max-width:70px"/>'
+    + '</div>'
+    + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:5px;margin:-6px 0 10px">'
+    + ['🎯','🏖️','🏠','🚗','💍','✈️','🎓','🏋️','🐕','📱','💰','🌟','🏕️','🛡️','🎉','💎'].map(function(e) {
+        return '<span style="cursor:pointer;font-size:1.2rem;padding:3px 5px;border-radius:6px;background:var(--card2)" onclick="document.getElementById(\'ge-icon-' + i + '\').value=\'' + e + '\'">' + e + '</span>';
+      }).join('')
+    + '</div>'
+    + '<div class="form-grid">'
+    + '<div><label class="lbl">Target Amount</label><input type="number" id="ge-target-' + i + '" value="' + (_goalTarget(g) || '') + '" placeholder="10000" min="0" step="100" inputmode="decimal"/></div>'
+    + '<div><label class="lbl">Current Amount</label><input type="number" id="ge-current-' + i + '" value="' + (Number(g.currentAmount) || Number(g.saved) || 0) + '" placeholder="0" min="0" step="100" inputmode="decimal"/></div>'
+    + '</div>'
+    + '<div class="form-grid">'
+    + '<div><label class="lbl">Target Date (optional)</label><input type="date" id="ge-date-' + i + '" value="' + (g.targetDate || '') + '"/></div>'
+    + '<div><label class="lbl">Linked Account</label>' + acctSel + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn btn-primary btn-sm" onclick="saveGoalEdit(' + i + ')">Save</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="toggleGoalEdit(' + i + ')">Cancel</button>'
+    + '</div>';
+}
+
+function toggleGoalEdit(i) {
+  var panel = document.getElementById('goal-edit-' + i);
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveGoalEdit(i) {
+  if (!GOALS[i]) return;
+  var g = function(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  var n = function(id) { var e = document.getElementById(id); return parseFloat((e||{}).value) || 0; };
+  GOALS[i].name          = g('ge-name-' + i)    || GOALS[i].name;
+  GOALS[i].icon          = g('ge-icon-' + i)    || '🎯';
+  GOALS[i].targetAmount  = n('ge-target-' + i)  || GOALS[i].targetAmount;
+  GOALS[i].currentAmount = n('ge-current-' + i);
+  GOALS[i].targetDate    = g('ge-date-' + i);
+  GOALS[i].linkedAccount = (document.getElementById('ge-account-' + i) || {}).value || '';
+  try { save(K.goals, GOALS); } catch(e) { toast('⚠️ Could not save'); return; }
+  renderGoalCards();
+  if (typeof dbRenderGoals === 'function') dbRenderGoals();
+  toast('✅ Goal updated');
 }
 
 function _goalProjection(g,current,target){

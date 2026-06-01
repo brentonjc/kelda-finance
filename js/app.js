@@ -41,6 +41,11 @@ function go(id){
     if(pg) pg.classList.toggle('active',p===id);
     if(nv) nv.classList.toggle('active',p===id);
   });
+  // Inject how-to guide once per page (idempotent)
+  if (typeof renderHowTo === 'function') {
+    var _htEl = document.getElementById('how-to-' + id);
+    if (_htEl && !_htEl.dataset.filled) { _htEl.innerHTML = renderHowTo(id); _htEl.dataset.filled = '1'; }
+  }
   try{
     if(id==='dashboard')renderDashboard();
     else if(id==='insights'){if(typeof renderInsights==='function')renderInsights();}
@@ -57,7 +62,7 @@ function go(id){
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
     else if(id==='transfers'){if(typeof renderTransfersPage==='function')renderTransfersPage();}
-    else if(id==='forecast'){detectRecurring();renderForecast();}
+    else if(id==='forecast'){detectRecurring();renderForecast();if(typeof fc2SyncBalance==='function')fc2SyncBalance();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
     else if(id==='health'){if(typeof renderHealthPage==='function')renderHealthPage();}
@@ -348,6 +353,87 @@ function saveAppName() {
   toast('App name updated to "' + name + '"');
 }
 
+
+// ── HOW-TO GUIDE ─────────────────────────────────────────────
+var _HOW_TO = {
+  transactions: { title:'Recording Transactions', items:[
+    {icon:'➕', h:'Adding a transaction', b:'Fill in the date, type (income or expense), name, amount and category then tap Add. The name field auto-suggests a category based on the merchant name.'},
+    {icon:'📂', h:'Categories & subcategories', b:'Assign every transaction a category so the Budget vs Actuals and Insights pages can analyse your spending accurately.'},
+    {icon:'🔍', h:'Filtering & searching', b:'Use the month filter and search box to narrow down transactions. Bulk-select rows to reassign categories in one go.'},
+    {icon:'📤', h:'Importing from CSV', b:'Use the Export tab to import a bank CSV. Columns are mapped to the app fields and auto-categorisation rules are applied.'}
+  ]},
+  bills: { title:'Managing Bills', items:[
+    {icon:'➕', h:'Adding a bill', b:'Enter the name, amount, next due date and frequency. The due day-of-month is extracted from the date you pick and used for recurring tracking.'},
+    {icon:'✔️', h:'Marking paid', b:'Tap "Paid" on a bill once you\'ve paid it. This clears it from upcoming alerts on the Dashboard. Reset at month start with "Undo".'},
+    {icon:'💡', h:'Auto-detect', b:'The app scans your transactions for recurring insurance, utility, phone and childcare payments and suggests them as bills to add.'},
+    {icon:'📅', h:'Frequency', b:'Set the correct frequency (monthly, fortnightly, yearly etc.) so the summary totals correctly reflect your actual commitments.'}
+  ]},
+  goals: { title:'Savings Goals', items:[
+    {icon:'🎯', h:'Creating a goal', b:'Enter a name, target amount and optional target date. Tap an emoji icon from the preset row or type your own.'},
+    {icon:'🔗', h:'Linking to Cash Tracker', b:'Link a goal to one of your savings accounts — the goal progress will automatically reflect the live balance from your Cash Tracker.'},
+    {icon:'✏️', h:'Editing a goal', b:'Tap "✏️ Edit" on any goal card to update the name, icon, target amount, current amount, date or linked account.'},
+    {icon:'📊', h:'Projection', b:'The goal card shows an estimated completion date based on the gap between current and target, or the target date if you set one.'}
+  ]},
+  bva: { title:'Budget vs Actuals', items:[
+    {icon:'💰', h:'Setting budgets', b:'Enter a monthly limit for each spending category. Budgets persist month to month — you only need to set them once.'},
+    {icon:'📊', h:'Reading the report', b:'Green = under budget. Amber = 70–99% used. Red = exceeded. The "Used" column shows actual spending from your transactions.'},
+    {icon:'📅', h:'Month navigation', b:'Use the arrows to review past months. The budget limits are fixed; actual spending is pulled from your transaction history.'},
+    {icon:'⚠️', h:'Budget alerts', b:'Alerts appear on the Dashboard for any category at 70%+ of its limit. Smart Insights on the dashboard also reference the top overrun.'}
+  ]},
+  forecast: { title:'Cash Flow Forecast', items:[
+    {icon:'🔄', h:'How it works', b:'The forecast auto-detects recurring income and expense patterns from your last 90 days of transactions and projects them forward.'},
+    {icon:'⟳', h:'Syncing', b:'The balance sync runs automatically when you open this tab, pulling the latest combined balance from your Cash Tracker as the starting point.'},
+    {icon:'✏️', h:'Adjusting entries', b:'Tap the adjustment icon on any forecast row to add a one-off override — useful for planned expenses or income that differ from the pattern.'},
+    {icon:'📈', h:'Cumulative view', b:'Toggle between monthly and cumulative chart views to see the overall trajectory of your cash position over time.'}
+  ]},
+  assets: { title:'Net Assets', items:[
+    {icon:'🏦', h:'What is shown', b:'Net Assets = Gross Assets (bank + super + property + equities) minus Total Liabilities (mortgage + other debts). This is your true financial position.'},
+    {icon:'🏡', h:'Property value', b:'The full home value is included in gross assets. The mortgage balance sits in liabilities — so net property equity flows through correctly.'},
+    {icon:'📊', h:'Donuts', b:'The Assets Breakdown donut shows allocation by class. The Liabilities donut shows debt breakdown. Tap any segment to navigate to that page.'},
+    {icon:'📈', h:'Debt ratio', b:'Liabilities ÷ Gross Assets. Below 30% is strong. Above 60% is high. Use this alongside the Health Score for a full picture.'}
+  ]},
+  super: { title:'Superannuation Projections', items:[
+    {icon:'💼', h:'Entering your details', b:'Enter your current balance, age, retirement age and salary. The SGC rate defaults to 11.5% (current legal minimum). Add extra contributions if you salary sacrifice.'},
+    {icon:'📈', h:'Growth scenarios', b:'Choose a scenario (Conservative / Balanced / Growth / High Growth) based on ASFA standard return assumptions. The return rate and fees fields auto-fill — you can override them.'},
+    {icon:'💡', h:'Inflation adjustment', b:'The projection shows both nominal (raw) and real (inflation-adjusted) values. The real figure reflects actual purchasing power at retirement.'},
+    {icon:'⚠️', h:'Estimates only', b:'These projections are illustrative only and not financial advice. Speak with a licensed financial adviser for personalised super planning.'}
+  ]},
+  insights: { title:'Insights & Analytics', items:[
+    {icon:'📅', h:'Period navigation', b:'Switch between Monthly and Yearly views using the toggle. Navigate with the arrows or tap "Today" to return to the current period.'},
+    {icon:'📈', h:'Net worth chart', b:'Shows your recorded net worth over time from the Cash Tracker history. Each point is a monthly snapshot — update your Cash Tracker regularly for accurate trend data.'},
+    {icon:'💸', h:'Income flow (Sankey)', b:'The Sankey diagram shows how your income splits across spending categories. Hover or tap any flow to see the exact amount and percentage.'},
+    {icon:'🔎', h:'Category drilldown', b:'The category and subcategory charts let you drill into exactly where money is going. Use the subcategory chart to find high-spend areas.'}
+  ]},
+  transfers: { title:'Transfers & Reconciliation', items:[
+    {icon:'🔄', h:'What are transfers', b:'Transfers are movements between your own accounts (e.g. offset → savings). They are excluded from income/expense analysis to avoid double-counting.'},
+    {icon:'✅', h:'Auto-detected pairs', b:'The app auto-matches same-amount income/expense pairs on the same or adjacent days. Confirm to tag them as transfers, or Dismiss to keep them in analysis.'},
+    {icon:'🔗', h:'Manual linking', b:'If auto-detection missed a pair, use the manual link panel. Search for the two transactions, select both checkboxes, then tap "Link Selected".'},
+    {icon:'↩️', h:'Unlinking', b:'Confirmed transfers can be unlinked at any time. Both transactions return to the "Other" category and reappear in your analysis.'}
+  ]}
+};
+
+function renderHowTo(pageId) {
+  var cfg = _HOW_TO[pageId];
+  if (!cfg) return '';
+  var itemsHtml = cfg.items.map(function(it) {
+    return '<div class="how-to-item">'
+      + '<div class="how-to-icon">' + it.icon + '</div>'
+      + '<div><div class="how-to-title">' + it.h + '</div>'
+      + '<div class="how-to-text">' + it.b + '</div></div>'
+      + '</div>';
+  }).join('');
+  return '<div class="card how-to-card mb">'
+    + '<div class="how-to-hd" onclick="this.parentNode.querySelector(\'.how-to-body\').style.display=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'grid\':\'none\';this.querySelector(\'.how-to-chev\').style.transform=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'\':\' rotate(180deg)\'">'
+    + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.1rem">📖</span>'
+    + '<div><div style="font-weight:700;font-size:.88rem;color:var(--text)">How to use — ' + cfg.title + '</div>'
+    + '<div style="font-size:.72rem;color:var(--muted)">Tap to expand guide</div></div></div>'
+    + '<span class="how-to-chev" style="font-size:.9rem;color:var(--muted);transition:transform .2s">▼</span>'
+    + '</div>'
+    + '<div class="how-to-body" style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
+    + itemsHtml
+    + '</div>'
+    + '</div>';
+}
 
 // ── FAB RADIAL MENU ──────────────────────────────────────────
 function toggleFabMenu() {

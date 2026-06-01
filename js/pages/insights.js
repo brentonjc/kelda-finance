@@ -59,11 +59,80 @@ function renderInsights() {
     const b = document.getElementById('ins-mode-' + x);
     if (b) b.classList.toggle('active', x === insMode);
   });
+  insRenderNWChart();
   insRenderCashFlowChart();
   insRenderCompareChart();
   insRenderSankey();
   insRenderCatChart();
   insRenderSubcatChart();
+}
+
+// ── Net Worth History Chart ─────────────────────────────────────
+var insNWChart = null;
+function insRenderNWChart() {
+  var canvas = document.getElementById('ins-nw-chart');
+  if (!canvas) return;
+  if (insNWChart) { insNWChart.destroy(); insNWChart = null; }
+
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
+
+  // One value per month — last entry per month wins
+  var moMap = {};
+  for (var i = 0; i < hist.length; i++) {
+    var entry = hist[i];
+    if (entry.date) { moMap[entry.date.slice(0,7)] = entry.netWorth; }
+  }
+  var moKeys = Object.keys(moMap).sort();
+
+  if (moKeys.length < 2) {
+    var ctx2 = canvas.getContext('2d');
+    ctx2.clearRect(0, 0, canvas.width, canvas.height);
+    ctx2.fillStyle = insToken('--muted') || '#6278A0';
+    ctx2.font = '13px DM Sans, sans-serif';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('Not enough history yet — check back after a few months', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  var labels = moKeys.map(function(m) {
+    return new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: '2-digit' });
+  });
+  var values = moKeys.map(function(m) { return moMap[m]; });
+  var isUp   = values[values.length - 1] >= values[0];
+  var lineColor = isUp ? '#00C896' : '#EF4444';
+  var muted = insToken('--muted') || '#6278A0';
+  var card  = insToken('--card')  || '#111830';
+
+  insNWChart = safeChart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Net Worth',
+        data: values,
+        borderColor: lineColor,
+        backgroundColor: lineColor + '18',
+        fill: true,
+        tension: 0.35,
+        pointRadius: moKeys.length > 18 ? 2 : 4,
+        pointHoverRadius: 6,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(c) { return ' Net Worth: ' + fmt(c.parsed.y); } } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: muted, font: { family: 'DM Sans' } } },
+        y: { grid: { color: card }, ticks: { color: muted, font: { family: 'DM Mono' }, callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; } } }
+      }
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════════════

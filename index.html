@@ -456,6 +456,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-insights">
     <div class="page-title">Insights</div>
     <div class="page-sub">Trends, patterns and spending analysis · All amounts in AUD</div>
+    <div id="how-to-insights"></div>
 
     <!-- Period controls -->
     <div class="dash-period-bar">
@@ -492,8 +493,17 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="ins-compare-deltas" style="margin-top:14px"></div>
       </div>
 
+      <!-- Net Worth Over Time -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:10px">
+          <div class="section-label" style="margin:0">📈 Net Worth Over Time</div>
+          <a href="#" onclick="go('assets');return false;" class="tile-link">View assets →</a>
+        </div>
+        <div class="db-chart-fill"><canvas id="ins-nw-chart"></canvas></div>
+      </div>
+
       <!-- Income Flow Sankey -->
-      <div class="card" id="ins-sankey-row" style="position:relative">
+      <div class="card" id="ins-sankey-row" style="position:relative;overflow:hidden">
         <div class="tile-hd" style="margin-bottom:12px">
           <div class="section-label" style="margin:0">💸 Income Flow</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
@@ -538,6 +548,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-transactions">
     <div class="page-title">Income & Expenses</div>
     <div class="page-sub" id="tx-page-sub">Log transactions for both profiles</div>
+    <div id="how-to-transactions"></div>
  <div class="g2 mb">
       <div class="card">
         <div class="section-label">Add Transaction</div>
@@ -729,20 +740,13 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="empty" id="tx-empty" style="display:none"><div class="ei">💸</div><p>No transactions yet.</p></div>
       </div>
     </div>
-    <!-- Transaction category bar chart -->
-    <div class="card" style="margin-top:18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">📊 Spending by Category</div>
-        <div id="tx-chart-period" style="font-size:.74rem;color:var(--muted)"></div>
-      </div>
-      <div class="chart-box" style="height:220px"><canvas id="tx-cat-chart"></canvas></div>
-    </div>
   </div>
 
   <!-- ═══ BILLS ═══ -->
   <div class="page" id="page-bills">
     <div class="page-title">Bills &amp; Due Dates</div>
     <div class="page-sub">Track recurring bills and mark them paid</div>
+    <div id="how-to-bills"></div>
 
     <!-- Auto-detected suggestions -->
     <div id="bills-suggestions"></div>
@@ -753,7 +757,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="form-grid"><div><label class="lbl">Bill Name</label><input type="text" id="bill-name" placeholder="e.g. Power Bill"/></div></div>
         <div class="form-grid">
           <div><label class="lbl">Amount (AUD)</label><input type="number" id="bill-amount" placeholder="120.00" step="0.01" inputmode="decimal"/></div>
-          <div><label class="lbl">Due Day of Month</label><input type="number" id="bill-due" placeholder="15" min="1" max="31" inputmode="numeric"/></div>
+          <div><label class="lbl">Next Due Date</label><input type="date" id="bill-due"/></div>
         </div>
         <div class="form-grid">
           <div><label class="lbl">Frequency</label>
@@ -786,6 +790,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-goals">
     <div class="page-title">Savings Goals</div>
     <div class="page-sub">Track progress toward your financial targets</div>
+    <div id="how-to-goals"></div>
     <div id="goals-content"></div>
   </div>
 
@@ -1225,6 +1230,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-super">
     <div class="page-title">Superannuation</div>
     <div class="page-sub" id="super-page-sub">Track and project super balances for both profiles</div>
+    <div id="how-to-super"></div>
     <div class="g2 mb">
       <!-- Brenton -->
       <div class="card">
@@ -1239,8 +1245,17 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="super-ass-row"><label>SGC Rate (%)</label><input type="number" id="sb-sgc" value="11.5" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="sb-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="sb-inflation" value="2.5" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
-        <div class="super-ass-row"><label>Return Rate (% p.a.)</label><input type="number" id="sb-return" value="7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
-        <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="sb-fees" value="0.8" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Growth Scenario</label>
+          <select id="sb-scenario" onchange="superApplyScenario('b',this.value)">
+            <option value="">— Custom —</option>
+            <option value="conservative">Conservative (~3.5% net) — ASFA</option>
+            <option value="balanced">Balanced (~5.5% net) — ASFA</option>
+            <option value="growth" selected>Growth (~7.0% net) — ASFA</option>
+            <option value="highgrowth">High Growth (~8.5% net) — ASFA</option>
+          </select>
+        </div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.) <span style="font-size:.65rem;color:var(--muted)">(auto-set by scenario)</span></label><input type="number" id="sb-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="sb-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <div id="sb-result" style="margin-top:14px"></div>
       </div>
       <!-- Shelley -->
@@ -1255,8 +1270,17 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="super-ass-row"><label>Annual Salary (AUD)</label><input type="number" id="ss-salary" placeholder="95000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>SGC Rate (%)</label><input type="number" id="ss-sgc" value="11.5" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Extra Contributions (AUD/yr)</label><input type="number" id="ss-extra" placeholder="0" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
-        <div class="super-ass-row"><label>Return Rate (% p.a.)</label><input type="number" id="ss-return" value="7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
-        <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="ss-fees" value="0.8" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Growth Scenario</label>
+          <select id="ss-scenario" onchange="superApplyScenario('s',this.value)">
+            <option value="">— Custom —</option>
+            <option value="conservative">Conservative (~3.5% net) — ASFA</option>
+            <option value="balanced">Balanced (~5.5% net) — ASFA</option>
+            <option value="growth" selected>Growth (~7.0% net) — ASFA</option>
+            <option value="highgrowth">High Growth (~8.5% net) — ASFA</option>
+          </select>
+        </div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.) <span style="font-size:.65rem;color:var(--muted)">(auto-set by scenario)</span></label><input type="number" id="ss-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="ss-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="ss-inflation" value="2.5" step="0.1" oninput="calcSuper()"/></div>
         <div id="ss-result" style="margin-top:14px"></div>
       </div>
@@ -1284,6 +1308,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-assets">
     <div class="page-title">Net Assets</div>
     <div class="page-sub">Total assets minus total liabilities — your true financial position</div>
+    <div id="how-to-assets"></div>
 
     <!-- Summary KPI strip -->
     <div class="g4 mb" id="assets-stats"></div>
@@ -1296,7 +1321,6 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="card"><div class="section-label">🏦 Bank Balances</div><div id="assets-bank"></div></div>
         <div class="card"><div class="section-label">💼 Superannuation</div><div id="assets-super"></div></div>
         <div class="card"><div class="section-label">🏡 Property Equity</div><div id="assets-property"></div></div>
-        <div class="card"><div class="section-label">📈 Equity Holdings</div><div id="assets-equities-summary"></div></div>
         <div class="card"><div class="section-label">⚖️ Liabilities</div><div id="assets-liabilities-summary"></div></div>
       </div>
 
@@ -1463,6 +1487,7 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ BUDGET VS ACTUALS ═══ -->
   <div class="page" id="page-bva">
+    <div id="how-to-bva"></div>
     <div class="bva-header">
       <div>
         <div class="page-title" id="bva-title">Budget vs Actuals</div>
@@ -1608,6 +1633,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-forecast">
     <div class="page-title">Cash Flow Forecast</div>
     <div class="page-sub">12-month projection using your actuals and prior-year patterns. Tweak with one-off or recurring adjustments.</div>
+    <div id="how-to-forecast"></div>
 
     <!-- Sync / chart-mode bar -->
     <div class="card mb fc2-sync-bar">
@@ -1720,6 +1746,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-transfers">
     <div class="page-title">Transfers &amp; Reconciliation</div>
     <div class="page-sub">Internal account transfers are excluded from income, expense and budget analysis.</div>
+    <div id="how-to-transfers"></div>
     <div class="g3 mb" id="tr-summary"></div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
