@@ -473,12 +473,21 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     ? '<button class="btn btn-ghost btn-sm" onclick="promoteLearnedRule(this.closest(\'.rule-card\'))" title="Promote to confirmed rule" style="color:var(--primary)">⬆ Confirm</button>'
     : '';
 
+  // Get pattern from rule if it exists
+  var rule = ruleRead(merchant);
+  var pattern = rule && rule.pattern ? rule.pattern : 'exact';
+  var patternBadge = source === 'lrule'
+    ? '<span style="font-size:.65rem;background:rgba(120,119,248,.15);color:#818cf8;border-radius:99px;padding:2px 8px;font-weight:600;letter-spacing:.03em">'
+      + (pattern === 'contains' ? '◡ CONTAINS' : '= EXACT') + '</span>'
+    : '';
+
   return '<div class="rule-card" data-merchant="' + merchant.replace(/"/g, '&quot;') + '" data-source="' + source + '">'
     + '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">'
     + '<div style="flex:1;min-width:140px">'
-    + '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">'
+    + '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">'
     + '<span style="font-weight:700;font-size:.88rem">🏪 ' + merchant + '</span>'
     + sourceBadge
+    + patternBadge
     + '</div>'
     + '<div>' + metaLine + '</div>'
     + '</div>'
@@ -497,6 +506,11 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     + '</div></div>'
     + '<div class="rule-edit-inline" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
     + '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">'
+    + '<div style="flex:1;min-width:150px"><label class="lbl" style="font-size:.72rem">Pattern</label>'
+    + '<select class="rule-pattern-sel" style="width:100%">'
+    + '<option value="exact"' + (pattern === 'exact' ? ' selected' : '') + '>= Exact Match</option>'
+    + '<option value="contains"' + (pattern === 'contains' ? ' selected' : '') + '>◡ Contains</option>'
+    + '</select></div>'
     + '<div style="flex:1;min-width:150px"><label class="lbl" style="font-size:.72rem">Category</label>'
     + '<select class="rule-cat-sel" style="width:100%" onchange="ruleEditCatChanged(this)">' + catOpts + '</select></div>'
     + '<div style="flex:1;min-width:150px"><label class="lbl" style="font-size:.72rem">Subcategory</label>'
@@ -507,6 +521,11 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     + '</div></div></div>'
     + '</div>';
 }
+
+// Pagination state for rules
+var _rulesPage = 0;
+var _rulesSearch = '';
+var _rulesPerPage = 10;
 
 function renderRulesList() {
   var rulesEl = document.getElementById('rules-list');
@@ -522,36 +541,113 @@ function renderRulesList() {
     return;
   }
 
+  // Filter rules by search term
+  var search = (_rulesSearch || '').toLowerCase().trim();
+  var filteredLRules = lruleEntries.filter(function(entry) {
+    return !search || entry[0].toLowerCase().indexOf(search) !== -1;
+  });
+  var filteredLearned = learnedEntries.filter(function(entry) {
+    return !search || entry[0].toLowerCase().indexOf(search) !== -1;
+  });
+
+  // Combine and paginate
+  var allRules = [];
+  filteredLRules.forEach(function(entry) {
+    var merchant = entry[0];
+    var rule = ruleRead(merchant);
+    allRules.push({
+      merchant: merchant,
+      catId: rule ? rule.catId : (typeof entry[1] === 'string' ? entry[1] : ''),
+      subcat: rule ? (rule.subcat || '') : '',
+      source: 'lrule',
+      meta: null
+    });
+  });
+  filteredLearned.forEach(function(entry) {
+    var key = entry[0];
+    var meta = entry[1];
+    if (meta && meta.catId) {
+      allRules.push({
+        merchant: key,
+        catId: meta.catId,
+        subcat: meta.subcat || '',
+        source: 'learned',
+        meta: meta
+      });
+    }
+  });
+
+  var totalRules = allRules.length;
+  var totalPages = Math.ceil(totalRules / _rulesPerPage);
+  if (_rulesPage >= totalPages) _rulesPage = Math.max(0, totalPages - 1);
+
+  var start = _rulesPage * _rulesPerPage;
+  var end = start + _rulesPerPage;
+  var paginatedRules = allRules.slice(start, end);
+
   var html = '';
 
-  // ── Confirmed rules (LRULES) ─────────────────────────────────
-  if (lruleEntries.length) {
-    html += '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">⚡ Confirmed Rules (' + lruleEntries.length + ')</div>';
-    lruleEntries.forEach(function(entry) {
-      var merchant = entry[0];
-      var rule     = ruleRead(merchant);
-      var catId    = rule ? rule.catId : (typeof entry[1] === 'string' ? entry[1] : '');
-      var subcat   = rule ? (rule.subcat || '') : '';
-      html += _buildRuleCardHtml(merchant, catId, subcat, 'lrule', null);
+  // Search input
+  html += '<div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap">'
+    + '<input type="text" id="rules-search-input" placeholder="Search rules..." value="' + (_rulesSearch || '') + '" '
+    + 'style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem" '
+    + 'onkeyup="rulesSearchUpdate(this.value)">'
+    + '<button class="btn btn-ghost btn-sm" onclick="rulesShowCreateForm()" style="white-space:nowrap">+ New Rule</button>'
+    + '</div>';
+
+  // Results count and pagination info
+  var countText = '';
+  if (search) {
+    countText = totalRules + ' result' + (totalRules !== 1 ? 's' : '') + ' found';
+  } else {
+    countText = totalRules + ' rule' + (totalRules !== 1 ? 's' : '');
+  }
+  html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">' + countText + '</div>';
+
+  // Rules cards
+  if (paginatedRules.length === 0) {
+    if (search) {
+      html += '<div class="empty"><div class="ei">🔍</div><p>No rules match your search.</p></div>';
+    } else {
+      html += '<div class="empty"><div class="ei">⚡</div><p>No rules yet. Assign a category to a transaction to create one automatically.</p></div>';
+    }
+  } else {
+    paginatedRules.forEach(function(rule) {
+      html += _buildRuleCardHtml(rule.merchant, rule.catId, rule.subcat, rule.source, rule.meta);
     });
   }
 
-  // ── Auto-learned mappings ────────────────────────────────────
-  if (learnedEntries.length) {
-    // Sort: high confidence first, then by matchCount desc
-    learnedEntries.sort(function(a, b) {
-      return (b[1].matchCount || 0) - (a[1].matchCount || 0);
-    });
-    html += '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 10px">🤖 Auto-Learned (' + learnedEntries.length + ')</div>';
-    learnedEntries.forEach(function(entry) {
-      var key   = entry[0];
-      var meta  = entry[1];
-      if (!meta || !meta.catId) return;
-      html += _buildRuleCardHtml(key, meta.catId, meta.subcat || '', 'learned', meta);
-    });
+  // Pagination controls
+  if (totalPages > 1) {
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px">'
+      + '<button class="btn btn-ghost btn-sm" onclick="rulesPreviousPage()" ' + (_rulesPage === 0 ? 'disabled' : '') + '>← Previous</button>'
+      + '<span style="font-size:.8rem;color:var(--muted)">Page ' + (_rulesPage + 1) + ' of ' + totalPages + '</span>'
+      + '<button class="btn btn-ghost btn-sm" onclick="rulesNextPage()" ' + (_rulesPage >= totalPages - 1 ? 'disabled' : '') + '>Next →</button>'
+      + '</div>';
   }
 
   rulesEl.innerHTML = html;
+}
+
+function rulesSearchUpdate(val) {
+  _rulesSearch = val || '';
+  _rulesPage = 0; // Reset to first page
+  renderRulesList();
+}
+
+function rulesNextPage() {
+  _rulesPage++;
+  renderRulesList();
+}
+
+function rulesPreviousPage() {
+  _rulesPage = Math.max(0, _rulesPage - 1);
+  renderRulesList();
+}
+
+function rulesShowCreateForm() {
+  // TODO: Implement rule creation form modal
+  toast('⚠️ Rule creation form coming soon');
 }
 
 function toggleRuleEdit(card) {
@@ -570,6 +666,9 @@ function saveRuleCard(card) {
   if (!merchant || !catSel) return;
   var newCatId  = catSel.value;
   var newSubcat = subcatSel ? subcatSel.value : '';
+  // Get pattern type if available (for new-format rules)
+  var patternSel = card.querySelector('.rule-pattern-sel');
+  var newPattern = patternSel ? patternSel.value : 'exact';
 
   if (source === 'learned') {
     // Update learnedMappings
@@ -581,8 +680,13 @@ function saveRuleCard(card) {
     }
     try { localStorage.setItem('learnedMappings', JSON.stringify(learned)); } catch(e) {}
   } else {
-    // Update LRULES
-    LRULES[merchant] = { catId: newCatId, subcat: newSubcat };
+    // Update LRULES with pattern support
+    LRULES[merchant] = {
+      catId: newCatId,
+      subcat: newSubcat,
+      pattern: newPattern || 'exact',
+      confidence: 'HIGH'
+    };
     try { save(K.rules, LRULES); } catch(e) {}
   }
 
@@ -601,6 +705,7 @@ function saveRuleCard(card) {
   renderRulesList();
   renderTx();
   toast('Rule updated — ' + applied + ' transaction' + (applied !== 1 ? 's' : '') + ' re-assigned');
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 function deleteRuleCard(card) {
@@ -629,8 +734,13 @@ function promoteLearnedRule(card) {
   var entry = learned[merchant];
   if (!entry || !entry.catId) return;
 
-  // Move to LRULES and delete from learnedMappings
-  LRULES[merchant] = { catId: entry.catId, subcat: entry.subcat || '' };
+  // Move to LRULES with pattern support and delete from learnedMappings
+  LRULES[merchant] = {
+    catId: entry.catId,
+    subcat: entry.subcat || '',
+    pattern: 'exact',
+    confidence: 'HIGH'
+  };
   try { save(K.rules, LRULES); } catch(e) {}
   delete learned[merchant];
   try { localStorage.setItem('learnedMappings', JSON.stringify(learned)); } catch(e) {}

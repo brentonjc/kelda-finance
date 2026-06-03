@@ -642,6 +642,7 @@ function liabSave() {
 
   liabCloseModal();
   liabRenderPage();
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 function liabConfirmDelete(id) {

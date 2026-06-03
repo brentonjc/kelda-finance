@@ -28,7 +28,43 @@ if (!LCATS.find(function(c){ return c.id === 'uncategorised'; })) {
 }
 
 let LBUDGETS  = load(K.lbudgets) || {}; // { catId: amount }
-let LRULES    = load(K.rules)    || {}; // { merchant: catId }
+
+// Migration: Convert LRULES from old format (no pattern field) to new format (with pattern type)
+function migrateRulesToPattern() {
+  var stored = load(K.rules) || {};
+  var migrated = false;
+  for (var merchant in stored) {
+    if (stored.hasOwnProperty(merchant)) {
+      var rule = stored[merchant];
+      // If pattern field doesn't exist, add it as 'exact' (backward compatibility)
+      if (rule && typeof rule === 'object' && !rule.pattern) {
+        rule.pattern = 'exact';
+        rule.confidence = rule.confidence || 'HIGH';
+        migrated = true;
+      }
+    }
+  }
+  if (migrated) {
+    try { save(K.rules, stored); } catch(e) {}
+  }
+  return stored;
+}
+
+let LRULES = (function() {
+  var stored = load(K.rules) || {};
+  // Check if migration is needed (any rule without pattern field)
+  var needsMigration = false;
+  for (var m in stored) {
+    if (stored[m] && !stored[m].pattern) {
+      needsMigration = true;
+      break;
+    }
+  }
+  if (needsMigration) {
+    stored = migrateRulesToPattern();
+  }
+  return stored;
+})();
 let LRECURRING = load(K.recurring) || [];
 let TRANSFERS  = load(K.transfers)  || [];
 let USER_CONFIG = load('cff_userconfig') || {};

@@ -66,6 +66,7 @@ function addTx(){
   const tn=document.getElementById('tx-name');if(tn)tn.value='';
   const ta=document.getElementById('tx-account');if(ta)ta.value='';
   renderTx();renderTxCatChart();renderDashboard();toast('✅ Transaction added');
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 function delTx(id){TX=TX.filter(t=>t.id!==id);save(K.tx,TX);renderTx();toast('🗑️ Deleted');}

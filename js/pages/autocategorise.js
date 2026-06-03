@@ -30,20 +30,20 @@ var AutoCat = (function() {
     { catId:'salary', subcat:'Regular Pay',   keywords:['centrelink','services australia','family tax benefit','child care subsidy','jobkeeper','jobseeker'], incomeOnly:true },
 
     // FOOD & EATING OUT
-    { catId:'food_eating_out', subcat:'Groceries', keywords:['woolworths','coles','aldi','iga','spar','harris farm','foodworks','drakes','costco','supermarket'] },
-    { catId:'food_eating_out', subcat:'Uber Eats and Delivery',  keywords:['uber eats','ubereats','doordash','menulog','deliveroo'] },
-    { catId:'food_eating_out', subcat:'Eating Out (Cafes, Restaurant Food)', keywords:['restaurant','bistro','brasserie','dining','thai','chinese','japanese','indian','italian','greek','turkish','lebanese','vietnamese','korean','mexican','sushi','ramen','noodle','kebab','pizza','pasta','mcdonald','mcdonalds','kfc','hungry jacks','hungry jack','domino','pizza hut','subway','nandos','nando\'s','red rooster','oporto','guzman','taco bell','zambrero','grill\'d'] },
-    { catId:'food_eating_out', subcat:'Cafe and Lunches',        keywords:['coffee','cafe','espresso','barista','gloria jeans','starbucks','hudsons coffee','boost juice','chatime','bakers delight','breadtop','donut king','muffin break','pie face'] },
-    { catId:'food_eating_out', subcat:'Alcohol and Bars',        keywords:['dan murphy','bws','liquorland','vintage cellars','bottle shop','wine bar','craft beer','bar ','pub ','hotel bar','liquor'] },
+    { catId:'food_eating_out', subcat:'Groceries', keywords:['woolworths','woolies','coles','aldi','iga','spar','harris farm','foodworks','drakes','costco','supermarket','checkout','savourlife','buy online','groceries'] },
+    { catId:'food_eating_out', subcat:'Uber Eats and Delivery',  keywords:['uber eats','ubereats','doordash','menulog','deliveroo','hellofresh','every plate','everyplate','hungryhacker','meal kit','delivered meal'] },
+    { catId:'food_eating_out', subcat:'Eating Out (Cafes, Restaurant Food)', keywords:['restaurant','bistro','brasserie','dining','thai','chinese','japanese','indian','italian','greek','turkish','lebanese','vietnamese','korean','mexican','sushi','ramen','noodle','kebab','pizza','pasta','mcdonald','mcdonalds','kfc','hungry jacks','hungry jack','domino','pizza hut','subway','nandos','nando\'s','red rooster','oporto','guzman','taco bell','zambrero','grill\'d','maccas','chooeys','taco','burrito','curry','schnitzel'] },
+    { catId:'food_eating_out', subcat:'Cafe and Lunches',        keywords:['coffee','cafe','espresso','barista','gloria jeans','starbucks','hudsons coffee','boost juice','chatime','bakers delight','breadtop','donut king','muffin break','pie face','flat white','latte','cappuccino','cold brew'] },
+    { catId:'food_eating_out', subcat:'Alcohol and Bars',        keywords:['dan murphy','bws','liquorland','vintage cellars','bottle shop','wine bar','craft beer','bar ','pub ','hotel bar','liquor','local liquor','tavern'] },
 
     // CAR & TRANSPORT
-    { catId:'car_transport', subcat:'Petrol',              keywords:['caltex','bp ','shell','7eleven','7-eleven','ampol','puma energy','liberty oil','united petroleum','petrol','fuel','servo'] },
-    { catId:'car_transport', subcat:'Tolls',               keywords:['linkt','e-toll','citylink','transurban','m2 toll','harbour tunnel','roam express','eastlink','westconnex','toll'] },
-    { catId:'car_transport', subcat:'Public Transport',    keywords:['opal','myki','go card','metrocard','translink','transperth','ptv','public transport','train fare','bus fare','ferry fare'] },
-    { catId:'car_transport', subcat:'Ubers and Taxis',     keywords:['uber','didi','ola ride','taxify','bolt ride','rideshare','taxi'] },
-    { catId:'car_transport', subcat:'Car Parking',         keywords:['parking','wilson parking','care park','secure parking','smart parking','ace parking'] },
-    { catId:'car_transport', subcat:'Registration',        keywords:['vehicle registration','rego','transport nsw','vicroads','department of transport','roads and maritime'] },
-    { catId:'car_transport', subcat:'Car Servicing',       keywords:['mechanic','car service','auto service','log book service','tyres','tyre','wheel alignment','midas','kmart tyre','beaurepaires','bridgestone','goodyear'] },
+    { catId:'car_transport', subcat:'Petrol',              keywords:['caltex','bp ','shell','7eleven','7-eleven','ampol','puma energy','liberty oil','united petroleum','petrol','fuel','servo','fuel station','gas station'] },
+    { catId:'car_transport', subcat:'Tolls',               keywords:['linkt','e-toll','citylink','transurban','m2 toll','harbour tunnel','roam express','eastlink','westconnex','toll','toll road'] },
+    { catId:'car_transport', subcat:'Public Transport',    keywords:['opal','myki','go card','metrocard','translink','transperth','ptv','public transport','train fare','bus fare','ferry fare','transit pass'] },
+    { catId:'car_transport', subcat:'Ubers and Taxis',     keywords:['uber','didi','ola ride','taxify','bolt ride','rideshare','taxi','cab'] },
+    { catId:'car_transport', subcat:'Car Parking',         keywords:['parking','wilson parking','care park','secure parking','smart parking','ace parking','parkwhiz'] },
+    { catId:'car_transport', subcat:'Registration',        keywords:['vehicle registration','rego','transport nsw','vicroads','department of transport','roads and maritime','registration fee'] },
+    { catId:'car_transport', subcat:'Car Servicing',       keywords:['mechanic','car service','auto service','log book service','tyres','tyre','wheel alignment','midas','kmart tyre','beaurepaires','bridgestone','goodyear','repco','supercheap','anaconda','auto parts','battery'] },
     { catId:'car_transport', subcat:'Car Insurance & Membership', keywords:['aami','nrma car','racv','racq','ract','ctp','comprehensive insurance','vehicle insurance','car insurance','racwa'] },
 
     // HOME
@@ -52,14 +52,14 @@ var AutoCat = (function() {
     { catId:'home', subcat:'Water Rates and Usage',keywords:['water rates','sydney water','yarra valley water','sa water','waternsw','unitywater','icon water','water corporation'] },
     { catId:'home', subcat:'Strata Fees',          keywords:['body corporate','strata levy','owners corp','strata management'] },
     { catId:'home', subcat:'Maintenance',          keywords:['plumber','electrician','handyman','tradesman','building maintenance','home repair','pest control','locksmith','builder'] },
-    { catId:'home', subcat:'Power Bill',           keywords:['agl','origin energy','energyaustralia','energy australia','alinta energy','powershop','red energy','momentum energy','electricity','power bill'] },
-    { catId:'home', subcat:'Gas Bill',             keywords:['natural gas','gas bill','agl gas','origin gas','jemena','agility','gas supply'] },
-    { catId:'home', subcat:'Home Internet',        keywords:['nbn','internet bill','broadband','aussie broadband','iinet','internode','superloop','tpg internet'] },
+    { catId:'home', subcat:'Power Bill',           keywords:['agl','origin energy','energyaustralia','energy australia','alinta energy','powershop','red energy','momentum energy','electricity','power bill','electric bill','energy supply'] },
+    { catId:'home', subcat:'Gas Bill',             keywords:['natural gas','gas bill','agl gas','origin gas','jemena','agility','gas supply','gas company'] },
+    { catId:'home', subcat:'Home Internet',        keywords:['nbn','internet bill','broadband','aussie broadband','iinet','internode','superloop','tpg internet','tpg','optus broadband','vodafone broadband','bigair','myrepublic','exetel','dodo','iprimus','netspace'] },
     { catId:'home', subcat:'Home & Contents Insurance', keywords:['home insurance','home and contents','building insurance','suncorp home','aami home','nrma home','budget direct home'] },
     { catId:'home', subcat:'House Cleaning',       keywords:['cleaner','cleaning service','house clean','bond clean','end of lease clean'] },
 
     // HEALTH & BEAUTY
-    { catId:'health_beauty', subcat:'Doctors, Health, Specialists', keywords:['medical centre','medical practice','general practice','bulk bill','doctor','gp ','physician','specialist','cardiologist','dermatologist','physiotherapy','physio','chiropractic','chiropractor','optometrist','audiologist','hospital','emergency dept','pathology','radiology','xray','x-ray','mri','ct scan','ultrasound','psychologist','psychiatrist','counsellor','therapist','headspace','medibank','hbf','bupa health','nib health','ahm health','health fund'] },
+    { catId:'health_beauty', subcat:'Doctors, Health, Specialists', keywords:['medical centre','medical practice','general practice','bulk bill','doctor','gp ','physician','specialist','cardiologist','dermatologist','physiotherapy','physio','chiropractic','chiropractor','optometrist','audiologist','hospital','emergency dept','pathology','radiology','xray','x-ray','mri','ct scan','ultrasound','psychologist','psychiatrist','counsellor','therapist','headspace','beyond','mindfulness app','meditation app','wellness app','medibank','hbf','bupa health','nib health','ahm health','health fund'] },
     { catId:'health_beauty', subcat:'Pharmacy',    keywords:['chemist','pharmacy','priceline','chemist warehouse','terry white','blooms the chemist','discount drug','amcal'] },
     { catId:'health_beauty', subcat:'Doctors, Health, Specialists', keywords:['dentist','dental','teeth','orthodontic','braces','crown','filling','hygienist'] },
     { catId:'health_beauty', subcat:'Nails, Beauty & Other Errands', keywords:['nail salon','nails','beauty salon','waxing','spray tan','eyelash','lash bar','blow dry','beauty'] },
@@ -73,11 +73,11 @@ var AutoCat = (function() {
     { catId:'insurance_utilities', subcat:'Mobile Phone Bills', keywords:['telstra','optus','vodafone','amaysim','kogan mobile','boost mobile','circles life','felix mobile','mobile plan','prepaid recharge','phone bill'] },
 
     // ENTERTAINMENT
-    { catId:'entertainment', subcat:'Netflix',           keywords:['netflix'] },
-    { catId:'entertainment', subcat:'Amazon Prime',      keywords:['amazon prime'] },
+    { catId:'entertainment', subcat:'Netflix',           keywords:['netflix','netflix.com'] },
+    { catId:'entertainment', subcat:'Amazon Prime',      keywords:['amazon prime','amazon.com.au'] },
     { catId:'entertainment', subcat:'Apple Subscriptions',keywords:['apple.com/bill','apple subscriptions','itunes','apple tv','icloud storage','apple music','app store'] },
-    { catId:'entertainment', subcat:'Other Entertainment',keywords:['stan ','disney','binge','foxtel','kayo sports','paramount','spotify','youtube premium','google one','event cinemas','village cinemas','hoyts','reading cinemas','cinema ticket','movie ticket','ticketmaster','ticketek','moshtix','eventbrite','concert','festival','live music','theatre','comedy show','steam','playstation','xbox','nintendo','gaming'] },
-    { catId:'entertainment', subcat:'Wine & Presents',   keywords:['wine','bottle of wine','gift card','wine gift'] },
+    { catId:'entertainment', subcat:'Other Entertainment',keywords:['stan ','disney','binge','foxtel','kayo sports','paramount','spotify','youtube premium','google one','event cinemas','village cinemas','hoyts','reading cinemas','cinema ticket','movie ticket','ticketmaster','ticketek','moshtix','eventbrite','concert','festival','live music','theatre','comedy show','steam','playstation','xbox','nintendo','gaming','chess','casino','app subscription'] },
+    { catId:'entertainment', subcat:'Wine & Presents',   keywords:['wine','bottle of wine','gift card','wine gift','wine club','vineyard'] },
 
     // HOLIDAYS & TRAVEL
     { catId:'holidays_travel', subcat:'Flights',       keywords:['qantas','virgin australia','jetstar','rex airlines','bonza','tigerair','airasia','singapore airlines','emirates','cathay pacific','united airlines','flight centre','webjet','skyscanner'] },
@@ -86,9 +86,9 @@ var AutoCat = (function() {
     { catId:'holidays_travel', subcat:'Travel Insurance', keywords:['travel insurance','worldcare','cover-more','allianz travel','1cover','fast cover','southern cross travel'] },
 
     // SHOPPING
-    { catId:'shopping', subcat:'Clothing & Shopping',  keywords:['cotton on','country road','david jones','myer','the iconic','h&m','zara','uniqlo','target','kmart','big w','bonds','lorna jane','rebel sport','city beach','glue store','factorie','jay jays','jeanswest','rivers','rockmans','autograph','millers','katies','crossroads','lowes','rivers clothing'] },
-    { catId:'shopping', subcat:'Online Shopping',      keywords:['amazon','ebay','catch.com','kogan','aliexpress','etsy','paypal purchase','afterpay','zip pay','klarna','humm'] },
-    { catId:'shopping', subcat:'Home Shopping',        keywords:['bunnings','mitre 10','total tools','bbqs galore','ikea','fantastic furniture','nick scali','amart furniture','harvey norman','jb hi-fi','jb hifi','the good guys','good guys','bing lee','officeworks'] },
+    { catId:'shopping', subcat:'Clothing & Shopping',  keywords:['cotton on','country road','david jones','myer','the iconic','h&m','zara','uniqlo','target','kmart','big w','bigw','bonds','lorna jane','rebel sport','city beach','glue store','factorie','jay jays','jeanswest','rivers','rockmans','autograph','millers','katies','crossroads','lowes','rivers clothing','kmart tyre','dress','shoe','shirt','pants'] },
+    { catId:'shopping', subcat:'Online Shopping',      keywords:['amazon','ebay','catch','catch.com','kogan','aliexpress','etsy','paypal purchase','afterpay','zip','zip pay','zippy','klarna','humm','laybuy','splitit','sezzle','bnpl','buy now pay later'] },
+    { catId:'shopping', subcat:'Home Shopping',        keywords:['bunnings','mitre 10','total tools','bbqs galore','ikea','fantastic furniture','nick scali','amart furniture','harvey norman','jb hi-fi','jb hifi','the good guys','good guys','bing lee','officeworks','rebel','reject shop','bed mattress','appliance','furniture'] },
     { catId:'shopping', subcat:'Gifts',                keywords:['florist','flowers','balloon','gift shop','prezzy box','flower bouquet'] },
     { catId:'shopping', subcat:'Donations',            keywords:['st vincent','salvation army','red cross','oxfam','world vision','unicef','beyond blue','cancer council','heart foundation','smith family','lifeline','mission australia','rspca','wwf','amnesty','donate'] },
 
@@ -179,15 +179,45 @@ var AutoCat = (function() {
     return 'Between Accounts';
   }
 
-  // ── Check LRULES ─────────────────────────────────────────────
+  // ── Check LRULES (supports exact and contains patterns) ──────
   function matchLRules(name) {
     if (!name) return null;
-    var key = name.trim().toLowerCase();
+    var nameLower = name.trim().toLowerCase();
     if (typeof LRULES === 'undefined') return null;
-    var r = LRULES[key];
-    if (!r) return null;
-    if (typeof r === 'string') return { catId: r, subcat: '', confidence: CONF_HIGH };
-    if (typeof r === 'object') return { catId: r.catId || r, subcat: r.subcat || '', confidence: CONF_HIGH };
+
+    var exactMatches = [];
+    var containsMatches = [];
+
+    // Iterate through rules and collect matches by pattern type
+    for (var merchant in LRULES) {
+      if (!LRULES.hasOwnProperty(merchant)) continue;
+      var rule = LRULES[merchant];
+      if (!rule || !rule.catId) continue;
+
+      var merchantLower = merchant.trim().toLowerCase();
+      var pattern = rule.pattern || 'exact'; // Default to exact for backward compatibility
+
+      if (pattern === 'exact' && merchantLower === nameLower) {
+        exactMatches.push(rule);
+      } else if (pattern === 'contains' && nameLower.indexOf(merchantLower) !== -1) {
+        containsMatches.push({ merchant: merchant, rule: rule });
+      }
+    }
+
+    // Exact match takes priority over contains
+    if (exactMatches.length > 0) {
+      var r = exactMatches[0];
+      if (typeof r === 'string') return { catId: r, subcat: '', confidence: CONF_HIGH };
+      return { catId: r.catId || r, subcat: r.subcat || '', confidence: CONF_HIGH };
+    }
+
+    // If no exact match, try contains (sort by merchant length, longest first)
+    if (containsMatches.length > 0) {
+      containsMatches.sort(function(a, b) { return b.merchant.length - a.merchant.length; });
+      var matched = containsMatches[0].rule;
+      return { catId: matched.catId || matched, subcat: matched.subcat || '', confidence: CONF_HIGH };
+    }
+
     return null;
   }
 

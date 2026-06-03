@@ -731,3 +731,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .how-to-title{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:3px;}
 .how-to-text{font-size:.73rem;color:var(--muted);line-height:1.5;}
 @media(max-width:600px){.how-to-body{grid-template-columns:1fr!important;}}
+
+/* ── CONFETTI ANIMATION ── */
+@keyframes confetti-fall{
+  0%{transform:translateY(-100vh) rotate(0deg);opacity:1;}
+  100%{transform:translateY(100vh) rotate(360deg);opacity:0;}
+}
+.confetti{position:fixed;pointer-events:none;font-size:2rem;animation:confetti-fall 3s ease-in forwards;}

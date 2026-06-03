@@ -212,6 +212,7 @@ function saveLBudget(catId, value) {
   else { LBUDGETS[catId] = v; }
   save(K.lbudgets, LBUDGETS);
   renderBVA();
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 

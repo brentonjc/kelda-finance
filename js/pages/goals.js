@@ -216,6 +216,7 @@ function addGoalFromPage(){
   document.getElementById('g-account').value='';
   renderGoalsPage();
   toast('✅ Goal added');
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 function delGoalItem(id){

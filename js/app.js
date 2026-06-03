@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings','health'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings','health','quickstart'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -66,6 +66,7 @@ function go(id){
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
     else if(id==='health'){if(typeof renderHealthPage==='function')renderHealthPage();}
+    else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar
@@ -409,6 +410,48 @@ var _HOW_TO = {
     {icon:'✅', h:'Auto-detected pairs', b:'The app auto-matches same-amount income/expense pairs on the same or adjacent days. Confirm to tag them as transfers, or Dismiss to keep them in analysis.'},
     {icon:'🔗', h:'Manual linking', b:'If auto-detection missed a pair, use the manual link panel. Search for the two transactions, select both checkboxes, then tap "Link Selected".'},
     {icon:'↩️', h:'Unlinking', b:'Confirmed transfers can be unlinked at any time. Both transactions return to the "Other" category and reappear in your analysis.'}
+  ]},
+  quickstart: { title:'Quick Start Guide', items:[
+    {icon:'📚', h:'About this guide', b:'The Quick Start Guide walks you through the 7 essential steps to set up and master Kelda Finance in your own way.'},
+    {icon:'✔️', h:'Track your progress', b:'Check off each step as you complete it. The app auto-completes steps as you take actions (add a transaction, create a rule, etc.).'},
+    {icon:'🎯', h:'Follow your path', b:'Each step has a dedicated "Go" button that takes you directly to that feature. Work through them in order or jump to what you need.'},
+    {icon:'🎉', h:'Celebrate completion', b:'When you finish all 7 steps, you\'ll see a celebration animation and a badge on your Dashboard. You\'re ready to manage your finances!'}
+  ]},
+  categories: { title:'Categories & Rules', items:[
+    {icon:'📂', h:'Default categories', b:'The app comes with 16 expense categories and 83 subcategories spanning household, transport, health, entertainment and more. Customise as needed.'},
+    {icon:'✏️', h:'Custom categories', b:'Create custom categories to match your spending. Edit name, icon, and colour. Delete unused categories anytime (archived transactions keep their assignment).'},
+    {icon:'🤖', h:'Auto-categorisation rules', b:'Create rules to auto-assign categories based on merchant keywords. E.g., "contains Woolies" → Groceries. Rules apply to new transactions matching the pattern.'},
+    {icon:'🔄', h:'Bulk recategorise', b:'Select multiple transactions in the list and reassign them to a new category in bulk. Useful for catching past transactions your rules didn\'t catch.'}
+  ]},
+  equities: { title:'Equities & Holdings', items:[
+    {icon:'📈', h:'Add a holding', b:'Enter the ticker (ASX code), quantity, cost base ($/share) and purchase date. The app calculates current value using current price data.'},
+    {icon:'💹', h:'Track performance', b:'See the gain/loss and percentage return for each holding. The total equities value flows into your Net Assets summary on the Dashboard and Insights.'},
+    {icon:'✏️', h:'Edit & delete', b:'Update holdings when you buy/sell more shares. Delete entries when you exit a position. Historical entries can be archived instead of deleted.'},
+    {icon:'🎯', h:'Portfolio view', b:'The Equities page shows all holdings and total portfolio value. Filter by category (ASX, ETFs, International) for a clearer breakdown.'}
+  ]},
+  mortgage: { title:'Mortgage & Home', items:[
+    {icon:'🏠', h:'Home details', b:'Enter your home value, purchase date, and property location. This establishes your gross asset value for net worth calculations.'},
+    {icon:'💳', h:'Mortgage balance', b:'Enter the current outstanding mortgage balance. This is treated as a liability in your Net Assets calculation. Update quarterly as you pay it down.'},
+    {icon:'⚙️', h:'Offset account', b:'Link your mortgage offset account to the Cash Tracker. The offset balance reduces your effective mortgage balance, improving equity and reducing interest accrual.'},
+    {icon:'📊', h:'Equity tracker', b:'The Mortgage page shows your home equity (home value - balance). As you pay down the loan, equity grows. A key component of your long-term wealth.'}
+  ]},
+  liabilities: { title:'Liabilities & Debts', items:[
+    {icon:'💳', h:'Add a liability', b:'Record loans, credit cards, and personal debts. Enter name, current balance, interest rate (if applicable), and liability type (mortgage, car, credit card, personal).'},
+    {icon:'📊', h:'Debt breakdown', b:'See the total liabilities and breakdown by type. This is subtracted from your gross assets to calculate net wealth. Lower is better.'},
+    {icon:'✏️', h:'Update balance', b:'Track payments by updating the balance as you pay down debt. The app shows progress and remaining balance for each liability.'},
+    {icon:'⚠️', h:'Debt ratio', b:'Your total liabilities as a percentage of gross assets. Shown on the Assets page. Below 30% is strong; above 60% is concerning.'}
+  ]},
+  insurance: { title:'Insurance Policies', items:[
+    {icon:'📋', h:'Policy details', b:'Record all insurance policies: life, income protection, home, contents, car, etc. Enter the policy name, type, insurer, and monthly premium.'},
+    {icon:'📅', h:'Renewal tracking', b:'Set the renewal date for each policy. The app shows upcoming renewals so you can shop around and lock in the best rates.'},
+    {icon:'💰', h:'Premium management', b:'See total annual and monthly insurance costs. Compare costs across policies to identify savings opportunities or consolidation options.'},
+    {icon:'✏️', h:'Edit & archive', b:'Update policy details as you switch insurers or adjust coverage. Archive policies that lapse instead of deleting them.'}
+  ]},
+  health: { title:'Financial Health Score', items:[
+    {icon:'🎯', h:'What it measures', b:'The Health Score tracks 5 key metrics: cash flow balance, savings rate, budget adherence, debt ratio, and goal progress. Each contributes to your overall score out of 100.'},
+    {icon:'📊', h:'Score interpretation', b:'Above 70 = Healthy finances. 50–70 = Room for improvement. Below 50 = Needs attention. Use the breakdown to see which areas to focus on first.'},
+    {icon:'💡', h:'Monthly reset', b:'The score resets monthly and reflects how you performed that month. Consistent good decisions drive the score up over time.'},
+    {icon:'🎯', h:'Action nudges', b:'The Dashboard shows nudges for the top improvement areas. Focus on one or two actions at a time — the Health Score will improve naturally as you build better habits.'}
   ]}
 };
 

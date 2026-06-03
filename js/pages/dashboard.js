@@ -37,6 +37,106 @@ function recordNetWorthSnapshot() {
   } catch(e) { console.warn('recordNetWorthSnapshot error', e); }
 }
 
+// ── Populate historical net worth from transactions ─────────────
+function populateNetWorthHistory() {
+  try {
+    var hist = [];
+    try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) { hist = []; }
+
+    // If we already have significant history, skip regeneration
+    if (hist.length >= 3) return;
+
+    // Find earliest transaction date
+    var txns = TX || [];
+    if (txns.length === 0) return;
+
+    var earliest = null;
+    txns.forEach(function(t) {
+      if (t.date && (!earliest || t.date < earliest)) {
+        earliest = t.date;
+      }
+    });
+
+    if (!earliest) return;
+
+    // Parse earliest date
+    var parts = earliest.split('-');
+    var startYear = parseInt(parts[0]);
+    var startMonth = parseInt(parts[1]);
+    var startDay = parseInt(parts[2]);
+
+    // Generate net worth for each month from start to today
+    var hist = [];
+    var now = new Date();
+    var currentYear = now.getFullYear();
+    var currentMonth = now.getMonth() + 1;
+
+    var year = startYear;
+    var month = startMonth;
+
+    while (year < currentYear || (year === currentYear && month <= currentMonth)) {
+      // Use the last day of each month (or current day for current month)
+      var lastDay;
+      if (year === currentYear && month === currentMonth) {
+        lastDay = now.getDate();
+      } else {
+        var nextMonth = new Date(year, month, 0);
+        lastDay = nextMonth.getDate();
+      }
+
+      var dateStr = year + '-' + String(month).padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
+
+      // Calculate net worth as of this date
+      var nw = 0;
+
+      // Transactions up to this date
+      var txBalance = 0;
+      txns.forEach(function(t) {
+        if (t.date && t.date <= dateStr) {
+          if (t.type === 'income') {
+            txBalance += Number(t.amount);
+          } else {
+            txBalance -= Number(t.amount);
+          }
+        }
+      });
+      nw += txBalance;
+
+      // Super balances (assume constant, use current)
+      var supB = (SUPER && SUPER.b && SUPER.b.balance) ? Number(SUPER.b.balance) : 0;
+      var supS = (SUPER && SUPER.s && SUPER.s.balance) ? Number(SUPER.s.balance) : 0;
+      nw += supB + supS;
+
+      // Home value and mortgage (assume constant, use current)
+      var homeVal = (MORTGAGE && MORTGAGE.homeValue) ? Number(MORTGAGE.homeValue) : 0;
+      var mortgageBal = (MORTGAGE && MORTGAGE.balance) ? Number(MORTGAGE.balance) : 0;
+      nw += homeVal - mortgageBal;
+
+      // Equities (assume constant, use current)
+      var eqV = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
+      nw += eqV;
+
+      // Liabilities (assume constant, use current)
+      var otherLiab = (typeof liabTotal === 'function') ? liabTotal() : 0;
+      nw -= otherLiab;
+
+      hist.push({ date: dateStr, netWorth: Math.round(nw * 100) / 100 });
+
+      // Move to next month
+      month++;
+      if (month > 12) {
+        month = 1;
+        year++;
+      }
+    }
+
+    // Keep last 730 days
+    if (hist.length > 730) hist = hist.slice(Math.max(0, hist.length - 730));
+
+    try { localStorage.setItem('cff_networth_history', JSON.stringify(hist)); } catch(e) {}
+  } catch(e) { console.warn('populateNetWorthHistory error', e); }
+}
+
 // ── Health Score calculation ───────────────────────────────────
 function calculateHealthScore() {
   var now      = new Date();
@@ -896,6 +996,9 @@ function renderDashboard() {
 
   migrateTxCategories();
 
+  // ── Populate historical net worth data (first run only) ──────
+  try { populateNetWorthHistory(); } catch(e) { console.warn('populate nw history', e); }
+
   // ── Gamification sequence ───────────────────────────────────
   try { recordNetWorthSnapshot(); } catch(e) { console.warn('nw snapshot', e); }
   var _scoreData;
@@ -923,6 +1026,11 @@ function renderDashboard() {
     var _dayStr = _now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
     var _monStr = _now.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
     _gdEl.textContent = _dayStr + ' · showing ' + _monStr;
+  }
+
+  // ── Quick Start Guide banner for new users ────────────────────
+  var _qsData = load(K.quickstart);
+  if (_qsData && _qsData.showOnDashboard && !_qsData.completed) {
   }
 
   // ── New layout renders ───────────────────────────────────────

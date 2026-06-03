@@ -292,6 +292,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Sign in button -->
     <button class="lw-signin-btn" onclick="showPinScreen()">Sign In</button>
+    <!-- Quick Start Guide button (goes through PIN setup, then shows guide) -->
+    <button class="lw-signin-btn" style="background:var(--card3);color:var(--primary);margin-top:8px" onclick="showPinScreen()">📚 Quick Start Guide</button>
     <p class="lw-disclaimer">Secured with PIN · All data stays on your device</p>
     <button onclick="if(confirm('Reset your PIN?\n\nYour financial data will NOT be deleted — only the PIN is removed.')){localStorage.removeItem('cff_pins');location.reload();}" style="background:none;border:none;color:#6278A0;font-size:.72rem;cursor:pointer;padding:8px;text-decoration:underline;margin-top:-8px;">Forgot PIN?</button>
   </div>
@@ -345,6 +347,9 @@ window.addEventListener('unhandledrejection',function(e){
     <p data-app-sub>Family Finance Tracker · AUD</p>
   </div>
   <ul>
+    <li class="nav-group-hdr"><span class="nav-gh-icon">🚀</span>Getting Started</li>
+    <li><a onclick="go('quickstart')" id="n-quickstart"><span class="ni">🚀</span><span class="nav-lbl">Quick Start</span></a></li>
+
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏠</span>Overview</li>
     <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
     <li><a onclick="go('insights')" id="n-insights"><span class="ni">✨</span><span class="nav-lbl">Insights</span></a></li>
@@ -446,6 +451,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-health">
     <div class="page-title">Financial Health</div>
     <div class="page-sub">Your personalised financial score with clear actions to improve</div>
+    <div id="how-to-health"></div>
     <div class="card" style="margin-bottom:14px">
       <div id="fh-ring-wrap"></div>
     </div>
@@ -798,6 +804,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-mortgage">
     <div class="page-title">Mortgage &amp; Home</div>
     <div class="page-sub">Track your mortgages, offset accounts and home equity</div>
+    <div id="how-to-mortgage"></div>
 
     <!-- Property tabs -->
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">
@@ -952,6 +959,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-liabilities">
     <div class="page-title">Liabilities</div>
     <div class="page-sub">Total debt obligations across all accounts</div>
+    <div id="how-to-liabilities"></div>
 
     <!-- Summary panel -->
     <div class="card" id="liab-summary"></div>
@@ -1073,6 +1081,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-insurance">
     <div class="page-title">Insurance</div>
     <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
+    <div id="how-to-insurance"></div>
 
     <!-- Life Insurance Needs Analysis -->
     <div class="card mb" id="li-needs-card">
@@ -1364,6 +1373,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-equities">
     <div class="page-title">Equity Holdings</div>
     <div class="page-sub">Investment portfolio — shares, ETFs, bonds, crypto, RSUs, options</div>
+    <div id="how-to-equities"></div>
 
     <!-- Hero card (total value / P&L) -->
     <div class="card mb" id="eq-hero"></div>
@@ -1547,6 +1557,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-categories">
     <div class="page-title">Categories</div>
     <div class="page-sub">16 categories · 83 subcategories. Edit subcategories inline, add custom ones, or import your own set.</div>
+    <div id="how-to-categories"></div>
 
     <!-- Add category -->
     <div class="card mb">
@@ -1784,6 +1795,14 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="settings-content"></div>
   </div>
 
+  <!-- ═══ QUICK START GUIDE ═══ -->
+  <div class="page" id="page-quickstart">
+    <div class="page-title">Quick Start Guide</div>
+    <div class="page-sub">Get up and running in 7 steps</div>
+    <div id="how-to-quickstart"></div>
+    <div id="quickstart-content"></div>
+  </div>
+
   </div><!-- /page-content -->
 </div><!-- /main -->
 
@@ -1931,6 +1950,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/liabilities.js"></script>
 <script src="js/pages/settings.js"></script>
 <script src="js/pages/health.js"></script>
+<script src="js/pages/quickstart.js"></script>
 <script src="js/wizard.js"></script>
 <!-- Init -->
 <script>

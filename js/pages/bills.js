@@ -18,6 +18,7 @@ function addBill(){
   try{BILLS.push({id:Date.now(),name,amount,due,icon,frequency,paid:false});save(K.bills,BILLS);}catch(e){toast('⚠️ Could not save');return;}
   document.getElementById('bill-name').value='';document.getElementById('bill-amount').value='';document.getElementById('bill-due').value='';
   renderBills();toast('✅ Bill added');
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 // Auto-detect bills from recurring transactions
