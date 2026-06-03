@@ -646,8 +646,83 @@ function rulesPreviousPage() {
 }
 
 function rulesShowCreateForm() {
-  // TODO: Implement rule creation form modal
-  toast('⚠️ Rule creation form coming soon');
+  var modal = document.getElementById('create-rule-modal');
+  if (!modal) return;
+
+  // Clear form
+  document.getElementById('create-rule-merchant').value = '';
+  document.getElementById('create-rule-merchant').focus();
+  var categorySelect = document.getElementById('create-rule-category');
+  categorySelect.innerHTML = '<option value="">— Select Category —</option>'
+    + LCATS.map(function(c) {
+      return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>';
+    }).join('');
+  categorySelect.value = '';
+  document.getElementById('create-rule-subcat').innerHTML = '<option value="">— None —</option>';
+  document.querySelectorAll('input[name="create-rule-pattern"]').forEach(function(r) {
+    if (r.value === 'exact') r.checked = true;
+  });
+
+  modal.style.display = 'flex';
+}
+
+function createRuleCategoryChanged() {
+  var catId = document.getElementById('create-rule-category').value;
+  var subSelect = document.getElementById('create-rule-subcat');
+  if (!catId) {
+    subSelect.innerHTML = '<option value="">— None —</option>';
+    return;
+  }
+  var cat = LCATS.find(function(c) { return c.id === catId; });
+  var subs = cat ? (cat.subcats || []) : [];
+  subSelect.innerHTML = '<option value="">— None —</option>'
+    + subs.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
+}
+
+function createRuleSave() {
+  var merchant = document.getElementById('create-rule-merchant').value.trim();
+  var catId = document.getElementById('create-rule-category').value;
+  var subcat = document.getElementById('create-rule-subcat').value || '';
+  var pattern = document.querySelector('input[name="create-rule-pattern"]:checked').value;
+
+  // Validation
+  if (!merchant) {
+    toast('⚠️ Please enter a merchant name');
+    return;
+  }
+  if (!catId) {
+    toast('⚠️ Please select a category');
+    return;
+  }
+
+  // Check for duplicates
+  var merchantLower = merchant.toLowerCase();
+  for (var existing in LRULES) {
+    if (existing.toLowerCase() === merchantLower) {
+      if (confirm('A rule for "' + existing + '" already exists. Replace it?')) {
+        delete LRULES[existing];
+      } else {
+        return;
+      }
+    }
+  }
+
+  // Save rule
+  LRULES[merchant] = {
+    catId: catId,
+    subcat: subcat,
+    pattern: pattern || 'exact',
+    confidence: 'HIGH'
+  };
+  try { save(K.rules, LRULES); } catch(e) {}
+
+  // Close modal and refresh
+  document.getElementById('create-rule-modal').style.display = 'none';
+  _rulesPage = 0; // Reset to first page
+  _rulesSearch = ''; // Clear search
+  renderRulesList();
+  toast('✅ Rule created for "' + merchant + '"');
+  if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
 function toggleRuleEdit(card) {

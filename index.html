@@ -1619,6 +1619,52 @@ window.addEventListener('unhandledrejection',function(e){
       <div id="rules-list"></div>
     </div>
 
+    <!-- Create Rule Modal -->
+    <div class="modal-overlay" id="create-rule-modal" onclick="if(event.target === this) document.getElementById('create-rule-modal').style.display='none'">
+      <div class="modal-box" onclick="event.stopPropagation()">
+        <h3 style="margin-bottom:16px">Create New Rule</h3>
+        <div style="display:grid;gap:14px">
+          <div>
+            <label class="lbl">Merchant Name (e.g. "Woolworths")</label>
+            <input type="text" id="create-rule-merchant" placeholder="Enter merchant name" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem"/>
+          </div>
+          <div>
+            <label class="lbl">Pattern Type</label>
+            <div style="display:flex;gap:10px">
+              <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);cursor:pointer">
+                <input type="radio" name="create-rule-pattern" value="exact" checked/>
+                = Exact Match
+                <span style="font-size:.7rem;color:var(--muted)">woolworths matches only "woolworths"</span>
+              </label>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);cursor:pointer">
+                <input type="radio" name="create-rule-pattern" value="contains"/>
+                ◡ Contains
+                <span style="font-size:.7rem;color:var(--muted)">woolies matches "woolworths metro", etc</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="lbl">Category</label>
+            <select id="create-rule-category" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem" onchange="createRuleCategoryChanged()">
+              <option value="">— Select Category —</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Subcategory (optional)</label>
+            <select id="create-rule-subcat" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem">
+              <option value="">— None —</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:10px">
+            <button class="btn btn-primary btn-sm" onclick="createRuleSave()">Save Rule</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('create-rule-modal').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Bulk reprocess -->
     <div class="card">
       <div class="section-label" style="margin-bottom:3px">🤖 Bulk Auto-Categorise</div>
