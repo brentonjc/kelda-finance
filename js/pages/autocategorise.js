@@ -69,8 +69,8 @@ var AutoCat = (function() {
     { catId:'fitness', subcat:'Brenton Gym',       keywords:['gym','fitness first','anytime fitness','snap fitness','f45','crossfit','yoga','pilates','swimming lesson','swim','tennis','golf','squash','bowling','surf lesson','park run','half marathon','marathon registration','planet fitness','virgin active','goodlife'] },
 
     // INSURANCE & UTILITIES
-    { catId:'insurance_utilities', subcat:'Life & Income Insurance', keywords:['life insurance','term life','income protection','total permanent','tpd cover','tal ','zurich','aia insurance','onepath','clearview','asteron'] },
-    { catId:'insurance_utilities', subcat:'Mobile Phone Bills', keywords:['telstra','optus','vodafone','amaysim','kogan mobile','boost mobile','circles life','felix mobile','mobile plan','prepaid recharge','phone bill'] },
+    { catId:'insurance_utilities', subcat:'Life & Income Insurance', keywords:['life insurance','term life','income protection','total permanent','tpd cover','tal ','zurich','aia insurance','onepath','clearview','asteron','iia','prudential','suncorp insurance'] },
+    { catId:'insurance_utilities', subcat:'Mobile Phone Bills', keywords:['telstra','optus','vodafone','amaysim','kogan mobile','boost mobile','circles life','felix mobile','mobile plan','prepaid recharge','phone bill','mobile contract','sim card'] },
 
     // ENTERTAINMENT
     { catId:'entertainment', subcat:'Netflix',           keywords:['netflix','netflix.com'] },
@@ -87,7 +87,7 @@ var AutoCat = (function() {
 
     // SHOPPING
     { catId:'shopping', subcat:'Clothing & Shopping',  keywords:['cotton on','country road','david jones','myer','the iconic','h&m','zara','uniqlo','target','kmart','big w','bigw','bonds','lorna jane','rebel sport','city beach','glue store','factorie','jay jays','jeanswest','rivers','rockmans','autograph','millers','katies','crossroads','lowes','rivers clothing','kmart tyre','dress','shoe','shirt','pants'] },
-    { catId:'shopping', subcat:'Online Shopping',      keywords:['amazon','ebay','catch','catch.com','kogan','aliexpress','etsy','paypal purchase','afterpay','zip','zip pay','zippy','klarna','humm','laybuy','splitit','sezzle','bnpl','buy now pay later'] },
+    { catId:'shopping', subcat:'Online Shopping',      keywords:['amazon','ebay','catch','catch.com','kogan','aliexpress','etsy','paypal purchase','paypal.com','afterpay','zip','zip pay','zippy','klarna','humm','laybuy','splitit','sezzle','quadpay','bnpl','buy now pay later'] },
     { catId:'shopping', subcat:'Home Shopping',        keywords:['bunnings','mitre 10','total tools','bbqs galore','ikea','fantastic furniture','nick scali','amart furniture','harvey norman','jb hi-fi','jb hifi','the good guys','good guys','bing lee','officeworks','rebel','reject shop','bed mattress','appliance','furniture'] },
     { catId:'shopping', subcat:'Gifts',                keywords:['florist','flowers','balloon','gift shop','prezzy box','flower bouquet'] },
     { catId:'shopping', subcat:'Donations',            keywords:['st vincent','salvation army','red cross','oxfam','world vision','unicef','beyond blue','cancer council','heart foundation','smith family','lifeline','mission australia','rspca','wwf','amnesty','donate'] },
@@ -110,6 +110,11 @@ var AutoCat = (function() {
     { catId:'business', subcat:'Website and Digital', keywords:['adobe','microsoft 365','office 365','dropbox','notion','slack','zoom','google workspace','canva','figma','atlassian','github','aws','azure','digital ocean','cloudflare','godaddy','namecheap','domain registration'] },
     { catId:'business', subcat:'Education',        keywords:['udemy','coursera','linkedin learning','skillshare','masterclass','codecademy','pluralsight'] },
     { catId:'business', subcat:'Business Insurance', keywords:['accountant','accounting fee','tax agent','bas preparation','bookkeeper','solicitor','lawyer','legal fee','conveyancer','notary'] },
+
+    // CAPITAL GAINS & INVESTMENTS
+    { catId:'capital_gains', subcat:'Shares', keywords:['commsec','self-wealth','stake','interactive brokers','nabtrade','etoro','trading 212','stock purchase','share purchase'] },
+    { catId:'capital_gains', subcat:'Crypto', keywords:['coinbase','binance','kraken','btc','ethereum','crypto','bitcoin','doge','aave','uniswap','nft','defi','blockchain'] },
+    { catId:'capital_gains', subcat:'ETF', keywords:['vanguard','blackrock','ishares','etf purchase','index fund','managed fund','growth assets'] },
   ];
 
   // ── Transfer detection ───────────────────────────────────────
