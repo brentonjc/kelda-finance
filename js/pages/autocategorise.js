@@ -510,3 +510,29 @@ function acatUndoReprocess() {
     toast('↩️ Undo complete');
   }
 }
+
+// Smart Rules page — second reprocess button (delegates to same logic, different element IDs)
+function acatReprocess2() {
+  var btn    = document.getElementById('acat-reprocess-btn2');
+  var prog   = document.getElementById('acat-progress2');
+  var result = document.getElementById('acat-result2');
+  if (btn) btn.disabled = true;
+  if (prog) { prog.style.display = 'block'; prog.value = 0; }
+  if (result) result.innerHTML = '<span style="color:var(--muted)">Processing...</span>';
+
+  AutoCat.reprocess(
+    function(pct, changed) {
+      if (prog) prog.value = pct;
+      if (result) result.innerHTML = '<span style="color:var(--muted)">Processing... ' + pct + '% (' + changed + ' updated)</span>';
+    },
+    function(changed) {
+      if (btn) btn.disabled = false;
+      if (prog) prog.style.display = 'none';
+      if (result) result.innerHTML = '<span style="color:var(--success)">Done — ' + changed + ' transactions updated.</span>';
+      if (typeof renderTx === 'function') renderTx();
+      if (typeof renderDashboard === 'function') renderDashboard();
+      if (typeof renderRulesList === 'function') renderRulesList();
+      toast('✅ Reprocessed ' + changed + ' transactions');
+    }
+  );
+}

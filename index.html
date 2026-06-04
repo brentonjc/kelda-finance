@@ -380,6 +380,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Controls</li>
     <li><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
+    <li><a onclick="go('smartrules')" id="n-smartrules"><span class="ni">⚡</span><span class="nav-lbl">Smart Rules</span></a></li>
     <li><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
     <li><a onclick="go('settings')" id="n-settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></a></li>
   </ul>
@@ -1612,11 +1613,14 @@ window.addEventListener('unhandledrejection',function(e){
       <div id="cat-list"></div>
     </div>
 
-    <!-- Auto-assignment rules -->
-    <div class="card">
-      <div class="section-label" style="margin-bottom:3px">⚡ Auto-Assignment Rules</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Auto-assign categories to future transactions from the same merchant.</p>
-      <div id="rules-list"></div>
+    <!-- Smart Rules shortcut -->
+    <div class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="go('smartrules')">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(240,83,138,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">⚡</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:2px">Smart Rules</div>
+        <div style="font-size:.75rem;color:var(--muted)">Create and manage auto-categorisation rules for your merchants.</div>
+      </div>
+      <span style="color:var(--muted);font-size:1.1rem">›</span>
     </div>
 
     <!-- Create Rule Modal -->
@@ -1704,6 +1708,66 @@ window.addEventListener('unhandledrejection',function(e){
           <button class="btn btn-ghost btn-sm" onclick="runFixOrphaned()">🔧 Fix Now</button>
           <span id="fix-orphan-result" style="font-size:.8rem"></span>
         </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ SMART RULES ═══ -->
+  <div class="page" id="page-smartrules">
+    <div class="page-title">Smart Rules</div>
+    <div class="page-sub">Auto-assign categories to transactions based on merchant name. Rules run every time a new transaction is added or imported.</div>
+    <div id="how-to-smartrules"></div>
+
+    <!-- How it works explainer -->
+    <div class="card mb" style="background:linear-gradient(135deg,rgba(240,83,138,.08) 0%,rgba(129,140,248,.08) 100%);border-color:rgba(240,83,138,.2)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">⚡</div>
+          <div>
+            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Confirmed Rules</div>
+            <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Rules you create manually or confirm from suggestions. Highest priority — always applied first.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">🤖</div>
+          <div>
+            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Auto-Learned</div>
+            <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Patterns the app learns when you categorise transactions. Promoted to Confirmed with one click.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">= vs ◡</div>
+          <div>
+            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Exact vs Contains</div>
+            <div style="font-size:.75rem;color:var(--muted);line-height:1.5"><b>Exact</b> matches the precise merchant name. <b>Contains</b> matches any transaction whose name includes the keyword — great for chains with location suffixes.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">🔢</div>
+          <div>
+            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Priority order</div>
+            <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Transfers → Confirmed Rules → High-confidence Learned → Keywords → Low-confidence Learned → Amount signal.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules list -->
+    <div class="card">
+      <div id="rules-list"></div>
+    </div>
+
+    <!-- Create Rule Modal (shared with categories page) -->
+
+    <!-- Bulk reprocess (also accessible here) -->
+    <div class="card" style="margin-top:16px">
+      <div class="section-label" style="margin-bottom:3px">🤖 Bulk Auto-Categorise</div>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a confirmed rule.</p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" id="acat-reprocess-btn2" onclick="acatReprocess2()">▶ Run Now</button>
+        <progress id="acat-progress2" value="0" max="100" style="display:none;width:160px;height:8px"></progress>
+        <span id="acat-result2" style="font-size:.8rem"></span>
       </div>
     </div>
   </div>

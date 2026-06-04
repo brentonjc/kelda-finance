@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','export','forecast','transfers','equities','settings','health','quickstart'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','forecast','transfers','equities','settings','health','quickstart'];
 
 function go(id){
   PAGES.forEach(p=>{
@@ -61,6 +61,7 @@ function go(id){
     else if(id==='export')renderExportPage();
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
+    else if(id==='smartrules'){if(typeof renderRulesList==='function')renderRulesList();}
     else if(id==='transfers'){if(typeof renderTransfersPage==='function')renderTransfersPage();}
     else if(id==='forecast'){detectRecurring();renderForecast();if(typeof fc2SyncBalance==='function')fc2SyncBalance();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
@@ -75,7 +76,7 @@ function go(id){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['dashboard','insights','categories','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
+  var stPages=['dashboard','insights','categories','smartrules','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
   if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
 }
@@ -420,8 +421,14 @@ var _HOW_TO = {
   categories: { title:'Categories & Rules', items:[
     {icon:'📂', h:'Default categories', b:'The app comes with 16 expense categories and 83 subcategories spanning household, transport, health, entertainment and more. Customise as needed.'},
     {icon:'✏️', h:'Custom categories', b:'Create custom categories to match your spending. Edit name, icon, and colour. Delete unused categories anytime (archived transactions keep their assignment).'},
-    {icon:'🤖', h:'Auto-categorisation rules', b:'Create rules to auto-assign categories based on merchant keywords. E.g., "contains Woolies" → Groceries. Rules apply to new transactions matching the pattern.'},
+    {icon:'⚡', h:'Smart Rules', b:'Auto-categorisation rules live in their own Smart Rules tab. Head there to create Exact or Contains rules — e.g. "contains Woolies" → Groceries.'},
     {icon:'🔄', h:'Bulk recategorise', b:'Select multiple transactions in the list and reassign them to a new category in bulk. Useful for catching past transactions your rules didn\'t catch.'}
+  ]},
+  smartrules: { title:'Smart Rules', items:[
+    {icon:'⚡', h:'Confirmed Rules', b:'Rules you create or confirm manually. These have the highest priority and are always applied first. Use Exact match for specific merchants, Contains for chains like "Coles" that add location suffixes.'},
+    {icon:'🤖', h:'Auto-Learned patterns', b:'Every time you manually categorise a transaction, the app learns that merchant → category mapping. Once a merchant is seen 3+ times it gains high confidence. Promote any learned pattern to a confirmed rule with one click.'},
+    {icon:'= vs ◡', h:'Exact vs Contains matching', b:'Exact match: the cleaned merchant name must match precisely (case-insensitive). Contains match: the transaction name only needs to include your keyword — ideal for "Starbucks" matching "Starbucks Sydney CBD".'},
+    {icon:'🔢', h:'Rule priority order', b:'Transfers are detected first, then your Confirmed Rules, then high-confidence Learned patterns, then the built-in keyword database, then low-confidence learned patterns, and finally an amount signal as a last resort.'}
   ]},
   equities: { title:'Equities & Holdings', items:[
     {icon:'📈', h:'Add a holding', b:'Enter the ticker (ASX code), quantity, cost base ($/share) and purchase date. The app calculates current value using current price data.'},
