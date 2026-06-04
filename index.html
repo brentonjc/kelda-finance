@@ -1665,6 +1665,29 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
+    <!-- Bank Category Comparison -->
+    <div class="card mb" id="bank-comparison-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="toggleBankComparison()">
+        <div>
+          <div class="section-label" style="margin:0">🏦 Australian Bank Category Comparison</div>
+          <p style="font-size:.76rem;color:var(--muted);margin:4px 0 0">See how Kelda categories map to CBA, Westpac, NAB, ANZ, Macquarie, Up Bank, Amex &amp; HEM.</p>
+        </div>
+        <span id="bank-cmp-chevron" style="font-size:1.1rem;color:var(--muted);transition:transform .2s">▼</span>
+      </div>
+      <div id="bank-comparison-body" style="display:none;margin-top:16px">
+        <!-- Bank filter pills -->
+        <div id="bank-filter-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+        <!-- Table -->
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <div id="bank-cmp-table"></div>
+        </div>
+        <p style="font-size:.68rem;color:var(--muted);margin-top:12px">
+          ✦ Kelda categories are a superset — some granular distinctions (e.g. Pets, Tax) don't appear in every bank's taxonomy.<br>
+          ✦ HEM = Australian Bureau of Statistics Household Expenditure Measure (12 primary categories).
+        </p>
+      </div>
+    </div>
+
     <!-- Bulk reprocess -->
     <div class="card">
       <div class="section-label" style="margin-bottom:3px">🤖 Bulk Auto-Categorise</div>

@@ -1,7 +1,17 @@
-import http.server, os
+import http.server, os, socketserver
+
 os.chdir('/Users/brentoncharnley/Documents/Claude/PFM App')
+PORT = 8080
+Handler = http.server.SimpleHTTPRequestHandler
+Handler.extensions_map.update({
+    '.js':   'application/javascript',
+    '.css':  'text/css',
+    '.json': 'application/json',
+    '.html': 'text/html',
+    '.webmanifest': 'application/manifest+json',
+})
 print('Kelda Finance running at:')
-print('  Local:   http://localhost:8080')
-print('  Network: http://192.168.1.97:8080')
+print('  Local:   http://localhost:' + str(PORT))
 print('Press Ctrl+C to stop.')
-http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=8080, bind='0.0.0.0')
+with socketserver.TCPServer(('', PORT), Handler) as httpd:
+    httpd.serve_forever()

@@ -1225,4 +1225,131 @@ function resetDefaultCategories() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// BANK CATEGORY COMPARISON  (Phase 7)
+// ══════════════════════════════════════════════════════════════
+
+// Mapping data: Kelda category → equivalents in each bank + HEM
+// Blank string = not a distinct category in that bank
+var _BANK_MAP = [
+  // catId, kelda label,  CBA,                        Westpac,                NAB,                  ANZ,                  Macquarie,            Up Bank,              Amex,                 HEM
+  ['home',             '🏠 Home',              'Home & Property',         'Home',                 'Home',               'Home',               'Home',               'Home',               'Home',               '04 Housing'],
+  ['car_transport',    '🚗 Car & Transport',   'Transport',               'Transport',            'Transport',          'Transport',          'Transport',          'Transport',          'Transport',          '08 Transport'],
+  ['health_beauty',    '❤ Health & Beauty',    'Health & Personal Care',  'Health & Beauty',      'Health',             'Health',             'Health & Beauty',    'Health & Medical',   'Health',             '07 Health'],
+  ['fitness',          '🏋 Fitness',           'Health & Personal Care',  'Health & Fitness',     'Health',             'Health',             'Health & Beauty',    'Fitness',            'Health',             '07 Health'],
+  ['food_eating_out',  '🍽 Food & Eating Out', 'Groceries + Dining',      'Groceries + Dining',   'Food',               'Food & Drink',       'Food & Drink',       'Groceries + Eating Out', 'Supermarkets + Dining', '01 Food & Non-alcoholic Beverages'],
+  ['children',         '👶 Children',          'Family',                  'Family',               'Family',             'Family',             '—',                  'Family & Children',  '—',                  '10 Education (partial)'],
+  ['pippen',           '🐾 Pets',              'Animals & Pets',          'Pets',                 'Personal',           'Personal',           '—',                  'Pets',               '—',                  '09 Recreation (partial)'],
+  ['insurance_utilities','🛡 Insurance',       'Insurance',               'Insurance',            'Insurance',          'Insurance',          'Insurance',          '—',                  'Insurance',          '12 Insurance & Financial Services'],
+  ['utilities',        '💡 Utilities',         'Home & Utilities',        'Bills & Payments',     'Bills',              'Bills & Utilities',  'Bills',              'Bills & Utilities',  '—',                  '05 Household Utilities'],
+  ['tax',              '🧾 Tax Payments',      'Taxes',                   '—',                    'Tax',                '—',                  'Tax',                '—',                  '—',                  '12 Insurance & Financial Services'],
+  ['entertainment',    '🎬 Entertainment',     'Entertainment',           'Entertainment',        'Entertainment',      'Entertainment',      'Entertainment',      'Entertainment',      'Entertainment',      '09 Recreation & Culture'],
+  ['holidays_travel',  '✈ Holidays & Travel',  'Travel',                  'Travel',               'Travel',             'Travel',             'Travel',             'Travel',             'Travel',             '09 Recreation & Culture'],
+  ['shopping',         '🛍 Shopping',          'Shopping',                'Shopping',             'Shopping',           'Shopping',          'Shopping',            'Shopping',           'Shopping',           '03 Clothing & Footwear (partial)'],
+  ['business',         '💼 Business',          'Business',                'Business',             'Business',           'Business',           'Business',           '—',                  'Business',           '12 Insurance & Financial Services'],
+  ['salary',           '💰 Salary',            'Income',                  'Income',               'Income',             'Income',             'Income',             'Income',             'Income',             '— (Income)'],
+  ['bonus',            '🎁 Bonus',             'Income',                  'Income',               'Income',             'Income',             'Income',             'Income',             'Income',             '— (Income)'],
+  ['interest',         '🏦 Interest',          'Savings & Investments',   'Savings',              'Investment',         'Investment',         'Investment',         '—',                  '—',                  '— (Income)'],
+  ['capital_gains',    '📈 Capital Gains',     'Savings & Investments',   'Investments',          'Investment',         'Investment',         'Investment',         'Investment',         '—',                  '— (Income)'],
+  ['transfers',        '🔄 Transfers',         'Transfers',               'Transfers',            'Transfers',          'Transfers',          'Transfers',          'Transfers',          'Transfers',          '— (Transfer)'],
+  ['other',            '📋 Other',             'Uncategorised',           'Other',                'Uncategorised',      'Uncategorised',      'Other',              'Uncategorised',      'Other',              '— (Other)'],
+];
+
+var _BANKS = ['All', 'CBA', 'Westpac', 'NAB', 'ANZ', 'Macquarie', 'Up Bank', 'Amex', 'HEM'];
+var _BANK_COLORS = {
+  'CBA':      { bg:'#ffed99', text:'#5a4500', dark_bg:'rgba(255,220,50,.18)', dark_text:'#f0c840' },
+  'Westpac':  { bg:'#d0e8ff', text:'#003a7a', dark_bg:'rgba(50,120,255,.15)', dark_text:'#70b0ff' },
+  'NAB':      { bg:'#ffe0d0', text:'#7a2000', dark_bg:'rgba(220,80,20,.15)',  dark_text:'#ff9060' },
+  'ANZ':      { bg:'#d0ffec', text:'#005a30', dark_bg:'rgba(0,180,100,.15)',  dark_text:'#40d090' },
+  'Macquarie':{ bg:'#ede0ff', text:'#3a0070', dark_bg:'rgba(120,60,220,.15)', dark_text:'#b080ff' },
+  'Up Bank':  { bg:'#ffddf5', text:'#6a0040', dark_bg:'rgba(220,50,160,.15)', dark_text:'#ff80cc' },
+  'Amex':     { bg:'#e0f0ff', text:'#003060', dark_bg:'rgba(0,80,180,.15)',   dark_text:'#6ab0ff' },
+  'HEM':      { bg:'#f0f0f0', text:'#404040', dark_bg:'rgba(180,180,180,.15)','dark_text':'#b0b0b0' },
+};
+// Column indices in _BANK_MAP row (0=catId, 1=label, 2=CBA…9=HEM)
+var _BANK_COL = { 'CBA':2,'Westpac':3,'NAB':4,'ANZ':5,'Macquarie':6,'Up Bank':7,'Amex':8,'HEM':9 };
+
+var _bankCmpOpen    = false;
+var _bankCmpFilter  = 'All';
+
+function toggleBankComparison() {
+  _bankCmpOpen = !_bankCmpOpen;
+  var body     = document.getElementById('bank-comparison-body');
+  var chevron  = document.getElementById('bank-cmp-chevron');
+  if (!body) return;
+  body.style.display = _bankCmpOpen ? 'block' : 'none';
+  if (chevron) chevron.style.transform = _bankCmpOpen ? 'rotate(180deg)' : '';
+  if (_bankCmpOpen) renderBankComparison();
+}
+
+function setBankFilter(bank) {
+  _bankCmpFilter = bank;
+  // Update pill styles
+  var pills = document.querySelectorAll('.bank-filter-pill');
+  pills.forEach(function(p) {
+    var active = p.dataset.bank === bank;
+    p.style.background   = active ? 'var(--primary)' : 'var(--card2)';
+    p.style.color        = active ? '#fff' : 'var(--muted)';
+    p.style.borderColor  = active ? 'var(--primary)' : 'var(--border)';
+  });
+  renderBankComparison();
+}
+
+function renderBankComparison() {
+  var pillsEl = document.getElementById('bank-filter-pills');
+  var tableEl = document.getElementById('bank-cmp-table');
+  if (!pillsEl || !tableEl) return;
+
+  // Pills
+  pillsEl.innerHTML = _BANKS.map(function(b) {
+    var active = b === _bankCmpFilter;
+    return '<button class="bank-filter-pill" data-bank="' + b + '" onclick="setBankFilter(\'' + b + '\')" '
+      + 'style="font-size:.72rem;padding:4px 12px;border-radius:99px;border:1px solid '
+      + (active ? 'var(--primary)' : 'var(--border)') + ';background:'
+      + (active ? 'var(--primary)' : 'var(--card2)') + ';color:'
+      + (active ? '#fff' : 'var(--muted)') + ';cursor:pointer;font-weight:600;white-space:nowrap">'
+      + b + '</button>';
+  }).join('');
+
+  // Determine columns to show
+  var showAll    = (_bankCmpFilter === 'All');
+  var bankCols   = showAll
+    ? Object.keys(_BANK_COL)
+    : (_BANK_COL[_bankCmpFilter] !== undefined ? [_bankCmpFilter] : []);
+
+  if (!bankCols.length) { tableEl.innerHTML = ''; return; }
+
+  var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+  // Table header
+  var headerCells = '<th style="text-align:left;padding:8px 12px 8px 0;font-size:.72rem;color:var(--muted);font-weight:700;white-space:nowrap">Kelda Category</th>';
+  bankCols.forEach(function(b) {
+    var c = _BANK_COLORS[b] || {};
+    var bg   = isDark ? (c.dark_bg   || 'rgba(180,180,180,.1)')  : (c.bg   || '#f0f0f0');
+    var col  = isDark ? (c.dark_text || 'var(--muted)')           : (c.text || '#444');
+    headerCells += '<th style="text-align:left;padding:8px 10px;font-size:.72rem;font-weight:700;'
+      + 'background:' + bg + ';color:' + col + ';border-radius:6px 6px 0 0;white-space:nowrap">'
+      + b + '</th>';
+  });
+
+  // Table rows
+  var rows = _BANK_MAP.map(function(row) {
+    var cells = '<td style="padding:7px 12px 7px 0;font-size:.8rem;font-weight:600;white-space:nowrap;color:var(--text)">'
+      + row[1] + '</td>';
+    bankCols.forEach(function(b) {
+      var idx = _BANK_COL[b];
+      var val = idx !== undefined ? (row[idx] || '—') : '—';
+      var isEmpty = val === '—';
+      cells += '<td style="padding:7px 10px;font-size:.78rem;color:' + (isEmpty ? 'var(--muted)' : 'var(--text)') + ';border-bottom:1px solid var(--border)">'
+        + val + '</td>';
+    });
+    return '<tr>' + cells + '</tr>';
+  }).join('');
+
+  tableEl.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>' + headerCells + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table>';
+}
+
+// ══════════════════════════════════════════════════════════════
 // TRANSACTION BAR CHART
