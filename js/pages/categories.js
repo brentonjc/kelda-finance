@@ -64,6 +64,9 @@ var _SUBCAT_FULL_MAP = {
   'car insurance & membership':       { catId:'insurance_utilities', subcat:'Car Insurance' },
   'car insurance':                    { catId:'insurance_utilities', subcat:'Car Insurance' },
 
+  // ── Food & Eating Out — v10 renames ──────────────────────────
+  'activate food and meals':          { catId:'food_eating_out',     subcat:'Meal Delivery' },
+
   // ── Food & Eating Out — subcat renames (stay in category) ───
   'supermarket':                    { catId:'food_eating_out', subcat:'Groceries' },
   'butcher':                        { catId:'food_eating_out', subcat:'Groceries' },
