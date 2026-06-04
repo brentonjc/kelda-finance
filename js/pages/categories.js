@@ -53,6 +53,17 @@ var _LEGACY_CAT_MAP = {
 // Applied to ALL transactions regardless of current category.
 // If catId matches current and subcat matches current, it's a no-op.
 var _SUBCAT_FULL_MAP = {
+  // ── Fitness — v9 renames ──────────────────────────────────────
+  'brenton gym':                      { catId:'fitness',             subcat:'Gym Memberships' },
+  'shelley gym':                      { catId:'fitness',             subcat:'Gym Memberships' },
+  'brenton personal training':        { catId:'fitness',             subcat:'Personal Training' },
+  'shelley personal training':        { catId:'fitness',             subcat:'Personal Training' },
+
+  // ── Insurance — v9 moves ──────────────────────────────────────
+  'ring insurance':                   { catId:'insurance_utilities', subcat:'Other Insurance' },
+  'car insurance & membership':       { catId:'insurance_utilities', subcat:'Car Insurance' },
+  'car insurance':                    { catId:'insurance_utilities', subcat:'Car Insurance' },
+
   // ── Food & Eating Out — subcat renames (stay in category) ───
   'supermarket':                    { catId:'food_eating_out', subcat:'Groceries' },
   'butcher':                        { catId:'food_eating_out', subcat:'Groceries' },
