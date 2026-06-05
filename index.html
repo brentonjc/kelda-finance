@@ -402,18 +402,18 @@ window.addEventListener('unhandledrejection',function(e){
       <div>
         <label class="lbl">Match Type</label>
         <div style="display:grid;gap:8px;margin-top:4px">
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card2);overflow:hidden" id="pattern-exact-label">
-            <input type="radio" name="create-rule-pattern" value="exact" checked style="width:auto;flex-shrink:0;margin-top:3px" onchange="updatePatternLabels()"/>
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:11px 14px;border:2px solid var(--primary);border-radius:10px;background:rgba(240,83,138,.1);overflow:hidden;transition:all .15s" id="pattern-exact-label" onclick="updatePatternLabels()">
+            <input type="radio" name="create-rule-pattern" value="exact" checked style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)"/>
             <div style="min-width:0">
-              <div style="font-weight:600;font-size:.85rem">= Exact Match</div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Merchant name must match exactly (case-insensitive)</div>
+              <div style="font-weight:700;font-size:.85rem;color:var(--primary)">=&nbsp;Exact Match</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Name must match exactly — case-insensitive</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card2);overflow:hidden" id="pattern-contains-label">
-            <input type="radio" name="create-rule-pattern" value="contains" style="width:auto;flex-shrink:0;margin-top:3px" onchange="updatePatternLabels()"/>
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:11px 14px;border:2px solid var(--border);border-radius:10px;background:var(--card2);overflow:hidden;transition:all .15s" id="pattern-contains-label" onclick="updatePatternLabels()">
+            <input type="radio" name="create-rule-pattern" value="contains" style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)"/>
             <div style="min-width:0">
-              <div style="font-weight:600;font-size:.85rem">◡ Contains</div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Transaction name only needs to include the keyword — good for chains like "Coles Metro"</div>
+              <div style="font-weight:700;font-size:.85rem;color:var(--muted)">◡&nbsp;Contains</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Name only needs to include the keyword — good for chains like "Coles Metro"</div>
             </div>
           </label>
         </div>

@@ -1039,19 +1039,25 @@ function updateBannerPatternLabels() {
 }
 
 function updatePatternLabels() {
-  // For the create-rule modal's pattern cards
-  var sel = document.querySelector('input[name="create-rule-pattern"]:checked');
-  var pattern = sel ? sel.value : 'exact';
-  var exactEl = document.getElementById('pattern-exact-label');
-  var containsEl = document.getElementById('pattern-contains-label');
-  if (exactEl) {
-    exactEl.style.borderColor = pattern === 'exact' ? 'var(--primary)' : 'var(--border)';
-    exactEl.style.background  = pattern === 'exact' ? 'rgba(240,83,138,.08)' : 'var(--card2)';
-  }
-  if (containsEl) {
-    containsEl.style.borderColor = pattern === 'contains' ? 'var(--primary)' : 'var(--border)';
-    containsEl.style.background  = pattern === 'contains' ? 'rgba(240,83,138,.08)' : 'var(--card2)';
-  }
+  // Defer one tick so the radio is already checked when we read it
+  setTimeout(function() {
+    var sel = document.querySelector('input[name="create-rule-pattern"]:checked');
+    var pattern = sel ? sel.value : 'exact';
+    var exactEl    = document.getElementById('pattern-exact-label');
+    var containsEl = document.getElementById('pattern-contains-label');
+
+    function applyCard(el, active) {
+      if (!el) return;
+      el.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
+      el.style.borderWidth  = '2px';
+      el.style.background   = active ? 'rgba(240,83,138,.1)' : 'var(--card2)';
+      var title = el.querySelector('div > div:first-child');
+      if (title) title.style.color = active ? 'var(--primary)' : 'var(--muted)';
+    }
+
+    applyCard(exactEl,    pattern === 'exact');
+    applyCard(containsEl, pattern === 'contains');
+  }, 0);
 }
 
 function dismissRuleBanner() {
