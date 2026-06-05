@@ -361,7 +361,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">💰</span>Save</li>
     <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
-    <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Cash Tracker</span></a></li>
+    <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Accounts</span></a></li>
     <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Assets</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏦</span>Borrow</li>
@@ -1036,7 +1036,7 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 
   <div class="page" id="page-cash">
-    <div class="page-title">Cash Balance Tracker</div>
+    <div class="page-title">Accounts</div>
     <div class="page-sub">Record your account closing balances each month — update any time, not just month-end</div>
 
     <!-- How to use explainer -->
@@ -1085,29 +1085,72 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <!-- Account label config (legacy, still useful for quick rename) -->
-    <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        <div class="section-label" style="margin:0">Account Labels</div>
-        <a href="#" onclick="go('settings');return false;" style="font-size:.74rem;color:var(--primary);font-weight:600;text-decoration:none">Manage in Settings →</a>
+
+    <!-- Add Account / manage bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <div id="ct-account-count" style="font-size:.78rem;color:var(--muted)"></div>
+      <button class="btn btn-primary btn-sm" onclick="ctShowAddAccountForm()" id="ct-add-acct-btn">+ Add Account</button>
+    </div>
+
+    <!-- Inline add-account form (hidden by default) -->
+    <div id="ct-add-acct-form" class="card mb" style="display:none">
+      <div class="section-label" style="margin-bottom:14px">New Account</div>
+      <div class="form-grid" style="grid-template-columns:56px 1fr;margin-bottom:10px">
+        <div><label class="lbl">Icon</label><input type="text" id="ct-new-icon" value="🏦" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>
+        <div><label class="lbl">Nickname</label><input type="text" id="ct-new-name" placeholder="e.g. Everyday Account" style="font-size:16px"/></div>
       </div>
-      <div class="form-grid">
-        <div><label class="lbl">Offset Label</label><input type="text" id="ct-offset-lbl" placeholder="Offset Account" oninput="saveCTConfig()"/></div>
-        <div><label class="lbl">Home Transaction Label</label><input type="text" id="ct-home-lbl" placeholder="Home Transaction" oninput="saveCTConfig()"/></div>
-        <div><label class="lbl">Profile 1 Savings Label</label><input type="text" id="ct-sav1-lbl" placeholder="Savings Account 1" oninput="saveCTConfig()"/></div>
-        <div><label class="lbl">Profile 2 Savings Label</label><input type="text" id="ct-sav2-lbl" placeholder="Savings Account 2" oninput="saveCTConfig()"/></div>
+      <div class="form-grid" style="margin-bottom:10px">
+        <div>
+          <label class="lbl">Bank</label>
+          <select id="ct-new-bank" style="width:100%;box-sizing:border-box">
+            <option value="">— Select Bank —</option>
+            <option value="CBA">Commonwealth Bank (CBA)</option>
+            <option value="Westpac">Westpac</option>
+            <option value="NAB">NAB</option>
+            <option value="ANZ">ANZ</option>
+            <option value="Macquarie">Macquarie Bank</option>
+            <option value="St George">St George Bank</option>
+            <option value="Bank of Melbourne">Bank of Melbourne</option>
+            <option value="BankSA">BankSA</option>
+            <option value="ING">ING Australia</option>
+            <option value="Bendigo">Bendigo Bank</option>
+            <option value="Suncorp">Suncorp Bank</option>
+            <option value="BOQ">Bank of Queensland (BOQ)</option>
+            <option value="HSBC">HSBC Australia</option>
+            <option value="Citibank">Citibank Australia</option>
+            <option value="ME Bank">ME Bank</option>
+            <option value="AMP">AMP Bank</option>
+            <option value="Ubank">Ubank</option>
+            <option value="Up Bank">Up Bank</option>
+            <option value="Revolut">Revolut</option>
+            <option value="Wise">Wise</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Account Type</label>
+          <select id="ct-new-acct-type" style="width:100%;box-sizing:border-box">
+            <option value="">— Select Type —</option>
+            <option value="Everyday">Everyday / Transaction</option>
+            <option value="Savings">Savings</option>
+            <option value="Offset">Offset</option>
+            <option value="Investment">Investment</option>
+            <option value="Term Deposit">Term Deposit</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" onclick="ctAddAccount()">Add Account</button>
+        <button class="btn btn-ghost btn-sm" onclick="ctHideAddAccountForm()">Cancel</button>
       </div>
     </div>
 
     <div class="g4 mb" id="ct-summary"></div>
 
     <!-- Account cards — built dynamically by renderCashTracker() -->
-    <div id="ct-accts-container">
-      <div id="ct-acct-offset" class="acct-card"></div>
-      <div id="ct-acct-home" class="acct-card"></div>
-      <div id="ct-acct-sav1" class="acct-card"></div>
-      <div id="ct-acct-sav2" class="acct-card"></div>
-    </div>
+    <div id="ct-accts-container"></div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div class="section-label" style="margin:0">📈 Combined Balances Over Time</div>

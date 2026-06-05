@@ -117,9 +117,55 @@ function ctAddMonth(id) {
   toast('✅ Saved');
 }
 
+// ── Add / delete accounts directly from the Accounts page ────
+function ctShowAddAccountForm() {
+  var form = document.getElementById('ct-add-acct-form');
+  if (form) { form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+function ctHideAddAccountForm() {
+  var form = document.getElementById('ct-add-acct-form');
+  if (form) form.style.display = 'none';
+}
+function ctAddAccount() {
+  if (ACCOUNTS.length >= 8) { toast('Maximum 8 accounts reached'); return; }
+  var name = (document.getElementById('ct-new-name') || {}).value.trim();
+  if (!name) { toast('Please enter an account name'); return; }
+  var icon = ((document.getElementById('ct-new-icon') || {}).value || '').trim() || '🏦';
+  var bank = (document.getElementById('ct-new-bank') || {}).value || '';
+  var type = (document.getElementById('ct-new-acct-type') || {}).value || '';
+  var newId = 'acct_' + Date.now().toString(36);
+  ACCOUNTS.push({ id:newId, name:name, icon:icon, currency:'AUD', bank:bank, acctType:type, location:'Australia', color:'#818CF8', isCore:false });
+  try { save(K.accounts, ACCOUNTS); } catch(e) {}
+  ctHideAddAccountForm();
+  renderCashTracker();
+  toast('✅ Account added — ' + name);
+}
+function ctDeleteAccount(id) {
+  var a = ACCOUNTS.find(function(x){ return x.id === id; });
+  if (!a) return;
+  if (a.isCore) { toast('⚠️ Core accounts cannot be deleted here — manage in Settings'); return; }
+  if (!confirm('Delete "' + a.name + '"?\nBalance data for this account will also be removed.')) return;
+  // Remove balance data for this account
+  for (var month in CT) {
+    if (CT[month] && CT[month][id] !== undefined) delete CT[month][id];
+  }
+  try { save(K.ct, CT); } catch(e) {}
+  ACCOUNTS = ACCOUNTS.filter(function(x){ return x.id !== id; });
+  try { save(K.accounts, ACCOUNTS); } catch(e) {}
+  renderCashTracker();
+  toast('🗑️ Account deleted — ' + a.name);
+}
+
 function renderCashTracker() {
   // Rebuild CT_ACCTS from ACCOUNTS in case accounts were added/removed in Settings
   CT_ACCTS = _buildCTAccts();
+
+  // Update account count display
+  var countEl = document.getElementById('ct-account-count');
+  if (countEl) countEl.textContent = CT_ACCTS.length + ' account' + (CT_ACCTS.length !== 1 ? 's' : '');
+  // Hide add button if at limit
+  var addBtn = document.getElementById('ct-add-acct-btn');
+  if (addBtn) addBtn.style.display = ACCOUNTS.length >= 8 ? 'none' : '';
 
   // Config fields (legacy labels — still sync for backward compat)
   var cfg = CTCFG;
@@ -201,18 +247,27 @@ function ctRenderAcct(a) {
     }
   }
 
-  // Owner label
+  // Owner label / bank subtitle
+  var acctObj = ACCOUNTS.find(function(x){ return x.id === a.id; }) || {};
+  var bankLabel = acctObj.bank ? acctObj.bank : '';
   var ownerLbl = a.id === 'sav1' ? getUserName('brenton')
                : a.id === 'sav2' ? getUserName('shelley')
                : (a.owner === 'shared' ? 'Shared' : (a.owner || 'Shared'));
+  var subLine = [bankLabel, ownerLbl].filter(Boolean).join(' · ');
+
+  // Delete button — only for non-core custom accounts
+  var deleteBtn = (!acctObj.isCore && acctObj.id)
+    ? '<button onclick="ctDeleteAccount(\'' + a.id + '\')" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:rgba(255,255,255,.5);font-size:.8rem;line-height:1;flex-shrink:0" title="Delete account">🗑</button>'
+    : '';
 
   el.innerHTML = '<div class="acct-hd" style="background:' + a.light + '">'
     + '<div class="acct-ic" style="background:' + a.color + '">' + a.icon + '</div>'
-    + '<div class="acct-meta">'
+    + '<div class="acct-meta" style="flex:1;min-width:0">'
     + '<div class="acct-title" style="color:' + a.color + '">' + label + '</div>'
-    + '<div class="acct-sub" style="color:' + a.color + '">' + ownerLbl + '</div>'
+    + '<div class="acct-sub" style="color:' + a.color + '">' + subLine + '</div>'
     + '</div>'
     + '<div class="acct-total" style="color:' + a.color + '">' + fmt(latest) + '</div>'
+    + deleteBtn
     + '</div>'
     + '<div class="acct-body">' + rows
     + '<div class="add-mo-row">'

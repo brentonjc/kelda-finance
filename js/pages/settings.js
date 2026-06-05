@@ -229,6 +229,13 @@ function settingsSaveProfiles() {
 // ── Account management helpers ───────────────────────────────
 var _CURRENCIES = ['AUD','USD','GBP','EUR','NZD','SGD','HKD','JPY','CAD','CHF'];
 var _LOCATIONS  = ['Australia','New Zealand','United States','United Kingdom','Europe','Asia','Singapore','Canada','Other'];
+var _AU_BANKS   = [
+  '','Commonwealth Bank (CBA)','Westpac','NAB','ANZ','Macquarie Bank',
+  'St George Bank','Bank of Melbourne','BankSA','ING Australia',
+  'Bendigo Bank','Suncorp Bank','Bank of Queensland (BOQ)',
+  'HSBC Australia','Citibank Australia','ME Bank','AMP Bank',
+  'Ubank','Up Bank','Revolut','Wise','Other'
+];
 
 function _settAcctCurrSel(cur) {
   var html = '<select id="sett-acct-cur">';
@@ -263,16 +270,33 @@ function _settAcctLocSelFor(id, loc) {
   return html;
 }
 
+function _settAcctBankSel(selId, bank) {
+  var html = '<select id="' + selId + '" style="width:100%;box-sizing:border-box">';
+  var labels = ['— No Bank —','Commonwealth Bank (CBA)','Westpac','NAB','ANZ','Macquarie Bank',
+    'St George Bank','Bank of Melbourne','BankSA','ING Australia','Bendigo Bank',
+    'Suncorp Bank','Bank of Queensland (BOQ)','HSBC Australia','Citibank Australia',
+    'ME Bank','AMP Bank','Ubank','Up Bank','Revolut','Wise','Other'];
+  var vals = ['','CBA','Westpac','NAB','ANZ','Macquarie','St George','Bank of Melbourne',
+    'BankSA','ING','Bendigo','Suncorp','BOQ','HSBC','Citibank','ME Bank',
+    'AMP','Ubank','Up Bank','Revolut','Wise','Other'];
+  for (var i = 0; i < labels.length; i++) {
+    html += '<option value="' + vals[i] + '"' + (vals[i] === bank ? ' selected' : '') + '>' + labels[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+
 function _settAcctsList() {
   if (!ACCOUNTS || !ACCOUNTS.length) return '<p style="color:var(--muted);font-size:.82rem">No accounts yet.</p>';
   var html = '';
   for (var i = 0; i < ACCOUNTS.length; i++) {
     var a = ACCOUNTS[i];
+    var meta = (a.currency || 'AUD') + (a.bank ? ' &middot; ' + _settEsc(a.bank) : '') + (a.isCore ? '' : ' &middot; <span style="color:var(--muted);font-size:.68rem">Custom</span>');
     html += '<div class="sett-acct-row" id="sett-acct-row-' + _settEsc(a.id) + '">'
       + '<div class="sett-acct-icon">' + (a.icon || '🏦') + '</div>'
       + '<div class="sett-acct-info">'
       + '<div class="sett-acct-name">' + _settEsc(a.name) + '</div>'
-      + '<div class="sett-acct-meta">' + (a.currency || 'AUD') + ' &middot; ' + (a.location || 'Australia') + (a.isCore ? '' : ' &middot; <span style="color:var(--muted);font-size:.68rem">Custom</span>') + '</div>'
+      + '<div class="sett-acct-meta">' + meta + '</div>'
       + '</div>'
       + '<div class="sett-acct-actions">'
       + '<button class="btn btn-ghost btn-sm" onclick="settAcctEdit(\'' + _settEsc(a.id) + '\')">Edit</button>'
@@ -290,9 +314,9 @@ function _settAcctAddForm() {
     + '<div><label class="lbl">Icon</label><input type="text" id="sett-acct-new-icon" value="🏦" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>'
     + '<div><label class="lbl">Nickname</label><input type="text" id="sett-acct-new-name" placeholder="e.g. US Investment Account" style="font-size:16px"/></div>'
     + '</div>'
-    + '<div class="form-grid">'
+    + '<div class="form-grid" style="margin-top:8px">'
+    + '<div><label class="lbl">Bank</label>' + _settAcctBankSel('sett-acct-bank', '') + '</div>'
     + '<div><label class="lbl">Currency</label>' + _settAcctCurrSel('AUD') + '</div>'
-    + '<div><label class="lbl">Country / Region</label>' + _settAcctLocSel('Australia') + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:4px">'
     + '<button class="btn btn-primary btn-sm" onclick="settAcctAdd()">Add Account</button>'
@@ -316,9 +340,9 @@ function settAcctAdd() {
   if (!name) { toast('Please enter an account nickname'); return; }
   var icon = (document.getElementById('sett-acct-new-icon') || {}).value.trim() || '🏦';
   var cur  = (document.getElementById('sett-acct-cur') || {}).value || 'AUD';
-  var loc  = (document.getElementById('sett-acct-loc') || {}).value || 'Australia';
+  var bank = (document.getElementById('sett-acct-bank') || {}).value || '';
   var newId = 'acct_' + Date.now().toString(36);
-  ACCOUNTS.push({ id:newId, name:name, icon:icon, currency:cur, location:loc, color:'#818CF8', isCore:false });
+  ACCOUNTS.push({ id:newId, name:name, icon:icon, currency:cur, bank:bank, location:'Australia', color:'#818CF8', isCore:false });
   save(K.accounts, ACCOUNTS);
   _settAcctsRefresh();
   settAcctCancelAdd();
@@ -336,9 +360,9 @@ function settAcctEdit(id) {
     + '<div><label class="lbl">Icon</label><input type="text" id="sett-edit-icon-' + _settEsc(id) + '" value="' + _settEsc(a.icon||'🏦') + '" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>'
     + '<div><label class="lbl">Nickname</label><input type="text" id="sett-edit-name-' + _settEsc(id) + '" value="' + _settEsc(a.name) + '" placeholder="Account nickname" style="font-size:16px"/></div>'
     + '</div>'
-    + '<div class="form-grid">'
+    + '<div class="form-grid" style="margin-top:8px">'
+    + '<div><label class="lbl">Bank</label>' + _settAcctBankSel('sett-acct-bank-' + _settEsc(id), a.bank||'') + '</div>'
     + '<div><label class="lbl">Currency</label>' + _settAcctCurrSelFor(id, a.currency||'AUD') + '</div>'
-    + '<div><label class="lbl">Country / Region</label>' + _settAcctLocSelFor(id, a.location||'Australia') + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:4px">'
     + '<button class="btn btn-primary btn-sm" onclick="settAcctSave(\'' + _settEsc(id) + '\')">Save</button>'
@@ -353,11 +377,11 @@ function settAcctSave(id) {
   var nameEl = document.getElementById('sett-edit-name-' + id);
   var iconEl = document.getElementById('sett-edit-icon-' + id);
   var curEl  = document.getElementById('sett-acct-cur-' + id);
-  var locEl  = document.getElementById('sett-acct-loc-' + id);
+  var bankEl = document.getElementById('sett-acct-bank-' + id);
   if (nameEl) a.name = nameEl.value.trim() || a.name;
   if (iconEl) a.icon = iconEl.value.trim() || a.icon;
   if (curEl)  a.currency = curEl.value;
-  if (locEl)  a.location = locEl.value;
+  if (bankEl) a.bank = bankEl.value;
   save(K.accounts, ACCOUNTS);
   // Keep USER_CONFIG in sync for core accounts
   if (a.isCore) {
