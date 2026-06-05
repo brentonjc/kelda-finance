@@ -331,7 +331,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .tx-check{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;}
 
 /* ══ AUTO-RULE BANNER ══ */
-.rule-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#1a2a1a;border:1px solid #1a4a1a;border-radius:9px;margin-bottom:12px;font-size:.8rem;animation:fadeUp .2s ease;}
+.rule-banner{padding:14px 16px;background:#1a2a1a;border:1px solid rgba(0,200,150,.25);border-radius:12px;margin-bottom:12px;font-size:.8rem;animation:fadeUp .2s ease;}
 .rule-banner strong{color:var(--success);}
 
 /* ══ FORECAST ══ */

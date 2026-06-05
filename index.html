@@ -389,6 +389,55 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 </nav>
 
+<!-- ═══ CREATE RULE MODAL (global — accessible from any page) ═══ -->
+<div class="modal-overlay" id="create-rule-modal" onclick="if(event.target===this)document.getElementById('create-rule-modal').style.display='none'">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;width:100%">
+    <h3 style="margin-bottom:4px">⚡ Create New Rule</h3>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Auto-assign a category whenever a transaction matches this merchant.</p>
+    <div style="display:grid;gap:14px">
+      <div>
+        <label class="lbl">Merchant Name</label>
+        <input type="text" id="create-rule-merchant" placeholder='e.g. "Woolworths"' style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div>
+        <label class="lbl">Match Type</label>
+        <div style="display:grid;gap:8px;margin-top:4px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card2)" id="pattern-exact-label">
+            <input type="radio" name="create-rule-pattern" value="exact" checked style="margin-top:2px;flex-shrink:0" onchange="updatePatternLabels()"/>
+            <div>
+              <div style="font-weight:600;font-size:.85rem">= Exact Match</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">"woolworths" matches only transactions named exactly "woolworths"</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card2)" id="pattern-contains-label">
+            <input type="radio" name="create-rule-pattern" value="contains" style="margin-top:2px;flex-shrink:0" onchange="updatePatternLabels()"/>
+            <div>
+              <div style="font-weight:600;font-size:.85rem">◡ Contains</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">"coles" matches "Coles Metro", "Coles Express", "Coles Online", etc.</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div>
+        <label class="lbl">Category</label>
+        <select id="create-rule-category" onchange="createRuleCategoryChanged()" style="width:100%;box-sizing:border-box">
+          <option value="">— Select Category —</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Subcategory <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <select id="create-rule-subcat" style="width:100%;box-sizing:border-box">
+          <option value="">— None —</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-primary" onclick="createRuleSave()" style="flex:1">Save Rule</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('create-rule-modal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MAIN -->
 <div id="main">
   <div id="topbar">
@@ -1623,51 +1672,6 @@ window.addEventListener('unhandledrejection',function(e){
       <span style="color:var(--muted);font-size:1.1rem">›</span>
     </div>
 
-    <!-- Create Rule Modal -->
-    <div class="modal-overlay" id="create-rule-modal" onclick="if(event.target === this) document.getElementById('create-rule-modal').style.display='none'">
-      <div class="modal-box" onclick="event.stopPropagation()">
-        <h3 style="margin-bottom:16px">Create New Rule</h3>
-        <div style="display:grid;gap:14px">
-          <div>
-            <label class="lbl">Merchant Name (e.g. "Woolworths")</label>
-            <input type="text" id="create-rule-merchant" placeholder="Enter merchant name" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem"/>
-          </div>
-          <div>
-            <label class="lbl">Pattern Type</label>
-            <div style="display:flex;gap:10px">
-              <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);cursor:pointer">
-                <input type="radio" name="create-rule-pattern" value="exact" checked/>
-                = Exact Match
-                <span style="font-size:.7rem;color:var(--muted)">woolworths matches only "woolworths"</span>
-              </label>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:8px">
-              <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);cursor:pointer">
-                <input type="radio" name="create-rule-pattern" value="contains"/>
-                ◡ Contains
-                <span style="font-size:.7rem;color:var(--muted)">woolies matches "woolworths metro", etc</span>
-              </label>
-            </div>
-          </div>
-          <div>
-            <label class="lbl">Category</label>
-            <select id="create-rule-category" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem" onchange="createRuleCategoryChanged()">
-              <option value="">— Select Category —</option>
-            </select>
-          </div>
-          <div>
-            <label class="lbl">Subcategory (optional)</label>
-            <select id="create-rule-subcat" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem">
-              <option value="">— None —</option>
-            </select>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:10px">
-            <button class="btn btn-primary btn-sm" onclick="createRuleSave()">Save Rule</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('create-rule-modal').style.display='none'">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Bank Category Comparison -->
     <div class="card mb" id="bank-comparison-card">
@@ -1758,7 +1762,6 @@ window.addEventListener('unhandledrejection',function(e){
       <div id="rules-list"></div>
     </div>
 
-    <!-- Create Rule Modal (shared with categories page) -->
 
     <!-- Bulk reprocess (also accessible here) -->
     <div class="card" style="margin-top:16px">

@@ -550,11 +550,6 @@ function renderRulesList() {
   try { learnedRaw = JSON.parse(localStorage.getItem('learnedMappings') || '{}'); } catch(e) {}
   var learnedEntries = Object.entries(learnedRaw);
 
-  if (!lruleEntries.length && !learnedEntries.length) {
-    rulesEl.innerHTML = '<div class="empty"><div class="ei">⚡</div><p>No rules yet. Assign a category to a transaction to create one automatically.</p></div>';
-    return;
-  }
-
   // Filter rules by search term
   var search = (_rulesSearch || '').toLowerCase().trim();
   var filteredLRules = lruleEntries.filter(function(entry) {
@@ -606,7 +601,7 @@ function renderRulesList() {
     + '<input type="text" id="rules-search-input" placeholder="Search rules..." value="' + (_rulesSearch || '') + '" '
     + 'style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem" '
     + 'onkeyup="rulesSearchUpdate(this.value)">'
-    + '<button class="btn btn-ghost btn-sm" onclick="rulesShowCreateForm()" style="white-space:nowrap">+ New Rule</button>'
+    + '<button class="btn btn-primary btn-sm" onclick="rulesShowCreateForm()" style="white-space:nowrap;gap:6px">⚡ New Rule</button>'
     + '</div>';
 
   // Results count and pagination info
@@ -663,21 +658,32 @@ function rulesShowCreateForm() {
   var modal = document.getElementById('create-rule-modal');
   if (!modal) return;
 
+  // Always ensure the modal is a direct child of body so display:none on
+  // any parent page div can never block it (cache-safe fix)
+  if (modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+
   // Clear form
-  document.getElementById('create-rule-merchant').value = '';
-  document.getElementById('create-rule-merchant').focus();
+  var merchantInput = document.getElementById('create-rule-merchant');
+  if (merchantInput) { merchantInput.value = ''; }
   var categorySelect = document.getElementById('create-rule-category');
-  categorySelect.innerHTML = '<option value="">— Select Category —</option>'
-    + LCATS.map(function(c) {
-      return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>';
-    }).join('');
-  categorySelect.value = '';
-  document.getElementById('create-rule-subcat').innerHTML = '<option value="">— None —</option>';
+  if (categorySelect) {
+    categorySelect.innerHTML = '<option value="">— Select Category —</option>'
+      + LCATS.map(function(c) {
+        return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>';
+      }).join('');
+    categorySelect.value = '';
+  }
+  var subcatSelect = document.getElementById('create-rule-subcat');
+  if (subcatSelect) subcatSelect.innerHTML = '<option value="">— None —</option>';
   document.querySelectorAll('input[name="create-rule-pattern"]').forEach(function(r) {
-    if (r.value === 'exact') r.checked = true;
+    r.checked = (r.value === 'exact');
   });
+  updatePatternLabels();
 
   modal.style.display = 'flex';
+  if (merchantInput) setTimeout(function(){ merchantInput.focus(); }, 80);
 }
 
 function createRuleCategoryChanged() {
@@ -951,62 +957,152 @@ function inlineAssignCat(selectEl) {
   if (document.getElementById('page-bva') && document.getElementById('page-bva').classList.contains('active')) renderBVA();
 }
 
+var _ruleBannerTimer = null;
+
 function showRuleBanner(merchant, catId, subcat, cat) {
   var banner = document.getElementById('tx-rule-banner');
   if (!banner) return;
   if (!cat) cat = LCATS.find(function(c) { return c.id === catId; });
   var catLabel = cat ? cat.icon + ' ' + cat.name : catId;
-  // Store rule data on the element to avoid inline string escaping issues
+  var catColor = cat ? cat.color : 'var(--primary)';
+
+  // Store rule data on element
   banner._ruleMerchant = merchant;
   banner._ruleCatId    = catId;
   banner._ruleSubcat   = subcat || '';
-  banner.style.display = 'flex';
-  banner.innerHTML = '<span style="flex:1">Assign <strong style="color:var(--pink-light)">'
-    + merchant + '</strong> → <strong style="color:' + (cat ? cat.color : 'var(--primary)') + '">'
-    + catLabel + '</strong>'
-    + (subcat ? ' → <span style="color:var(--muted);font-size:.8rem">' + subcat + '</span>' : '')
-    + ' always?</span>'
-    + '<button class="btn btn-sm btn-primary" onclick="createRuleFromBanner()">Yes</button>'
-    + '<button class="btn btn-sm btn-ghost" onclick="dismissRuleBanner()">No</button>';
-  setTimeout(function() { if (banner) banner.style.display = 'none'; }, 14000);
+
+  // Build expanded inline rule editor
+  banner.style.display = 'block';
+  banner.innerHTML =
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+      + '<div style="flex:1;min-width:220px">'
+        + '<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">⚡ Save as a rule?</div>'
+        + '<div style="font-size:.8rem;color:var(--muted)">'
+          + '<strong style="color:var(--text)">' + esc(merchant) + '</strong>'
+          + ' → <strong style="color:' + catColor + '">' + catLabel + '</strong>'
+          + (subcat ? '<span style="color:var(--muted)"> › ' + esc(subcat) + '</span>' : '')
+        + '</div>'
+      + '</div>'
+      + '<button onclick="dismissRuleBanner()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0">✕</button>'
+    + '</div>'
+    // Pattern picker
+    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.8rem;padding:5px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card2)" id="rb-exact-label">'
+        + '<input type="radio" name="rule-banner-pattern" value="exact" checked onchange="updateBannerPatternLabels()"/> = Exact'
+      + '</label>'
+      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.8rem;padding:5px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card2)" id="rb-contains-label">'
+        + '<input type="radio" name="rule-banner-pattern" value="contains" onchange="updateBannerPatternLabels()"/> ◡ Contains'
+      + '</label>'
+    + '</div>'
+    // Apply-all checkbox
+    + '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.8rem;cursor:pointer;line-height:1.3">'
+      + '<input type="checkbox" id="rule-banner-apply-all" checked style="flex-shrink:0"/>'
+      + '<span>Apply to all existing transactions from this merchant</span>'
+    + '</label>'
+    // Countdown + action buttons
+    + '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">'
+      + '<button class="btn btn-primary btn-sm" onclick="createRuleFromBanner()" style="min-width:80px">Save Rule</button>'
+      + '<button class="btn btn-ghost btn-sm" onclick="dismissRuleBanner()">Dismiss</button>'
+      + '<span id="rule-banner-countdown" style="font-size:.72rem;color:var(--muted);margin-left:auto"></span>'
+    + '</div>';
+
+  // 15-second countdown
+  if (_ruleBannerTimer) clearInterval(_ruleBannerTimer);
+  var remaining = 15;
+  var countEl = banner.querySelector('#rule-banner-countdown');
+  if (countEl) countEl.textContent = remaining + 's';
+  _ruleBannerTimer = setInterval(function() {
+    remaining--;
+    var el = document.getElementById('rule-banner-countdown');
+    if (el) el.textContent = remaining + 's';
+    if (remaining <= 0) {
+      clearInterval(_ruleBannerTimer);
+      _ruleBannerTimer = null;
+      dismissRuleBanner();
+    }
+  }, 1000);
+
+  // Highlight selected pattern label
+  updateBannerPatternLabels();
+}
+
+function updateBannerPatternLabels() {
+  var sel = document.querySelector('input[name="rule-banner-pattern"]:checked');
+  var pattern = sel ? sel.value : 'exact';
+  ['rb-exact-label','rb-contains-label'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var active = (id === 'rb-exact-label' && pattern === 'exact') || (id === 'rb-contains-label' && pattern === 'contains');
+    el.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
+    el.style.color       = active ? 'var(--primary)' : 'var(--text)';
+  });
+}
+
+function updatePatternLabels() {
+  // For the create-rule modal's pattern cards
+  var sel = document.querySelector('input[name="create-rule-pattern"]:checked');
+  var pattern = sel ? sel.value : 'exact';
+  var exactEl = document.getElementById('pattern-exact-label');
+  var containsEl = document.getElementById('pattern-contains-label');
+  if (exactEl) {
+    exactEl.style.borderColor = pattern === 'exact' ? 'var(--primary)' : 'var(--border)';
+    exactEl.style.background  = pattern === 'exact' ? 'rgba(240,83,138,.08)' : 'var(--card2)';
+  }
+  if (containsEl) {
+    containsEl.style.borderColor = pattern === 'contains' ? 'var(--primary)' : 'var(--border)';
+    containsEl.style.background  = pattern === 'contains' ? 'rgba(240,83,138,.08)' : 'var(--card2)';
+  }
 }
 
 function dismissRuleBanner() {
+  if (_ruleBannerTimer) { clearInterval(_ruleBannerTimer); _ruleBannerTimer = null; }
   var b = document.getElementById('tx-rule-banner');
-  if (b) b.style.display = 'none';
+  if (b) { b.style.display = 'none'; b.innerHTML = ''; }
 }
 
 function createRuleFromBanner() {
   var b = document.getElementById('tx-rule-banner');
   if (!b) return;
-  var merchant = b._ruleMerchant || '';
-  var catId    = b._ruleCatId    || '';
-  var subcat   = b._ruleSubcat   || '';
-  if (merchant && catId) createRule(merchant, catId, subcat);
+  var merchant  = b._ruleMerchant || '';
+  var catId     = b._ruleCatId    || '';
+  var subcat    = b._ruleSubcat   || '';
+  var patternEl = b.querySelector('input[name="rule-banner-pattern"]:checked');
+  var pattern   = patternEl ? patternEl.value : 'exact';
+  var applyAll  = b.querySelector('#rule-banner-apply-all');
+  var doApply   = applyAll ? applyAll.checked : true;
+  if (merchant && catId) createRule(merchant, catId, subcat, pattern, doApply);
   else dismissRuleBanner();
 }
 
-function createRule(merchant, catId, subcat) {
-  LRULES[merchant] = { catId: catId, subcat: subcat || '' };
+function createRule(merchant, catId, subcat, pattern, applyAll) {
+  if (typeof pattern === 'undefined') pattern = 'exact';
+  if (typeof applyAll === 'undefined') applyAll = true;
+
+  LRULES[merchant] = { catId: catId, subcat: subcat || '', pattern: pattern, confidence: 'HIGH' };
   try { save(K.rules, LRULES); } catch(e) {}
 
-  // Apply to all existing matching transactions
   var applied = 0;
-  TX.forEach(function(t) {
-    if (ruleKey(t) === merchant) {
-      t.catId    = catId;
-      t.subcat   = subcat || '';
-      t.userSet  = true; // rule-confirmed: protect from future auto-fix passes
-      var c = LCATS.find(function(x) { return x.id === catId; });
-      t.category = c ? c.name : 'Other';
-      applied++;
-    }
-  });
-  try { save(K.tx, TX); } catch(e) {}
+  if (applyAll) {
+    TX.forEach(function(t) {
+      var matches = pattern === 'contains'
+        ? (ruleKey(t) || '').indexOf(merchant.toLowerCase()) !== -1
+        : ruleKey(t) === merchant;
+      if (matches) {
+        t.catId    = catId;
+        t.subcat   = subcat || '';
+        t.userSet  = true;
+        var c = LCATS.find(function(x) { return x.id === catId; });
+        t.category = c ? c.name : 'Other';
+        applied++;
+      }
+    });
+    try { save(K.tx, TX); } catch(e) {}
+  }
+
   dismissRuleBanner();
   renderTx();
-  if (typeof renderCategories === 'function') renderCategories();
-  toast('⚡ Rule saved — ' + applied + ' transaction' + (applied !== 1 ? 's' : '') + ' updated');
+  if (typeof renderRulesList === 'function') renderRulesList();
+  toast('⚡ Rule saved' + (applied > 0 ? ' — ' + applied + ' transaction' + (applied !== 1 ? 's' : '') + ' updated' : ''));
 }
 
 // Apply auto-rules when a new transaction is added
