@@ -2,6 +2,197 @@
 // SUPERANNUATION PAGE
 // ══════════════════════════════════════════════════════════════
 
+// ── Multi-account super store ─────────────────────────────────
+// { brenton: [{id,fund,balance,type}], shelley: [...] }
+var SUPER_ACCTS = (function(){
+  var d = load(K.superAccts);
+  return d || { brenton: [], shelley: [] };
+})();
+
+var _SUPER_TYPES = ['Accumulation','Defined Benefit','SMSF','Pension (Drawdown)','Other'];
+
+function _superProfileKey(pfx) { return pfx === 'b' ? 'brenton' : 'shelley'; }
+
+function superAcctTotal(pfx) {
+  var accts = SUPER_ACCTS[_superProfileKey(pfx)] || [];
+  return accts.reduce(function(s,a){ return s + (parseFloat(a.balance)||0); }, 0);
+}
+
+function superSaveAccts() {
+  try { save(K.superAccts, SUPER_ACCTS); } catch(e) {}
+}
+
+// Auto-fill balance from account total when accounts exist
+function superSyncBalance(pfx) {
+  var total = superAcctTotal(pfx);
+  if (total > 0) {
+    var el = document.getElementById((pfx==='b'?'sb':'ss') + '-balance');
+    if (el && !el.matches(':focus')) { el.value = total; }
+  }
+}
+
+// ── Aggregation table ─────────────────────────────────────────
+function renderSuperAggTable() {
+  var el = document.getElementById('super-agg-table');
+  if (!el) return;
+
+  var bName = getUserName ? (getUserName('brenton') || 'Profile 1') : 'Profile 1';
+  var sName = getUserName ? (getUserName('shelley') || 'Profile 2') : 'Profile 2';
+
+  var bAccts = SUPER_ACCTS.brenton || [];
+  var sAccts = SUPER_ACCTS.shelley || [];
+  var bTotal = bAccts.reduce(function(s,a){ return s+(parseFloat(a.balance)||0); },0);
+  var sTotal = sAccts.reduce(function(s,a){ return s+(parseFloat(a.balance)||0); },0);
+  var combined = bTotal + sTotal;
+
+  if (!bAccts.length && !sAccts.length) {
+    el.innerHTML = '<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:12px 0">No super accounts added yet. Use the + Add Super Account button in each profile below.</div>';
+    return;
+  }
+
+  var rows = '';
+  var profileColor = { brenton:'var(--primary)', shelley:'#818CF8' };
+
+  function profileRows(accts, name, total, colorKey) {
+    if (!accts.length) return '';
+    var r = '';
+    accts.forEach(function(a, i) {
+      r += '<tr>'
+        + (i === 0 ? '<td rowspan="' + (accts.length+1) + '" style="font-weight:700;color:' + (colorKey==='brenton'?profileColor.brenton:profileColor.shelley) + ';vertical-align:top;padding:8px 12px 8px 0;border-bottom:1px solid var(--border);white-space:nowrap">' + esc(name) + '</td>' : '')
+        + '<td style="padding:6px 12px;font-size:.83rem;color:var(--text)">' + esc(a.fund||'—') + '</td>'
+        + '<td style="padding:6px 12px;font-size:.83rem;color:var(--muted)">' + esc(a.type||'—') + '</td>'
+        + '<td style="padding:6px 12px;font-family:var(--font-mono);font-size:.83rem;text-align:right;color:var(--text)">' + fmt(a.balance||0) + '</td>'
+        + '</tr>';
+    });
+    // Subtotal row
+    r += '<tr style="border-top:1px solid var(--border)">'
+      + '<td colspan="2" style="padding:6px 12px;font-size:.78rem;font-weight:700;color:var(--muted)">Total — ' + esc(name) + '</td>'
+      + '<td style="padding:6px 12px;font-family:var(--font-mono);font-weight:700;font-size:.88rem;text-align:right;color:' + (colorKey==='brenton'?profileColor.brenton:profileColor.shelley) + ';border-bottom:2px solid var(--border)">' + fmt(total) + '</td>'
+      + '</tr>';
+    return r;
+  }
+
+  rows += profileRows(bAccts, bName, bTotal, 'brenton');
+  rows += profileRows(sAccts, sName, sTotal, 'shelley');
+
+  // Combined row
+  rows += '<tr style="background:rgba(240,83,138,.06)">'
+    + '<td style="padding:8px 12px 8px 0;font-weight:700;font-size:.88rem;color:var(--text)">Combined</td>'
+    + '<td colspan="2" style="padding:8px 12px;font-size:.78rem;color:var(--muted)">' + (bAccts.length + sAccts.length) + ' account' + (bAccts.length+sAccts.length!==1?'s':'') + '</td>'
+    + '<td style="padding:8px 12px;font-family:var(--font-mono);font-weight:700;font-size:1rem;text-align:right;color:var(--success)">' + fmt(combined) + '</td>'
+    + '</tr>';
+
+  el.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'
+    + '<table style="width:100%;border-collapse:collapse;min-width:360px">'
+    + '<thead><tr style="border-bottom:2px solid var(--border)">'
+    + '<th style="text-align:left;padding:6px 12px 8px 0;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile</th>'
+    + '<th style="text-align:left;padding:6px 12px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Fund</th>'
+    + '<th style="text-align:left;padding:6px 12px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Type</th>'
+    + '<th style="text-align:right;padding:6px 12px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Balance</th>'
+    + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table></div>';
+}
+
+// ── Account list renderer for each profile card ───────────────
+function renderSuperAcctList(pfx) {
+  var el = document.getElementById('super-acct-list-' + pfx);
+  if (!el) return;
+  var key   = _superProfileKey(pfx);
+  var accts = SUPER_ACCTS[key] || [];
+
+  if (!accts.length) {
+    el.innerHTML = '<div style="font-size:.78rem;color:var(--muted);padding:6px 0">No accounts added yet.</div>';
+    return;
+  }
+  el.innerHTML = accts.map(function(a) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap" id="super-acct-row-' + pfx + '-' + a.id + '">'
+      + '<div style="flex:1;min-width:120px">'
+      + '<div style="font-weight:700;font-size:.85rem">' + esc(a.fund||'Unknown Fund') + '</div>'
+      + '<div style="font-size:.72rem;color:var(--muted)">' + esc(a.type||'Accumulation') + '</div>'
+      + '</div>'
+      + '<div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:var(--primary)">' + fmt(a.balance||0) + '</div>'
+      + '<div style="display:flex;gap:4px;flex-shrink:0">'
+      + '<button class="btn btn-ghost btn-sm" onclick="superEditAcct(\'' + pfx + '\',\'' + a.id + '\')">Edit</button>'
+      + '<button class="del-btn" onclick="superDeleteAcct(\'' + pfx + '\',\'' + a.id + '\')">🗑</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Show inline add form ───────────────────────────────────────
+function superShowAddForm(pfx) {
+  var el = document.getElementById('super-add-form-' + pfx);
+  if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+function superHideAddForm(pfx) {
+  var el = document.getElementById('super-add-form-' + pfx);
+  if (el) el.style.display = 'none';
+}
+
+function superAddAcct(pfx) {
+  var key  = _superProfileKey(pfx);
+  var fund = (document.getElementById('super-new-fund-' + pfx) || {}).value.trim();
+  var bal  = parseFloat((document.getElementById('super-new-bal-' + pfx) || {}).value) || 0;
+  var type = (document.getElementById('super-new-type-' + pfx) || {}).value || 'Accumulation';
+  if (!fund) { toast('Please enter a fund name'); return; }
+  if (!SUPER_ACCTS[key]) SUPER_ACCTS[key] = [];
+  var id = 'sa_' + Date.now().toString(36);
+  SUPER_ACCTS[key].push({ id: id, fund: fund, balance: bal, type: type });
+  superSaveAccts();
+  superHideAddForm(pfx);
+  _superRefresh(pfx);
+  toast('✅ Super account added — ' + fund);
+}
+
+function superDeleteAcct(pfx, id) {
+  var key   = _superProfileKey(pfx);
+  var accts = SUPER_ACCTS[key] || [];
+  var a     = accts.find(function(x){ return x.id === id; });
+  if (!a || !confirm('Remove "' + a.fund + '" from super accounts?')) return;
+  SUPER_ACCTS[key] = accts.filter(function(x){ return x.id !== id; });
+  superSaveAccts();
+  _superRefresh(pfx);
+  toast('🗑️ Removed — ' + a.fund);
+}
+
+function superEditAcct(pfx, id) {
+  var key  = _superProfileKey(pfx);
+  var a    = (SUPER_ACCTS[key] || []).find(function(x){ return x.id === id; });
+  if (!a) return;
+  var rowEl = document.getElementById('super-acct-row-' + pfx + '-' + id);
+  if (!rowEl) return;
+  rowEl.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;width:100%;padding:4px 0">'
+    + '<div style="flex:1;min-width:140px"><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-edit-fund-' + pfx + '-' + id + '" value="' + esc(a.fund||'') + '" style="font-size:16px;width:100%;box-sizing:border-box"/></div>'
+    + '<div style="flex:1;min-width:120px"><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-edit-bal-' + pfx + '-' + id + '" value="' + (a.balance||0) + '" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>'
+    + '<div style="flex:1;min-width:140px"><label class="lbl" style="font-size:.7rem">Type</label><select id="super-edit-type-' + pfx + '-' + id + '" style="width:100%;box-sizing:border-box">'
+    + _SUPER_TYPES.map(function(t){ return '<option value="' + t + '"' + (t===a.type?' selected':'') + '>' + t + '</option>'; }).join('')
+    + '</select></div>'
+    + '<div style="display:flex;gap:6px;flex-shrink:0">'
+    + '<button class="btn btn-primary btn-sm" onclick="superSaveEdit(\'' + pfx + '\',\'' + id + '\')">Save</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="renderSuperAcctList(\'' + pfx + '\')">Cancel</button>'
+    + '</div></div>';
+}
+
+function superSaveEdit(pfx, id) {
+  var key  = _superProfileKey(pfx);
+  var a    = (SUPER_ACCTS[key] || []).find(function(x){ return x.id === id; });
+  if (!a) return;
+  a.fund    = (document.getElementById('super-edit-fund-' + pfx + '-' + id) || {}).value.trim() || a.fund;
+  a.balance = parseFloat((document.getElementById('super-edit-bal-' + pfx + '-' + id) || {}).value) || 0;
+  a.type    = (document.getElementById('super-edit-type-' + pfx + '-' + id) || {}).value || a.type;
+  superSaveAccts();
+  _superRefresh(pfx);
+  toast('✅ Updated — ' + a.fund);
+}
+
+function _superRefresh(pfx) {
+  renderSuperAcctList(pfx);
+  superSyncBalance(pfx);
+  renderSuperAggTable();
+  calcSuper();
+}
+
 // ASFA-aligned growth scenarios (net return after fees shown; fees split separately)
 var SUPER_SCENARIOS = {
   conservative: { ret: 4.7,  fees: 1.2,  label: 'Conservative' },
@@ -34,6 +225,12 @@ function renderSuperPage(){
     ['balance','age','retire','salary','sgc','extra'].forEach(f=>fill('ss-'+f,d.s[f]));
     fill('ss-return',d.s.ret);fill('ss-fees',d.s.fees);fill('ss-inflation',d.s.inflation);
   }
+  // Render multi-account lists, sync totals, then render table
+  renderSuperAcctList('b');
+  renderSuperAcctList('s');
+  superSyncBalance('b');
+  superSyncBalance('s');
+  renderSuperAggTable();
   showSuperResults();renderSuperChart();renderD293Section();
 }
 
