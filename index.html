@@ -447,9 +447,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
       <div style="display:grid;gap:8px"><label class="lbl">Type</label>
         <select id="ins-edit-type" onchange="insEditTypeChanged()">
-          <option>Home &amp; Contents</option><option>Car / Vehicle</option><option>Health</option>
           <option>Life</option><option>TPD</option><option>Income Protection</option>
-          <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1317,9 +1315,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="form-grid">
           <div><label class="lbl">Type</label>
             <select id="ins-type" onchange="insTypeChanged()">
-              <option>Home &amp; Contents</option><option>Car / Vehicle</option><option>Health</option>
               <option>Life</option><option>TPD</option><option>Income Protection</option>
-              <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
             </select>
           </div>
           <div><label class="lbl">Provider</label><input type="text" id="ins-prov" placeholder="e.g. TAL, AIA, Zurich"/></div>
@@ -1405,9 +1401,7 @@ window.addEventListener('unhandledrejection',function(e){
           <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()">📊 CSV</button>
           <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()">📄 Report</button>
           <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto;">
-            <option value="">All Types</option><option>Home &amp; Contents</option><option>Car / Vehicle</option>
-            <option>Health</option><option>Life</option><option>TPD</option><option>Income Protection</option>
-            <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
+            <option value="">All Types</option><option>Life</option><option>TPD</option><option>Income Protection</option>
           </select>
         </div>
       </div>

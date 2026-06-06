@@ -34,20 +34,14 @@ function insAutoFillNeed(){
   const ipBenEl = document.getElementById('ins-ip-benefit');
   const hintEl  = document.getElementById('ins-need-hint');
 
-  // Only relevant for Life, TPD, Income Protection
-  if(!['Life','TPD','Income Protection'].includes(type)){
-    if(hintEl) hintEl.textContent='';
-    return;
-  }
-
   // Map covered person → needs analysis prefix
   // For 'joint' use the higher of the two needs as a guide
   function getNeedForPfx(pfx){
     const n = _computeNeedsData(pfx);
     if(!n) return null;
-    if(type==='Life')              return { need: Math.round(n.recLife),   ip: null };
-    if(type==='TPD')               return { need: Math.round(n.tpdNeed),   ip: null };
-    if(type==='Income Protection') return { need: Math.round(n.ipAnnual),  ip: Math.round(n.ipMonthly) };
+    if(type==='Life')              return { need: Math.round(n.recLife),  ip: null };
+    if(type==='TPD')               return { need: Math.round(n.tpdNeed), ip: null };
+    if(type==='Income Protection') return { need: Math.round(n.ipAnnual), ip: Math.round(n.ipMonthly) };
     return null;
   }
 
