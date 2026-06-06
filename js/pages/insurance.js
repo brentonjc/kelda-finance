@@ -23,6 +23,54 @@ function insTypeChanged(){
   const tpdF=document.getElementById('ins-tpd-fields');
   if(ipF)  ipF.style.display  = type==='Income Protection'?'block':'none';
   if(tpdF) tpdF.style.display = type==='TPD'?'block':'none';
+  insAutoFillNeed();
+}
+
+// Auto-fill Cover Need from the needs analysis inputs when type/person changes
+function insAutoFillNeed(){
+  const type    = document.getElementById('ins-type')?.value||'';
+  const covered = document.getElementById('ins-covered')?.value||'joint';
+  const needEl  = document.getElementById('ins-need');
+  const ipBenEl = document.getElementById('ins-ip-benefit');
+  const hintEl  = document.getElementById('ins-need-hint');
+
+  // Only relevant for Life, TPD, Income Protection
+  if(!['Life','TPD','Income Protection'].includes(type)){
+    if(hintEl) hintEl.textContent='';
+    return;
+  }
+
+  // Map covered person → needs analysis prefix
+  // For 'joint' use the higher of the two needs as a guide
+  function getNeedForPfx(pfx){
+    const n = _computeNeedsData(pfx);
+    if(!n) return null;
+    if(type==='Life')              return { need: Math.round(n.recLife),   ip: null };
+    if(type==='TPD')               return { need: Math.round(n.tpdNeed),   ip: null };
+    if(type==='Income Protection') return { need: Math.round(n.ipAnnual),  ip: Math.round(n.ipMonthly) };
+    return null;
+  }
+
+  let result = null;
+  let hint   = '';
+  if(covered === 'brenton'){
+    result = getNeedForPfx('b');
+    hint   = result ? 'Auto-filled from '+getUserName('brenton')+'\'s needs analysis' : '';
+  } else if(covered === 'shelley'){
+    result = getNeedForPfx('s');
+    hint   = result ? 'Auto-filled from '+getUserName('shelley')+'\'s needs analysis' : '';
+  } else {
+    // Joint — use higher of the two needs
+    const rb = getNeedForPfx('b');
+    const rs = getNeedForPfx('s');
+    if(rb && rs)      { result = { need: Math.max(rb.need, rs.need), ip: rb.ip && rs.ip ? Math.max(rb.ip, rs.ip) : (rb.ip||rs.ip) }; hint='Auto-filled (higher of both profiles)'; }
+    else if(rb||rs)   { result = rb||rs; hint='Auto-filled from available profile data'; }
+  }
+
+  if(!result){ if(hintEl) hintEl.textContent='Enter income in the Needs Analysis above to auto-fill'; return; }
+  if(needEl && result.need > 0){ needEl.value = result.need; }
+  if(ipBenEl && result.ip  > 0){ ipBenEl.value = result.ip; }
+  if(hintEl) hintEl.textContent = hint;
 }
 
 function insShowEditModal(id){

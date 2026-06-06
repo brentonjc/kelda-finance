@@ -1336,14 +1336,18 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="form-grid">
           <div><label class="lbl">Renewal Date</label><input type="date" id="ins-renewal"/></div>
           <div><label class="lbl">Covered Person</label>
-            <select id="ins-covered">
+            <select id="ins-covered" onchange="insAutoFillNeed()">
               <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Brenton</option><option value="shelley" data-profile-name="shelley">Shelley</option>
             </select>
           </div>
         </div>
         <div class="form-grid">
           <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
-          <div><label class="lbl">Cover Need (Life/TPD) (AUD)</label><input type="number" id="ins-need" placeholder="e.g. 2000000" step="1000" inputmode="decimal"/></div>
+          <div>
+            <label class="lbl">Cover Need (Life/TPD/IP) (AUD)</label>
+            <input type="number" id="ins-need" placeholder="Auto-filled from Needs Analysis" step="1000" inputmode="decimal"/>
+            <div id="ins-need-hint" style="font-size:.68rem;color:var(--success);margin-top:3px;min-height:14px"></div>
+          </div>
         </div>
         <div class="form-grid">
           <div><label class="lbl">Location</label>
