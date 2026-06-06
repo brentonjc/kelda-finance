@@ -106,65 +106,321 @@ function addInsurance(){
 
 function delIns(id){INS=INS.filter(p=>p.id!==id);save(K.ins,INS);renderInsurance();toast('🗑️ Removed');}
 
+// ── Shared needs analysis calculation (used by UI + exports) ─────
+function _computeNeedsData(pfx) {
+  const pre = 'li-' + pfx + '-';
+  const gv = id => parseFloat(document.getElementById(pre + id)?.value) || 0;
+  const income    = gv('income');
+  if (!income) return null;
+  const years     = gv('years') || 25;
+  const debts     = gv('debts');
+  const mortgage  = gv('mortgage');
+  const education = gv('education');
+  const funeral   = gv('funeral') || 15000;
+  const assets    = gv('assets');
+  const existing  = gv('existing');
+  const ageInput  = gv('age');
+  const superAge  = pfx === 'b' ? (SUPER.b?.age || 0) : (SUPER.s?.age || 0);
+  const age       = ageInput || superAge || (pfx === 'b' ? 40 : 38);
+  const yearsTo65 = Math.max(0, 65 - age);
+  const disc      = 0.05;
+
+  // DIME
+  const dimeGross = debts + (income * years) + mortgage + education + funeral;
+  const dimeLife  = Math.max(0, dimeGross - assets - existing);
+
+  // 10× Income
+  const incGross  = income * 10;
+  const incLife   = Math.max(0, incGross - assets - existing);
+
+  // Needs PV
+  const pvIncome   = income * (1 - Math.pow(1 + disc, -years)) / disc;
+  const needsGross = pvIncome + debts + mortgage + education + funeral;
+  const needsLife  = Math.max(0, needsGross - assets - existing);
+
+  // TPD
+  const modAllowance = 50000;
+  const tpdIncomePV  = yearsTo65 > 0 ? income * (1 - Math.pow(1 + disc, -yearsTo65)) / disc : 0;
+  const tpdGross     = tpdIncomePV + debts + mortgage + funeral + modAllowance;
+  const tpdNeed      = Math.max(0, tpdGross - assets);
+
+  // IP (75% of gross income, to age 65)
+  const ipMonthly = income * 0.75 / 12;
+  const ipAnnual  = ipMonthly * 12;
+
+  // Existing cover from policies
+  const existLife  = INS.filter(i => i.type === 'Life' && (i.covered === pfx || i.covered === 'joint')).reduce((s,i) => s + (i.cover || 0), 0);
+  const polTPD     = INS.filter(i => i.type === 'TPD'  && (i.covered === pfx || i.covered === 'joint')).reduce((s,i) => s + (i.cover || 0), 0);
+  const polIPmo    = INS.filter(i => i.type === 'Income Protection' && (i.covered === pfx || i.covered === 'joint')).reduce((s,i) => s + (i.ipBenefit || (i.cover / 12) || 0), 0);
+  const manualTPD  = parseFloat(document.getElementById('li-' + pfx + '-exist-tpd')?.value) || 0;
+  const manualIPmo = parseFloat(document.getElementById('li-' + pfx + '-exist-ip')?.value)  || 0;
+  const existTPD   = manualTPD > 0 ? manualTPD : polTPD;
+  const existIP    = manualIPmo > 0 ? manualIPmo : polIPmo;
+  const allExistLife = existLife + existing;
+
+  const recLife  = Math.max(dimeLife, incLife, needsLife); // most conservative
+  const lifeGap  = Math.max(0, recLife - allExistLife);
+  const tpdGap   = Math.max(0, tpdNeed - existTPD);
+  const ipGap    = Math.max(0, ipAnnual - (existIP * 12));
+
+  return {
+    income, years, debts, mortgage, education, funeral, assets, existing,
+    age, yearsTo65,
+    dimeGross, dimeLife,
+    incGross, incLife,
+    needsGross, needsLife,
+    tpdNeed, tpdGross,
+    ipMonthly, ipAnnual,
+    allExistLife, existTPD, existIP,
+    recLife, lifeGap, tpdGap, ipGap,
+  };
+}
+
 function exportInsuranceCSV(){
-  if(!INS.length){toast('⚠️ No policies to export');return;}
-  const headers=['Policy Name','Type','Provider','Premium','Frequency','Annual Cost','Renewal Date','Covered Person','Sum Insured','Cover Need','Location','Document Link','Notes'];
-  const rows=INS.map(p=>[
-    p.name,p.type,p.prov||'',p.prem,p.freq,insToAnnual(p.prem,p.freq),p.renewal||'',
-    p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both',
-    p.cover||0,p.need||0,p.location||'Outside Super',p.doclink||'',p.notes||''
-  ]);
-  let csv=headers.join(',')+'\n';
-  rows.forEach(r=>csv+=r.map(v=>typeof v==='string'&&v.includes(',')?'"'+v+'"':v).join(',')+'\n');
+  const total=INS.reduce((s,p)=>s+insToAnnual(p.prem,p.freq),0);
+  let csv='';
+
+  // ── Sheet 1: Policies ──────────────────────────────────────────
+  const polHeaders=['Policy Name','Type','Provider','Premium','Frequency','Annual Cost',
+    'Renewal Date','Covered Person','Sum Insured','Cover Need','Location','Document Link','Notes'];
+  csv += 'POLICIES\n';
+  csv += polHeaders.join(',') + '\n';
+  INS.forEach(p=>{
+    const row=[
+      p.name, p.type, p.prov||'', p.prem, p.freq, insToAnnual(p.prem,p.freq),
+      p.renewal||'',
+      p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both',
+      p.cover||0, p.need||0, p.location==='inside'?'Inside Super':'Outside Super',
+      p.doclink||'', p.notes||''
+    ];
+    csv += row.map(v=>typeof v==='string'&&(v.includes(',')||v.includes('"'))?'"'+v.replace(/"/g,'""')+'"':v).join(',') + '\n';
+  });
+  csv += '\nAnnual Total,' + insToAnnual(total,1) + '\n\n';
+
+  // ── Sheet 2: Needs Analysis ────────────────────────────────────
+  csv += 'NEEDS ANALYSIS\n';
+  csv += ['Person','Annual Income','Years to Replace','Outstanding Debts','Mortgage Balance',
+    'Education/Future','Funeral/Final','Existing Savings/Super','Existing Life Cover in Super','Current Age',
+    'DIME — Gross Need','DIME — Life Cover Needed',
+    '10× Income — Gross Need','10× Income — Life Cover Needed',
+    'Needs PV — Gross Need','Needs PV — Life Cover Needed',
+    'Recommended Life Need (most conservative)',
+    'Existing Life Cover','Life Cover Gap',
+    'TPD Need','Existing TPD Cover','TPD Gap',
+    'IP Monthly Needed (75% income)','Existing IP Monthly Benefit','IP Gap (annual)'].join(',') + '\n';
+
+  ['b','s'].forEach(pfx=>{
+    const n = _computeNeedsData(pfx);
+    const pName = pfx==='b' ? getUserName('brenton') : getUserName('shelley');
+    if (!n) { csv += '"'+pName+'",No income data entered\n'; return; }
+    const row=[
+      pName, n.income, n.years, n.debts, n.mortgage, n.education, n.funeral, n.assets, n.existing, n.age,
+      n.dimeGross, n.dimeLife,
+      n.incGross, n.incLife,
+      Math.round(n.needsGross), Math.round(n.needsLife),
+      Math.round(n.recLife),
+      n.allExistLife, Math.round(n.lifeGap),
+      Math.round(n.tpdNeed), n.existTPD, Math.round(n.tpdGap),
+      Math.round(n.ipMonthly), n.existIP, Math.round(n.ipGap)
+    ];
+    csv += row.join(',') + '\n';
+  });
+
+  if(!INS.length && !_computeNeedsData('b') && !_computeNeedsData('s')){toast('⚠️ No data to export');return;}
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download='insurance-policies-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.download='insurance-report-'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
   URL.revokeObjectURL(url);
   toast('✅ CSV exported');
 }
 
 function exportInsurancePDF(){
-  if(!INS.length){toast('⚠️ No policies to export');return;}
   const total=INS.reduce((s,p)=>s+insToAnnual(p.prem,p.freq),0);
-  let html='<html><head><meta charset="utf-8"><title>Insurance Report</title><style>body{font-family:Arial,sans-serif;margin:20px;background:#f5f5f5}h1,h2{color:#333}.report-date{color:#999;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse;background:white;margin-bottom:20px}.table-head{background:#2c3e50;color:white;font-weight:bold}.table-row td{padding:8px;border-bottom:1px solid #ddd}.total-row{background:#f9f9f9;font-weight:bold}.gap-section{background:white;padding:15px;margin:15px 0;border-left:4px solid #e8457a}.gap-section h3{margin-top:0}.gap-chart{display:flex;align-items:center;gap:10px;margin:10px 0}.gap-bar{width:100%;background:#e8e8e8;height:20px;border-radius:3px;overflow:hidden}.gap-fill{height:100%;background:#e8457a;transition:width .3s}.gap-pct{min-width:60px;text-align:right;font-weight:bold}.footer{color:#999;font-size:11px;margin-top:30px;border-top:1px solid #ddd;padding-top:10px}</style></head><body>';
-  html+='<h1>Insurance Policy Report</h1>';
-  html+='<div class="report-date">Generated: '+new Date().toLocaleDateString('en-AU')+' | For Financial Adviser Review</div>';
-  html+='<h2>Summary</h2>';
-  html+='<table><tr class="table-head"><td>Metric</td><td style="text-align:right">Amount</td></tr>';
-  html+='<tr class="table-row"><td>Total Policies</td><td style="text-align:right">'+INS.length+'</td></tr>';
-  html+='<tr class="table-row"><td>Annual Insurance Cost</td><td style="text-align:right">$'+fmt(total)+'</td></tr>';
-  html+='<tr class="table-row"><td>Monthly Average</td><td style="text-align:right">$'+fmt(total/12)+'</td></tr></table>';
+  const fmtd=n=>n===undefined||n===null?'—':'$'+n.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const pct=(a,b)=>b>0?Math.min(100,Math.round(a/b*100)):100;
 
-  html+='<h2>Policies</h2><table><tr class="table-head"><td>Policy</td><td>Type</td><td>Provider</td><td style="text-align:right">Premium</td><td style="text-align:right">Annual</td><td>Renewal</td></tr>';
-  INS.forEach(p=>{
-    html+='<tr class="table-row"><td><strong>'+p.name+'</strong></td><td>'+p.type+'</td><td>'+(p.prov||'')+'</td><td style="text-align:right">$'+fmt(p.prem)+'/'+({monthly:'mo',annual:'yr',quarterly:'qtr',fortnightly:'fn'}[p.freq]||p.freq)+'</td><td style="text-align:right">$'+fmt(insToAnnual(p.prem,p.freq))+'</td><td>'+(p.renewal||'—')+'</td></tr>';
+  const css=`
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#fff;padding:28px 32px}
+    h1{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+    .subtitle{font-size:11px;color:#888;margin-bottom:24px}
+    h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#e8457a;border-bottom:2px solid #e8457a;padding-bottom:5px;margin:24px 0 12px}
+    h3{font-size:12px;font-weight:700;color:#1a1a2e;margin:14px 0 8px}
+    table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10.5px}
+    th{background:#1a1a2e;color:#fff;padding:7px 10px;text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+    th.r,td.r{text-align:right}
+    td{padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top}
+    tr:last-child td{border-bottom:none}
+    tr:nth-child(even) td{background:#f9f9fb}
+    .person-block{border:1.5px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;break-inside:avoid}
+    .person-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .person-name{font-size:14px;font-weight:700}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+    .b-pink{background:#fce7ef;color:#c0335e}
+    .b-purple{background:#ede9fe;color:#5b21b6}
+    .method-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+    .method-box{border:1px solid #eee;border-radius:6px;padding:10px;background:#fafafa}
+    .method-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#888;margin-bottom:3px}
+    .method-amount{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
+    .method-detail{font-size:9px;color:#888}
+    .gap-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .gap-label{width:180px;flex-shrink:0;font-size:10px;font-weight:600}
+    .gap-bar-wrap{flex:1;background:#eee;height:14px;border-radius:4px;overflow:hidden}
+    .gap-bar-fill{height:100%;border-radius:4px}
+    .gap-amounts{width:160px;flex-shrink:0;text-align:right;font-size:9.5px}
+    .gap-status{width:90px;flex-shrink:0;text-align:right;font-size:9.5px;font-weight:700}
+    .ok{color:#059669} .warn{color:#d97706} .bad{color:#dc2626}
+    .summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+    .stat-box{border:1.5px solid #eee;border-radius:8px;padding:12px;text-align:center}
+    .stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#888;margin-bottom:4px}
+    .stat-value{font-size:18px;font-weight:700;color:#1a1a2e}
+    .stat-sub{font-size:9.5px;color:#888;margin-top:2px}
+    .disclaimer{font-size:9.5px;color:#aaa;border-top:1px solid #eee;padding-top:12px;margin-top:24px;line-height:1.6}
+    @media print{body{padding:0} h2{break-before:auto}}
+  `;
+
+  let html = `<html><head><meta charset="utf-8"><title>Life Insurance Report — ${new Date().toLocaleDateString('en-AU')}</title><style>${css}</style></head><body>`;
+
+  // ── Header ───────────────────────────────────────────────────
+  html += `<h1>Life Insurance &amp; Coverage Report</h1>`;
+  html += `<div class="subtitle">Prepared ${new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})} &nbsp;·&nbsp; For financial adviser review &nbsp;·&nbsp; Confidential</div>`;
+
+  // ── Portfolio summary ─────────────────────────────────────────
+  html += '<h2>Insurance Portfolio Summary</h2>';
+  html += '<div class="summary-grid">';
+  html += `<div class="stat-box"><div class="stat-label">Total Policies</div><div class="stat-value">${INS.length}</div><div class="stat-sub">${[...new Set(INS.map(p=>p.type))].join(', ')||'—'}</div></div>`;
+  html += `<div class="stat-box"><div class="stat-label">Annual Premium</div><div class="stat-value">${fmtd(total)}</div><div class="stat-sub">${fmtd(total/12)} per month</div></div>`;
+  const soon=INS.filter(p=>{const d=daysTilRenewal(p.renewal);return d!==null&&d>=0&&d<=60;}).length;
+  html += `<div class="stat-box"><div class="stat-label">Renewals ≤ 60 Days</div><div class="stat-value" style="color:${soon?'#d97706':'#059669'}">${soon}</div><div class="stat-sub">${soon?'Action required':'All clear'}</div></div>`;
+  html += '</div>';
+
+  // ── Policy list ───────────────────────────────────────────────
+  if(INS.length){
+    html += '<h2>Policies</h2>';
+    html += '<table><thead><tr><th>Policy Name</th><th>Type</th><th>Provider</th><th>Covered</th><th>Location</th><th class="r">Sum Insured</th><th class="r">Premium</th><th class="r">Annual Cost</th><th>Renewal</th><th>Notes</th></tr></thead><tbody>';
+    INS.forEach(p=>{
+      const fl={monthly:'mo',annual:'yr',quarterly:'qtr',fortnightly:'fn'}[p.freq]||p.freq;
+      const cov=p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both';
+      const loc=p.location==='inside'?'In Super':'External';
+      html += `<tr><td><strong>${esc(p.name)}</strong></td><td>${esc(p.type)}</td><td>${esc(p.prov||'')}</td><td>${esc(cov)}</td><td>${loc}</td><td class="r">${p.cover?fmtd(p.cover):'—'}</td><td class="r">${fmtd(p.prem)}/${fl}</td><td class="r">${fmtd(insToAnnual(p.prem,p.freq))}</td><td>${p.renewal||'—'}</td><td>${esc(p.notes||'')}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  }
+
+  // ── Needs Analysis per person ─────────────────────────────────
+  html += '<h2>Life Insurance Needs Analysis</h2>';
+  html += '<p style="font-size:10px;color:#888;margin-bottom:14px">All three methods calculated independently. Recommended coverage uses the most conservative (highest) figure.</p>';
+
+  const personColors = { b:'#c0335e', s:'#5b21b6' };
+  const personBadge  = { b:'b-pink',  s:'b-purple' };
+
+  ['b','s'].forEach(pfx=>{
+    const n   = _computeNeedsData(pfx);
+    const pName = pfx==='b' ? getUserName('brenton') : getUserName('shelley');
+    html += `<div class="person-block">`;
+    html += `<div class="person-header"><span class="person-name">${esc(pName)}</span><span class="badge ${personBadge[pfx]}">${pfx==='b'?'Profile 1':'Profile 2'}</span></div>`;
+
+    if(!n){
+      html += '<p style="color:#888;font-size:10px">No income entered — enter income in the Needs Analysis tab to calculate.</p></div>';
+      return;
+    }
+
+    // Inputs used
+    html += '<table style="margin-bottom:12px"><thead><tr><th colspan="4" style="background:#f5f5f5;color:#444">Inputs Used in Calculation</th></tr></thead><tbody>';
+    const inputs=[
+      ['Annual Income', fmtd(n.income), 'Current Age', n.age],
+      ['Years to Replace Income', n.years, 'Years to Age 65', n.yearsTo65],
+      ['Outstanding Debts', fmtd(n.debts), 'Mortgage Balance', fmtd(n.mortgage)],
+      ['Education / Future Costs', fmtd(n.education), 'Funeral / Final Expenses', fmtd(n.funeral)],
+      ['Existing Savings / Super', fmtd(n.assets), 'Existing Life Cover in Super', fmtd(n.existing)],
+    ];
+    inputs.forEach(([k1,v1,k2,v2])=>{
+      html += `<tr><td style="color:#888;width:140px">${k1}</td><td style="font-weight:600">${v1}</td><td style="color:#888;width:140px">${k2}</td><td style="font-weight:600">${v2||'—'}</td></tr>`;
+    });
+    html += '</tbody></table>';
+
+    // Three method boxes
+    html += '<h3>Life Insurance — Three Methods Compared</h3>';
+    html += '<div class="method-grid">';
+    const methods=[
+      ['DIME Method', n.dimeGross, n.dimeLife, 'D+I+M+E less assets'],
+      ['10× Income', n.incGross, n.incLife, '10 × annual income less assets'],
+      ['Needs Analysis (PV)', Math.round(n.needsGross), Math.round(n.needsLife), 'PV of income stream at 5% discount'],
+    ];
+    methods.forEach(([title,gross,net,detail])=>{
+      html += `<div class="method-box"><div class="method-label">${title}</div><div class="method-amount" style="color:${personColors[pfx]}">${fmtd(net)}</div><div class="method-detail">Gross: ${fmtd(gross)}</div><div class="method-detail">${detail}</div></div>`;
+    });
+    html += '</div>';
+
+    // Coverage gap bars
+    html += '<h3>Coverage Gap Summary</h3>';
+    const gapBars=[
+      ['💛 Life Cover', n.allExistLife, n.recLife, 'Most conservative method used'],
+      ['♿ TPD Cover', n.existTPD, Math.round(n.tpdNeed), 'Independent of Life — PV of income to 65 + modifications'],
+      ['🛡️ Income Protection', n.existIP*12, Math.round(n.ipAnnual), '75% of income to age 65 — ' + fmtd(Math.round(n.ipMonthly)) + '/mo'],
+    ];
+    gapBars.forEach(([label,have,need,note])=>{
+      const p2=pct(have,need);
+      const gap=Math.max(0,need-have);
+      const barColor=p2>=100?'#059669':p2>=70?'#d97706':'#dc2626';
+      const statusClass=gap<=0?'ok':p2>=70?'warn':'bad';
+      const statusText=gap<=0?'✓ Covered':'Gap: '+fmtd(gap);
+      html += `<div class="gap-row">
+        <div class="gap-label">${label}</div>
+        <div class="gap-bar-wrap"><div class="gap-bar-fill" style="width:${p2}%;background:${barColor}"></div></div>
+        <div class="gap-amounts">${fmtd(have)} of ${fmtd(need)}<br><span style="color:#888">${p2}% covered</span></div>
+        <div class="gap-status ${statusClass}">${statusText}</div>
+      </div>`;
+      html += `<div style="font-size:9px;color:#bbb;margin-bottom:8px;padding-left:188px">${note}</div>`;
+    });
+
+    // DIME breakdown detail
+    html += `<details style="margin-top:10px;font-size:10px">
+      <summary style="cursor:pointer;color:#888;margin-bottom:6px">DIME Breakdown</summary>
+      <table style="font-size:10px"><tbody>
+        <tr><td style="color:#888">D — Outstanding Debts</td><td class="r">${fmtd(n.debts)}</td></tr>
+        <tr><td style="color:#888">I — Income × ${n.years} years</td><td class="r">${fmtd(n.income*n.years)}</td></tr>
+        <tr><td style="color:#888">M — Mortgage Balance</td><td class="r">${fmtd(n.mortgage)}</td></tr>
+        <tr><td style="color:#888">E — Education + Funeral</td><td class="r">${fmtd(n.education+n.funeral)}</td></tr>
+        <tr><td style="color:#888">Less: Savings / Super</td><td class="r" style="color:#059669">-${fmtd(n.assets)}</td></tr>
+        <tr><td style="color:#888">Less: Existing Cover</td><td class="r" style="color:#059669">-${fmtd(n.existing)}</td></tr>
+      </tbody></table>
+    </details>`;
+
+    html += '</div>'; // person-block
   });
-  html+='</table>';
 
-  html+='<h2>Life Insurance & TPD Gap Analysis</h2>';
-  ['brenton','shelley'].forEach(person=>{
-    const pName=person==='brenton'?getUserName('brenton'):getUserName('shelley');
-    const liPolicies=INS.filter(p=>(p.type==='Life'||p.type==='Income Protection'||p.type==='TPD')&&(p.covered===person||p.covered==='joint'));
-    if(!liPolicies.length)return;
-    const lifeCover=liPolicies.filter(p=>p.type==='Life').reduce((s,p)=>s+(p.cover||0),0);
-    const tpdCover=liPolicies.filter(p=>p.type==='TPD').reduce((s,p)=>s+(p.cover||0),0);
-    const ipBenefit=liPolicies.filter(p=>p.type==='Income Protection').reduce((s,p)=>s+(p.ipBenefit||0),0);
-    html+='<div class="gap-section"><h3>'+pName+'</h3>';
-    html+='<p><strong>Life Insurance:</strong> $'+fmt(lifeCover)+'</p>';
-    html+='<p><strong>TPD Cover:</strong> $'+fmt(tpdCover)+'</p>';
-    html+='<p><strong>IP Monthly Benefit:</strong> $'+fmt(ipBenefit)+'/month</p></div>';
+  // ── Adviser action items ──────────────────────────────────────
+  html += '<h2>Recommended Actions for Adviser</h2>';
+  html += '<table><thead><tr><th>Person</th><th>Coverage Type</th><th class="r">Current Cover</th><th class="r">Recommended Need</th><th class="r">Gap</th><th>Priority</th></tr></thead><tbody>';
+  ['b','s'].forEach(pfx=>{
+    const n=_computeNeedsData(pfx);
+    if(!n)return;
+    const pName=pfx==='b'?getUserName('brenton'):getUserName('shelley');
+    const rows=[
+      ['Life', n.allExistLife, Math.round(n.recLife), n.lifeGap],
+      ['TPD', n.existTPD, Math.round(n.tpdNeed), n.tpdGap],
+      ['Income Protection (annual)', n.existIP*12, Math.round(n.ipAnnual), n.ipGap],
+    ];
+    rows.forEach(([type,have,need,gap])=>{
+      const p2=pct(have,need);
+      const pri=gap<=0?'<span style="color:#059669">✓ Adequate</span>':p2>=70?'<span style="color:#d97706">⚠ Review</span>':'<span style="color:#dc2626">❗ Urgent</span>';
+      html+=`<tr><td>${esc(pName)}</td><td>${type}</td><td class="r">${fmtd(have)}</td><td class="r">${fmtd(need)}</td><td class="r" style="color:${gap>0?'#dc2626':'#059669'}">${gap>0?fmtd(gap):'—'}</td><td>${pri}</td></tr>`;
+    });
   });
+  html += '</tbody></table>';
 
-  html+='<div class="footer">This report is provided for informational purposes. Consult a licensed financial adviser for personalized recommendations.</div>';
-  html+='</body></html>';
+  html += `<div class="disclaimer">⚠️ This report is for informational purposes and discussion with your licensed financial adviser only. Life insurance needs calculations (DIME, 10× Income, Needs Present Value) are estimates based on inputs provided and standard actuarial assumptions (5% discount rate, 75% income replacement, 90-day IP waiting period). They do not constitute personal financial advice. Consult a licensed financial adviser or insurance specialist before making any coverage decisions. All figures in AUD.</div>`;
+  html += '</body></html>';
+
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   window.open(url,'_blank');
-  setTimeout(()=>URL.revokeObjectURL(url),100);
-  toast('✅ PDF opened');
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('✅ Report opened — use browser Print → Save as PDF');
 }
 
 function renderInsurance(){
@@ -399,79 +655,40 @@ function liSwitchTab(tab) {
 
 function calcLifeNeeds() {
   ['b','s'].forEach(p => {
-    const pre = 'li-' + p + '-';
-    const g = id => parseFloat(document.getElementById(pre + id)?.value) || 0;
-    const income    = g('income');
-    const years     = g('years') || 25;
-    const debts     = g('debts');
-    const mortgage  = g('mortgage');
-    const education = g('education');
-    const funeral   = g('funeral') || 15000;
-    const assets    = g('assets');
-    const existing  = g('existing');
     const el = document.getElementById('li-' + p + '-result');
     if (!el) return;
-    if (!income) { el.innerHTML = ''; return; }
 
-    // Age: use manual input first, then fall back to Super tab data
-    const ageInput = parseFloat(document.getElementById('li-' + p + '-age')?.value) || 0;
-    const superAge = p === 'b' ? (SUPER.b?.age || 0) : (SUPER.s?.age || 0);
-    const age = ageInput || superAge || (p === 'b' ? 40 : 38);
-    const yearsTo65 = Math.max(0, 65 - age);
+    // Pull all computed values from shared helper
+    const n = _computeNeedsData(p);
+    if (!n) { el.innerHTML = ''; return; }
 
-    // ── Method 1: DIME ───────────────────────────────────────────
-    // D = Debts, I = Income × years, M = Mortgage, E = Education + Funeral
-    const dimeGross = debts + (income * years) + mortgage + education + funeral;
-    const dimeLife  = Math.max(0, dimeGross - assets - existing);
+    const { income, years, debts, mortgage, education, funeral, assets, existing,
+            age, yearsTo65,
+            dimeGross, dimeLife, incGross, incLife, needsGross, needsLife,
+            tpdNeed, tpdGross, ipMonthly, ipAnnual,
+            allExistLife, existTPD, existIP } = n;
 
-    // ── Method 2: 10× Income ────────────────────────────────────
-    const incGross  = income * 10;
-    const incLife   = Math.max(0, incGross - assets - existing);
-
-    // ── Method 3: Needs Analysis (PV of income stream) ──────────
-    const disc      = 0.05; // 5% real discount rate
-    const pvIncome  = income * (1 - Math.pow(1 + disc, -years)) / disc;
-    const needsGross= pvIncome + debts + mortgage + education + funeral;
-    const needsLife = Math.max(0, needsGross - assets - existing);
-
-    // ── TPD (independent from Life) ─────────────────────────────
-    // Lump sum: PV of income to age 65 + debts + mortgage + mods allowance
-    const modAllowance = 50000; // home/vehicle modifications allowance
-    const tpdIncomePV  = income * (1 - Math.pow(1 + disc, -yearsTo65)) / disc;
-    const tpdGross     = tpdIncomePV + debts + mortgage + funeral + modAllowance;
-    const tpdNeed      = Math.max(0, tpdGross - assets);
-
-    // ── Income Protection (90-day wait, to age 65) ──────────────
-    const ipMonthly    = income * 0.75 / 12;  // 75% of gross income
-    const ipAnnual     = ipMonthly * 12;
-    const ipBenefitYrs = yearsTo65;
-
-    // ── Existing cover — manual inputs take precedence over policy log ──
-    const existLife   = INS.filter(i => i.type === 'Life' && (i.covered === p || i.covered === 'joint')).reduce((s,i) => s + (i.cover || 0), 0);
-    const polTPD      = INS.filter(i => i.type === 'TPD'  && (i.covered === p || i.covered === 'joint')).reduce((s,i) => s + (i.cover || 0), 0);
-    const polIPmthly  = INS.filter(i => i.type === 'Income Protection' && (i.covered === p || i.covered === 'joint')).reduce((s,i) => s + (i.ipBenefit || (i.cover / 12) || 0), 0);
-    // Manual existing cover inputs (override/supplement policy log)
-    const manualTPD   = parseFloat(document.getElementById('li-' + p + '-exist-tpd')?.value) || 0;
-    const manualIPmo  = parseFloat(document.getElementById('li-' + p + '-exist-ip')?.value)  || 0;
-    // Use manual if entered, otherwise fall back to detected policies
-    const existTPD    = manualTPD > 0 ? manualTPD : polTPD;
-    const existIP     = manualIPmo > 0 ? manualIPmo : polIPmthly;
-    const allExistLife = existLife + existing; // include manually entered existing life cover
-
-    // ── Pick "recommended" based on tab ─────────────────────────
+    // Recalculate tab-specific recLife (helper always uses most conservative)
     const recLife = liActiveTab === 'dime'   ? dimeLife
                   : liActiveTab === 'income' ? incLife
                   : liActiveTab === 'needs'  ? needsLife
-                  : Math.max(dimeLife, incLife, needsLife); // 'all' = most conservative
+                  : Math.max(dimeLife, incLife, needsLife);
 
     const lifeGap = Math.max(0, recLife - allExistLife);
     const tpdGap  = Math.max(0, tpdNeed - existTPD);
-    const ipGap   = Math.max(0, ipAnnual - existIP);
+    const ipGap   = Math.max(0, ipAnnual - (existIP * 12));
+
+    const disc       = 0.05;
+    const modAllow   = 50000;
+    const tpdIncomePV= yearsTo65 > 0 ? income * (1 - Math.pow(1+disc,-yearsTo65)) / disc : 0;
+    // Manual override values for display in TPD/IP detail
+    const manualTPD  = parseFloat(document.getElementById('li-'+p+'-exist-tpd')?.value) || 0;
+    const manualIPmo = parseFloat(document.getElementById('li-'+p+'-exist-ip')?.value)  || 0;
+    const polIPmthly = INS.filter(i=>i.type==='Income Protection'&&(i.covered===p||i.covered==='joint')).reduce((s,i)=>s+(i.ipBenefit||(i.cover/12)||0),0);
+    const polTPD     = INS.filter(i=>i.type==='TPD'&&(i.covered===p||i.covered==='joint')).reduce((s,i)=>s+(i.cover||0),0);
 
     const color = p === 'b' ? 'var(--primary)' : 'var(--purple)';
-    const bg    = p === 'b' ? 'var(--primary-bg)' : 'var(--card3)';
 
-    // Build method comparison boxes
     const showAll    = liActiveTab === 'all';
     const showDime   = showAll || liActiveTab === 'dime';
     const showIncome = showAll || liActiveTab === 'income';
@@ -516,9 +733,9 @@ function calcLifeNeeds() {
     }
 
     el.innerHTML = ''
-      + (showDime   ? methodBox('DIME Method',         dimeGross,  dimeLife,  lifeGap, dimeBreakdown()) : '')
-      + (showIncome ? methodBox('10× Income Method',   incGross,   incLife,   lifeGap, '') : '')
-      + (showNeeds  ? methodBox('Needs Analysis (PV)', needsGross, needsLife, lifeGap, '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">PV of ' + years + ' yrs income at 5% discount rate</div>') : '')
+      + (showDime   ? methodBox('DIME Method',         dimeGross,              dimeLife,  lifeGap, dimeBreakdown()) : '')
+      + (showIncome ? methodBox('10× Income Method',   incGross,               incLife,   lifeGap, '') : '')
+      + (showNeeds  ? methodBox('Needs Analysis (PV)', Math.round(needsGross), Math.round(needsLife), lifeGap, '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">PV of ' + years + ' yrs income at 5% discount rate</div>') : '')
       + '<div style="margin-top:14px">'
       + coverBar(allExistLife, recLife, '💛 Life Cover (recommended)')
       + coverBar(existTPD, tpdNeed, '♿ TPD Cover (independent, to age 65)')
@@ -528,11 +745,11 @@ function calcLifeNeeds() {
       + '<details style="margin-top:10px"><summary style="font-size:.74rem;color:var(--muted);cursor:pointer">TPD &amp; IP calculation detail</summary>'
       + '<div style="margin-top:8px">'
       + '<div class="li-dr"><span class="li-dr-k">TPD: PV of income to age 65 (' + yearsTo65 + ' yrs)</span><span class="li-dr-v">' + fmt(tpdIncomePV) + '</span></div>'
-      + '<div class="li-dr"><span class="li-dr-k">TPD: Home/vehicle modifications allowance</span><span class="li-dr-v">' + fmt(modAllowance) + '</span></div>'
+      + '<div class="li-dr"><span class="li-dr-k">TPD: Home/vehicle modifications allowance</span><span class="li-dr-v">' + fmt(modAllow) + '</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">TPD: Less existing savings/super</span><span class="li-dr-v" style="color:var(--success)">-' + fmt(assets) + '</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">IP: 75% of income/month needed (90-day wait)</span><span class="li-dr-v">' + fmt(ipMonthly) + '/mo</span></div>'
-      + '<div class="li-dr"><span class="li-dr-k">IP: Existing cover (manual input)</span><span class="li-dr-v">' + (manualIPmo > 0 ? fmt(manualIPmo) + '/mo' : polIPmthly > 0 ? fmt(polIPmthly) + '/mo (from policies)' : 'None entered') + '</span></div>'
-      + '<div class="li-dr"><span class="li-dr-k">TPD: Existing cover (manual input)</span><span class="li-dr-v">' + (manualTPD > 0 ? fmt(manualTPD) : polTPD > 0 ? fmt(polTPD) + ' (from policies)' : 'None entered') + '</span></div>'
+      + '<div class="li-dr"><span class="li-dr-k">IP: Existing cover</span><span class="li-dr-v">' + (manualIPmo > 0 ? fmt(manualIPmo) + '/mo (manual)' : polIPmthly > 0 ? fmt(polIPmthly) + '/mo (from policies)' : 'None entered') + '</span></div>'
+      + '<div class="li-dr"><span class="li-dr-k">TPD: Existing cover</span><span class="li-dr-v">' + (manualTPD > 0 ? fmt(manualTPD) + ' (manual)' : polTPD > 0 ? fmt(polTPD) + ' (from policies)' : 'None entered') + '</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">IP: Benefit period</span><span class="li-dr-v">To age 65 (' + yearsTo65 + ' yrs)</span></div>'
       + '</div></details>';
   });
