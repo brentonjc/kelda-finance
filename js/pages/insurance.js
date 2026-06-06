@@ -525,64 +525,165 @@ function renderInsurance(){
   }).join('');
 }
 
-function renderInsCoverage(){
-  const el=document.getElementById('ins-coverage');if(!el)return;
-  const types=['Life','Income Protection'];
-  const people=['brenton','shelley','joint'];
-  const pName=p=>p==='brenton'?getUserName('brenton'):p==='shelley'?getUserName('shelley'):'Joint';
-  const sum={};
-  people.forEach(p=>{sum[p]={};types.forEach(t=>{sum[p][t]={cover:0,need:0};});});
-  INS.filter(p=>types.includes(p.type)).forEach(pol=>{
-    const p=pol.covered||'joint';
-    if(sum[p]&&sum[p][pol.type]){sum[p][pol.type].cover+=pol.cover||0;sum[p][pol.type].need+=pol.need||0;}
-  });
-  const hasData=INS.some(p=>types.includes(p.type));
-  if(!hasData){el.innerHTML='<div class="empty" style="padding:12px 0"><div class="ei">🛡️</div><p>Add Life or Income Protection policies with Sum Insured and Cover Need to see gap analysis</p></div>';return;}
-  let html='';
-  people.forEach(p=>{
-    const hasAny=types.some(t=>sum[p]?.[t]?.cover>0||sum[p]?.[t]?.need>0);
-    if(!hasAny)return;
-    html+=`<div class="cov-section"><div class="cov-hd">${pName(p)}</div>`;
-    types.forEach(t=>{
-      const d=sum[p]?.[t]||{cover:0,need:0};
-      if(!d.cover&&!d.need)return;
-      const pct=d.need>0?Math.min(100,(d.cover/d.need)*100):100;
-      const cls=pct>=100?'':pct>=70?'warn':'over';
-      const gap=d.need-d.cover;
-      const status=gap<=0?`<span style="color:var(--success);font-weight:700">✅ Fully covered</span>`:`<span style="color:var(--warn);font-weight:700">⚠️ Gap: ${fmt(gap)}</span>`;
-      html+=`<div class="prog-wrap"><div class="prog-hd"><span class="prog-lbl">${t}</span><span class="prog-val">${fmt(d.cover)} of ${fmt(d.need)||'—'} needed</span></div>
-        <div class="prog-track"><div class="prog-fill ${cls}" style="width:${pct.toFixed(0)}%"></div></div>
-        <div style="display:flex;justify-content:space-between;margin-top:3px"><span style="font-size:.7rem;color:var(--muted)">${pct.toFixed(0)}% covered</span>${status}</div></div>`;
-    });
-    html+='</div>';
-  });
-  el.innerHTML=html||'<div class="empty" style="padding:10px 0"><p>No coverage data yet</p></div>';
+// ── Shared helper: sum current cover from policies for one person + type ──
+// Joint policies count toward both individuals.
+function _insCoverForPerson(pfx, type) {
+  return INS
+    .filter(p => p.type === type && (p.covered === pfx || p.covered === 'joint'))
+    .reduce((s, p) => s + (p.cover || 0), 0);
 }
 
-let insGapChart=null;
-function renderInsCoverageChart(){
-  const types=['Life','TPD'];
-  const people=['brenton','shelley'];
-  const labels=[];
-  const coverData=[];const needData=[];const gapData=[];
-  people.forEach(p=>{
-    types.forEach(t=>{
-      const lbl=(p==='brenton'?getUserName('brenton'):getUserName('shelley'))+' - '+t;
-      const pols=INS.filter(pol=>pol.type===t&&(pol.covered===p||pol.covered==='joint'));
-      const cover=pols.reduce((s,po)=>s+(po.cover||0),0);
-      const need=pols.reduce((s,po)=>s+(po.need||0),0);
-      const gap=Math.max(0,need-cover);
-      if(need>0){labels.push(lbl);coverData.push(cover);needData.push(need);gapData.push(gap);}
+// IP is monthly benefit, not lump sum — sum ipBenefit across matching policies
+function _insIPMonthlyForPerson(pfx) {
+  return INS
+    .filter(p => p.type === 'Income Protection' && (p.covered === pfx || p.covered === 'joint'))
+    .reduce((s, p) => s + (p.ipBenefit || (p.cover / 12) || 0), 0);
+}
+
+function renderInsCoverage() {
+  const el = document.getElementById('ins-coverage'); if (!el) return;
+
+  // Need comes from the needs analysis calculator (authoritative source).
+  // Cover comes from summing policies (including joint → both people).
+  const nb = _computeNeedsData('b');
+  const ns = _computeNeedsData('s');
+  const hasNeeds = nb || ns;
+  const hasPols  = INS.some(p => ['Life','TPD','Income Protection'].includes(p.type));
+
+  if (!hasNeeds && !hasPols) {
+    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">🛡️</div><p>Enter income in the Needs Analysis above and add policies to see gap analysis</p></div>';
+    return;
+  }
+
+  let html = '';
+  [['b', nb], ['s', ns]].forEach(([pfx, n]) => {
+    const pName = pfx === 'b' ? getUserName('brenton') : getUserName('shelley');
+    if (!n) return; // no income entered for this person
+
+    const lifeNeed = Math.round(n.recLife);
+    const tpdNeed  = Math.round(n.tpdNeed);
+    const ipNeed   = Math.round(n.ipMonthly); // monthly comparison
+
+    const lifeCover = _insCoverForPerson(pfx, 'Life');
+    const tpdCover  = _insCoverForPerson(pfx, 'TPD');
+    const ipCover   = _insIPMonthlyForPerson(pfx); // monthly
+
+    html += `<div class="cov-section"><div class="cov-hd">${pName}</div>`;
+
+    function bar(label, cover, need, isMonthly) {
+      if (!need) return '';
+      const pct    = Math.min(100, cover / need * 100);
+      const cls    = pct >= 100 ? '' : pct >= 70 ? 'warn' : 'over';
+      const gap    = Math.max(0, need - cover);
+      const suffix = isMonthly ? '/mo' : '';
+      const status = gap <= 0
+        ? `<span style="color:var(--success);font-weight:700">✅ Fully covered</span>`
+        : `<span style="color:var(--warn);font-weight:700">⚠️ Gap: ${fmt(gap)}${suffix}</span>`;
+      return `<div class="prog-wrap">
+        <div class="prog-hd"><span class="prog-lbl">${label}</span>
+          <span class="prog-val">${fmt(cover)}${suffix} of ${fmt(need)}${suffix} needed</span></div>
+        <div class="prog-track"><div class="prog-fill ${cls}" style="width:${pct.toFixed(0)}%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:.7rem;color:var(--muted)">${pct.toFixed(0)}% covered</span>${status}</div></div>`;
+    }
+
+    html += bar('💛 Life', lifeCover, lifeNeed, false);
+    html += bar('♿ TPD',  tpdCover,  tpdNeed,  false);
+    html += bar('🛡️ Income Protection', ipCover, ipNeed, true);
+    html += '</div>';
+  });
+
+  el.innerHTML = html || '<div class="empty" style="padding:10px 0"><p>Enter income in the Needs Analysis above to calculate needs</p></div>';
+}
+
+let insGapChart = null;
+function renderInsCoverageChart() {
+  const el = document.getElementById('ins-coverage-chart'); if (!el) return;
+
+  // Build one bar group per person × type, using needs analysis as the need figure.
+  const labels = [], coverData = [], gapData = [];
+
+  [['b', getUserName('brenton')], ['s', getUserName('shelley')]].forEach(([pfx, pName]) => {
+    const n = _computeNeedsData(pfx);
+    if (!n) return;
+
+    const rows = [
+      { label: pName + ' — Life', cover: _insCoverForPerson(pfx, 'Life'),      need: Math.round(n.recLife)  },
+      { label: pName + ' — TPD',  cover: _insCoverForPerson(pfx, 'TPD'),       need: Math.round(n.tpdNeed)  },
+      { label: pName + ' — IP',   cover: _insIPMonthlyForPerson(pfx) * 12,     need: Math.round(n.ipAnnual) },
+    ];
+
+    rows.forEach(r => {
+      if (!r.need) return; // skip if no need calculated
+      const gap = Math.max(0, r.need - r.cover);
+      labels.push(r.label);
+      coverData.push(r.cover);
+      gapData.push(gap);
     });
   });
-  const el=document.getElementById('ins-coverage-chart');if(!el||!labels.length)return;
-  const ctx=el.getContext('2d');if(!ctx)return;
-  if(insGapChart)insGapChart.destroy();
-  const insToken=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';};
-  insGapChart=safeChart(ctx,{type:'bar',data:{labels,datasets:[
-    {label:'Current Cover',data:coverData,backgroundColor:'#e8457a',borderRadius:6},
-    {label:'Still Needed',data:gapData,backgroundColor:'#f59e0b',borderRadius:6}
-  ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'x',plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:insToken('--muted')}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.x)}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Inter'},color:insToken('--muted'),callback:v=>'$'+Math.round(v/1000)+'k'}},y:{stacked:true,grid:{color:insToken('--card3')},ticks:{font:{family:'Inter'},color:insToken('--muted')}}}}});
+
+  const ctx = el.getContext('2d'); if (!ctx) return;
+  if (insGapChart) insGapChart.destroy();
+
+  if (!labels.length) {
+    // Clear canvas and show empty message
+    ctx.clearRect(0, 0, el.width, el.height);
+    const parent = el.parentElement;
+    if (parent && !parent.querySelector('.ins-chart-empty')) {
+      const msg = document.createElement('div');
+      msg.className = 'ins-chart-empty empty';
+      msg.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px';
+      msg.innerHTML = '<div class="ei">📊</div><p>Enter income in the Needs Analysis above to see the gap chart</p>';
+      parent.appendChild(msg);
+    }
+    return;
+  }
+
+  // Remove any empty-state message
+  el.parentElement?.querySelector('.ins-chart-empty')?.remove();
+
+  const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '';
+  insGapChart = safeChart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Current Cover', data: coverData, backgroundColor: '#00C896', borderRadius: 5 },
+        { label: 'Still Needed',  data: gapData,   backgroundColor: '#EF4444', borderRadius: 5 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',  // horizontal bars — easier to read with long labels
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 14, color: tok('--muted') } },
+        tooltip: {
+          callbacks: {
+            label: c => ' ' + c.dataset.label + ': ' + fmt(c.parsed.x),
+            afterBody: items => {
+              const i = items[0].dataIndex;
+              const total = (coverData[i] || 0) + (gapData[i] || 0);
+              const pct   = total > 0 ? Math.round(coverData[i] / total * 100) : 100;
+              return ['Coverage: ' + pct + '%'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { color: tok('--card3') },
+          ticks: { font: { family: 'Inter' }, color: tok('--muted'), callback: v => '$' + Math.round(v / 1000) + 'k' }
+        },
+        y: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { family: 'Inter', size: 11 }, color: tok('--text') }
+        }
+      }
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
