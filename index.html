@@ -375,7 +375,7 @@ window.addEventListener('unhandledrejection',function(e){
     <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">🛠️</span>Tools</li>
-    <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Insurance</span></a></li>
+    <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a></li>
     <li><a onclick="go('health')" id="n-health"><span class="ni">💪</span><span class="nav-lbl">Financial Health</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Controls</li>
@@ -433,6 +433,59 @@ window.addEventListener('unhandledrejection',function(e){
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-primary" onclick="createRuleSave()" style="flex:1">Save Rule</button>
         <button class="btn btn-ghost" onclick="document.getElementById('create-rule-modal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Insurance Edit Modal -->
+<div class="modal-overlay" id="edit-modal-insurance" onclick="if(event.target===this)insHideEditModal()" style="display:none">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <h3 style="margin-bottom:4px">✏️ Edit Policy</h3>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Update policy details and coverage information.</p>
+    <div style="display:grid;gap:12px">
+      <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
+      <div style="display:grid;gap:8px"><label class="lbl">Type</label>
+        <select id="ins-edit-type" onchange="insEditTypeChanged()">
+          <option>Home &amp; Contents</option><option>Car / Vehicle</option><option>Health</option>
+          <option>Life</option><option>TPD</option><option>Income Protection</option>
+          <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Provider</label><input type="text" id="ins-edit-prov" placeholder="e.g. TAL, AIA"/></div>
+        <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-edit-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Frequency</label>
+          <select id="ins-edit-freq"><option value="monthly">Monthly</option><option value="annual" selected>Annual</option><option value="quarterly">Quarterly</option><option value="fortnightly">Fortnightly</option></select>
+        </div>
+        <div><label class="lbl">Renewal Date</label><input type="date" id="ins-edit-renewal"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Covered Person</label>
+          <select id="ins-edit-covered"><option value="joint">Both</option><option value="brenton">Brenton</option><option value="shelley">Shelley</option></select>
+        </div>
+        <div><label class="lbl">Location</label>
+          <select id="ins-edit-location"><option value="outside">Outside Super</option><option value="inside">Inside Super</option></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Sum Insured (AUD)</label><input type="number" id="ins-edit-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
+        <div><label class="lbl">Cover Need (AUD)</label><input type="number" id="ins-edit-need" placeholder="2000000" step="1000" inputmode="decimal"/></div>
+      </div>
+      <div style="display:grid;gap:8px"><label class="lbl">Policy Document Link</label><input type="url" id="ins-edit-doclink" placeholder="https://... or file path"/></div>
+      <div style="display:grid;gap:8px"><label class="lbl">Notes</label><input type="text" id="ins-edit-notes" placeholder="e.g. Excess $500"/></div>
+      <div id="ins-edit-ip-fields" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-edit-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
+        <div><label class="lbl">Benefit Period</label><select id="ins-edit-ip-period"><option value="age65">To Age 65</option><option value="2yr">2 Years</option><option value="5yr">5 Years</option></select></div>
+      </div>
+      <div id="ins-edit-tpd-fields" style="display:none;grid-template-columns:1fr;gap:8px">
+        <div><label class="lbl">TPD Definition</label><select id="ins-edit-tpd-def"><option value="own">Own Occupation</option><option value="any">Any Occupation</option></select></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-primary" onclick="addInsurance()" style="flex:1">Save Changes</button>
+        <button class="btn btn-ghost" onclick="insHideEditModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -1172,7 +1225,7 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ INSURANCE ═══ -->
   <div class="page" id="page-insurance">
-    <div class="page-title">Insurance</div>
+    <div class="page-title">Life Insurance</div>
     <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
     <div id="how-to-insurance"></div>
 
@@ -1242,6 +1295,21 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- General Policies -->
     <div class="g3 mb" id="ins-summary-strip"></div>
+
+    <!-- Coverage Gap Chart -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px">💔 Coverage Gap Analysis</div>
+      <div style="height:320px;position:relative;margin-bottom:14px">
+        <canvas id="ins-coverage-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Coverage Summary -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px">🛡️ Coverage Summary</div>
+      <div id="ins-coverage"></div>
+    </div>
+
     <div class="g2 mb">
       <div class="card">
         <div class="section-label">Add Policy</div>
@@ -1275,7 +1343,18 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div class="form-grid">
           <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
-          <div><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
+          <div><label class="lbl">Cover Need (Life/TPD) (AUD)</label><input type="number" id="ins-need" placeholder="e.g. 2000000" step="1000" inputmode="decimal"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Location</label>
+            <select id="ins-location">
+              <option value="outside">Outside Super</option><option value="inside">Inside Super</option>
+            </select>
+          </div>
+          <div><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period" style="grid-column:1/-1"/></div>
         </div>
         <!-- IP-specific fields (shown when type = Income Protection) -->
         <div id="ins-ip-fields" style="display:none">
@@ -1318,11 +1397,15 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="section-label" style="margin:0">All Policies</div>
-        <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto;">
-          <option value="">All Types</option><option>Home &amp; Contents</option><option>Car / Vehicle</option>
-          <option>Health</option><option>Life</option><option>TPD</option><option>Income Protection</option>
-          <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
-        </select>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()">📊 CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()">📄 Report</button>
+          <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto;">
+            <option value="">All Types</option><option>Home &amp; Contents</option><option>Car / Vehicle</option>
+            <option>Health</option><option>Life</option><option>TPD</option><option>Income Protection</option>
+            <option>Travel</option><option>Pet</option><option>Business</option><option>Other</option>
+          </select>
+        </div>
       </div>
       <div id="ins-list"></div>
     </div>

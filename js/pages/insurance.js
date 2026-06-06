@@ -15,6 +15,8 @@ const INS_META={
 function insToAnnual(amt,freq){return(amt||0)*({monthly:12,annual:1,quarterly:4,fortnightly:26}[freq]||1);}
 function daysTilRenewal(ds){if(!ds)return null;return Math.ceil((new Date(ds)-new Date())/(864e5));}
 
+var insEditingId=null;
+
 function insTypeChanged(){
   const type=document.getElementById('ins-type')?.value||'';
   const ipF=document.getElementById('ins-ip-fields');
@@ -23,39 +25,147 @@ function insTypeChanged(){
   if(tpdF) tpdF.style.display = type==='TPD'?'block':'none';
 }
 
+function insShowEditModal(id){
+  insEditingId=id;
+  const pol=INS.find(p=>p.id===id);
+  if(!pol)return;
+  const g=fId=>{const e=document.getElementById('ins-edit-'+fId);if(e)return e;return document.getElementById('ins-'+fId);};
+  if(g('name'))g('name').value=pol.name;
+  if(g('type')){g('type').value=pol.type;insEditTypeChanged();}
+  if(g('prov'))g('prov').value=pol.prov||'';
+  if(g('prem'))g('prem').value=pol.prem;
+  if(g('freq'))g('freq').value=pol.freq||'annual';
+  if(g('renewal'))g('renewal').value=pol.renewal||'';
+  if(g('covered'))g('covered').value=pol.covered||'joint';
+  if(g('cover'))g('cover').value=pol.cover||0;
+  if(g('need'))g('need').value=pol.need||0;
+  if(g('location'))g('location').value=pol.location||'outside';
+  if(g('doclink'))g('doclink').value=pol.doclink||'';
+  if(g('notes'))g('notes').value=pol.notes||'';
+  if(pol.type==='Income Protection'){
+    if(g('ip-benefit'))g('ip-benefit').value=pol.ipBenefit||0;
+    if(g('ip-period'))g('ip-period').value=pol.ipPeriod||'age65';
+    if(g('ip-wait'))g('ip-wait').value=pol.ipWait||'90';
+  }
+  if(pol.type==='TPD'&&g('tpd-def'))g('tpd-def').value=pol.tpdDef||'own';
+  document.getElementById('edit-modal-insurance').style.display='flex';
+}
+
+function insHideEditModal(){
+  insEditingId=null;
+  document.getElementById('edit-modal-insurance').style.display='none';
+}
+
+function insEditTypeChanged(){
+  const type=document.getElementById('ins-edit-type')?.value||'';
+  const ipF=document.getElementById('ins-edit-ip-fields');
+  const tpdF=document.getElementById('ins-edit-tpd-fields');
+  if(ipF)  ipF.style.display  = type==='Income Protection'?'block':'none';
+  if(tpdF) tpdF.style.display = type==='TPD'?'block':'none';
+}
+
 function addInsurance(){
-  const g=id=>document.getElementById(id);
-  const name=(g('ins-name')?.value||'').trim();
-  const type=g('ins-type')?.value||'';
-  const prov=(g('ins-prov')?.value||'').trim();
-  const prem=parseFloat(g('ins-prem')?.value)||0;
-  const freq=g('ins-freq')?.value||'annual';
-  const renewal=g('ins-renewal')?.value||'';
-  const covered=g('ins-covered')?.value||'joint';
-  const cover=parseFloat(g('ins-cover')?.value)||0;
-  const notes=(g('ins-notes')?.value||'').trim();
+  const g=id=>document.getElementById((insEditingId?'ins-edit-':'ins-')+id);
+  const name=(g('name')?.value||'').trim();
+  const type=g('type')?.value||'';
+  const prov=(g('prov')?.value||'').trim();
+  const prem=parseFloat(g('prem')?.value)||0;
+  const freq=g('freq')?.value||'annual';
+  const renewal=g('renewal')?.value||'';
+  const covered=g('covered')?.value||'joint';
+  const cover=parseFloat(g('cover')?.value)||0;
+  const need=parseFloat(g('need')?.value)||0;
+  const location=g('location')?.value||'outside';
+  const doclink=(g('doclink')?.value||'').trim();
+  const notes=(g('notes')?.value||'').trim();
   if(!name){toast('⚠️ Enter a policy name');return;}
   if(!prem){toast('⚠️ Enter a premium amount');return;}
-  const pol={id:Date.now(),name,type,prov,prem,freq,renewal,covered,cover,notes};
+  const pol={id:insEditingId||Date.now(),name,type,prov,prem,freq,renewal,covered,cover,need,location,doclink,notes};
   // IP-specific
   if(type==='Income Protection'){
-    pol.ipBenefit=parseFloat(g('ins-ip-benefit')?.value)||0;
-    pol.ipPeriod=g('ins-ip-period')?.value||'age65';
-    pol.ipWait=g('ins-ip-wait')?.value||'90';
+    pol.ipBenefit=parseFloat(g('ip-benefit')?.value)||0;
+    pol.ipPeriod=g('ip-period')?.value||'age65';
+    pol.ipWait=g('ip-wait')?.value||'90';
   }
   // TPD-specific
   if(type==='TPD'){
-    pol.tpdDef=g('ins-tpd-def')?.value||'own';
+    pol.tpdDef=g('tpd-def')?.value||'own';
   }
-  INS.push(pol);
+  if(insEditingId){
+    INS=INS.map(p=>p.id===insEditingId?pol:p);
+    toast('✅ Policy updated');
+  }else{
+    INS.push(pol);
+    toast('✅ Policy added');
+  }
   try{save(K.ins,INS);}catch(e){console.error('Insurance save error:',e);}
-  ['ins-name','ins-prov','ins-prem','ins-renewal','ins-cover','ins-notes',
-   'ins-ip-benefit'].forEach(id=>{const e=g(id);if(e)e.value='';});
+  insHideEditModal();
+  ['name','prov','prem','renewal','cover','need','doclink','notes','ip-benefit'].forEach(id=>{const e=document.getElementById('ins-'+id);if(e)e.value='';});
   renderInsurance();
-  toast('✅ Policy saved — '+(INS.length)+' polic'+(INS.length===1?'y':'ies'));
 }
 
 function delIns(id){INS=INS.filter(p=>p.id!==id);save(K.ins,INS);renderInsurance();toast('🗑️ Removed');}
+
+function exportInsuranceCSV(){
+  if(!INS.length){toast('⚠️ No policies to export');return;}
+  const headers=['Policy Name','Type','Provider','Premium','Frequency','Annual Cost','Renewal Date','Covered Person','Sum Insured','Cover Need','Location','Document Link','Notes'];
+  const rows=INS.map(p=>[
+    p.name,p.type,p.prov||'',p.prem,p.freq,insToAnnual(p.prem,p.freq),p.renewal||'',
+    p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both',
+    p.cover||0,p.need||0,p.location||'Outside Super',p.doclink||'',p.notes||''
+  ]);
+  let csv=headers.join(',')+'\n';
+  rows.forEach(r=>csv+=r.map(v=>typeof v==='string'&&v.includes(',')?'"'+v+'"':v).join(',')+'\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='insurance-policies-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ CSV exported');
+}
+
+function exportInsurancePDF(){
+  if(!INS.length){toast('⚠️ No policies to export');return;}
+  const total=INS.reduce((s,p)=>s+insToAnnual(p.prem,p.freq),0);
+  let html='<html><head><meta charset="utf-8"><title>Insurance Report</title><style>body{font-family:Arial,sans-serif;margin:20px;background:#f5f5f5}h1,h2{color:#333}.report-date{color:#999;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse;background:white;margin-bottom:20px}.table-head{background:#2c3e50;color:white;font-weight:bold}.table-row td{padding:8px;border-bottom:1px solid #ddd}.total-row{background:#f9f9f9;font-weight:bold}.gap-section{background:white;padding:15px;margin:15px 0;border-left:4px solid #e8457a}.gap-section h3{margin-top:0}.gap-chart{display:flex;align-items:center;gap:10px;margin:10px 0}.gap-bar{width:100%;background:#e8e8e8;height:20px;border-radius:3px;overflow:hidden}.gap-fill{height:100%;background:#e8457a;transition:width .3s}.gap-pct{min-width:60px;text-align:right;font-weight:bold}.footer{color:#999;font-size:11px;margin-top:30px;border-top:1px solid #ddd;padding-top:10px}</style></head><body>';
+  html+='<h1>Insurance Policy Report</h1>';
+  html+='<div class="report-date">Generated: '+new Date().toLocaleDateString('en-AU')+' | For Financial Adviser Review</div>';
+  html+='<h2>Summary</h2>';
+  html+='<table><tr class="table-head"><td>Metric</td><td style="text-align:right">Amount</td></tr>';
+  html+='<tr class="table-row"><td>Total Policies</td><td style="text-align:right">'+INS.length+'</td></tr>';
+  html+='<tr class="table-row"><td>Annual Insurance Cost</td><td style="text-align:right">$'+fmt(total)+'</td></tr>';
+  html+='<tr class="table-row"><td>Monthly Average</td><td style="text-align:right">$'+fmt(total/12)+'</td></tr></table>';
+
+  html+='<h2>Policies</h2><table><tr class="table-head"><td>Policy</td><td>Type</td><td>Provider</td><td style="text-align:right">Premium</td><td style="text-align:right">Annual</td><td>Renewal</td></tr>';
+  INS.forEach(p=>{
+    html+='<tr class="table-row"><td><strong>'+p.name+'</strong></td><td>'+p.type+'</td><td>'+(p.prov||'')+'</td><td style="text-align:right">$'+fmt(p.prem)+'/'+({monthly:'mo',annual:'yr',quarterly:'qtr',fortnightly:'fn'}[p.freq]||p.freq)+'</td><td style="text-align:right">$'+fmt(insToAnnual(p.prem,p.freq))+'</td><td>'+(p.renewal||'—')+'</td></tr>';
+  });
+  html+='</table>';
+
+  html+='<h2>Life Insurance & TPD Gap Analysis</h2>';
+  ['brenton','shelley'].forEach(person=>{
+    const pName=person==='brenton'?getUserName('brenton'):getUserName('shelley');
+    const liPolicies=INS.filter(p=>(p.type==='Life'||p.type==='Income Protection'||p.type==='TPD')&&(p.covered===person||p.covered==='joint'));
+    if(!liPolicies.length)return;
+    const lifeCover=liPolicies.filter(p=>p.type==='Life').reduce((s,p)=>s+(p.cover||0),0);
+    const tpdCover=liPolicies.filter(p=>p.type==='TPD').reduce((s,p)=>s+(p.cover||0),0);
+    const ipBenefit=liPolicies.filter(p=>p.type==='Income Protection').reduce((s,p)=>s+(p.ipBenefit||0),0);
+    html+='<div class="gap-section"><h3>'+pName+'</h3>';
+    html+='<p><strong>Life Insurance:</strong> $'+fmt(lifeCover)+'</p>';
+    html+='<p><strong>TPD Cover:</strong> $'+fmt(tpdCover)+'</p>';
+    html+='<p><strong>IP Monthly Benefit:</strong> $'+fmt(ipBenefit)+'/month</p></div>';
+  });
+
+  html+='<div class="footer">This report is provided for informational purposes. Consult a licensed financial adviser for personalized recommendations.</div>';
+  html+='</body></html>';
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  window.open(url,'_blank');
+  setTimeout(()=>URL.revokeObjectURL(url),100);
+  toast('✅ PDF opened');
+}
 
 function renderInsurance(){
   const filter=document.getElementById('ins-filter')?.value||'';
@@ -77,6 +187,7 @@ function renderInsurance(){
 
   // Coverage
   renderInsCoverage();
+  renderInsCoverageChart();
 
   // Policy list
   const el=document.getElementById('ins-list');
@@ -90,6 +201,8 @@ function renderInsurance(){
     const rdate=p.renewal?new Date(p.renewal+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
     const cov=p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both';
     const fl={monthly:'mo',annual:'yr',quarterly:'qtr',fortnightly:'fn'}[p.freq]||p.freq;
+    const locBadge=p.location&&p.location!=='outside'?`<span class="ins-tag" style="background:var(--card3);color:var(--muted)">🏦 ${p.location==='inside'?'Inside Super':'Outside Super'}</span>`:'';
+    const docBadge=p.doclink?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)"><a href="${esc(p.doclink)}" target="_blank" style="color:inherit;text-decoration:none">📄 Document</a></span>`:'';
     return`<div class="ins-card">
       <div class="ins-icon" style="background:${m.bg};color:${m.color}">${m.icon}</div>
       <div class="ins-body">
@@ -99,6 +212,8 @@ function renderInsurance(){
           <span class="ins-tag" style="background:${m.bg};color:${m.color}">${p.type}</span>
           <span class="badge ${rbc}">${rlbl} · ${rdate}</span>
           <span class="ins-tag" style="background:var(--card2);color:var(--muted)">👤 ${cov}</span>
+          ${locBadge}
+          ${docBadge}
           ${p.notes?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)">📝 ${p.notes}</span>`:''}
           ${p.type==='Income Protection'&&p.ipBenefit?`<span class="ins-tag" style="background:var(--card3);color:var(--purple)">${fmt(p.ipBenefit)}/mo · ${p.ipWait||90}d wait · to ${p.ipPeriod==='age65'?'age 65':p.ipPeriod}</span>`:''}
           ${p.type==='TPD'&&p.tpdDef?`<span class="ins-tag" style="background:var(--warn-bg);color:var(--warn)">${p.tpdDef==='own'?'Own Occupation':'Any Occupation'} TPD</span>`:''}
@@ -107,7 +222,7 @@ function renderInsurance(){
       <div>
         <div class="ins-amt" style="color:${m.color}">${fmt(p.prem)}<small>/${fl}</small></div>
         <div style="font-size:.68rem;color:var(--muted);text-align:right;margin-top:2px">${fmt(insToAnnual(p.prem,p.freq))}/yr</div>
-        <div style="text-align:right;margin-top:7px"><button class="del-btn" onclick="delIns(${p.id})">🗑</button></div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:7px"><button class="btn btn-ghost btn-sm" onclick="insShowEditModal(${p.id})">Edit</button><button class="del-btn" onclick="delIns(${p.id})">🗑</button></div>
       </div></div>`;
   }).join('');
 }
@@ -144,6 +259,32 @@ function renderInsCoverage(){
     html+='</div>';
   });
   el.innerHTML=html||'<div class="empty" style="padding:10px 0"><p>No coverage data yet</p></div>';
+}
+
+let insGapChart=null;
+function renderInsCoverageChart(){
+  const types=['Life','TPD'];
+  const people=['brenton','shelley'];
+  const labels=[];
+  const coverData=[];const needData=[];const gapData=[];
+  people.forEach(p=>{
+    types.forEach(t=>{
+      const lbl=(p==='brenton'?getUserName('brenton'):getUserName('shelley'))+' - '+t;
+      const pols=INS.filter(pol=>pol.type===t&&(pol.covered===p||pol.covered==='joint'));
+      const cover=pols.reduce((s,po)=>s+(po.cover||0),0);
+      const need=pols.reduce((s,po)=>s+(po.need||0),0);
+      const gap=Math.max(0,need-cover);
+      if(need>0){labels.push(lbl);coverData.push(cover);needData.push(need);gapData.push(gap);}
+    });
+  });
+  const el=document.getElementById('ins-coverage-chart');if(!el||!labels.length)return;
+  const ctx=el.getContext('2d');if(!ctx)return;
+  if(insGapChart)insGapChart.destroy();
+  const insToken=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'';};
+  insGapChart=safeChart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'Current Cover',data:coverData,backgroundColor:'#e8457a',borderRadius:6},
+    {label:'Still Needed',data:gapData,backgroundColor:'#f59e0b',borderRadius:6}
+  ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'x',plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:insToken('--muted')}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.x)}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Inter'},color:insToken('--muted'),callback:v=>'$'+Math.round(v/1000)+'k'}},y:{stacked:true,grid:{color:insToken('--card3')},ticks:{font:{family:'Inter'},color:insToken('--muted')}}}}});
 }
 
 // ══════════════════════════════════════════════════════════════
