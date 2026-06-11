@@ -7,39 +7,78 @@ var liabEditIdx = -1;
 
 // ── Data helpers ──────────────────────────────────────────────
 
+// Returns true if any mortgage property is linked to this liability ID
+function _liabIsMortgageLinked(liabId) {
+  var props = (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length)
+    ? MORTGAGE.properties : [];
+  return props.some(function(p) { return p.linkedLiabilityId === liabId; });
+}
+
+// Returns the mortgage property linked to a given liability ID (or null)
+function _liabLinkedMortgageProp(liabId) {
+  var props = (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length)
+    ? MORTGAGE.properties : [];
+  return props.find(function(p) { return p.linkedLiabilityId === liabId; }) || null;
+}
+
 function liabAllMortgages() {
-  var m = MORTGAGE;
-  if (!m || !m.balance) return [];
-  var r = (m.rate || 0) / 100 / 12;
-  var n = (m.years || 0) * 12;
-  var isIO = m.reptype === 'io';
-  var repmt = 0;
-  if (isIO) {
-    repmt = m.balance * r;
-  } else if (r && n) {
-    repmt = m.balance * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  var props = (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length)
+    ? MORTGAGE.properties : null;
+
+  if (!props) {
+    // Legacy flat object fallback
+    var m = MORTGAGE;
+    if (!m || !m.balance) return [];
+    var r  = (m.rate || 0) / 100 / 12;
+    var n  = (m.years || 0) * 12;
+    var isIO = m.reptype === 'io';
+    var repmt = 0;
+    if (isIO) { repmt = m.balance * r; }
+    else if (r && n) { repmt = m.balance * (r * Math.pow(1+r,n)) / (Math.pow(1+r,n)-1); }
+    var payoffDate = '';
+    if (!isIO && r && n) {
+      var d = new Date(); d.setMonth(d.getMonth() + n);
+      payoffDate = d.toLocaleDateString('en-AU', { month:'short', year:'numeric' });
+    }
+    return [{
+      id: 'mortgage_primary', type: 'mortgage',
+      lender: m.lenderName || 'Home Loan',
+      balance: Number(m.balance) || 0, originalBalance: Number(m.original) || 0,
+      rate: Number(m.rate) || 0, rateType: 'variable', payment: repmt,
+      dueDay: 1, termMonths: n, payoffDate: payoffDate,
+      homeValue: Number(m.homeValue) || 0, readonly: true
+    }];
   }
-  var payoffDate = '';
-  if (!isIO && r && n) {
-    var d = new Date();
-    d.setMonth(d.getMonth() + n);
-    payoffDate = d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
-  }
-  return [{
-    id: 'mortgage_primary',
-    type: 'mortgage',
-    lender: m.lenderName || 'Home Loan',
-    balance: Number(m.balance) || 0,
-    originalBalance: Number(m.original) || 0,
-    rate: Number(m.rate) || 0,
-    rateType: 'variable',
-    payment: repmt,
-    dueDay: 1,
-    termMonths: n,
-    payoffDate: payoffDate,
-    homeValue: Number(m.homeValue) || 0,
-    readonly: true
-  }];
+
+  var items = [];
+  props.forEach(function(p, idx) {
+    // Skip: this property is linked to a LIABILITIES entry — that card represents it
+    if (p.linkedLiabilityId) return;
+    if (!p.balance) return;
+
+    var r  = (Number(p.rate) || 0) / 100 / 12;
+    var n  = (Number(p.years) || 0) * 12;
+    var isIO = p.reptype === 'io';
+    var repmt = 0;
+    if (isIO) { repmt = p.balance * r; }
+    else if (r && n) { repmt = p.balance * (r * Math.pow(1+r,n)) / (Math.pow(1+r,n)-1); }
+    var payoffDate = '';
+    if (!isIO && r && n) {
+      var d = new Date(); d.setMonth(d.getMonth() + n);
+      payoffDate = d.toLocaleDateString('en-AU', { month:'short', year:'numeric' });
+    }
+    // First property keeps 'mortgage_primary' for backward-compat with monthly history data
+    var id = idx === 0 ? 'mortgage_primary' : ('mortgage_prop_' + p.id);
+    items.push({
+      id: id, type: 'mortgage',
+      lender: p.name || 'Home Loan',
+      balance: Number(p.balance) || 0, originalBalance: Number(p.original) || 0,
+      rate: Number(p.rate) || 0, rateType: 'variable', payment: repmt,
+      dueDay: 1, termMonths: n, payoffDate: payoffDate,
+      homeValue: Number(p.homeValue) || 0, readonly: true
+    });
+  });
+  return items;
 }
 
 function liabTotal() {
@@ -462,11 +501,24 @@ function liabRenderList() {
     // Due day label
     var dueSuffix = l.dueDay == 1 ? 'st' : l.dueDay == 2 ? 'nd' : l.dueDay == 3 ? 'rd' : 'th';
 
+    // Mortgage link detection
+    var linkedProp = _liabLinkedMortgageProp(l.id);
+    var mortgageLinkBadge = linkedProp
+      ? '<span style="background:rgba(0,200,150,.12);color:var(--success);padding:2px 8px;border-radius:12px;font-size:.68rem;display:inline-flex;align-items:center;gap:4px">🔗 Mortgage Linked</span>'
+      : '';
+    var mortgageSyncNote = linkedProp
+      ? '<div style="margin-top:8px;padding:8px 12px;background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)">'
+        + '🔗 Balance auto-syncs from the <a href="#" onclick="go(\'mortgage\');return false;" style="color:var(--success)">Mortgage tab</a>'
+        + ' · <strong>' + esc(linkedProp.name || 'Primary Property') + '</strong>'
+        + '</div>'
+      : '';
+
     html += '<div class="card" style="margin-bottom:12px;border-left:3px solid ' + info.color + '">'
       + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px">'
       + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
       + '<span style="background:' + info.color + '22;color:' + info.color + ';padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700">' + info.emoji + ' ' + info.label + '</span>'
       + rateBadge
+      + mortgageLinkBadge
       + '</div>'
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
       + '<button onclick="liabOpenModal(' + realIdx + ')" style="background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">✏️</button>'
@@ -486,6 +538,7 @@ function liabRenderList() {
       + payoffHtml
       + hecsHtml
       + scheduleHtml
+      + mortgageSyncNote
       + (l.notes ? '<div style="margin-top:10px;font-size:.75rem;color:var(--muted);border-top:1px solid rgba(255,255,255,.06);padding-top:8px">' + esc(l.notes) + '</div>' : '')
       + '</div>';
   });

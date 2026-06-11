@@ -1041,6 +1041,16 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="form-grid">
           <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Month this valuation applies to (defaults to current)</div></div>
         </div>
+        <hr class="div"/>
+        <div class="section-label">🔗 Link to Liability</div>
+        <div style="margin-bottom:14px">
+          <label class="lbl">Linked Liability Record</label>
+          <select id="m-linked-liability" onchange="mortgageLiabilityLinkBanner()" style="margin-bottom:8px">
+            <option value="__none__">None — show as read-only in Liabilities</option>
+          </select>
+          <div id="m-liab-link-banner" style="display:none;padding:8px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)"></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:6px">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
+        </div>
         <button class="btn btn-primary" onclick="saveMortgage()">💾 Save Details</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">

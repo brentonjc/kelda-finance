@@ -19,12 +19,17 @@ function _mortgageEnsureProps() {
       reptype:       MORTGAGE.reptype       || 'pi',
       offset:        MORTGAGE.offset        || 0,
       offsetName:    MORTGAGE.offsetName    || 'Offset Account',
-      acquiredDate:  MORTGAGE.acquiredDate  || '',
-      purchasePrice: MORTGAGE.purchasePrice || 0
+      acquiredDate:      MORTGAGE.acquiredDate      || '',
+      purchasePrice:     MORTGAGE.purchasePrice     || 0,
+      linkedLiabilityId: MORTGAGE.linkedLiabilityId || null
     };
     MORTGAGE.properties = [legacy];
     try { save(K.mortgage, MORTGAGE); } catch(e) {}
   }
+  // Ensure every existing property has linkedLiabilityId (forward-compat migration)
+  MORTGAGE.properties.forEach(function(p) {
+    if (p.linkedLiabilityId === undefined) p.linkedLiabilityId = null;
+  });
   return MORTGAGE.properties;
 }
 
@@ -66,7 +71,7 @@ function mortgageAddProperty() {
     name: 'Property ' + (props.length + 1),
     balance: 0, original: 0, rate: 0, years: 0,
     homeValue: 0, reptype: 'pi', offset: 0, offsetName: 'Offset Account',
-    acquiredDate: '', purchasePrice: 0
+    acquiredDate: '', purchasePrice: 0, linkedLiabilityId: null
   };
   props.push(newProp);
   try { save(K.mortgage, MORTGAGE); } catch(e) {}
@@ -110,6 +115,87 @@ function _mortgageSaveActive() {
   p.offsetName    = g('m-offset-name')                 || p.offsetName;
   p.acquiredDate  = g('m-acquired')                    || p.acquiredDate;
   p.purchasePrice = parseFloat(g('m-purchase-price'))  || p.purchasePrice;
+  var linkedEl    = document.getElementById('m-linked-liability');
+  if (linkedEl) {
+    var val = linkedEl.value;
+    p.linkedLiabilityId = (val && val !== '__none__') ? val : null;
+  }
+}
+
+// ── Liability link helpers ────────────────────────────────────
+
+// Populate the linked-liability <select> for the active property
+function mortgagePopulateLiabilitySelect() {
+  var el = document.getElementById('m-linked-liability');
+  if (!el) return;
+  var p = _mortgageActiveProp();
+  var curId = p.linkedLiabilityId || '__none__';
+
+  var opts = '<option value="__none__">None — show as read-only in Liabilities</option>';
+  opts += '<option value="__create__"' + (curId === '__create__' ? ' selected' : '') + '>＋ Create new liability for this property</option>';
+  (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).forEach(function(l) {
+    var sel = l.id === curId ? ' selected' : '';
+    opts += '<option value="' + l.id + '"' + sel + '>' + esc(l.lender) + ' (' + fmt(Number(l.balance)||0) + ')</option>';
+  });
+  el.innerHTML = opts;
+  // Refresh the banner
+  mortgageLiabilityLinkBanner();
+}
+
+// Show/hide the linked-liability info banner below the select
+function mortgageLiabilityLinkBanner() {
+  var banner = document.getElementById('m-liab-link-banner');
+  if (!banner) return;
+  var el = document.getElementById('m-linked-liability');
+  var val = el ? el.value : '__none__';
+  if (val === '__none__') {
+    banner.style.display = 'none';
+  } else if (val === '__create__') {
+    banner.style.display = 'block';
+    banner.innerHTML = '<span style="color:var(--success)">✅</span> A new Mortgage liability will be created and linked when you save.';
+  } else {
+    var liab = (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).find(function(l){ return l.id === val; });
+    if (liab) {
+      banner.style.display = 'block';
+      banner.innerHTML = '<span style="color:var(--success)">🔗</span> Saving will sync the remaining balance to <strong>' + esc(liab.lender) + '</strong> in Liabilities.';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+
+// Sync linked liabilities after saving mortgage — create new ones or update existing
+function _mortgageSyncLinkedLiabilities() {
+  var props = _mortgageEnsureProps();
+  var liabChanged = false;
+  var curMo = (typeof _nwCurrentMonth === 'function') ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
+  var vmEl = document.getElementById('m-valuation-month');
+  var recordMo = (vmEl && vmEl.value) ? vmEl.value : curMo;
+
+  props.forEach(function(p) {
+    if (!p.linkedLiabilityId) return;
+
+    // __create__ was already resolved to a real ID before this runs (see saveMortgage)
+    var liab = (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).find(function(l){ return l.id === p.linkedLiabilityId; });
+    if (!liab) { p.linkedLiabilityId = null; return; }
+
+    // Sync balance and rate from mortgage to liability
+    liab.balance = Number(p.balance) || 0;
+    liab.rate    = Number(p.rate)    || liab.rate;
+    if (p.years && !liab.termMonths) liab.termMonths = (Number(p.years) || 0) * 12;
+    liabChanged = true;
+
+    // Also record in LIAB_MONTHLY for the save month
+    if (typeof LIAB_MONTHLY !== 'undefined') {
+      if (!LIAB_MONTHLY[liab.id]) LIAB_MONTHLY[liab.id] = {};
+      LIAB_MONTHLY[liab.id][recordMo] = Number(p.balance) || 0;
+      try { save(K.liabMonthly, LIAB_MONTHLY); } catch(e) {}
+    }
+  });
+
+  if (liabChanged) {
+    try { save(K.liabilities, LIABILITIES); } catch(e) {}
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -161,6 +247,37 @@ function saveMortgage(){
   p.offsetName    = document.getElementById('m-offset-name').value.trim()||'Offset Account';
   p.acquiredDate  = document.getElementById('m-acquired').value||'';
   p.purchasePrice = parseFloat(document.getElementById('m-purchase-price').value)||0;
+  // Read linked liability selection
+  var linkedEl = document.getElementById('m-linked-liability');
+  if (linkedEl) {
+    var linkedVal = linkedEl.value;
+    if (linkedVal === '__create__') {
+      // Auto-create a new LIABILITIES entry for this property
+      var newLiab = {
+        id: 'liab_' + Date.now(),
+        type: 'mortgage',
+        lender: p.name || 'Home Loan',
+        balance: p.balance || 0,
+        originalBalance: p.original || null,
+        rate: p.rate || 0,
+        rateType: 'variable',
+        fixedExpiry: null,
+        payment: 0,
+        dueDay: 1,
+        termMonths: (p.years || 0) * 12 || null,
+        creditLimit: null,
+        notes: 'Linked to Mortgage tab — ' + (p.name || 'Primary Property'),
+        addToBills: false,
+        createdAt: today()
+      };
+      LIABILITIES.push(newLiab);
+      try { save(K.liabilities, LIABILITIES); } catch(e) {}
+      p.linkedLiabilityId = newLiab.id;
+      toast('✅ Saved · New liability "' + newLiab.lender + '" created and linked');
+    } else {
+      p.linkedLiabilityId = (linkedVal && linkedVal !== '__none__') ? linkedVal : null;
+    }
+  }
   // Also update legacy flat fields from first property for backward compat with other pages
   if (_mortgagePropIdx === 0) {
     MORTGAGE.balance=p.balance;MORTGAGE.original=p.original;MORTGAGE.rate=p.rate;
@@ -169,6 +286,8 @@ function saveMortgage(){
     MORTGAGE.acquiredDate=p.acquiredDate;MORTGAGE.purchasePrice=p.purchasePrice;
   }
   try { save(K.mortgage, MORTGAGE); } catch(e) {}
+  // Sync balance to linked liability (and record monthly entry)
+  _mortgageSyncLinkedLiabilities();
   // Record property value + mortgage balance in monthly history
   try {
     var mo = (document.getElementById('m-valuation-month') || {}).value || _nwCurrentMonth();
@@ -180,7 +299,8 @@ function saveMortgage(){
   renderPaydownChart();
   renderRateSensitivity();
   try{if(typeof recordNetWorthSnapshot==='function')recordNetWorthSnapshot();}catch(e){}
-  toast('✅ Saved'+(ctOff>0&&typedOffset===0?' · offset synced from Cash Tracker':''));
+  var linkMsg = p.linkedLiabilityId ? ' · balance synced to Liabilities' : '';
+  toast('✅ Saved'+(ctOff>0&&typedOffset===0?' · offset synced from Cash Tracker':'')+linkMsg);
 }
 
 function syncOffsetSlider(){
@@ -252,6 +372,8 @@ function renderMortgage(){
   if(ppEl)ppEl.value=m.purchasePrice||'';
   const vmEl=document.getElementById('m-valuation-month');
   if(vmEl&&!vmEl.value)vmEl.value=typeof _nwCurrentMonth==='function'?_nwCurrentMonth():'';
+  // Populate the linked-liability selector for the active property
+  mortgagePopulateLiabilitySelect();
 
   const equity=(m.homeValue||0)-(m.balance||0);
   const eqPct=m.homeValue?Math.max(0,Math.min(100,(equity/m.homeValue)*100)):0;
