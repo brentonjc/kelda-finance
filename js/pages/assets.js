@@ -76,15 +76,42 @@ function renderAssets() {
     + '<span class="dr-v" style="color:var(--primary)">' + fmt(supTotal) + '</span></div>';
 
   // ── Property ──────────────────────────────────────────────
-  var hv = MORTGAGE.homeValue || 0;
-  var mb = MORTGAGE.balance   || 0;
-  var off= MORTGAGE.offset    || 0;
-  var eq = hv - mb;
+  var hv  = MORTGAGE.homeValue     || 0;
+  var mb  = MORTGAGE.balance       || 0;
+  var off = MORTGAGE.offset        || 0;
+  var eq  = hv - mb;
+  var pp  = MORTGAGE.purchasePrice || 0;
+  var ad  = MORTGAGE.acquiredDate  || '';
+
+  // Acquired-date helpers (inline — no dependency on mortgage.js being loaded)
+  var acqHoldStr = '';
+  var acqDateStr = '';
+  if (ad) {
+    var then = new Date(ad + 'T00:00:00'), now = new Date();
+    if (!isNaN(then.getTime()) && then <= now) {
+      var yrs = now.getFullYear() - then.getFullYear();
+      var mos = now.getMonth() - then.getMonth();
+      if (mos < 0) { yrs--; mos += 12; }
+      acqHoldStr = yrs === 0 ? mos + ' mo' : (mos === 0 ? yrs + ' yr' : yrs + ' yr ' + mos + ' mo');
+      acqDateStr = then.toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'});
+    }
+  }
+  var capGainHtml = '';
+  if (pp > 0 && hv > 0) {
+    var gain    = hv - pp;
+    var gainPct = (gain / pp * 100).toFixed(1);
+    var gainColor = gain >= 0 ? 'var(--success)' : 'var(--danger)';
+    capGainHtml = '<div class="dr"><span class="dr-k">Purchase Price</span><span class="dr-v">' + fmt(pp) + '</span></div>'
+      + '<div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v" style="color:' + gainColor + '">'
+      + (gain >= 0 ? '+' : '') + fmt(gain) + ' (' + (gain >= 0 ? '+' : '') + gainPct + '%)</span></div>';
+  }
 
   document.getElementById('assets-property').innerHTML = hv
     ? '<div class="dr"><span class="dr-k">🏡 Home Value</span><span class="dr-v">' + fmt(hv) + '</span></div>'
       + '<div class="dr"><span class="dr-k">📉 Mortgage</span><span class="dr-v" style="color:var(--danger)">-' + fmt(mb) + '</span></div>'
       + '<div class="dr"><span class="dr-k">🏦 Offset</span><span class="dr-v" style="color:var(--success)">' + fmt(off) + '</span></div>'
+      + (acqDateStr ? '<div class="dr"><span class="dr-k">📅 Acquired</span><span class="dr-v">' + acqDateStr + (acqHoldStr ? ' · ' + acqHoldStr : '') + '</span></div>' : '')
+      + capGainHtml
       + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
       + '<span class="dr-k" style="font-weight:700">Net Equity</span>'
       + '<span class="dr-v" style="color:var(--primary)">' + fmt(eq) + '</span></div>'

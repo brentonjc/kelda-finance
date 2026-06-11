@@ -11,14 +11,16 @@ function _mortgageEnsureProps() {
     var legacy = {
       id: Date.now(),
       name: 'Primary Property',
-      balance:    MORTGAGE.balance    || 0,
-      original:   MORTGAGE.original   || 0,
-      rate:       MORTGAGE.rate       || 0,
-      years:      MORTGAGE.years      || 0,
-      homeValue:  MORTGAGE.homeValue  || 0,
-      reptype:    MORTGAGE.reptype    || 'pi',
-      offset:     MORTGAGE.offset     || 0,
-      offsetName: MORTGAGE.offsetName || 'Offset Account'
+      balance:       MORTGAGE.balance       || 0,
+      original:      MORTGAGE.original      || 0,
+      rate:          MORTGAGE.rate          || 0,
+      years:         MORTGAGE.years         || 0,
+      homeValue:     MORTGAGE.homeValue     || 0,
+      reptype:       MORTGAGE.reptype       || 'pi',
+      offset:        MORTGAGE.offset        || 0,
+      offsetName:    MORTGAGE.offsetName    || 'Offset Account',
+      acquiredDate:  MORTGAGE.acquiredDate  || '',
+      purchasePrice: MORTGAGE.purchasePrice || 0
     };
     MORTGAGE.properties = [legacy];
     try { save(K.mortgage, MORTGAGE); } catch(e) {}
@@ -63,7 +65,8 @@ function mortgageAddProperty() {
     id: Date.now(),
     name: 'Property ' + (props.length + 1),
     balance: 0, original: 0, rate: 0, years: 0,
-    homeValue: 0, reptype: 'pi', offset: 0, offsetName: 'Offset Account'
+    homeValue: 0, reptype: 'pi', offset: 0, offsetName: 'Offset Account',
+    acquiredDate: '', purchasePrice: 0
   };
   props.push(newProp);
   try { save(K.mortgage, MORTGAGE); } catch(e) {}
@@ -97,17 +100,32 @@ function _mortgageSaveActive() {
   if (!props[_mortgagePropIdx]) return;
   var p = props[_mortgagePropIdx];
   var g = function(id) { var e = document.getElementById(id); return e ? e.value : ''; };
-  p.balance    = parseFloat(g('m-balance'))    || p.balance;
-  p.original   = parseFloat(g('m-original'))   || p.original;
-  p.rate       = parseFloat(g('m-rate'))        || p.rate;
-  p.years      = parseInt(g('m-years'))         || p.years;
-  p.homeValue  = parseFloat(g('m-homevalue'))   || p.homeValue;
-  p.reptype    = g('m-reptype')                 || p.reptype;
-  p.offset     = parseFloat(g('m-offset'))      || p.offset;
-  p.offsetName = g('m-offset-name')             || p.offsetName;
+  p.balance       = parseFloat(g('m-balance'))        || p.balance;
+  p.original      = parseFloat(g('m-original'))       || p.original;
+  p.rate          = parseFloat(g('m-rate'))            || p.rate;
+  p.years         = parseInt(g('m-years'))             || p.years;
+  p.homeValue     = parseFloat(g('m-homevalue'))       || p.homeValue;
+  p.reptype       = g('m-reptype')                     || p.reptype;
+  p.offset        = parseFloat(g('m-offset'))          || p.offset;
+  p.offsetName    = g('m-offset-name')                 || p.offsetName;
+  p.acquiredDate  = g('m-acquired')                    || p.acquiredDate;
+  p.purchasePrice = parseFloat(g('m-purchase-price'))  || p.purchasePrice;
 }
 
 // ══════════════════════════════════════════════════════════════
+// ── Acquired-date helpers ────────────────────────────────────
+function _mortgageHoldDuration(dateStr) {
+  if (!dateStr) return null;
+  var then = new Date(dateStr + 'T00:00:00');
+  var now  = new Date();
+  if (isNaN(then.getTime()) || then > now) return null;
+  var yrs  = now.getFullYear() - then.getFullYear();
+  var mos  = now.getMonth() - then.getMonth();
+  if (mos < 0) { yrs--; mos += 12; }
+  if (yrs === 0) return mos + ' mo';
+  return mos === 0 ? yrs + ' yr' : yrs + ' yr ' + mos + ' mo';
+}
+
 function calcRepayment(principal,rate,years){
   if(!principal||!rate||!years)return 0;
   const r=rate/100/12,n=years*12;
@@ -133,19 +151,22 @@ function saveMortgage(){
   }
   // Write to the active property
   var p = props[_mortgagePropIdx] || props[0];
-  p.balance    = parseFloat(document.getElementById('m-balance').value)||0;
-  p.original   = parseFloat(document.getElementById('m-original').value)||0;
-  p.rate       = parseFloat(document.getElementById('m-rate').value)||0;
-  p.years      = parseInt(document.getElementById('m-years').value)||0;
-  p.homeValue  = parseFloat(document.getElementById('m-homevalue').value)||0;
-  p.reptype    = document.getElementById('m-reptype').value||'pi';
-  p.offset     = resolvedOffset;
-  p.offsetName = document.getElementById('m-offset-name').value.trim()||'Offset Account';
+  p.balance       = parseFloat(document.getElementById('m-balance').value)||0;
+  p.original      = parseFloat(document.getElementById('m-original').value)||0;
+  p.rate          = parseFloat(document.getElementById('m-rate').value)||0;
+  p.years         = parseInt(document.getElementById('m-years').value)||0;
+  p.homeValue     = parseFloat(document.getElementById('m-homevalue').value)||0;
+  p.reptype       = document.getElementById('m-reptype').value||'pi';
+  p.offset        = resolvedOffset;
+  p.offsetName    = document.getElementById('m-offset-name').value.trim()||'Offset Account';
+  p.acquiredDate  = document.getElementById('m-acquired').value||'';
+  p.purchasePrice = parseFloat(document.getElementById('m-purchase-price').value)||0;
   // Also update legacy flat fields from first property for backward compat with other pages
   if (_mortgagePropIdx === 0) {
     MORTGAGE.balance=p.balance;MORTGAGE.original=p.original;MORTGAGE.rate=p.rate;
     MORTGAGE.years=p.years;MORTGAGE.homeValue=p.homeValue;MORTGAGE.reptype=p.reptype;
     MORTGAGE.offset=p.offset;MORTGAGE.offsetName=p.offsetName;
+    MORTGAGE.acquiredDate=p.acquiredDate;MORTGAGE.purchasePrice=p.purchasePrice;
   }
   try { save(K.mortgage, MORTGAGE); } catch(e) {}
   renderMortgage();
@@ -217,6 +238,10 @@ function renderMortgage(){
   if(m.reptype)document.getElementById('m-reptype').value=m.reptype;
   if(m.offset)document.getElementById('m-offset').value=m.offset;
   if(m.offsetName)document.getElementById('m-offset-name').value=m.offsetName;
+  const acqEl=document.getElementById('m-acquired');
+  if(acqEl)acqEl.value=m.acquiredDate||'';
+  const ppEl=document.getElementById('m-purchase-price');
+  if(ppEl)ppEl.value=m.purchasePrice||'';
 
   const equity=(m.homeValue||0)-(m.balance||0);
   const eqPct=m.homeValue?Math.max(0,Math.min(100,(equity/m.homeValue)*100)):0;
@@ -247,6 +272,28 @@ function renderMortgage(){
     }
   }else{simMonths=calcMonthsPayoff(m.balance,m.rate,repNoOff);}
 
+  // ── Acquired / capital growth rows ──────────────────────────
+  const holdDur = _mortgageHoldDuration(m.acquiredDate);
+  const acqRows = m.acquiredDate ? `
+    <div class="dr"><span class="dr-k">📅 Acquired</span><span class="dr-v">${new Date(m.acquiredDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</span></div>
+    <div class="dr"><span class="dr-k">Hold Period</span><span class="dr-v">${holdDur||'—'}</span></div>` : '';
+  const capGainRows = (m.purchasePrice > 0 && m.homeValue > 0) ? (() => {
+    const gain = m.homeValue - m.purchasePrice;
+    const gainPct = (gain / m.purchasePrice * 100).toFixed(1);
+    const holdYrs = m.acquiredDate ? (() => {
+      var then = new Date(m.acquiredDate+'T00:00:00'), now = new Date();
+      var y = now.getFullYear()-then.getFullYear(), mo = now.getMonth()-then.getMonth();
+      if(mo<0){y--;mo+=12;} return y+(mo/12);
+    })() : 0;
+    const cagr = (holdYrs > 0.5)
+      ? ((Math.pow(m.homeValue/m.purchasePrice, 1/holdYrs)-1)*100).toFixed(1)+'% p.a.'
+      : '';
+    return `
+    <div class="dr"><span class="dr-k">Purchase Price</span><span class="dr-v">${fmt(m.purchasePrice)}</span></div>
+    <div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v" style="color:${gain>=0?'var(--success)':'var(--danger)'}">${gain>=0?'+':''}${fmt(gain)} (${gain>=0?'+':''}${gainPct}%)</span></div>`
+    + (cagr ? `<div class="dr"><span class="dr-k">Annualised Growth</span><span class="dr-v" style="color:var(--success)">${cagr}</span></div>` : '');
+  })() : '';
+
   sumEl.innerHTML=`
     <div class="dr"><span class="dr-k">Rate (p.a.)</span><span class="dr-v">${m.rate}%</span></div>
     <div class="dr"><span class="dr-k">Loan Balance</span><span class="dr-v">${fmt(m.balance)}</span></div>
@@ -255,7 +302,8 @@ function renderMortgage(){
     <div class="dr"><span class="dr-k">Monthly Repayment</span><span class="dr-v">${fmt(repWithOff)}</span></div>
     <div class="dr"><span class="dr-k">Monthly Interest</span><span class="dr-v">${fmt(intWithOff)}</span></div>
     <div class="dr"><span class="dr-k">Loan Paid Off</span><span class="dr-v" style="color:var(--primary)">${paidOff.toFixed(1)}%</span></div>
-    <div class="dr"><span class="dr-k">Equity</span><span class="dr-v" style="color:var(--primary)">${eqPct.toFixed(1)}%</span></div>`;
+    <div class="dr"><span class="dr-k">Equity</span><span class="dr-v" style="color:var(--primary)">${eqPct.toFixed(1)}%</span></div>
+    ${acqRows}${capGainRows}`;
 
   const sim=document.getElementById('offset-sim-card');
   sim.style.display='block';
