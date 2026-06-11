@@ -13,7 +13,11 @@ const K={
   superHist:    'cff_super_history',    // { 'YYYY-MM': { brenton, shelley } }
   mortgageHist: 'cff_mortgage_history', // { 'YYYY-MM': { homeValue, balance } }
   eqHist:       'cff_eq_history',       // { 'YYYY-MM': totalValue }
-  liabHist:     'cff_liab_history'      // { 'YYYY-MM': totalBalance }
+  liabHist:     'cff_liab_history',     // { 'YYYY-MM': totalBalance }
+  // Monthly closing balance grids (Cash Tracker-style per component)
+  superMonthly: 'cff_super_monthly',    // { accountId: { 'YYYY-MM': balance } }
+  liabMonthly:  'cff_liab_monthly',     // { liabilityId: { 'YYYY-MM': balance } }
+  eqMonthly:    'cff_eq_monthly'        // { 'YYYY-MM': { closing } }
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}

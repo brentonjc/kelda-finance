@@ -208,6 +208,145 @@ function _superRefresh(pfx) {
   superSyncBalance(pfx);
   renderSuperAggTable();
   calcSuper();
+  renderSuperMonthlyGrid();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUPER MONTHLY CLOSING BALANCE GRID (Cash Tracker-style)
+// ══════════════════════════════════════════════════════════════
+
+function _superMonthlyMonthOpts(sel) {
+  var now = new Date();
+  var o = '';
+  for (var i = 0; i < 36; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var l = d.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+    o += '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + l + '</option>';
+  }
+  return o;
+}
+
+function _superMonthlyUpdateNW(mo) {
+  try {
+    if (typeof nwRecordSuperMonth !== 'function') return;
+    var bTotal = 0, sTotal = 0;
+    var bAccts = SUPER_ACCTS.brenton || [];
+    var sAccts = SUPER_ACCTS.shelley || [];
+    bAccts.forEach(function(a) {
+      var hist = SUPER_MONTHLY[a.id] || {};
+      bTotal += hist[mo] !== undefined ? hist[mo] : (parseFloat(a.balance) || 0);
+    });
+    sAccts.forEach(function(a) {
+      var hist = SUPER_MONTHLY[a.id] || {};
+      sTotal += hist[mo] !== undefined ? hist[mo] : (parseFloat(a.balance) || 0);
+    });
+    nwRecordSuperMonth(mo, bTotal, sTotal);
+    if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot();
+  } catch(e) {}
+}
+
+function superMonthSave(acctId) {
+  var mo  = (document.getElementById('super-mo-inp-' + acctId) || {}).value;
+  var bal = parseFloat((document.getElementById('super-mo-bal-' + acctId) || {}).value);
+  if (!mo || isNaN(bal)) { toast('⚠️ Select month and enter balance'); return; }
+  if (!SUPER_MONTHLY[acctId]) SUPER_MONTHLY[acctId] = {};
+  SUPER_MONTHLY[acctId][mo] = bal;
+  save(K.superMonthly, SUPER_MONTHLY);
+  _superMonthlyUpdateNW(mo);
+  renderSuperMonthlyGrid();
+  var balInp = document.getElementById('super-mo-bal-' + acctId);
+  if (balInp) balInp.value = '';
+  toast('✅ Balance saved');
+}
+
+function superMonthUpdate(acctId, mo, value) {
+  var v = parseFloat(value);
+  if (!SUPER_MONTHLY[acctId]) SUPER_MONTHLY[acctId] = {};
+  if (!isNaN(v)) {
+    SUPER_MONTHLY[acctId][mo] = v;
+  } else {
+    delete SUPER_MONTHLY[acctId][mo];
+  }
+  save(K.superMonthly, SUPER_MONTHLY);
+  _superMonthlyUpdateNW(mo);
+}
+
+function superMonthDel(acctId, mo) {
+  if (SUPER_MONTHLY[acctId]) delete SUPER_MONTHLY[acctId][mo];
+  save(K.superMonthly, SUPER_MONTHLY);
+  _superMonthlyUpdateNW(mo);
+  renderSuperMonthlyGrid();
+}
+
+function renderSuperMonthlyGrid() {
+  var el = document.getElementById('super-monthly-grid');
+  if (!el) return;
+
+  var bAccts = SUPER_ACCTS.brenton || [];
+  var sAccts = SUPER_ACCTS.shelley || [];
+  var allAccts = [];
+  var bName = (typeof getUserName === 'function') ? (getUserName('brenton') || 'Brenton') : 'Brenton';
+  var sName = (typeof getUserName === 'function') ? (getUserName('shelley') || 'Shelley') : 'Shelley';
+  bAccts.forEach(function(a) { allAccts.push({ acct: a, profileLabel: bName, color: 'var(--primary)' }); });
+  sAccts.forEach(function(a) { allAccts.push({ acct: a, profileLabel: sName, color: '#818CF8' }); });
+
+  if (!allAccts.length) {
+    el.innerHTML = '<div class="card mb" style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Add super accounts above to start tracking monthly balances.</div>';
+    return;
+  }
+
+  var curMo = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
+  var html = '<div class="section-label" style="margin-bottom:12px">📅 Monthly Super Balances</div>'
+    + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record each account\'s closing balance by month — tracks changes in super over time and links to Net Worth history.</div>';
+
+  allAccts.forEach(function(item) {
+    var a = item.acct;
+    var data = SUPER_MONTHLY[a.id] || {};
+    var months = Object.keys(data).sort();
+    var rows = '';
+    if (!months.length) {
+      rows = '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No entries yet.</div>';
+    } else {
+      months.forEach(function(m, i) {
+        var bal = data[m];
+        var prev = i > 0 ? data[months[i - 1]] : null;
+        var diff = prev !== null ? bal - prev : null;
+        var diffStr = diff === null ? '' : (diff >= 0 ? '+' : '') + fmt(diff);
+        var diffColor = diff === null ? '' : diff >= 0 ? 'var(--success)' : 'var(--danger)';
+        var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
+        rows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
+          + '<div style="min-width:80px;font-size:.78rem;color:var(--muted)">' + ml + '</div>'
+          + '<input type="number" step="1000" value="' + bal + '" inputmode="decimal"'
+          + ' onchange="superMonthUpdate(\'' + a.id + '\',\'' + m + '\',this.value)"'
+          + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
+          + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
+          + '<button onclick="superMonthDel(\'' + a.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">🗑</button>'
+          + '</div>';
+      });
+    }
+
+    html += '<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
+      + '<div style="width:10px;height:10px;border-radius:50%;background:' + item.color + ';flex-shrink:0"></div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-weight:700;font-size:.88rem">' + esc(a.fund || 'Unknown Fund') + '</div>'
+      + '<div style="font-size:.7rem;color:var(--muted)">' + item.profileLabel + ' · ' + esc(a.type || 'Accumulation') + '</div>'
+      + '</div>'
+      + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:' + item.color + ';font-weight:700">' + fmt(parseFloat(a.balance) || 0) + '</span></div>'
+      + '</div>'
+      + rows
+      + '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">'
+      + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Month</label>'
+      + '<select id="super-mo-inp-' + a.id + '" style="width:100%;font-size:.82rem">' + _superMonthlyMonthOpts(curMo) + '</select></div>'
+      + '<div style="flex:1;min-width:120px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Closing Balance (AUD)</label>'
+      + '<input type="number" id="super-mo-bal-' + a.id + '" placeholder="0" step="1000" inputmode="decimal" style="width:100%;font-size:16px;box-sizing:border-box"/></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="superMonthSave(\'' + a.id + '\')" style="flex-shrink:0;min-height:44px">Save</button>'
+      + '</div>'
+      + '</div>';
+  });
+
+  el.innerHTML = '<div class="card mb">' + html + '</div>';
 }
 
 // ASFA-aligned growth scenarios (net return after fees shown; fees split separately)
@@ -248,6 +387,7 @@ function renderSuperPage(){
   superSyncBalance('b');
   superSyncBalance('s');
   renderSuperAggTable();
+  renderSuperMonthlyGrid();
   showSuperResults();renderSuperChart();renderD293Section();
 }
 

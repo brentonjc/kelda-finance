@@ -70,6 +70,10 @@ let TRANSFERS  = load(K.transfers)  || [];
 let USER_CONFIG = load('cff_userconfig') || {};
 let EQUITIES    = load(K.equities)     || []; // [{id,ticker,company,type,qty,costBase,currentPrice,currency,notes,sales:[]}]
 let LIABILITIES = load(K.liabilities) || []; // [{id,type,lender,balance,originalBalance,rate,rateType,fixedExpiry,payment,dueDay,termMonths,creditLimit,notes,addToBills,createdAt}]
+// Monthly closing balance grids — per-component historical tracking
+var SUPER_MONTHLY = load(K.superMonthly) || {}; // { accountId: { 'YYYY-MM': balance } }
+var LIAB_MONTHLY  = load(K.liabMonthly)  || {}; // { liabilityId: { 'YYYY-MM': balance } }
+var EQ_MONTHLY    = load(K.eqMonthly)    || {}; // { 'YYYY-MM': { closing } }
 // Entry dates for cash tracker: { acctId: { 'YYYY-MM': 'YYYY-MM-DD' } }
 var CT_DATES = load(K.ctdates) || {};
 // ACCOUNTS — [{id,name,icon,currency,location,color,isCore}]

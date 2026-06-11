@@ -507,6 +507,7 @@ function liabRenderPage() {
   liabRenderSummary();
   liabRenderMortgages();
   liabRenderList();
+  renderLiabMonthlyGrid();
 }
 
 // ── Modal ─────────────────────────────────────────────────────
@@ -664,4 +665,145 @@ function liabSetSort(mode) {
     if (btn) btn.classList.toggle('active', m === mode);
   });
   liabRenderList();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIABILITY MONTHLY CLOSING BALANCE GRID (Cash Tracker-style)
+// ══════════════════════════════════════════════════════════════
+
+function _liabMonthlyMonthOpts(sel) {
+  var now = new Date();
+  var o = '';
+  for (var i = 0; i < 36; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var l = d.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+    o += '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + l + '</option>';
+  }
+  return o;
+}
+
+function _liabMonthlyAllItems() {
+  var items = [];
+  liabAllMortgages().forEach(function(m) {
+    items.push({ id: m.id, label: m.lender, currentBalance: m.balance, icon: '🏠', note: 'Balance mirrors Mortgage tab — edit there' });
+  });
+  LIABILITIES.forEach(function(l) {
+    var info = liabTypeInfo(l.type);
+    items.push({ id: l.id, label: l.lender, currentBalance: Number(l.balance) || 0, icon: info.emoji, note: '' });
+  });
+  return items;
+}
+
+function _liabMonthlyTotalForMonth(mo) {
+  var total = 0;
+  _liabMonthlyAllItems().forEach(function(item) {
+    var hist = LIAB_MONTHLY[item.id] || {};
+    total += hist[mo] !== undefined ? hist[mo] : item.currentBalance;
+  });
+  return total;
+}
+
+function _liabMonthlyUpdateNW(mo) {
+  try {
+    if (typeof nwRecordLiabMonth !== 'function') return;
+    nwRecordLiabMonth(mo, _liabMonthlyTotalForMonth(mo));
+    if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot();
+  } catch(e) {}
+}
+
+function liabMonthSave(itemId) {
+  var mo  = (document.getElementById('liab-mo-inp-' + itemId) || {}).value;
+  var bal = parseFloat((document.getElementById('liab-mo-bal-' + itemId) || {}).value);
+  if (!mo || isNaN(bal)) { toast('⚠️ Select month and enter balance'); return; }
+  if (!LIAB_MONTHLY[itemId]) LIAB_MONTHLY[itemId] = {};
+  LIAB_MONTHLY[itemId][mo] = bal;
+  save(K.liabMonthly, LIAB_MONTHLY);
+  _liabMonthlyUpdateNW(mo);
+  renderLiabMonthlyGrid();
+  var balInp = document.getElementById('liab-mo-bal-' + itemId);
+  if (balInp) balInp.value = '';
+  toast('✅ Balance saved');
+}
+
+function liabMonthUpdate(itemId, mo, value) {
+  var v = parseFloat(value);
+  if (!LIAB_MONTHLY[itemId]) LIAB_MONTHLY[itemId] = {};
+  if (!isNaN(v)) {
+    LIAB_MONTHLY[itemId][mo] = v;
+  } else {
+    delete LIAB_MONTHLY[itemId][mo];
+  }
+  save(K.liabMonthly, LIAB_MONTHLY);
+  _liabMonthlyUpdateNW(mo);
+}
+
+function liabMonthDel(itemId, mo) {
+  if (LIAB_MONTHLY[itemId]) delete LIAB_MONTHLY[itemId][mo];
+  save(K.liabMonthly, LIAB_MONTHLY);
+  _liabMonthlyUpdateNW(mo);
+  renderLiabMonthlyGrid();
+}
+
+function renderLiabMonthlyGrid() {
+  var el = document.getElementById('liab-monthly-grid');
+  if (!el) return;
+
+  var items = _liabMonthlyAllItems();
+  if (!items.length) {
+    el.innerHTML = '<div class="card mb" style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Add mortgage or liabilities above to start tracking monthly balances.</div>';
+    return;
+  }
+
+  var curMo = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
+  var html = '<div class="section-label" style="margin-bottom:12px">📅 Monthly Liability Balances</div>'
+    + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record each liability\'s closing balance by month — tracks debt reduction over time and links to Net Worth history.</div>';
+
+  items.forEach(function(item) {
+    var data = LIAB_MONTHLY[item.id] || {};
+    var months = Object.keys(data).sort();
+    var rows = '';
+    if (!months.length) {
+      rows = '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No entries yet.</div>';
+    } else {
+      months.forEach(function(m, i) {
+        var bal = data[m];
+        var prev = i > 0 ? data[months[i - 1]] : null;
+        var diff = prev !== null ? bal - prev : null;
+        var diffStr = diff === null ? '' : (diff >= 0 ? '+' : '') + fmt(diff);
+        // For liabilities: going down = green (good), up = red (bad)
+        var diffColor = diff === null ? '' : diff <= 0 ? 'var(--success)' : 'var(--danger)';
+        var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
+        rows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
+          + '<div style="min-width:80px;font-size:.78rem;color:var(--muted)">' + ml + '</div>'
+          + '<input type="number" step="1000" value="' + bal + '" inputmode="decimal"'
+          + ' onchange="liabMonthUpdate(\'' + item.id + '\',\'' + m + '\',this.value)"'
+          + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
+          + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
+          + '<button onclick="liabMonthDel(\'' + item.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">🗑</button>'
+          + '</div>';
+      });
+    }
+
+    html += '<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
+      + '<span style="font-size:1.1rem">' + item.icon + '</span>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-weight:700;font-size:.88rem">' + esc(item.label) + '</div>'
+      + (item.note ? '<div style="font-size:.68rem;color:var(--muted);margin-top:1px">' + item.note + '</div>' : '')
+      + '</div>'
+      + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:var(--danger);font-weight:700">' + fmt(item.currentBalance) + '</span></div>'
+      + '</div>'
+      + rows
+      + '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">'
+      + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Month</label>'
+      + '<select id="liab-mo-inp-' + item.id + '" style="width:100%;font-size:.82rem">' + _liabMonthlyMonthOpts(curMo) + '</select></div>'
+      + '<div style="flex:1;min-width:120px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Closing Balance (AUD)</label>'
+      + '<input type="number" id="liab-mo-bal-' + item.id + '" placeholder="0" step="1000" inputmode="decimal" style="width:100%;font-size:16px;box-sizing:border-box"/></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="liabMonthSave(\'' + item.id + '\')" style="flex-shrink:0;min-height:44px">Save</button>'
+      + '</div>'
+      + '</div>';
+  });
+
+  el.innerHTML = '<div class="card mb">' + html + '</div>';
 }

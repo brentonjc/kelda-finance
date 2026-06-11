@@ -130,6 +130,7 @@ function renderEquitiesPage() {
     renderEqVestByYear();
     renderEqCharts();
     renderEquitiesList();
+    renderEqMonthlyGrid();
 }
 
 // ── Vested vs Unvested — portfolio summary card ───────────────
@@ -1005,6 +1006,115 @@ function saveBatchPrices() {
     renderEquitiesPage();
     if (typeof renderAssets==='function') renderAssets();
     toast('Prices updated for '+changed+' holding'+(changed!==1?'s':''));
+}
+
+// ══════════════════════════════════════════════════════════════
+// EQUITIES MONTHLY PORTFOLIO SNAPSHOT GRID (Cash Tracker-style)
+// ══════════════════════════════════════════════════════════════
+
+function _eqMonthlyMonthOpts(sel) {
+  var now = new Date();
+  var o = '';
+  for (var i = 0; i < 36; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var l = d.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+    o += '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + l + '</option>';
+  }
+  return o;
+}
+
+function eqMonthSave() {
+  var mo  = (document.getElementById('eq-mo-inp') || {}).value;
+  var val = parseFloat((document.getElementById('eq-mo-val') || {}).value);
+  if (!mo || isNaN(val)) { toast('⚠️ Select month and enter portfolio value'); return; }
+  if (!EQ_MONTHLY[mo]) EQ_MONTHLY[mo] = {};
+  EQ_MONTHLY[mo].closing = val;
+  save(K.eqMonthly, EQ_MONTHLY);
+  try {
+    if (typeof nwRecordEqMonth === 'function') nwRecordEqMonth(mo, val);
+    if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot();
+  } catch(e) {}
+  renderEqMonthlyGrid();
+  var inp = document.getElementById('eq-mo-val');
+  if (inp) inp.value = '';
+  toast('✅ Portfolio value saved');
+}
+
+function eqMonthUpdate(mo, value) {
+  var v = parseFloat(value);
+  if (!EQ_MONTHLY[mo]) EQ_MONTHLY[mo] = {};
+  if (!isNaN(v)) {
+    EQ_MONTHLY[mo].closing = v;
+  } else {
+    delete EQ_MONTHLY[mo];
+  }
+  save(K.eqMonthly, EQ_MONTHLY);
+  try {
+    if (!isNaN(v) && typeof nwRecordEqMonth === 'function') nwRecordEqMonth(mo, v);
+    if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot();
+  } catch(e) {}
+}
+
+function eqMonthDel(mo) {
+  delete EQ_MONTHLY[mo];
+  save(K.eqMonthly, EQ_MONTHLY);
+  try {
+    var hist = load(K.eqHist) || {};
+    delete hist[mo];
+    save(K.eqHist, hist);
+    if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot();
+  } catch(e) {}
+  renderEqMonthlyGrid();
+}
+
+function renderEqMonthlyGrid() {
+  var el = document.getElementById('eq-monthly-grid');
+  if (!el) return;
+
+  var curVal = typeof eqTotalEquitiesValue === 'function' ? eqTotalEquitiesValue() : 0;
+  var curMo  = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
+  var months = Object.keys(EQ_MONTHLY).sort();
+
+  var rows = '';
+  if (!months.length) {
+    rows = '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No entries yet.</div>';
+  } else {
+    months.forEach(function(m, i) {
+      var closing = (EQ_MONTHLY[m] || {}).closing;
+      if (closing === undefined) return;
+      var prevMo  = i > 0 ? months[i - 1] : null;
+      var prevVal = prevMo ? ((EQ_MONTHLY[prevMo] || {}).closing) : null;
+      var diff    = prevVal !== null && prevVal !== undefined ? closing - prevVal : null;
+      var diffStr = diff === null ? '' : (diff >= 0 ? '+' : '') + fmt(diff);
+      var diffColor = diff === null ? '' : diff >= 0 ? 'var(--success)' : 'var(--danger)';
+      var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
+      rows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
+        + '<div style="min-width:80px;font-size:.78rem;color:var(--muted)">' + ml + '</div>'
+        + '<input type="number" step="1000" value="' + closing + '" inputmode="decimal"'
+        + ' onchange="eqMonthUpdate(\'' + m + '\',this.value)"'
+        + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
+        + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
+        + '<button onclick="eqMonthDel(\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">🗑</button>'
+        + '</div>';
+    });
+  }
+
+  el.innerHTML = '<div class="card mb">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">'
+    + '<div class="section-label" style="margin:0">📅 Monthly Portfolio Snapshots</div>'
+    + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:var(--primary);font-weight:700">' + fmt(curVal) + '</span></div>'
+    + '</div>'
+    + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record your total portfolio closing value each month to track growth and link to Net Worth history. Holdings-level data auto-populates the current value above.</div>'
+    + rows
+    + '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">'
+    + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Month</label>'
+    + '<select id="eq-mo-inp" style="width:100%;font-size:.82rem">' + _eqMonthlyMonthOpts(curMo) + '</select></div>'
+    + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Closing Portfolio Value (AUD)</label>'
+    + '<input type="number" id="eq-mo-val" placeholder="0" step="1000" inputmode="decimal" style="width:100%;font-size:16px;box-sizing:border-box"/></div>'
+    + '<button class="btn btn-primary btn-sm" onclick="eqMonthSave()" style="flex-shrink:0;min-height:44px">Save</button>'
+    + '</div>'
+    + '</div>';
 }
 
 // ── Mobile nav ────────────────────────────────────────────────

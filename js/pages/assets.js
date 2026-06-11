@@ -284,10 +284,14 @@ function renderNetWorthHistory() {
   // ── Load all data sources ─────────────────────────────────────
   var hist = [];
   try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
-  var superHist = {}; try { superHist  = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
-  var mortHist  = {}; try { mortHist   = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
-  var eqHist    = {}; try { eqHist     = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
-  var liabHist  = {}; try { liabHist   = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
+  var superHist    = {}; try { superHist    = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
+  var mortHist     = {}; try { mortHist     = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
+  var eqHist       = {}; try { eqHist       = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
+  var liabHist     = {}; try { liabHist     = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
+  // New monthly grids — highest fidelity per-component data
+  var superMonthly = (typeof SUPER_MONTHLY !== 'undefined') ? SUPER_MONTHLY : {};
+  var liabMonthly  = (typeof LIAB_MONTHLY  !== 'undefined') ? LIAB_MONTHLY  : {};
+  var eqMonthly    = (typeof EQ_MONTHLY    !== 'undefined') ? EQ_MONTHLY    : {};
 
   // Current fallback values
   var curNW     = (typeof computeCurrentNetWorth === 'function') ? computeCurrentNetWorth() : {};
@@ -310,7 +314,41 @@ function renderNetWorthHistory() {
   Object.keys(mortHist).forEach(function(m){ allMonthSet[m] = true; });
   Object.keys(eqHist).forEach(function(m){ allMonthSet[m] = true; });
   Object.keys(liabHist).forEach(function(m){ allMonthSet[m] = true; });
+  // Also include months from the new monthly grids
+  Object.keys(eqMonthly).forEach(function(m){ allMonthSet[m] = true; });
+  Object.keys(liabMonthly).forEach(function(lid) { Object.keys(liabMonthly[lid]||{}).forEach(function(m){ allMonthSet[m]=true; }); });
+  Object.keys(superMonthly).forEach(function(aid) { Object.keys(superMonthly[aid]||{}).forEach(function(m){ allMonthSet[m]=true; }); });
   if (typeof ctAllMonths === 'function') { ctAllMonths().forEach(function(m){ allMonthSet[m] = true; }); }
+
+  // Helper: compute super total for a month from per-account monthly data
+  function superTotalForMonth(mo) {
+    var bAccts = (typeof SUPER_ACCTS !== 'undefined') ? (SUPER_ACCTS.brenton||[]) : [];
+    var sAccts = (typeof SUPER_ACCTS !== 'undefined') ? (SUPER_ACCTS.shelley||[]) : [];
+    var allAccts = bAccts.concat(sAccts);
+    if (!allAccts.length) return null; // no accounts — fall back to history
+    var anyEntry = false;
+    var total = 0;
+    allAccts.forEach(function(a) {
+      var hist = superMonthly[a.id] || {};
+      if (hist[mo] !== undefined) { total += hist[mo]; anyEntry = true; }
+    });
+    return anyEntry ? total : null;
+  }
+
+  // Helper: compute liab total for a month from per-liability monthly data
+  function liabTotalForMonth(mo) {
+    var allIds = [];
+    if (typeof liabAllMortgages === 'function') liabAllMortgages().forEach(function(m){ allIds.push(m.id); });
+    if (typeof LIABILITIES !== 'undefined') LIABILITIES.forEach(function(l){ allIds.push(l.id); });
+    if (!allIds.length) return null;
+    var anyEntry = false;
+    var total = 0;
+    allIds.forEach(function(id) {
+      var h = liabMonthly[id] || {};
+      if (h[mo] !== undefined) { total += h[mo]; anyEntry = true; }
+    });
+    return anyEntry ? total : null;
+  }
 
   // For each month, build a rich entry using best-available data
   var moMap = {};
@@ -319,13 +357,26 @@ function renderNetWorthHistory() {
 
   // Fill/override with component-level history where available
   Object.keys(allMonthSet).sort().forEach(function(mo) {
-    var bank  = bankForMonth(mo);
-    var sh    = superHist[mo];
-    var super_= sh ? ((sh.brenton||0)+(sh.shelley||0)) : (moMap[mo] ? (moMap[mo].super_||fbSuper) : fbSuper);
+    var bank   = bankForMonth(mo);
+    // Super: new per-account monthly grid > legacy totals history > fallback
+    var smGrid = superTotalForMonth(mo);
+    var sh     = superHist[mo];
+    var super_ = smGrid !== null ? smGrid
+               : sh ? ((sh.brenton||0)+(sh.shelley||0))
+               : (moMap[mo] ? (moMap[mo].super_||fbSuper) : fbSuper);
+    // Property: mortgage history > fallback
     var mh    = mortHist[mo];
     var prop  = mh ? (mh.homeValue||0) : (moMap[mo] ? (moMap[mo].property||fbProp) : fbProp);
-    var eq    = typeof eqHist[mo] !== 'undefined' ? eqHist[mo] : (moMap[mo] ? (moMap[mo].equities||fbEq) : fbEq);
-    var liab  = typeof liabHist[mo] !== 'undefined' ? liabHist[mo] : (moMap[mo] ? (moMap[mo].liabilities||fbLiab) : fbLiab);
+    // Equities: new monthly grid > legacy eq history > fallback
+    var eqGrid  = eqMonthly[mo] ? eqMonthly[mo].closing : undefined;
+    var eq      = eqGrid !== undefined ? eqGrid
+                : (typeof eqHist[mo] !== 'undefined' ? eqHist[mo]
+                : (moMap[mo] ? (moMap[mo].equities||fbEq) : fbEq));
+    // Liabilities: new per-liability monthly grid > legacy liab history > fallback
+    var lGrid = liabTotalForMonth(mo);
+    var liab  = lGrid !== null ? lGrid
+              : (typeof liabHist[mo] !== 'undefined' ? liabHist[mo]
+              : (moMap[mo] ? (moMap[mo].liabilities||fbLiab) : fbLiab));
     var nw    = bank + super_ + prop + eq - liab;
     moMap[mo] = { date: mo + '-01', netWorth: Math.round(nw*100)/100,
                   bank: Math.round(bank), super_: Math.round(super_),
