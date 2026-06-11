@@ -13,20 +13,13 @@ function computeCurrentNetWorth() {
   var lm      = months.length ? months[months.length - 1] : null;
 
   // Bank: all CT accounts for the most recent month
-  var ctAccts = (typeof CTCFG !== 'undefined' && CTCFG && CTCFG.accounts && CTCFG.accounts.length)
-    ? CTCFG.accounts.map(function(a){ return a.id; })
+  var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
+    ? CT_ACCTS.map(function(a){ return a.id; })
     : ['offset','home','sav1','sav2'];
-  var bank = lm ? ctAccts.reduce(function(s,a){ return s + ((CT[a]||{})[lm]||0); }, 0) : 0;
+  var bank = lm ? ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[lm]||0); }, 0) : 0;
 
   // Super: use multi-account totals if available, fall back to legacy SUPER fields
-  var super_ = 0;
-  if (typeof SUPER_ACCTS !== 'undefined' && Array.isArray(SUPER_ACCTS) && SUPER_ACCTS.length) {
-    super_ = SUPER_ACCTS.reduce(function(s,a){ return s + (Number(a.balance)||0); }, 0);
-  } else {
-    var supB = (SUPER && SUPER.b && SUPER.b.balance) ? Number(SUPER.b.balance) : 0;
-    var supS = (SUPER && SUPER.s && SUPER.s.balance) ? Number(SUPER.s.balance) : 0;
-    super_ = supB + supS;
-  }
+  var super_ = _nwSuperCurrentTotal();
 
   // Property: sum all mortgage property homeValues
   var property = 0;
@@ -47,10 +40,23 @@ function computeCurrentNetWorth() {
            netWorth: Math.round(netWorth * 100) / 100 };
 }
 
+// Helper: current super total across both profiles
+function _nwSuperCurrentTotal() {
+  if (typeof SUPER_ACCTS !== 'undefined') {
+    var all = [];
+    if (Array.isArray(SUPER_ACCTS)) { all = SUPER_ACCTS; }
+    else { ['brenton','shelley'].forEach(function(k){ if(SUPER_ACCTS[k])all=all.concat(SUPER_ACCTS[k]); }); }
+    if (all.length) return all.reduce(function(s,a){ return s+(Number(a.balance)||0); }, 0);
+  }
+  var supB = (SUPER && SUPER.b && SUPER.b.balance) ? Number(SUPER.b.balance) : 0;
+  var supS = (SUPER && SUPER.s && SUPER.s.balance) ? Number(SUPER.s.balance) : 0;
+  return supB + supS;
+}
+
+// ── Record today's snapshot ───────────────────────────────────
 function recordNetWorthSnapshot() {
   try {
     var nw = computeCurrentNetWorth();
-
     var d = new Date();
     var todayStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 
@@ -63,11 +69,123 @@ function recordNetWorthSnapshot() {
     var idx = -1;
     for (var i = 0; i < hist.length; i++) { if (hist[i].date === todayStr) { idx = i; break; } }
     if (idx >= 0) { hist[idx] = entry; } else { hist.push(entry); }
-
-    // Keep only last ~730 days (2 years of daily entries)
     if (hist.length > 730) hist = hist.slice(hist.length - 730);
     try { localStorage.setItem('cff_networth_history', JSON.stringify(hist)); } catch(e) {}
+
+    // Also back-fill any CT months that don't yet have a NW entry
+    _nwBackfillFromCT(hist);
   } catch(e) { console.warn('recordNetWorthSnapshot error', e); }
+}
+
+// ── Back-fill NW history using Cash Tracker months as backbone ─
+// Uses component monthly histories where recorded; falls back to
+// current values so every CT month immediately shows a net worth.
+function _nwBackfillFromCT(existingHist) {
+  try {
+    var ctMonths = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
+    if (!ctMonths.length) return;
+
+    var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
+      ? CT_ACCTS.map(function(a){ return a.id; }) : ['offset','home','sav1','sav2'];
+
+    // Current fallback values (used when no per-month entry exists)
+    var currentNW     = computeCurrentNetWorth();
+    var fallbackSuper = currentNW.super_;
+    var fallbackProp  = currentNW.property;
+    var fallbackEq    = currentNW.equities;
+    var fallbackLiab  = currentNW.liabilities;
+
+    // Load component histories
+    var superHist = {}; try { superHist    = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
+    var mortHist  = {}; try { mortHist     = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
+    var eqHist    = {}; try { eqHist       = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
+    var liabHist  = {}; try { liabHist     = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
+
+    // Build month→existing entry map
+    var moMap = {};
+    existingHist.forEach(function(e){ if(e.date) moMap[e.date.slice(0,7)] = true; });
+
+    var changed = false;
+    ctMonths.forEach(function(mo) {
+      if (moMap[mo]) return; // already have an entry for this month
+
+      // Bank from CT
+      var bank = ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[mo]||0); }, 0);
+
+      // Super
+      var sh     = superHist[mo];
+      var super_ = sh ? ((sh.brenton||0) + (sh.shelley||0)) : fallbackSuper;
+
+      // Property
+      var mh       = mortHist[mo];
+      var property = mh ? (mh.homeValue||0) : fallbackProp;
+
+      // Equities
+      var equities = (typeof eqHist[mo] !== 'undefined') ? eqHist[mo] : fallbackEq;
+
+      // Liabilities (includes mortgage balance)
+      var liabilities = (typeof liabHist[mo] !== 'undefined') ? liabHist[mo] : fallbackLiab;
+
+      var netWorth = bank + super_ + property + equities - liabilities;
+
+      // Use last day of the month as the date
+      var yr = parseInt(mo.slice(0,4)), m = parseInt(mo.slice(5,7));
+      var lastDay = new Date(yr, m, 0).getDate();
+      var dateStr = mo + '-' + String(lastDay).padStart(2,'0');
+
+      existingHist.push({ date: dateStr, netWorth: Math.round(netWorth*100)/100,
+        bank: Math.round(bank), super_: Math.round(super_), property: Math.round(property),
+        equities: Math.round(equities), liabilities: Math.round(liabilities),
+        _backfilled: true });
+      changed = true;
+    });
+
+    if (changed) {
+      existingHist.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+      if (existingHist.length > 730) existingHist = existingHist.slice(existingHist.length - 730);
+      try { localStorage.setItem('cff_networth_history', JSON.stringify(existingHist)); } catch(e) {}
+    }
+  } catch(e) { console.warn('_nwBackfillFromCT error', e); }
+}
+
+// ── Save per-component monthly values ─────────────────────────
+// Called by super/mortgage/equities/liabilities save functions.
+function nwRecordSuperMonth(mo, bretonTotal, shelleyTotal) {
+  try {
+    var h = {}; try { h = JSON.parse(localStorage.getItem('cff_super_history') || '{}') || {}; } catch(e) {}
+    h[mo] = { brenton: Math.round(bretonTotal||0), shelley: Math.round(shelleyTotal||0) };
+    localStorage.setItem('cff_super_history', JSON.stringify(h));
+  } catch(e) {}
+}
+
+function nwRecordMortgageMonth(mo, homeValue, balance) {
+  try {
+    var h = {}; try { h = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
+    h[mo] = { homeValue: Math.round(homeValue||0), balance: Math.round(balance||0) };
+    localStorage.setItem('cff_mortgage_history', JSON.stringify(h));
+  } catch(e) {}
+}
+
+function nwRecordEqMonth(mo, totalValue) {
+  try {
+    var h = {}; try { h = JSON.parse(localStorage.getItem('cff_eq_history') || '{}') || {}; } catch(e) {}
+    h[mo] = Math.round(totalValue||0);
+    localStorage.setItem('cff_eq_history', JSON.stringify(h));
+  } catch(e) {}
+}
+
+function nwRecordLiabMonth(mo, totalBalance) {
+  try {
+    var h = {}; try { h = JSON.parse(localStorage.getItem('cff_liab_history') || '{}') || {}; } catch(e) {}
+    h[mo] = Math.round(totalBalance||0);
+    localStorage.setItem('cff_liab_history', JSON.stringify(h));
+  } catch(e) {}
+}
+
+// Helper: current YYYY-MM string
+function _nwCurrentMonth() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
 
 // ── Populate historical net worth from transactions ─────────────

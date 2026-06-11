@@ -643,6 +643,7 @@ function liabSave() {
   liabCloseModal();
   liabRenderPage();
   if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
+  try{if(typeof nwRecordLiabMonth==='function')nwRecordLiabMonth(_nwCurrentMonth(),liabTotal());}catch(e){}
   try{if(typeof recordNetWorthSnapshot==='function')recordNetWorthSnapshot();}catch(e){}
 }
 
@@ -652,6 +653,7 @@ function liabConfirmDelete(id) {
   try { save(K.liabilities, LIABILITIES); } catch(e) {}
   toast('🗑 Liability deleted');
   liabRenderPage();
+  try{if(typeof nwRecordLiabMonth==='function')nwRecordLiabMonth(_nwCurrentMonth(),liabTotal());}catch(e){}
   try{if(typeof recordNetWorthSnapshot==='function')recordNetWorthSnapshot();}catch(e){}
 }
 

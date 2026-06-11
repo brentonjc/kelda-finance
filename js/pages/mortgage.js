@@ -169,6 +169,13 @@ function saveMortgage(){
     MORTGAGE.acquiredDate=p.acquiredDate;MORTGAGE.purchasePrice=p.purchasePrice;
   }
   try { save(K.mortgage, MORTGAGE); } catch(e) {}
+  // Record property value + mortgage balance in monthly history
+  try {
+    var mo = (document.getElementById('m-valuation-month') || {}).value || _nwCurrentMonth();
+    var totalHV = 0, totalBal = 0;
+    _mortgageEnsureProps().forEach(function(pr){ totalHV += Number(pr.homeValue)||0; totalBal += Number(pr.balance)||0; });
+    if(typeof nwRecordMortgageMonth==='function') nwRecordMortgageMonth(mo, totalHV, totalBal);
+  } catch(e) {}
   renderMortgage();
   renderPaydownChart();
   renderRateSensitivity();
@@ -243,6 +250,8 @@ function renderMortgage(){
   if(acqEl)acqEl.value=m.acquiredDate||'';
   const ppEl=document.getElementById('m-purchase-price');
   if(ppEl)ppEl.value=m.purchasePrice||'';
+  const vmEl=document.getElementById('m-valuation-month');
+  if(vmEl&&!vmEl.value)vmEl.value=typeof _nwCurrentMonth==='function'?_nwCurrentMonth():'';
 
   const equity=(m.homeValue||0)-(m.balance||0);
   const eqPct=m.homeValue?Math.max(0,Math.min(100,(equity/m.homeValue)*100)):0;

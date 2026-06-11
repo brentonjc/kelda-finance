@@ -136,11 +136,13 @@ function superAddAcct(pfx) {
   var fund = (document.getElementById('super-new-fund-' + pfx) || {}).value.trim();
   var bal  = parseFloat((document.getElementById('super-new-bal-' + pfx) || {}).value) || 0;
   var type = (document.getElementById('super-new-type-' + pfx) || {}).value || 'Accumulation';
+  var mo   = (document.getElementById('super-new-mo-' + pfx) || {}).value || _nwCurrentMonth();
   if (!fund) { toast('Please enter a fund name'); return; }
   if (!SUPER_ACCTS[key]) SUPER_ACCTS[key] = [];
   var id = 'sa_' + Date.now().toString(36);
   SUPER_ACCTS[key].push({ id: id, fund: fund, balance: bal, type: type });
   superSaveAccts();
+  _superRecordMonthHistory(mo);
   superHideAddForm(pfx);
   _superRefresh(pfx);
   toast('✅ Super account added — ' + fund);
@@ -163,12 +165,14 @@ function superEditAcct(pfx, id) {
   if (!a) return;
   var rowEl = document.getElementById('super-acct-row-' + pfx + '-' + id);
   if (!rowEl) return;
+  var curMo = _nwCurrentMonth ? _nwCurrentMonth() : '';
   rowEl.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;width:100%;padding:4px 0">'
     + '<div style="flex:1;min-width:140px"><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-edit-fund-' + pfx + '-' + id + '" value="' + esc(a.fund||'') + '" style="font-size:16px;width:100%;box-sizing:border-box"/></div>'
     + '<div style="flex:1;min-width:120px"><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-edit-bal-' + pfx + '-' + id + '" value="' + (a.balance||0) + '" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>'
     + '<div style="flex:1;min-width:140px"><label class="lbl" style="font-size:.7rem">Type</label><select id="super-edit-type-' + pfx + '-' + id + '" style="width:100%;box-sizing:border-box">'
     + _SUPER_TYPES.map(function(t){ return '<option value="' + t + '"' + (t===a.type?' selected':'') + '>' + t + '</option>'; }).join('')
     + '</select></div>'
+    + '<div style="flex:1;min-width:120px"><label class="lbl" style="font-size:.7rem">Balance as of</label><input type="month" id="super-edit-mo-' + pfx + '-' + id + '" value="' + curMo + '" style="width:100%;box-sizing:border-box"/></div>'
     + '<div style="display:flex;gap:6px;flex-shrink:0">'
     + '<button class="btn btn-primary btn-sm" onclick="superSaveEdit(\'' + pfx + '\',\'' + id + '\')">Save</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="renderSuperAcctList(\'' + pfx + '\')">Cancel</button>'
@@ -182,9 +186,21 @@ function superSaveEdit(pfx, id) {
   a.fund    = (document.getElementById('super-edit-fund-' + pfx + '-' + id) || {}).value.trim() || a.fund;
   a.balance = parseFloat((document.getElementById('super-edit-bal-' + pfx + '-' + id) || {}).value) || 0;
   a.type    = (document.getElementById('super-edit-type-' + pfx + '-' + id) || {}).value || a.type;
+  var mo    = (document.getElementById('super-edit-mo-' + pfx + '-' + id) || {}).value || _nwCurrentMonth();
   superSaveAccts();
+  _superRecordMonthHistory(mo);
   _superRefresh(pfx);
   toast('✅ Updated — ' + a.fund);
+}
+
+// Record the total super balance for both profiles into monthly history
+function _superRecordMonthHistory(mo) {
+  try {
+    if (typeof nwRecordSuperMonth !== 'function') return;
+    var bTotal = (SUPER_ACCTS.brenton || []).reduce(function(s,a){ return s+(parseFloat(a.balance)||0); }, 0);
+    var sTotal = (SUPER_ACCTS.shelley || []).reduce(function(s,a){ return s+(parseFloat(a.balance)||0); }, 0);
+    nwRecordSuperMonth(mo, bTotal, sTotal);
+  } catch(e) {}
 }
 
 function _superRefresh(pfx) {

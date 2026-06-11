@@ -1038,6 +1038,9 @@ window.addEventListener('unhandledrejection',function(e){
         <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
           🔗 <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
         </div>
+        <div class="form-grid">
+          <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Month this valuation applies to (defaults to current)</div></div>
+        </div>
         <button class="btn btn-primary" onclick="saveMortgage()">💾 Save Details</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -1463,15 +1466,18 @@ window.addEventListener('unhandledrejection',function(e){
               <div><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-new-fund-b" placeholder="e.g. ART, AustralianSuper" style="font-size:16px;width:100%;box-sizing:border-box"/></div>
               <div><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-new-bal-b" placeholder="0" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>
             </div>
-            <div style="margin-bottom:8px">
-              <label class="lbl" style="font-size:.7rem">Account Type</label>
-              <select id="super-new-type-b" style="width:100%;box-sizing:border-box">
-                <option value="Accumulation">Accumulation</option>
-                <option value="Defined Benefit">Defined Benefit</option>
-                <option value="SMSF">SMSF</option>
-                <option value="Pension (Drawdown)">Pension (Drawdown)</option>
-                <option value="Other">Other</option>
-              </select>
+            <div class="form-grid" style="margin-bottom:8px">
+              <div>
+                <label class="lbl" style="font-size:.7rem">Account Type</label>
+                <select id="super-new-type-b" style="width:100%;box-sizing:border-box">
+                  <option value="Accumulation">Accumulation</option>
+                  <option value="Defined Benefit">Defined Benefit</option>
+                  <option value="SMSF">SMSF</option>
+                  <option value="Pension (Drawdown)">Pension (Drawdown)</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div><label class="lbl" style="font-size:.7rem">Balance as of month</label><input type="month" id="super-new-mo-b" style="width:100%;box-sizing:border-box"/></div>
             </div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-primary btn-sm" onclick="superAddAcct('b')">Add Account</button>
@@ -1522,15 +1528,18 @@ window.addEventListener('unhandledrejection',function(e){
               <div><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-new-fund-s" placeholder="e.g. REST, Hesta, AustralianSuper" style="font-size:16px;width:100%;box-sizing:border-box"/></div>
               <div><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-new-bal-s" placeholder="0" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>
             </div>
-            <div style="margin-bottom:8px">
-              <label class="lbl" style="font-size:.7rem">Account Type</label>
-              <select id="super-new-type-s" style="width:100%;box-sizing:border-box">
-                <option value="Accumulation">Accumulation</option>
-                <option value="Defined Benefit">Defined Benefit</option>
-                <option value="SMSF">SMSF</option>
-                <option value="Pension (Drawdown)">Pension (Drawdown)</option>
-                <option value="Other">Other</option>
-              </select>
+            <div class="form-grid" style="margin-bottom:8px">
+              <div>
+                <label class="lbl" style="font-size:.7rem">Account Type</label>
+                <select id="super-new-type-s" style="width:100%;box-sizing:border-box">
+                  <option value="Accumulation">Accumulation</option>
+                  <option value="Defined Benefit">Defined Benefit</option>
+                  <option value="SMSF">SMSF</option>
+                  <option value="Pension (Drawdown)">Pension (Drawdown)</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div><label class="lbl" style="font-size:.7rem">Balance as of month</label><input type="month" id="super-new-mo-s" style="width:100%;box-sizing:border-box"/></div>
             </div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-primary btn-sm" onclick="superAddAcct('s')">Add Account</button>

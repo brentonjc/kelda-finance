@@ -8,7 +8,12 @@ const K={
   categories:'ledger_categories',lbudgets:'ledger_budgets',rules:'ledger_rules',
   recurring:'ledger_recurring',transfers:'cff_transfers',equities:'cff_equities',userconfig:'cff_userconfig',liabilities:'cff_liabilities',
   accounts:'cff_accounts',
-  ctdates:'cff_ct_dates',quickstart:'cff_qs_progress',superAccts:'cff_super_accts'
+  ctdates:'cff_ct_dates',quickstart:'cff_qs_progress',superAccts:'cff_super_accts',
+  // Per-component monthly histories — power the Net Worth breakdown table
+  superHist:    'cff_super_history',    // { 'YYYY-MM': { brenton, shelley } }
+  mortgageHist: 'cff_mortgage_history', // { 'YYYY-MM': { homeValue, balance } }
+  eqHist:       'cff_eq_history',       // { 'YYYY-MM': totalValue }
+  liabHist:     'cff_liab_history'      // { 'YYYY-MM': totalBalance }
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}

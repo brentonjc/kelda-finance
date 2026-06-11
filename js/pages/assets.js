@@ -281,15 +281,58 @@ function renderNetWorthHistory() {
   var el = document.getElementById('nw-history-wrap');
   if (!el) return;
 
+  // ── Load all data sources ─────────────────────────────────────
   var hist = [];
   try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
+  var superHist = {}; try { superHist  = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
+  var mortHist  = {}; try { mortHist   = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
+  var eqHist    = {}; try { eqHist     = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
+  var liabHist  = {}; try { liabHist   = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
 
-  // Collapse to one entry per month (last entry per month wins)
-  var moMap = {};
-  for (var i = 0; i < hist.length; i++) {
-    var e = hist[i];
-    if (e.date) moMap[e.date.slice(0,7)] = e;
+  // Current fallback values
+  var curNW     = (typeof computeCurrentNetWorth === 'function') ? computeCurrentNetWorth() : {};
+  var fbSuper   = curNW.super_     || 0;
+  var fbProp    = curNW.property   || 0;
+  var fbEq      = curNW.equities   || 0;
+  var fbLiab    = curNW.liabilities|| 0;
+
+  // Bank from CT per month
+  var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
+    ? CT_ACCTS.map(function(a){ return a.id; }) : ['offset','home','sav1','sav2'];
+  function bankForMonth(mo) {
+    return ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[mo]||0); }, 0);
   }
+
+  // Build union of all months from all sources
+  var allMonthSet = {};
+  hist.forEach(function(e){ if(e.date) allMonthSet[e.date.slice(0,7)] = true; });
+  Object.keys(superHist).forEach(function(m){ allMonthSet[m] = true; });
+  Object.keys(mortHist).forEach(function(m){ allMonthSet[m] = true; });
+  Object.keys(eqHist).forEach(function(m){ allMonthSet[m] = true; });
+  Object.keys(liabHist).forEach(function(m){ allMonthSet[m] = true; });
+  if (typeof ctAllMonths === 'function') { ctAllMonths().forEach(function(m){ allMonthSet[m] = true; }); }
+
+  // For each month, build a rich entry using best-available data
+  var moMap = {};
+  // Seed with existing snapshot history (most authoritative — includes manually recorded)
+  hist.forEach(function(e){ if(e.date){ var m=e.date.slice(0,7); if(!moMap[m])moMap[m]=e; } });
+
+  // Fill/override with component-level history where available
+  Object.keys(allMonthSet).sort().forEach(function(mo) {
+    var bank  = bankForMonth(mo);
+    var sh    = superHist[mo];
+    var super_= sh ? ((sh.brenton||0)+(sh.shelley||0)) : (moMap[mo] ? (moMap[mo].super_||fbSuper) : fbSuper);
+    var mh    = mortHist[mo];
+    var prop  = mh ? (mh.homeValue||0) : (moMap[mo] ? (moMap[mo].property||fbProp) : fbProp);
+    var eq    = typeof eqHist[mo] !== 'undefined' ? eqHist[mo] : (moMap[mo] ? (moMap[mo].equities||fbEq) : fbEq);
+    var liab  = typeof liabHist[mo] !== 'undefined' ? liabHist[mo] : (moMap[mo] ? (moMap[mo].liabilities||fbLiab) : fbLiab);
+    var nw    = bank + super_ + prop + eq - liab;
+    moMap[mo] = { date: mo + '-01', netWorth: Math.round(nw*100)/100,
+                  bank: Math.round(bank), super_: Math.round(super_),
+                  property: Math.round(prop), equities: Math.round(eq),
+                  liabilities: Math.round(liab) };
+  });
+
   var moKeys = Object.keys(moMap).sort().reverse(); // most-recent first
 
   if (moKeys.length === 0) {
