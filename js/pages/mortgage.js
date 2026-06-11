@@ -131,14 +131,25 @@ function mortgagePopulateLiabilitySelect() {
   var p = _mortgageActiveProp();
   var curId = p.linkedLiabilityId || '__none__';
 
-  var opts = '<option value="__none__">None — show as read-only in Liabilities</option>';
+  // Read directly from localStorage as the authoritative source — avoids any
+  // stale-reference issue with the let-declared LIABILITIES global
+  var liabs = [];
+  try { liabs = JSON.parse(localStorage.getItem('cff_liabilities') || '[]') || []; } catch(e) {}
+
+  var opts = '<option value="__none__"' + (curId === '__none__' ? ' selected' : '') + '>None — show as read-only in Liabilities</option>';
   opts += '<option value="__create__"' + (curId === '__create__' ? ' selected' : '') + '>＋ Create new liability for this property</option>';
-  (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).forEach(function(l) {
-    var sel = l.id === curId ? ' selected' : '';
-    opts += '<option value="' + l.id + '"' + sel + '>' + esc(l.lender) + ' (' + fmt(Number(l.balance)||0) + ')</option>';
-  });
+
+  if (liabs.length) {
+    opts += '<optgroup label="── Existing Liabilities ──" disabled></optgroup>';
+    liabs.forEach(function(l) {
+      var sel = l.id === curId ? ' selected' : '';
+      var label = (l.lender || 'Unnamed') + ' — ' + (l.type || 'other');
+      var balStr = l.balance ? ' (' + fmt(Number(l.balance) || 0) + ')' : '';
+      opts += '<option value="' + (l.id || '') + '"' + sel + '>' + esc(label) + balStr + '</option>';
+    });
+  }
+
   el.innerHTML = opts;
-  // Refresh the banner
   mortgageLiabilityLinkBanner();
 }
 
@@ -154,7 +165,9 @@ function mortgageLiabilityLinkBanner() {
     banner.style.display = 'block';
     banner.innerHTML = '<span style="color:var(--success)">✅</span> A new Mortgage liability will be created and linked when you save.';
   } else {
-    var liab = (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).find(function(l){ return l.id === val; });
+    var liabs2 = [];
+    try { liabs2 = JSON.parse(localStorage.getItem('cff_liabilities') || '[]') || []; } catch(e) {}
+    var liab = liabs2.find(function(l){ return l.id === val; });
     if (liab) {
       banner.style.display = 'block';
       banner.innerHTML = '<span style="color:var(--success)">🔗</span> Saving will sync the remaining balance to <strong>' + esc(liab.lender) + '</strong> in Liabilities.';
@@ -176,7 +189,8 @@ function _mortgageSyncLinkedLiabilities() {
     if (!p.linkedLiabilityId) return;
 
     // __create__ was already resolved to a real ID before this runs (see saveMortgage)
-    var liab = (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).find(function(l){ return l.id === p.linkedLiabilityId; });
+    // Read from LIABILITIES global directly (always defined by data.js)
+    var liab = LIABILITIES.find(function(l){ return l.id === p.linkedLiabilityId; });
     if (!liab) { p.linkedLiabilityId = null; return; }
 
     // Sync balance and rate from mortgage to liability
