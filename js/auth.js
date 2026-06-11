@@ -219,19 +219,24 @@ function handlePin() {
 function unlock(){
   loggedIn=true;
   // Reload data from localStorage (may have been scrubbed on lock)
-  TX         = load(K.tx)        || [];
-  BILLS      = load(K.bills)     || [];
-  MORTGAGE   = load(K.mortgage)  || {};
-  INS        = load(K.ins)       || [];
-  SUPER      = load(K.superdata) || {};
-  GOALS      = load(K.goals)     || [];
-  CT         = load(K.ct)        || {};
-  LRECURRING = load(K.recurring) || [];
-  TRANSFERS  = load(K.transfers) || [];
-  EQUITIES   = load(K.equities)  || [];
-  BUDGETS    = load(K.budgets)   || {};
-  LBUDGETS   = load(K.lbudgets)  || {};
-  LRULES     = load(K.rules)     || {};
+  TX          = load(K.tx)           || [];
+  BILLS       = load(K.bills)        || [];
+  MORTGAGE    = load(K.mortgage)     || {};
+  INS         = load(K.ins)          || [];
+  SUPER       = load(K.superdata)    || {};
+  GOALS       = load(K.goals)        || [];
+  CT          = load(K.ct)           || {};
+  LRECURRING  = load(K.recurring)    || [];
+  TRANSFERS   = load(K.transfers)    || [];
+  EQUITIES    = load(K.equities)     || [];
+  LIABILITIES = load(K.liabilities)  || [];
+  BUDGETS     = load(K.budgets)      || {};
+  LBUDGETS    = load(K.lbudgets)     || {};
+  LRULES      = load(K.rules)        || {};
+  // Monthly tracking grids
+  SUPER_MONTHLY = load(K.superMonthly) || {};
+  LIAB_MONTHLY  = load(K.liabMonthly)  || {};
+  EQ_MONTHLY    = load(K.eqMonthly)    || {};
   // Hide login screen first — before anything that could throw
   document.getElementById('login-screen').classList.add('gone');
   var _tabBar=document.getElementById('bottom-tab-bar');
@@ -293,7 +298,8 @@ function lockApp(){
   // Scrub financial data from memory — forces reload from localStorage on next unlock
   TX = []; BILLS = []; MORTGAGE = {}; INS = []; SUPER = {};
   GOALS = []; CT = {}; LRECURRING = []; TRANSFERS = []; EQUITIES = [];
-  BUDGETS = {}; LBUDGETS = {}; LRULES = {};
+  LIABILITIES = []; BUDGETS = {}; LBUDGETS = {}; LRULES = {};
+  SUPER_MONTHLY = {}; LIAB_MONTHLY = {}; EQ_MONTHLY = {};
 
   // Reset all rendered content so data isn't visible in the DOM
   ['db-cashflow','db-spending','db-networth','db-accounts','db-cat-breakdown',

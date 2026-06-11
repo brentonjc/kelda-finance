@@ -1,7 +1,7 @@
 // Kelda Finance — Service Worker
 // Network-first strategy: always fetches fresh code, falls back to cache if offline.
 
-const CACHE = 'kelda-finance-v17';
+const CACHE = 'kelda-finance-v18';
 
 const SHELL = [
   './',
@@ -29,6 +29,9 @@ const SHELL = [
   './js/pages/forecast.js',
   './js/pages/transfers.js',
   './js/pages/equities.js',
+  './js/pages/liabilities.js',
+  './js/pages/goals.js',
+  './js/pages/insights.js',
   './js/pages/quickstart.js',
   './js/wizard.js',
   './js/pages/settings.js',
