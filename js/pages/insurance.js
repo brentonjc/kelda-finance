@@ -98,6 +98,30 @@ function insHideEditModal(){
   document.getElementById('edit-modal-insurance').style.display='none';
 }
 
+function insShowAddModal(){
+  insEditingId=null;
+  ['ins-name','ins-prov','ins-prem','ins-renewal','ins-cover',
+   'ins-need','ins-doclink','ins-notes','ins-ip-benefit'].forEach(id=>{
+    const e=document.getElementById(id);if(e)e.value='';
+  });
+  const typeEl=document.getElementById('ins-type');
+  if(typeEl){typeEl.value='Life';insTypeChanged();}
+  const covEl=document.getElementById('ins-covered');
+  if(covEl)covEl.value='joint';
+  const freqEl=document.getElementById('ins-freq');
+  if(freqEl)freqEl.value='annual';
+  const locEl=document.getElementById('ins-location');
+  if(locEl)locEl.value='outside';
+  const hintEl=document.getElementById('ins-need-hint');
+  if(hintEl)hintEl.textContent='';
+  document.getElementById('add-modal-insurance').style.display='flex';
+  insAutoFillNeed();
+}
+
+function insHideAddModal(){
+  document.getElementById('add-modal-insurance').style.display='none';
+}
+
 function insEditTypeChanged(){
   const type=document.getElementById('ins-edit-type')?.value||'';
   const ipF=document.getElementById('ins-edit-ip-fields');
@@ -142,6 +166,7 @@ function addInsurance(){
   }
   try{save(K.ins,INS);}catch(e){console.error('Insurance save error:',e);}
   insHideEditModal();
+  insHideAddModal();
   ['name','prov','prem','renewal','cover','need','doclink','notes','ip-benefit'].forEach(id=>{const e=document.getElementById('ins-'+id);if(e)e.value='';});
   renderInsurance();
 }

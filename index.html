@@ -489,6 +489,95 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 </div>
 
+<!-- Insurance Add Policy Modal -->
+<div class="modal-overlay" id="add-modal-insurance" onclick="if(event.target===this)insHideAddModal()" style="display:none">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <h3 style="margin-bottom:4px">＋ Add Policy</h3>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Cover Need auto-fills from the Needs Analysis when income is entered there.</p>
+    <div style="display:grid;gap:12px">
+      <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div>
+      <div style="display:grid;gap:8px"><label class="lbl">Type</label>
+        <select id="ins-type" onchange="insTypeChanged()">
+          <option>Life</option><option>TPD</option><option>Income Protection</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Provider</label><input type="text" id="ins-prov" placeholder="e.g. TAL, AIA, Zurich"/></div>
+        <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Frequency</label>
+          <select id="ins-freq">
+            <option value="monthly">Monthly</option><option value="annual" selected>Annual</option>
+            <option value="quarterly">Quarterly</option><option value="fortnightly">Fortnightly</option>
+          </select>
+        </div>
+        <div><label class="lbl">Renewal Date</label><input type="date" id="ins-renewal"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Covered Person</label>
+          <select id="ins-covered" onchange="insAutoFillNeed()">
+            <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Brenton</option><option value="shelley" data-profile-name="shelley">Shelley</option>
+          </select>
+        </div>
+        <div><label class="lbl">Location</label>
+          <select id="ins-location">
+            <option value="outside">Outside Super</option><option value="inside">Inside Super</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
+        <div>
+          <label class="lbl">Cover Need (Life/TPD/IP) (AUD)</label>
+          <input type="number" id="ins-need" placeholder="Auto-filled from Needs Analysis" step="1000" inputmode="decimal"/>
+          <div id="ins-need-hint" style="font-size:.68rem;color:var(--success);margin-top:3px;min-height:14px"></div>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px"><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
+      <div style="display:grid;gap:8px"><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
+      <!-- IP-specific fields -->
+      <div id="ins-ip-fields" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
+          <div><label class="lbl">Benefit Period</label>
+            <select id="ins-ip-period">
+              <option value="age65">To Age 65</option>
+              <option value="2yr">2 Years</option>
+              <option value="5yr">5 Years</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+          <div><label class="lbl">Waiting Period</label>
+            <select id="ins-ip-wait">
+              <option value="30">30 days</option>
+              <option value="60">60 days</option>
+              <option value="90" selected>90 days</option>
+              <option value="180">180 days</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- TPD-specific fields -->
+      <div id="ins-tpd-fields" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr;gap:8px">
+          <div><label class="lbl">TPD Definition</label>
+            <select id="ins-tpd-def">
+              <option value="own">Own Occupation</option>
+              <option value="any">Any Occupation</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="addInsurance()" style="flex:1">Add Policy</button>
+      <button class="btn btn-ghost" onclick="insHideAddModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- MAIN -->
 <div id="main">
   <div id="topbar">
@@ -1223,11 +1312,52 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ INSURANCE ═══ -->
   <div class="page" id="page-insurance">
-    <div class="page-title">Life Insurance</div>
-    <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
+
+    <!-- Page header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+      <div>
+        <div class="page-title">Life Insurance</div>
+        <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
+      </div>
+      <button class="btn btn-primary" onclick="insShowAddModal()" style="flex-shrink:0;margin-top:4px">＋ Add Policy</button>
+    </div>
+
     <div id="how-to-insurance"></div>
 
-    <!-- Life Insurance Needs Analysis -->
+    <!-- Stat tiles -->
+    <div class="g3 mb" id="ins-summary-strip"></div>
+
+    <!-- Coverage Gap Analysis + Coverage Bars (single card) -->
+    <div class="card mb">
+      <div class="section-label" style="margin-bottom:14px">💔 Coverage Gap Analysis</div>
+      <div style="height:300px;position:relative;margin-bottom:16px">
+        <canvas id="ins-coverage-chart"></canvas>
+      </div>
+      <div id="ins-coverage"></div>
+    </div>
+
+    <!-- All Policies (with renewals collapsible inside) -->
+    <div class="card mb">
+      <details style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px">
+        <summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;align-items:center;gap:6px">
+          📅 Upcoming Renewals <span style="opacity:.5">▾</span>
+        </summary>
+        <div id="ins-renewals" style="margin-top:10px"></div>
+      </details>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">All Policies</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()">📊 CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()">📄 Report</button>
+          <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto">
+            <option value="">All Types</option><option>Life</option><option>TPD</option><option>Income Protection</option>
+          </select>
+        </div>
+      </div>
+      <div id="ins-list"></div>
+    </div>
+
+    <!-- Needs Analysis (moved to bottom) -->
     <div class="card mb" id="li-needs-card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         <div>
@@ -1291,122 +1421,6 @@ window.addEventListener('unhandledrejection',function(e){
       <div style="font-size:.7rem;color:var(--muted)">⚠️ Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
     </div>
 
-    <!-- General Policies -->
-    <div class="g3 mb" id="ins-summary-strip"></div>
-
-    <!-- Coverage Gap Chart -->
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">💔 Coverage Gap Analysis</div>
-      <div style="height:320px;position:relative;margin-bottom:14px">
-        <canvas id="ins-coverage-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Coverage Summary -->
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">🛡️ Coverage Summary</div>
-      <div id="ins-coverage"></div>
-    </div>
-
-    <div class="g2 mb">
-      <div class="card">
-        <div class="section-label">Add Policy</div>
-        <div class="form-grid"><div><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div></div>
-        <div class="form-grid">
-          <div><label class="lbl">Type</label>
-            <select id="ins-type" onchange="insTypeChanged()">
-              <option>Life</option><option>TPD</option><option>Income Protection</option>
-            </select>
-          </div>
-          <div><label class="lbl">Provider</label><input type="text" id="ins-prov" placeholder="e.g. TAL, AIA, Zurich"/></div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
-          <div><label class="lbl">Frequency</label>
-            <select id="ins-freq">
-              <option value="monthly">Monthly</option><option value="annual" selected>Annual</option>
-              <option value="quarterly">Quarterly</option><option value="fortnightly">Fortnightly</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Renewal Date</label><input type="date" id="ins-renewal"/></div>
-          <div><label class="lbl">Covered Person</label>
-            <select id="ins-covered" onchange="insAutoFillNeed()">
-              <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Brenton</option><option value="shelley" data-profile-name="shelley">Shelley</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
-          <div>
-            <label class="lbl">Cover Need (Life/TPD/IP) (AUD)</label>
-            <input type="number" id="ins-need" placeholder="Auto-filled from Needs Analysis" step="1000" inputmode="decimal"/>
-            <div id="ins-need-hint" style="font-size:.68rem;color:var(--success);margin-top:3px;min-height:14px"></div>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Location</label>
-            <select id="ins-location">
-              <option value="outside">Outside Super</option><option value="inside">Inside Super</option>
-            </select>
-          </div>
-          <div><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period" style="grid-column:1/-1"/></div>
-        </div>
-        <!-- IP-specific fields (shown when type = Income Protection) -->
-        <div id="ins-ip-fields" style="display:none">
-          <div class="form-grid">
-            <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
-            <div><label class="lbl">Benefit Period</label>
-              <select id="ins-ip-period">
-                <option value="age65">To Age 65</option>
-                <option value="2yr">2 Years</option>
-                <option value="5yr">5 Years</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-grid">
-            <div><label class="lbl">Waiting Period</label>
-              <select id="ins-ip-wait">
-                <option value="30">30 days</option>
-                <option value="60">60 days</option>
-                <option value="90" selected>90 days</option>
-                <option value="180">180 days</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <!-- TPD-specific fields -->
-        <div id="ins-tpd-fields" style="display:none">
-          <div class="form-grid">
-            <div><label class="lbl">TPD Definition</label>
-              <select id="ins-tpd-def">
-                <option value="own">Own Occupation</option>
-                <option value="any">Any Occupation</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="addInsurance()">Add Policy</button>
-      </div>
-      <div class="card"><div class="section-label">Upcoming Renewals</div><div id="ins-renewals"></div></div>
-    </div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">All Policies</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()">📊 CSV</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()">📄 Report</button>
-          <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto;">
-            <option value="">All Types</option><option>Life</option><option>TPD</option><option>Income Protection</option>
-          </select>
-        </div>
-      </div>
-      <div id="ins-list"></div>
-    </div>
   </div>
 
   <!-- ═══ SUPERANNUATION ═══ -->
