@@ -856,6 +856,7 @@ function saveEqModal() {
     }
 
     try { save(K.equities, EQUITIES); } catch(e) {}
+    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
     closeEqModal();
     renderEquitiesPage();
     if (typeof renderAssets==='function') renderAssets();
@@ -867,6 +868,7 @@ function deleteEquity(id) {
     if (!confirm('Delete this holding? Sales history will also be removed.')) return;
     EQUITIES = EQUITIES.filter(function(e){ return e.id!==id; });
     try { save(K.equities, EQUITIES); } catch(e) {}
+    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
     renderEquitiesPage();
     if (typeof renderAssets==='function') renderAssets();
     toast('Holding removed');
@@ -936,6 +938,7 @@ function saveEqSale() {
     if (!h.sales) h.sales=[];
     h.sales.push({ id:Date.now(), qty:qty, price:price, date:date, costs:costs });
     try { save(K.equities, EQUITIES); } catch(e) {}
+    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
     closeEqSale();
     renderEquitiesPage();
     if (typeof renderAssets==='function') renderAssets();
@@ -947,6 +950,7 @@ function deleteSaleEq(holdingId, saleId) {
     if (!h||!h.sales) return;
     h.sales = h.sales.filter(function(s){ return s.id!==saleId; });
     try { save(K.equities, EQUITIES); } catch(e) {}
+    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
     renderEquitiesPage();
     if (typeof renderAssets==='function') renderAssets();
     toast('Sale removed');
@@ -991,6 +995,7 @@ function saveBatchPrices() {
         if (!isNaN(val) && val > 0) { h.currentPrice=val; h.priceUpdated=Date.now(); changed++; }
     });
     try { save(K.equities, EQUITIES); } catch(e) {}
+    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
     closeEqModal();
     renderEquitiesPage();
     if (typeof renderAssets==='function') renderAssets();

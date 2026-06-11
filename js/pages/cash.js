@@ -92,6 +92,7 @@ function ctSaveEntry(acctId, month, value, entryDate) {
   save(K.ct, CT);
   ctRenderSummary(); ctRenderChart(); ctRenderNet(); ctGoalStatus();
   if (acctId === 'offset') syncOffsetToMortgage();
+  try{if(typeof recordNetWorthSnapshot==='function')recordNetWorthSnapshot();}catch(e){}
 }
 
 function ctDelEntry(acctId, month) {

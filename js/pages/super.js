@@ -20,6 +20,7 @@ function superAcctTotal(pfx) {
 
 function superSaveAccts() {
   try { save(K.superAccts, SUPER_ACCTS); } catch(e) {}
+  try{if(typeof recordNetWorthSnapshot==='function')recordNetWorthSnapshot();}catch(e){}
 }
 
 // Auto-fill balance from account total when accounts exist

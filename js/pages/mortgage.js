@@ -172,6 +172,7 @@ function saveMortgage(){
   renderMortgage();
   renderPaydownChart();
   renderRateSensitivity();
+  try{if(typeof recordNetWorthSnapshot==='function')recordNetWorthSnapshot();}catch(e){}
   toast('✅ Saved'+(ctOff>0&&typedOffset===0?' · offset synced from Cash Tracker':''));
 }
 

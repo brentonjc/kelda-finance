@@ -99,7 +99,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="mob-menu-label">💰 Save</div>
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
-      <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Net Assets</button>
+      <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Net Worth</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -362,7 +362,7 @@ window.addEventListener('unhandledrejection',function(e){
     <li class="nav-group-hdr"><span class="nav-gh-icon">💰</span>Save</li>
     <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
     <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Accounts</span></a></li>
-    <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Assets</span></a></li>
+    <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Worth</span></a></li>
 
     <li class="nav-group-hdr"><span class="nav-gh-icon">🏦</span>Borrow</li>
     <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
@@ -693,9 +693,10 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card">
         <div class="tile-hd" style="margin-bottom:10px">
           <div class="section-label" style="margin:0">📈 Net Worth Over Time</div>
-          <a href="#" onclick="go('assets');return false;" class="tile-link">View assets →</a>
+          <a href="#" onclick="go('assets');return false;" class="tile-link">View net worth →</a>
         </div>
-        <div class="db-chart-fill"><canvas id="ins-nw-chart"></canvas></div>
+        <div id="ins-nw-deltas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+        <div class="db-chart-fill" style="min-height:260px"><canvas id="ins-nw-chart"></canvas></div>
       </div>
 
       <!-- Income Flow Sankey -->
@@ -1582,7 +1583,7 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ NET ASSETS ═══ -->
   <div class="page" id="page-assets">
-    <div class="page-title">Net Assets</div>
+    <div class="page-title">Net Worth</div>
     <div class="page-sub">Total assets minus total liabilities — your true financial position</div>
     <div id="how-to-assets"></div>
 

@@ -77,13 +77,41 @@ function insRenderNWChart() {
   var hist = [];
   try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
 
-  // One value per month — last entry per month wins
+  // One entry per month — last entry per month wins, keep component breakdown if present
   var moMap = {};
   for (var i = 0; i < hist.length; i++) {
     var entry = hist[i];
-    if (entry.date) { moMap[entry.date.slice(0,7)] = entry.netWorth; }
+    if (entry.date) { moMap[entry.date.slice(0,7)] = entry; }
   }
   var moKeys = Object.keys(moMap).sort();
+
+  // ── Delta chips ─────────────────────────────────────────────
+  var deltaEl = document.getElementById('ins-nw-deltas');
+  if (deltaEl && moKeys.length >= 1) {
+    var last   = moMap[moKeys[moKeys.length - 1]].netWorth;
+    var deltas = [
+      { label: '1 mo',  mo: 1  },
+      { label: '3 mo',  mo: 3  },
+      { label: '6 mo',  mo: 6  },
+      { label: '12 mo', mo: 12 }
+    ];
+    deltaEl.innerHTML = deltas.map(function(d) {
+      var idx = moKeys.length - 1 - d.mo;
+      if (idx < 0) return '';
+      var prev  = moMap[moKeys[idx]].netWorth;
+      var delta = last - prev;
+      var pct   = prev !== 0 ? ((delta / Math.abs(prev)) * 100).toFixed(1) : '—';
+      var col   = delta >= 0 ? 'var(--success)' : 'var(--danger)';
+      var sign  = delta >= 0 ? '+' : '';
+      return '<div style="background:var(--card2);border-radius:9px;padding:8px 13px;text-align:center;flex:1;min-width:80px">'
+        + '<div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">' + d.label + '</div>'
+        + '<div style="font-family:var(--font-mono);font-size:.88rem;font-weight:700;color:' + col + '">' + sign + fmt(delta) + '</div>'
+        + '<div style="font-size:.66rem;color:' + col + '">' + (pct !== '—' ? sign + pct + '%' : '—') + '</div>'
+        + '</div>';
+    }).join('');
+  } else if (deltaEl) {
+    deltaEl.innerHTML = '';
+  }
 
   if (moKeys.length < 2) {
     var ctx2 = canvas.getContext('2d');
@@ -91,45 +119,74 @@ function insRenderNWChart() {
     ctx2.fillStyle = insToken('--muted') || '#6278A0';
     ctx2.font = '13px DM Sans, sans-serif';
     ctx2.textAlign = 'center';
-    ctx2.fillText('Not enough history yet — check back after a few months', canvas.width / 2, canvas.height / 2);
+    ctx2.fillText('Update your balances to build a history — data recorded automatically on each save', canvas.width / 2, canvas.height / 2);
     return;
   }
 
   var labels = moKeys.map(function(m) {
     return new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: '2-digit' });
   });
-  var values = moKeys.map(function(m) { return moMap[m]; });
-  var isUp   = values[values.length - 1] >= values[0];
-  var lineColor = isUp ? '#00C896' : '#EF4444';
-  var muted = insToken('--muted') || '#6278A0';
-  var card  = insToken('--card')  || '#111830';
+  var muted  = insToken('--muted') || '#6278A0';
+  var card   = insToken('--card')  || '#111830';
+
+  // Check if component data is available (new-format entries)
+  var hasComponents = moKeys.some(function(m) {
+    var e = moMap[m]; return typeof e.bank !== 'undefined';
+  });
+
+  var datasets = [];
+  if (hasComponents) {
+    var bankVals  = moKeys.map(function(m){ var e=moMap[m]; return typeof e.bank!=='undefined'      ? e.bank      : null; });
+    var superVals = moKeys.map(function(m){ var e=moMap[m]; return typeof e.super_!=='undefined'    ? e.super_    : null; });
+    var propVals  = moKeys.map(function(m){ var e=moMap[m]; return typeof e.property!=='undefined'  ? e.property  : null; });
+    var eqVals    = moKeys.map(function(m){ var e=moMap[m]; return typeof e.equities!=='undefined'  ? e.equities  : null; });
+    var liabVals  = moKeys.map(function(m){ var e=moMap[m]; return typeof e.liabilities!=='undefined' ? -e.liabilities : null; });
+    var nwVals    = moKeys.map(function(m){ return moMap[m].netWorth; });
+
+    var pr = moKeys.length > 18 ? 0 : 3;
+    datasets = [
+      { label:'Bank',        data:bankVals,  backgroundColor:'#3B82F620', borderColor:'#3B82F6', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, stack:'assets' },
+      { label:'Super',       data:superVals, backgroundColor:'#818CF820', borderColor:'#818CF8', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, stack:'assets' },
+      { label:'Property',    data:propVals,  backgroundColor:'#F0538A20', borderColor:'#F0538A', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, stack:'assets' },
+      { label:'Equities',    data:eqVals,    backgroundColor:'#F59E0B20', borderColor:'#F59E0B', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, stack:'assets' },
+      { label:'Liabilities', data:liabVals,  backgroundColor:'#EF444425', borderColor:'#EF4444', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, stack:'liab'   },
+      { label:'Net Worth',   data:nwVals,    borderColor:'#00C896',       backgroundColor:'transparent', fill:false, tension:0.35, pointRadius:pr?pr+1:0, pointHoverRadius:6, borderWidth:3, borderDash:[] }
+    ];
+  } else {
+    var values   = moKeys.map(function(m) { return moMap[m].netWorth; });
+    var isUp     = values[values.length - 1] >= values[0];
+    var lineColor = isUp ? '#00C896' : '#EF4444';
+    datasets = [{
+      label: 'Net Worth', data: values,
+      borderColor: lineColor, backgroundColor: lineColor + '18',
+      fill: true, tension: 0.35,
+      pointRadius: moKeys.length > 18 ? 2 : 4, pointHoverRadius: 6, borderWidth: 2.5
+    }];
+  }
 
   insNWChart = safeChart(canvas, {
     type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Net Worth',
-        data: values,
-        borderColor: lineColor,
-        backgroundColor: lineColor + '18',
-        fill: true,
-        tension: 0.35,
-        pointRadius: moKeys.length > 18 ? 2 : 4,
-        pointHoverRadius: 6,
-        borderWidth: 2.5
-      }]
-    },
+    data: { labels: labels, datasets: datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: function(c) { return ' Net Worth: ' + fmt(c.parsed.y); } } }
+        legend: {
+          display: hasComponents,
+          labels: { color: muted, font: { family: 'DM Sans', size: 11 }, boxWidth: 12, padding: 10 }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(c) {
+              if (c.dataset.label === 'Liabilities') return ' Liabilities: -' + fmt(Math.abs(c.parsed.y));
+              return ' ' + c.dataset.label + ': ' + fmt(c.parsed.y);
+            }
+          }
+        }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: muted, font: { family: 'DM Sans' } } },
-        y: { grid: { color: card }, ticks: { color: muted, font: { family: 'DM Mono' }, callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; } } }
+        x: { stacked: hasComponents, grid: { display: false }, ticks: { color: muted, font: { family: 'DM Sans' } } },
+        y: { stacked: false, grid: { color: card }, ticks: { color: muted, font: { family: 'DM Mono' }, callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; } } }
       }
     }
   });

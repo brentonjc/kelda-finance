@@ -6,17 +6,50 @@
 // ══════════════════════════════════════════════════════════════
 
 // ── Net Worth Snapshot recorder ───────────────────────────────
+// Computes the current net worth and all component values.
+// Returns { bank, super_, property, equities, liabilities, netWorth }.
+function computeCurrentNetWorth() {
+  var months  = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
+  var lm      = months.length ? months[months.length - 1] : null;
+
+  // Bank: all CT accounts for the most recent month
+  var ctAccts = (typeof CTCFG !== 'undefined' && CTCFG && CTCFG.accounts && CTCFG.accounts.length)
+    ? CTCFG.accounts.map(function(a){ return a.id; })
+    : ['offset','home','sav1','sav2'];
+  var bank = lm ? ctAccts.reduce(function(s,a){ return s + ((CT[a]||{})[lm]||0); }, 0) : 0;
+
+  // Super: use multi-account totals if available, fall back to legacy SUPER fields
+  var super_ = 0;
+  if (typeof SUPER_ACCTS !== 'undefined' && Array.isArray(SUPER_ACCTS) && SUPER_ACCTS.length) {
+    super_ = SUPER_ACCTS.reduce(function(s,a){ return s + (Number(a.balance)||0); }, 0);
+  } else {
+    var supB = (SUPER && SUPER.b && SUPER.b.balance) ? Number(SUPER.b.balance) : 0;
+    var supS = (SUPER && SUPER.s && SUPER.s.balance) ? Number(SUPER.s.balance) : 0;
+    super_ = supB + supS;
+  }
+
+  // Property: sum all mortgage property homeValues
+  var property = 0;
+  var mortProps = (MORTGAGE && MORTGAGE.properties && Array.isArray(MORTGAGE.properties))
+    ? MORTGAGE.properties : (MORTGAGE && MORTGAGE.homeValue ? [MORTGAGE] : []);
+  mortProps.forEach(function(p){ property += Number(p.homeValue)||0; });
+
+  // Equities
+  var equities = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
+
+  // Liabilities (includes all mortgage balances)
+  var liabilities = (typeof liabTotal === 'function') ? liabTotal()
+    : mortProps.reduce(function(s,p){ return s + (Number(p.balance)||0); }, 0);
+
+  var netWorth = bank + super_ + property + equities - liabilities;
+  return { bank: Math.round(bank), super_: Math.round(super_), property: Math.round(property),
+           equities: Math.round(equities), liabilities: Math.round(liabilities),
+           netWorth: Math.round(netWorth * 100) / 100 };
+}
+
 function recordNetWorthSnapshot() {
   try {
-    var months  = ctAllMonths();
-    var lm      = months.length ? months[months.length - 1] : null;
-    var bank    = lm ? ['offset','home','sav1','sav2'].reduce(function(s,a){return s+((CT[a]||{})[lm]||0);},0) : 0;
-    var supB    = (SUPER.b && SUPER.b.balance) ? Number(SUPER.b.balance) : 0;
-    var supS    = (SUPER.s && SUPER.s.balance) ? Number(SUPER.s.balance) : 0;
-    var homeVal = Number(MORTGAGE.homeValue) || 0;
-    var eqV     = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
-    var totalLiab = (typeof liabTotal === 'function') ? liabTotal() : (Number(MORTGAGE.balance) || 0);
-    var currentNW = bank + supB + supS + homeVal + eqV - totalLiab;
+    var nw = computeCurrentNetWorth();
 
     var d = new Date();
     var todayStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -24,13 +57,13 @@ function recordNetWorthSnapshot() {
     var hist = [];
     try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) { hist = []; }
 
+    var entry = { date: todayStr, netWorth: nw.netWorth,
+                  bank: nw.bank, super_: nw.super_, property: nw.property,
+                  equities: nw.equities, liabilities: nw.liabilities };
     var idx = -1;
     for (var i = 0; i < hist.length; i++) { if (hist[i].date === todayStr) { idx = i; break; } }
-    if (idx >= 0) {
-      hist[idx].netWorth = currentNW;
-    } else {
-      hist.push({ date: todayStr, netWorth: currentNW });
-    }
+    if (idx >= 0) { hist[idx] = entry; } else { hist.push(entry); }
+
     // Keep only last ~730 days (2 years of daily entries)
     if (hist.length > 730) hist = hist.slice(hist.length - 730);
     try { localStorage.setItem('cff_networth_history', JSON.stringify(hist)); } catch(e) {}
