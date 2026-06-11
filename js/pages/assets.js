@@ -185,6 +185,9 @@ function renderAssets() {
   // ── Charts ────────────────────────────────────────────────
   _assetsRenderAssetsDonut(bankTotal, supTotal, hv, eqVal);
   _assetsRenderLiabDonut(liabSegs, totalLiab);
+
+  // ── Net Worth History ─────────────────────────────────────
+  renderNetWorthHistory();
 }
 
 // ── Chart 1: Assets breakdown donut ──────────────────────────
@@ -265,6 +268,134 @@ function _assetsRenderLiabDonut(liabSegs, totalLiab) {
         tooltip: { callbacks: { label: function(c) { return ' ' + c.label + ': ' + fmt(c.parsed); } } }
       },
       onClick: function() { go('liabilities'); }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// NET WORTH HISTORY — monthly breakdown table + trend chart
+// ══════════════════════════════════════════════════════════════
+var _nwTrendChart = null;
+
+function renderNetWorthHistory() {
+  var el = document.getElementById('nw-history-wrap');
+  if (!el) return;
+
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
+
+  // Collapse to one entry per month (last entry per month wins)
+  var moMap = {};
+  for (var i = 0; i < hist.length; i++) {
+    var e = hist[i];
+    if (e.date) moMap[e.date.slice(0,7)] = e;
+  }
+  var moKeys = Object.keys(moMap).sort().reverse(); // most-recent first
+
+  if (moKeys.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:20px 0"><p>No history yet — save any balance to start recording snapshots automatically.</p></div>';
+    return;
+  }
+
+  // ── Trend chart ──────────────────────────────────────────────
+  var chartKeys = moKeys.slice().reverse(); // oldest→newest for chart
+  var hasCmp = chartKeys.some(function(m){ return typeof moMap[m].bank !== 'undefined'; });
+  var muted  = asToken('--muted') || '#6278A0';
+  var card2  = asToken('--card2') || '#111830';
+  var pr     = chartKeys.length > 18 ? 0 : 3;
+
+  var chartHtml = '<div style="height:240px;position:relative;margin-bottom:24px"><canvas id="nw-trend-canvas"></canvas></div>';
+
+  // ── Table ────────────────────────────────────────────────────
+  var hasBank = hasCmp, hasSuper = hasCmp, hasProp = hasCmp, hasEq = hasCmp, hasLiab = hasCmp;
+
+  var thStyle = 'padding:8px 12px;text-align:right;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap';
+  var thStyleL = thStyle.replace('text-align:right','text-align:left');
+  var tdStyle = 'padding:7px 12px;text-align:right;font-family:var(--font-mono);font-size:.8rem;border-bottom:1px solid var(--border)';
+  var tdStyleL = tdStyle.replace('text-align:right','text-align:left');
+
+  var thead = '<thead><tr>'
+    + '<th style="' + thStyleL + '">Month</th>'
+    + (hasBank  ? '<th style="' + thStyle + '">🏦 Bank</th>'       : '')
+    + (hasSuper ? '<th style="' + thStyle + '">💼 Super</th>'      : '')
+    + (hasProp  ? '<th style="' + thStyle + '">🏡 Property</th>'   : '')
+    + (hasEq    ? '<th style="' + thStyle + '">📈 Equities</th>'   : '')
+    + (hasLiab  ? '<th style="' + thStyle + '">⚖️ Liabilities</th>' : '')
+    + '<th style="' + thStyle + ';color:var(--primary)">Net Worth</th>'
+    + '<th style="' + thStyle + '">Change</th>'
+    + '</tr></thead>';
+
+  var prevNW = null;
+  var rows = moKeys.map(function(mk) {
+    var e    = moMap[mk];
+    var nw   = e.netWorth || 0;
+    var mo   = new Date(mk + '-02').toLocaleString('en-AU', {month:'short', year:'numeric'});
+    var delta = prevNW !== null ? nw - prevNW : null;
+    prevNW = nw;
+    var nwColor  = nw >= 0 ? 'var(--success)' : 'var(--danger)';
+    var dltColor = delta === null ? '' : (delta >= 0 ? 'color:var(--success)' : 'color:var(--danger)');
+    var dltStr   = delta === null ? '—'
+      : (delta >= 0 ? '+' : '') + fmt(delta);
+
+    return '<tr>'
+      + '<td style="' + tdStyleL + ';font-weight:600;color:var(--text)">' + mo + '</td>'
+      + (hasBank  ? '<td style="' + tdStyle + '">' + (typeof e.bank      !== 'undefined' ? fmt(e.bank)      : '—') + '</td>' : '')
+      + (hasSuper ? '<td style="' + tdStyle + '">' + (typeof e.super_    !== 'undefined' ? fmt(e.super_)    : '—') + '</td>' : '')
+      + (hasProp  ? '<td style="' + tdStyle + '">' + (typeof e.property  !== 'undefined' ? fmt(e.property)  : '—') + '</td>' : '')
+      + (hasEq    ? '<td style="' + tdStyle + '">' + (typeof e.equities  !== 'undefined' ? fmt(e.equities)  : '—') + '</td>' : '')
+      + (hasLiab  ? '<td style="' + tdStyle + ';color:var(--danger)">-' + (typeof e.liabilities !== 'undefined' ? fmt(e.liabilities) : '—') + '</td>' : '')
+      + '<td style="' + tdStyle + ';font-weight:700;color:' + nwColor + '">' + fmt(nw) + '</td>'
+      + '<td style="' + tdStyle + ';' + dltColor + '">' + dltStr + '</td>'
+      + '</tr>';
+  }).join('');
+
+  var tableHtml = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'
+    + '<table style="width:100%;border-collapse:collapse;min-width:480px">'
+    + thead + '<tbody>' + rows + '</tbody></table></div>';
+
+  el.innerHTML = chartHtml + tableHtml;
+
+  // ── Render the trend chart ────────────────────────────────────
+  var canvas = document.getElementById('nw-trend-canvas');
+  if (_nwTrendChart) { try { _nwTrendChart.destroy(); } catch(ex){} _nwTrendChart = null; }
+  if (!canvas || chartKeys.length < 2) return;
+
+  var labels = chartKeys.map(function(m) {
+    return new Date(m + '-02').toLocaleString('en-AU', {month:'short', year:'2-digit'});
+  });
+  var nwVals = chartKeys.map(function(m) { return moMap[m].netWorth; });
+  var isUp   = nwVals[nwVals.length - 1] >= nwVals[0];
+  var lc     = isUp ? '#00C896' : '#EF4444';
+
+  var datasets = [{ label:'Net Worth', data:nwVals, borderColor:lc, backgroundColor:lc+'20',
+    fill:true, tension:0.35, pointRadius:pr, pointHoverRadius:6, borderWidth:2.5 }];
+
+  if (hasCmp && chartKeys.length >= 2) {
+    datasets = [
+      { label:'Bank',     data:chartKeys.map(function(m){var e=moMap[m];return typeof e.bank!=='undefined'?e.bank:null;}),      borderColor:'#3B82F6', backgroundColor:'#3B82F618', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Super',    data:chartKeys.map(function(m){var e=moMap[m];return typeof e.super_!=='undefined'?e.super_:null;}),   borderColor:'#818CF8', backgroundColor:'#818CF818', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Property', data:chartKeys.map(function(m){var e=moMap[m];return typeof e.property!=='undefined'?e.property:null;}),borderColor:'#F0538A', backgroundColor:'#F0538A18', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Equities', data:chartKeys.map(function(m){var e=moMap[m];return typeof e.equities!=='undefined'?e.equities:null;}),borderColor:'#F59E0B', backgroundColor:'#F59E0B18', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Liabilities',data:chartKeys.map(function(m){var e=moMap[m];return typeof e.liabilities!=='undefined'?e.liabilities:null;}),borderColor:'#EF4444',backgroundColor:'#EF444418',fill:true,tension:0.3,pointRadius:pr,borderWidth:1.5,order:2 },
+      { label:'Net Worth',data:nwVals, borderColor:'#00C896', backgroundColor:'transparent', fill:false, tension:0.35, pointRadius:pr?pr+1:0, pointHoverRadius:6, borderWidth:3, order:1 }
+    ];
+  }
+
+  _nwTrendChart = safeChart(canvas, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: hasCmp, labels: { color: muted, font: { family:'DM Sans', size:11 }, boxWidth:12, padding:10 } },
+        tooltip: { callbacks: { label: function(c) { return ' ' + c.dataset.label + ': ' + fmt(c.parsed.y); } } }
+      },
+      scales: {
+        x: { grid:{ display:false }, ticks:{ color:muted, font:{ family:'DM Sans' } } },
+        y: { grid:{ color:card2 },   ticks:{ color:muted, font:{ family:'DM Mono' },
+             callback: function(v){ return '$'+(v/1000).toFixed(0)+'k'; } } }
+      }
     }
   });
 }

@@ -1633,6 +1633,18 @@ window.addEventListener('unhandledrejection',function(e){
         <a href="#" onclick="go('equities');return false;" class="btn btn-ghost btn-sm">View Holdings →</a>
       </div>
     </div>
+
+    <!-- Monthly Net Worth History -->
+    <div class="card mb">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div>
+          <div class="section-label" style="margin-bottom:2px">📅 Monthly Net Worth History</div>
+          <div style="font-size:.74rem;color:var(--muted)">Snapshot recorded automatically each time you save a balance, liability, or asset. Components shown when available.</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="renderNetWorthHistory()">↻ Refresh</button>
+      </div>
+      <div id="nw-history-wrap"></div>
+    </div>
   </div>
 
 
