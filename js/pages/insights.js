@@ -9,6 +9,8 @@ let insCashFlowChart = null;
 let insCompareChart  = null;
 let insCatChart      = null;
 let insSubcatChart   = null;
+let insIncCatChart   = null;
+let insIncSubcatChart = null;
 
 function insToken(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
@@ -65,6 +67,8 @@ function renderInsights() {
   insRenderSankey();
   insRenderCatChart();
   insRenderSubcatChart();
+  insRenderIncCatChart();
+  insRenderIncSubcatChart();
 }
 
 // ── Net Worth History Chart (Insights — summary view only) ──────
@@ -555,12 +559,13 @@ function insRenderCatChart() {
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div style="padding:7px 0;border-bottom:1px solid var(--border)">'
+          return '<div onclick="insGoToTxFiltered(\'expense\',\'' + r.id + '\',\'\',\'' + pfx + '\')" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
             + '<span style="width:22px;text-align:center">' + (r.icon || '📋') + '</span>'
             + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
             + '<span style="font-size:.78rem;color:var(--muted)">' + pct + '%</span>'
             + '<span style="font-weight:700;font-size:.86rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
             + '</div>'
             + '<div style="height:4px;background:var(--card3);border-radius:99px;overflow:hidden;margin-left:30px">'
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
@@ -607,16 +612,17 @@ function insRenderSubcatChart() {
     return;
   }
 
-  const totals = {};
+  const totalsMap = {};
   expTx.forEach(t => {
     const cat     = LCATS.find(c => c.id === (t.catId || 'other'));
     const catName = cat ? cat.name : (t.category || 'Other');
     const key     = filterCatId ? t.subcat : catName + ' › ' + t.subcat;
-    totals[key]   = (totals[key] || 0) + Number(t.amount);
+    if (!totalsMap[key]) totalsMap[key] = { amt: 0, catId: t.catId || 'other', subcat: t.subcat || '' };
+    totalsMap[key].amt += Number(t.amount);
   });
 
-  const sorted = Object.entries(totals)
-    .map(([label, amt]) => {
+  const sorted = Object.entries(totalsMap)
+    .map(([label, d]) => {
       let color = insToken('--muted');
       if (filterCatId) {
         const cat = LCATS.find(c => c.id === filterCatId);
@@ -625,7 +631,7 @@ function insRenderSubcatChart() {
         const matchedCat = LCATS.find(c => label.startsWith(c.name + ' ›'));
         if (matchedCat && matchedCat.color) color = matchedCat.color;
       }
-      return { label, amt, color };
+      return { label, amt: d.amt, color, catId: d.catId, subcat: d.subcat };
     })
     .sort((a, b) => b.amt - a.amt);
 
@@ -680,11 +686,242 @@ function insRenderSubcatChart() {
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div style="padding:6px 0;border-bottom:1px solid var(--border)">'
+          const sc   = r.subcat.replace(/'/g, "\\'");
+          return '<div onclick="insGoToTxFiltered(\'expense\',\'' + r.catId + '\',\'' + sc + '\',\'' + pfx + '\')" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
             + '<span style="flex:1;font-size:.8rem;font-weight:600">' + r.label + '</span>'
             + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
             + '<span style="font-weight:700;font-size:.84rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
+            + '</div>'
+            + '<div style="height:3px;background:var(--card3);border-radius:99px;overflow:hidden">'
+            + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
+            + '</div></div>';
+        }).join('');
+  }
+}
+
+// ── Click-through: navigate to Transactions with filters pre-set ─
+function insGoToTxFiltered(type, catId, subcat, period) {
+  go('transactions');
+  var setEl = function(id, val) {
+    var el = document.getElementById(id);
+    if (el) { el.value = val; el.dispatchEvent(new Event('change')); }
+  };
+  setEl('tx-filter-type',   type   || '');
+  setEl('tx-filter-month',  period || '');
+  setEl('tx-filter-cat',    catId  || '');
+  setEl('tx-filter-subcat', subcat || '');
+  if (typeof renderTx === 'function') renderTx();
+}
+
+// ── Income by Category Chart ────────────────────────────────────
+function insRenderIncCatChart() {
+  const canvas      = document.getElementById('ins-inc-cat-chart');
+  const wrap        = document.getElementById('ins-inc-cat-chart-wrap');
+  const breakdownEl = document.getElementById('ins-inc-cat-breakdown');
+  const periodLbl   = document.getElementById('ins-inc-cat-period-lbl');
+  if (insIncCatChart) { insIncCatChart.destroy(); insIncCatChart = null; }
+
+  const pfx   = insPeriodStr();
+  const label = insPeriodLabel();
+  if (periodLbl) periodLbl.textContent = label;
+
+  const incTx = activeTX().filter(t =>
+    t.type === 'income' && t.date.startsWith(pfx)
+  );
+
+  if (!incTx.length) {
+    if (wrap)        wrap.style.height = '';
+    if (breakdownEl) breakdownEl.innerHTML = '<div class="empty"><div class="ei">💰</div><p>No income this period.</p></div>';
+    return;
+  }
+
+  const catTotals = {};
+  incTx.forEach(t => {
+    const id = t.catId || 'other';
+    catTotals[id] = (catTotals[id] || 0) + Number(t.amount);
+  });
+
+  const INC_COLOR = '#52d68a';
+  const sorted = Object.entries(catTotals)
+    .map(([id, amt]) => {
+      const cat = LCATS.find(c => c.id === id);
+      const color = (cat && cat.color) ? cat.color : INC_COLOR;
+      return { id, name: cat ? cat.name : (id === 'other' ? 'Other' : id), icon: cat ? cat.icon : '💰', color, amt };
+    })
+    .sort((a, b) => b.amt - a.amt);
+
+  const total  = sorted.reduce((s, r) => s + r.amt, 0);
+  const topN   = Math.min(sorted.length, 14);
+  const top    = sorted.slice(0, topN);
+  const chartH = Math.max(220, topN * 44 + 48);
+  if (wrap) wrap.style.height = chartH + 'px';
+
+  if (canvas) {
+    insIncCatChart = safeChart(canvas, {
+      type: 'bar',
+      data: {
+        labels: top.map(r => r.icon + ' ' + r.name),
+        datasets: [{ label: 'Received', data: top.map(r => r.amt),
+          backgroundColor: top.map(r => r.color + 'cc'),
+          borderColor:     top.map(r => r.color),
+          borderWidth: 1.5, borderRadius: 6 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ' ' + fmt(c.parsed.x) + ' (' + ((c.parsed.x / total) * 100).toFixed(1) + '%)' } }
+        },
+        scales: {
+          x: { grid: { color: insToken('--card3') }, ticks: { font: { family: 'Inter', size: 10 }, color: insToken('--muted'), callback: v => '$' + Math.round(v).toLocaleString() } },
+          y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: insToken('--muted') } }
+        }
+      }
+    });
+  }
+
+  if (breakdownEl) {
+    const barMax = sorted[0] ? sorted[0].amt : 1;
+    breakdownEl.innerHTML = '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Full Breakdown — ' + fmt(total) + ' total</div>'
+      + sorted.map(r => {
+          const pct  = (r.amt / total * 100).toFixed(1);
+          const barW = Math.round(r.amt / barMax * 100);
+          return '<div onclick="insGoToTxFiltered(\'income\',\'' + r.id + '\',\'\',\'' + pfx + '\')" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
+            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+            + '<span style="width:22px;text-align:center">' + (r.icon || '💰') + '</span>'
+            + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
+            + '<span style="font-size:.78rem;color:var(--muted)">' + pct + '%</span>'
+            + '<span style="font-weight:700;font-size:.86rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
+            + '</div>'
+            + '<div style="height:4px;background:var(--card3);border-radius:99px;overflow:hidden;margin-left:30px">'
+            + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
+            + '</div></div>';
+        }).join('');
+  }
+}
+
+// ── Income by Subcategory Chart ─────────────────────────────────
+function insRenderIncSubcatChart() {
+  const canvas    = document.getElementById('ins-inc-subcat-chart');
+  const wrap      = document.getElementById('ins-inc-subcat-chart-wrap');
+  const breakdown = document.getElementById('ins-inc-subcat-breakdown');
+  const periodLbl = document.getElementById('ins-inc-subcat-period-lbl');
+  const catFilter = document.getElementById('ins-inc-subcat-filter-cat');
+
+  if (insIncSubcatChart) { insIncSubcatChart.destroy(); insIncSubcatChart = null; }
+
+  if (catFilter) {
+    const cur = catFilter.value;
+    catFilter.innerHTML = '<option value="">All Categories</option>'
+      + LCATS.filter(c => c.type === 'income' || c.type === 'both')
+             .filter(c => c.id !== 'transfers')
+             .map(c => '<option value="' + c.id + '"' + (c.id === cur ? ' selected' : '') + '>'
+                       + c.icon + ' ' + c.name + '</option>')
+             .join('');
+  }
+
+  const pfx         = insPeriodStr();
+  const filterCatId = catFilter ? catFilter.value : '';
+  if (periodLbl) periodLbl.textContent = insPeriodLabel();
+
+  const incTx = activeTX().filter(t =>
+    t.type === 'income' && t.date.startsWith(pfx) &&
+    t.subcat && t.subcat.trim() !== '' &&
+    (!filterCatId || t.catId === filterCatId)
+  );
+
+  if (!incTx.length) {
+    if (wrap)       wrap.style.height = '';
+    if (breakdown)  breakdown.innerHTML = '<div class="empty"><div class="ei">🔎</div><p>No subcategorised income this period.'
+      + (filterCatId ? '' : ' Assign subcategories in the Transactions tab.') + '</p></div>';
+    return;
+  }
+
+  const INC_COLOR = '#52d68a';
+  const totalsMap = {};
+  incTx.forEach(t => {
+    const cat     = LCATS.find(c => c.id === (t.catId || 'other'));
+    const catName = cat ? cat.name : (t.category || 'Other');
+    const key     = filterCatId ? t.subcat : catName + ' › ' + t.subcat;
+    if (!totalsMap[key]) totalsMap[key] = { amt: 0, catId: t.catId || 'other', subcat: t.subcat || '' };
+    totalsMap[key].amt += Number(t.amount);
+  });
+
+  const sorted = Object.entries(totalsMap)
+    .map(([label, d]) => {
+      let color = INC_COLOR;
+      if (filterCatId) {
+        const cat = LCATS.find(c => c.id === filterCatId);
+        if (cat && cat.color) color = cat.color;
+      } else {
+        const matchedCat = LCATS.find(c => label.startsWith(c.name + ' ›'));
+        if (matchedCat && matchedCat.color) color = matchedCat.color;
+      }
+      return { label, amt: d.amt, color, catId: d.catId, subcat: d.subcat };
+    })
+    .sort((a, b) => b.amt - a.amt);
+
+  const colorCount = {};
+  sorted.forEach(r => { colorCount[r.color] = (colorCount[r.color] || 0) + 1; });
+  const colorIdx = {};
+  sorted.forEach(r => {
+    colorIdx[r.color] = (colorIdx[r.color] || 0);
+    const siblings = colorCount[r.color];
+    if (siblings > 1) {
+      const shift = colorIdx[r.color] / siblings;
+      r.displayColor = r.color + Math.round(204 - shift * 80).toString(16).padStart(2, '0');
+    } else {
+      r.displayColor = r.color + 'cc';
+    }
+    colorIdx[r.color]++;
+  });
+
+  const total  = sorted.reduce((s, r) => s + r.amt, 0);
+  const topN   = Math.min(sorted.length, 16);
+  const top    = sorted.slice(0, topN);
+  const chartH = Math.max(220, topN * 40 + 48);
+  if (wrap) wrap.style.height = chartH + 'px';
+
+  if (canvas) {
+    insIncSubcatChart = safeChart(canvas, {
+      type: 'bar',
+      data: {
+        labels: top.map(r => r.label),
+        datasets: [{ label: 'Received', data: top.map(r => r.amt),
+          backgroundColor: top.map(r => r.displayColor),
+          borderColor:     top.map(r => r.color),
+          borderWidth: 1.5, borderRadius: 5 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ' ' + fmt(c.parsed.x) + ' (' + ((c.parsed.x / total) * 100).toFixed(1) + '%)' } }
+        },
+        scales: {
+          x: { grid: { color: insToken('--card3') }, ticks: { font: { family: 'Inter', size: 10 }, color: insToken('--muted'), callback: v => '$' + Math.round(v).toLocaleString() } },
+          y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 }, color: insToken('--muted') } }
+        }
+      }
+    });
+  }
+
+  if (breakdown) {
+    const barMax = sorted[0] ? sorted[0].amt : 1;
+    breakdown.innerHTML = '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Full Breakdown — ' + fmt(total) + ' total</div>'
+      + sorted.map(r => {
+          const pct  = (r.amt / total * 100).toFixed(1);
+          const barW = Math.round(r.amt / barMax * 100);
+          const sc   = r.subcat.replace(/'/g, "\\'");
+          return '<div onclick="insGoToTxFiltered(\'income\',\'' + r.catId + '\',\'' + sc + '\',\'' + pfx + '\')" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
+            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
+            + '<span style="flex:1;font-size:.8rem;font-weight:600">' + r.label + '</span>'
+            + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
+            + '<span style="font-weight:700;font-size:.84rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
             + '</div>'
             + '<div style="height:3px;background:var(--card3);border-radius:99px;overflow:hidden">'
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
