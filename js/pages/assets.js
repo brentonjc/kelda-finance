@@ -277,6 +277,67 @@ function _assetsRenderLiabDonut(liabSegs, totalLiab) {
 // ══════════════════════════════════════════════════════════════
 var _nwTrendChart = null;
 
+// Compute vested units for an RSU/option holding AS OF a historical date
+function _eqVestCalcAt(h, asOfDate) {
+  var total  = parseFloat(h.totalUnits) || 0;
+  var cliffY = (h.cliffYears !== undefined) ? parseFloat(h.cliffYears) : (parseInt(h.cliffMonths) || 0) / 12;
+  var vestY  = (h.vestingYears !== undefined) ? parseFloat(h.vestingYears) : (parseInt(h.vestingMonths) || 48) / 12;
+  var freq   = h.vestFrequency || 'quarterly';
+  var gd     = h.grantDate || '';
+  if (!total || !gd) return 0;
+  var grant = new Date(gd + 'T00:00:00');
+  if (isNaN(grant.getTime())) return 0;
+  var cliffMonths = Math.round(cliffY * 12);
+  var cliffDate   = new Date(grant.getFullYear(), grant.getMonth() + cliffMonths, grant.getDate());
+  var freqM       = freq === 'monthly' ? 1 : freq === 'annual' ? 12 : 3;
+  var freqPerYear = freq === 'monthly' ? 12 : freq === 'annual' ? 1 : 4;
+  var numVests    = Math.max(1, Math.round(vestY * freqPerYear));
+  var unitsPerV   = total / numVests;
+  var vested = 0, cum = 0;
+  for (var i = 0; i < numVests; i++) {
+    var vd    = new Date(cliffDate.getFullYear(), cliffDate.getMonth() + i * freqM, cliffDate.getDate());
+    var units = (i === numVests - 1) ? Math.max(0, Math.round(total - cum)) : Math.round(unitsPerV);
+    cum += units;
+    if (vd <= asOfDate) vested += units;
+  }
+  return vested;
+}
+
+// Derive total equity cost-basis value for a given month from EQUITIES[]
+// Returns null if no holding existed yet (so callers can distinguish 0 cost from "not yet started")
+function _eqCostBasisForMonth(mo) {
+  if (typeof EQUITIES === 'undefined' || !EQUITIES.length) return null;
+  var moEnd = new Date(parseInt(mo.slice(0,4)), parseInt(mo.slice(5,7)), 0); // last day of month
+  var anyHolding = false, total = 0;
+  EQUITIES.forEach(function(h) {
+    var type     = h.type || 'stock';
+    var startStr = h.purchaseDate || h.grantDate || '';
+    if (!startStr) return;
+    var startDate = new Date(startStr + 'T00:00:00');
+    if (isNaN(startDate.getTime()) || startDate > moEnd) return;
+    anyHolding = true;
+    var salesByMo = (h.sales || []).filter(function(s) {
+      return s.date && new Date(s.date + 'T00:00:00') <= moEnd;
+    });
+    var soldQty = salesByMo.reduce(function(a, s) { return a + (parseFloat(s.qty) || 0); }, 0);
+    if (type === 'bond') {
+      var saleVal = salesByMo.reduce(function(a, s) {
+        return a + (parseFloat(s.qty) || 0) * (parseFloat(s.price) || 0);
+      }, 0);
+      total += Math.max(0, (parseFloat(h.purchasePrice) || 0) - saleVal);
+    } else if (type === 'rsu' || type === 'option') {
+      var vestedAt = _eqVestCalcAt(h, moEnd);
+      var price    = parseFloat(h.currentPrice) || 0;
+      var strike   = type === 'option' ? (parseFloat(h.strikePrice) || 0) : 0;
+      total += Math.max(0, vestedAt - soldQty) * Math.max(0, price - strike);
+    } else {
+      // stock: (qty - sold) × cost per unit
+      total += Math.max(0, (parseFloat(h.qty) || 0) - soldQty) * (parseFloat(h.cost) || parseFloat(h.currentPrice) || 0);
+    }
+  });
+  return anyHolding ? total : null;
+}
+
 function renderNetWorthHistory() {
   var el = document.getElementById('nw-history-wrap');
   if (!el) return;
@@ -284,65 +345,80 @@ function renderNetWorthHistory() {
   // ── Load all data sources ─────────────────────────────────────
   var hist = [];
   try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) {}
-  var superHist    = {}; try { superHist    = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
-  var mortHist     = {}; try { mortHist     = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
-  var eqHist       = {}; try { eqHist       = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
-  var liabHist     = {}; try { liabHist     = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
+  var superHist = {}; try { superHist = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
+  var mortHist  = {}; try { mortHist  = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
+  var eqHist    = {}; try { eqHist    = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
+  var liabHist  = {}; try { liabHist  = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
   // New monthly grids — highest fidelity per-component data
   var superMonthly = (typeof SUPER_MONTHLY !== 'undefined') ? SUPER_MONTHLY : {};
   var liabMonthly  = (typeof LIAB_MONTHLY  !== 'undefined') ? LIAB_MONTHLY  : {};
   var eqMonthly    = (typeof EQ_MONTHLY    !== 'undefined') ? EQ_MONTHLY    : {};
 
-  // Current fallback values
-  var curNW     = (typeof computeCurrentNetWorth === 'function') ? computeCurrentNetWorth() : {};
-  var fbSuper   = curNW.super_     || 0;
-  var fbProp    = curNW.property   || 0;
-  var fbEq      = curNW.equities   || 0;
-  var fbLiab    = curNW.liabilities|| 0;
+  // ── Earliest start dates for property and equities ───────────
+  // Property: driven by acquisition date entered on the Mortgage tab
+  var propAcqMo = null;
+  if (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length) {
+    MORTGAGE.properties.forEach(function(p) {
+      if (p.acquiredDate) {
+        var d = p.acquiredDate.slice(0, 7);
+        if (!propAcqMo || d < propAcqMo) propAcqMo = d;
+      }
+    });
+  }
+  if (!propAcqMo && MORTGAGE && MORTGAGE.acquiredDate) propAcqMo = MORTGAGE.acquiredDate.slice(0, 7);
 
-  // Bank from CT per month
+  // Equities: driven by earliest purchaseDate / grantDate across all holdings
+  var eqStartMo = null;
+  if (typeof EQUITIES !== 'undefined' && EQUITIES.length) {
+    EQUITIES.forEach(function(h) {
+      var d = (h.purchaseDate || h.grantDate || '').slice(0, 7);
+      if (d && (!eqStartMo || d < eqStartMo)) eqStartMo = d;
+    });
+  }
+
+  // ── Bank from CT per month ────────────────────────────────────
   var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
     ? CT_ACCTS.map(function(a){ return a.id; }) : ['offset','home','sav1','sav2'];
   function bankForMonth(mo) {
     return ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[mo]||0); }, 0);
   }
 
-  // Build union of all months from all sources
+  // ── Build union of all months ─────────────────────────────────
   var allMonthSet = {};
   hist.forEach(function(e){ if(e.date) allMonthSet[e.date.slice(0,7)] = true; });
   Object.keys(superHist).forEach(function(m){ allMonthSet[m] = true; });
   Object.keys(mortHist).forEach(function(m){ allMonthSet[m] = true; });
   Object.keys(eqHist).forEach(function(m){ allMonthSet[m] = true; });
   Object.keys(liabHist).forEach(function(m){ allMonthSet[m] = true; });
-  // Also include months from the new monthly grids
   Object.keys(eqMonthly).forEach(function(m){ allMonthSet[m] = true; });
-  Object.keys(liabMonthly).forEach(function(lid) { Object.keys(liabMonthly[lid]||{}).forEach(function(m){ allMonthSet[m]=true; }); });
-  Object.keys(superMonthly).forEach(function(aid) { Object.keys(superMonthly[aid]||{}).forEach(function(m){ allMonthSet[m]=true; }); });
+  Object.keys(liabMonthly).forEach(function(lid){ Object.keys(liabMonthly[lid]||{}).forEach(function(m){ allMonthSet[m]=true; }); });
+  Object.keys(superMonthly).forEach(function(aid){ Object.keys(superMonthly[aid]||{}).forEach(function(m){ allMonthSet[m]=true; }); });
   if (typeof ctAllMonths === 'function') { ctAllMonths().forEach(function(m){ allMonthSet[m] = true; }); }
+  // Always include property acquisition month so it anchors the history
+  if (propAcqMo) allMonthSet[propAcqMo] = true;
+  if (eqStartMo) allMonthSet[eqStartMo] = true;
 
-  // Helper: compute super total for a month from per-account monthly data
+  // Helper: super total for a month from per-account monthly data
   function superTotalForMonth(mo) {
-    var bAccts = (typeof SUPER_ACCTS !== 'undefined') ? (SUPER_ACCTS.brenton||[]) : [];
-    var sAccts = (typeof SUPER_ACCTS !== 'undefined') ? (SUPER_ACCTS.shelley||[]) : [];
+    var bAccts   = (typeof SUPER_ACCTS !== 'undefined') ? (SUPER_ACCTS.brenton||[]) : [];
+    var sAccts   = (typeof SUPER_ACCTS !== 'undefined') ? (SUPER_ACCTS.shelley||[]) : [];
     var allAccts = bAccts.concat(sAccts);
-    if (!allAccts.length) return null; // no accounts — fall back to history
-    var anyEntry = false;
-    var total = 0;
+    if (!allAccts.length) return null;
+    var anyEntry = false, total = 0;
     allAccts.forEach(function(a) {
-      var hist = superMonthly[a.id] || {};
-      if (hist[mo] !== undefined) { total += hist[mo]; anyEntry = true; }
+      var h = superMonthly[a.id] || {};
+      if (h[mo] !== undefined) { total += h[mo]; anyEntry = true; }
     });
     return anyEntry ? total : null;
   }
 
-  // Helper: compute liab total for a month from per-liability monthly data
+  // Helper: liab total for a month from per-liability monthly data
   function liabTotalForMonth(mo) {
     var allIds = [];
     if (typeof liabAllMortgages === 'function') liabAllMortgages().forEach(function(m){ allIds.push(m.id); });
     if (typeof LIABILITIES !== 'undefined') LIABILITIES.forEach(function(l){ allIds.push(l.id); });
     if (!allIds.length) return null;
-    var anyEntry = false;
-    var total = 0;
+    var anyEntry = false, total = 0;
     allIds.forEach(function(id) {
       var h = liabMonthly[id] || {};
       if (h[mo] !== undefined) { total += h[mo]; anyEntry = true; }
@@ -350,49 +426,113 @@ function renderNetWorthHistory() {
     return anyEntry ? total : null;
   }
 
-  // For each month, build a rich entry using best-available data
+  // ── Build moMap in ascending order with carry-forward ─────────
+  // Each component carries its last known value forward month-to-month.
+  // Property only starts from acquisition date; equities from earliest grant/purchase date.
   var moMap = {};
-  // Seed with existing snapshot history (most authoritative — includes manually recorded)
   hist.forEach(function(e){ if(e.date){ var m=e.date.slice(0,7); if(!moMap[m])moMap[m]=e; } });
 
-  // Fill/override with component-level history where available
+  var lastKnownSuper = 0;
+  var lastKnownProp  = 0;
+  var lastKnownEq    = 0;
+  var lastKnownLiab  = 0;
+
   Object.keys(allMonthSet).sort().forEach(function(mo) {
-    var bank   = bankForMonth(mo);
-    // Super: new per-account monthly grid > legacy totals history > fallback
+    var bank = bankForMonth(mo);
+
+    // ── Super: carry forward last known value once entered ──────
     var smGrid = superTotalForMonth(mo);
     var sh     = superHist[mo];
-    var super_ = smGrid !== null ? smGrid
-               : sh ? ((sh.brenton||0)+(sh.shelley||0))
-               : (moMap[mo] ? (moMap[mo].super_||fbSuper) : fbSuper);
-    // Property: mortgage history > fallback
-    var mh    = mortHist[mo];
-    var prop  = mh ? (mh.homeValue||0) : (moMap[mo] ? (moMap[mo].property||fbProp) : fbProp);
-    // Equities: new monthly grid > legacy eq history > fallback
-    var eqGrid  = eqMonthly[mo] ? eqMonthly[mo].closing : undefined;
-    var eq      = eqGrid !== undefined ? eqGrid
-                : (typeof eqHist[mo] !== 'undefined' ? eqHist[mo]
-                : (moMap[mo] ? (moMap[mo].equities||fbEq) : fbEq));
-    // Liabilities: new per-liability monthly grid > legacy liab history > fallback
+    var super_;
+    if (smGrid !== null) {
+      super_ = smGrid; lastKnownSuper = smGrid;
+    } else if (sh) {
+      super_ = (sh.brenton||0) + (sh.shelley||0); lastKnownSuper = super_;
+    } else if (moMap[mo] && moMap[mo].super_) {
+      super_ = moMap[mo].super_; lastKnownSuper = super_;
+    } else {
+      super_ = lastKnownSuper; // persist until updated
+    }
+
+    // ── Property: only from acquisition date, then carry forward ─
+    var prop = 0;
+    if (!propAcqMo || mo >= propAcqMo) {
+      var mh = mortHist[mo];
+      if (mh && (mh.homeValue || mh.homeValue === 0)) {
+        prop = mh.homeValue; lastKnownProp = prop;
+      } else if (moMap[mo] && moMap[mo].property) {
+        prop = moMap[mo].property; lastKnownProp = prop;
+      } else if (lastKnownProp > 0) {
+        prop = lastKnownProp; // carry forward
+      } else if (propAcqMo && mo === propAcqMo && MORTGAGE.homeValue) {
+        // Anchor the acquisition month with current home value if no history yet
+        prop = MORTGAGE.homeValue; lastKnownProp = prop;
+      }
+    }
+
+    // ── Equities: from first grant/purchase date, carry forward ──
+    var eq = 0;
+    if (!eqStartMo || mo >= eqStartMo) {
+      var eqGrid = eqMonthly[mo] ? eqMonthly[mo].closing : undefined;
+      if (eqGrid !== undefined) {
+        eq = eqGrid; lastKnownEq = eq;
+      } else if (typeof eqHist[mo] !== 'undefined') {
+        eq = eqHist[mo]; lastKnownEq = eq;
+      } else if (moMap[mo] && typeof moMap[mo].equities !== 'undefined' && moMap[mo].equities > 0) {
+        eq = moMap[mo].equities; lastKnownEq = eq;
+      } else {
+        // Derive from cost basis of holdings that existed by this month
+        var costBasis = _eqCostBasisForMonth(mo);
+        if (costBasis !== null) {
+          eq = costBasis; lastKnownEq = eq;
+        } else {
+          eq = lastKnownEq; // carry forward
+        }
+      }
+    }
+
+    // ── Liabilities: carry forward last known value once entered ─
     var lGrid = liabTotalForMonth(mo);
-    var liab  = lGrid !== null ? lGrid
-              : (typeof liabHist[mo] !== 'undefined' ? liabHist[mo]
-              : (moMap[mo] ? (moMap[mo].liabilities||fbLiab) : fbLiab));
-    var nw    = bank + super_ + prop + eq - liab;
-    moMap[mo] = { date: mo + '-01', netWorth: Math.round(nw*100)/100,
+    var liab;
+    if (lGrid !== null) {
+      liab = lGrid; lastKnownLiab = lGrid;
+    } else if (typeof liabHist[mo] !== 'undefined') {
+      liab = liabHist[mo]; lastKnownLiab = liab;
+    } else if (moMap[mo] && moMap[mo].liabilities) {
+      liab = moMap[mo].liabilities; lastKnownLiab = liab;
+    } else {
+      liab = lastKnownLiab; // persist until updated
+    }
+
+    var nw = bank + super_ + prop + eq - liab;
+    moMap[mo] = { date: mo + '-01', netWorth: Math.round(nw * 100) / 100,
                   bank: Math.round(bank), super_: Math.round(super_),
                   property: Math.round(prop), equities: Math.round(eq),
                   liabilities: Math.round(liab) };
   });
 
-  var moKeys = Object.keys(moMap).sort().reverse(); // most-recent first
+  var moKeys = Object.keys(moMap).sort().reverse(); // most-recent first for display
 
   if (moKeys.length === 0) {
     el.innerHTML = '<div class="empty" style="padding:20px 0"><p>No history yet — save any balance to start recording snapshots automatically.</p></div>';
     return;
   }
 
+  // ── Precompute month-on-month deltas in ascending order ───────
+  // The change column shows how much net worth grew FROM the previous month.
+  // The oldest entry gets —; all subsequent entries show current − previous.
+  var ascKeys  = moKeys.slice().reverse();
+  var deltaMap = {};
+  for (var di = 0; di < ascKeys.length; di++) {
+    if (di === 0) {
+      deltaMap[ascKeys[di]] = null; // first ever entry has no predecessor
+    } else {
+      deltaMap[ascKeys[di]] = (moMap[ascKeys[di]].netWorth || 0) - (moMap[ascKeys[di - 1]].netWorth || 0);
+    }
+  }
+
   // ── Trend chart ──────────────────────────────────────────────
-  var chartKeys = moKeys.slice().reverse(); // oldest→newest for chart
+  var chartKeys = ascKeys; // oldest→newest
   var hasCmp = chartKeys.some(function(m){ return typeof moMap[m].bank !== 'undefined'; });
   var muted  = asToken('--muted') || '#6278A0';
   var card2  = asToken('--card2') || '#111830';
@@ -403,43 +543,40 @@ function renderNetWorthHistory() {
   // ── Table ────────────────────────────────────────────────────
   var hasBank = hasCmp, hasSuper = hasCmp, hasProp = hasCmp, hasEq = hasCmp, hasLiab = hasCmp;
 
-  var thStyle = 'padding:8px 12px;text-align:right;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap';
+  var thStyle  = 'padding:8px 12px;text-align:right;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap';
   var thStyleL = thStyle.replace('text-align:right','text-align:left');
-  var tdStyle = 'padding:7px 12px;text-align:right;font-family:var(--font-mono);font-size:.8rem;border-bottom:1px solid var(--border)';
+  var tdStyle  = 'padding:7px 12px;text-align:right;font-family:var(--font-mono);font-size:.8rem;border-bottom:1px solid var(--border)';
   var tdStyleL = tdStyle.replace('text-align:right','text-align:left');
 
   var thead = '<thead><tr>'
     + '<th style="' + thStyleL + '">Month</th>'
-    + (hasBank  ? '<th style="' + thStyle + '">🏦 Bank</th>'       : '')
-    + (hasSuper ? '<th style="' + thStyle + '">💼 Super</th>'      : '')
-    + (hasProp  ? '<th style="' + thStyle + '">🏡 Property</th>'   : '')
-    + (hasEq    ? '<th style="' + thStyle + '">📈 Equities</th>'   : '')
+    + (hasBank  ? '<th style="' + thStyle + '">🏦 Bank</th>'        : '')
+    + (hasSuper ? '<th style="' + thStyle + '">💼 Super</th>'       : '')
+    + (hasProp  ? '<th style="' + thStyle + '">🏡 Property</th>'    : '')
+    + (hasEq    ? '<th style="' + thStyle + '">📈 Equities</th>'    : '')
     + (hasLiab  ? '<th style="' + thStyle + '">⚖️ Liabilities</th>' : '')
     + '<th style="' + thStyle + ';color:var(--primary)">Net Worth</th>'
     + '<th style="' + thStyle + '">Change</th>'
     + '</tr></thead>';
 
-  var prevNW = null;
   var rows = moKeys.map(function(mk) {
-    var e    = moMap[mk];
-    var nw   = e.netWorth || 0;
-    var mo   = new Date(mk + '-02').toLocaleString('en-AU', {month:'short', year:'numeric'});
-    var delta = prevNW !== null ? nw - prevNW : null;
-    prevNW = nw;
+    var e       = moMap[mk];
+    var nw      = e.netWorth || 0;
+    var mo      = new Date(mk + '-02').toLocaleString('en-AU', {month:'short', year:'numeric'});
+    var delta   = deltaMap[mk];
     var nwColor  = nw >= 0 ? 'var(--success)' : 'var(--danger)';
     var dltColor = delta === null ? '' : (delta >= 0 ? 'color:var(--success)' : 'color:var(--danger)');
-    var dltStr   = delta === null ? '—'
-      : (delta >= 0 ? '+' : '') + fmt(delta);
+    var dltStr   = delta === null ? '—' : (delta >= 0 ? '+' : '') + fmt(delta);
 
     return '<tr>'
       + '<td style="' + tdStyleL + ';font-weight:600;color:var(--text)">' + mo + '</td>'
-      + (hasBank  ? '<td style="' + tdStyle + '">' + (typeof e.bank      !== 'undefined' ? fmt(e.bank)      : '—') + '</td>' : '')
-      + (hasSuper ? '<td style="' + tdStyle + '">' + (typeof e.super_    !== 'undefined' ? fmt(e.super_)    : '—') + '</td>' : '')
-      + (hasProp  ? '<td style="' + tdStyle + '">' + (typeof e.property  !== 'undefined' ? fmt(e.property)  : '—') + '</td>' : '')
-      + (hasEq    ? '<td style="' + tdStyle + '">' + (typeof e.equities  !== 'undefined' ? fmt(e.equities)  : '—') + '</td>' : '')
-      + (hasLiab  ? '<td style="' + tdStyle + ';color:var(--danger)">-' + (typeof e.liabilities !== 'undefined' ? fmt(e.liabilities) : '—') + '</td>' : '')
-      + '<td style="' + tdStyle + ';font-weight:700;color:' + nwColor + '">' + fmt(nw) + '</td>'
-      + '<td style="' + tdStyle + ';' + dltColor + '">' + dltStr + '</td>'
+      + (hasBank  ? '<td style="' + tdStyle + '">'                             + fmt(e.bank        || 0) + '</td>' : '')
+      + (hasSuper ? '<td style="' + tdStyle + '">'                             + fmt(e.super_      || 0) + '</td>' : '')
+      + (hasProp  ? '<td style="' + tdStyle + '">'                             + fmt(e.property    || 0) + '</td>' : '')
+      + (hasEq    ? '<td style="' + tdStyle + '">'                             + fmt(e.equities    || 0) + '</td>' : '')
+      + (hasLiab  ? '<td style="' + tdStyle + ';color:var(--danger)">-'       + fmt(e.liabilities || 0) + '</td>' : '')
+      + '<td style="' + tdStyle + ';font-weight:700;color:' + nwColor + '">'  + fmt(nw)                 + '</td>'
+      + '<td style="' + tdStyle + ';' + dltColor + '">'                       + dltStr                  + '</td>'
       + '</tr>';
   }).join('');
 
@@ -449,7 +586,7 @@ function renderNetWorthHistory() {
 
   el.innerHTML = chartHtml + tableHtml;
 
-  // ── Render the trend chart ────────────────────────────────────
+  // ── Render trend chart ────────────────────────────────────────
   var canvas = document.getElementById('nw-trend-canvas');
   if (_nwTrendChart) { try { _nwTrendChart.destroy(); } catch(ex){} _nwTrendChart = null; }
   if (!canvas || chartKeys.length < 2) return;
@@ -466,12 +603,12 @@ function renderNetWorthHistory() {
 
   if (hasCmp && chartKeys.length >= 2) {
     datasets = [
-      { label:'Bank',     data:chartKeys.map(function(m){var e=moMap[m];return typeof e.bank!=='undefined'?e.bank:null;}),      borderColor:'#3B82F6', backgroundColor:'#3B82F618', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
-      { label:'Super',    data:chartKeys.map(function(m){var e=moMap[m];return typeof e.super_!=='undefined'?e.super_:null;}),   borderColor:'#818CF8', backgroundColor:'#818CF818', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
-      { label:'Property', data:chartKeys.map(function(m){var e=moMap[m];return typeof e.property!=='undefined'?e.property:null;}),borderColor:'#F0538A', backgroundColor:'#F0538A18', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
-      { label:'Equities', data:chartKeys.map(function(m){var e=moMap[m];return typeof e.equities!=='undefined'?e.equities:null;}),borderColor:'#F59E0B', backgroundColor:'#F59E0B18', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
-      { label:'Liabilities',data:chartKeys.map(function(m){var e=moMap[m];return typeof e.liabilities!=='undefined'?e.liabilities:null;}),borderColor:'#EF4444',backgroundColor:'#EF444418',fill:true,tension:0.3,pointRadius:pr,borderWidth:1.5,order:2 },
-      { label:'Net Worth',data:nwVals, borderColor:'#00C896', backgroundColor:'transparent', fill:false, tension:0.35, pointRadius:pr?pr+1:0, pointHoverRadius:6, borderWidth:3, order:1 }
+      { label:'Bank',        data:chartKeys.map(function(m){return moMap[m].bank        || 0;}), borderColor:'#3B82F6', backgroundColor:'#3B82F618', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Super',       data:chartKeys.map(function(m){return moMap[m].super_      || 0;}), borderColor:'#818CF8', backgroundColor:'#818CF818', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Property',    data:chartKeys.map(function(m){return moMap[m].property    || 0;}), borderColor:'#F0538A', backgroundColor:'#F0538A18', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Equities',    data:chartKeys.map(function(m){return moMap[m].equities    || 0;}), borderColor:'#F59E0B', backgroundColor:'#F59E0B18', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Liabilities', data:chartKeys.map(function(m){return moMap[m].liabilities || 0;}), borderColor:'#EF4444', backgroundColor:'#EF444418', fill:true, tension:0.3, pointRadius:pr, borderWidth:1.5, order:2 },
+      { label:'Net Worth',   data:nwVals, borderColor:'#00C896', backgroundColor:'transparent', fill:false, tension:0.35, pointRadius:pr?pr+1:0, pointHoverRadius:6, borderWidth:3, order:1 }
     ];
   }
 
@@ -487,8 +624,7 @@ function renderNetWorthHistory() {
       },
       scales: {
         x: { grid:{ display:false }, ticks:{ color:muted, font:{ family:'DM Sans' } } },
-        y: { grid:{ color:card2 },   ticks:{ color:muted, font:{ family:'DM Mono' },
-             callback: function(v){ return '$'+(v/1000).toFixed(0)+'k'; } } }
+        y: { grid:{ color:card2 },   ticks:{ color:muted, font:{ family:'DM Mono' }, callback: function(v){ return '$'+(v/1000).toFixed(0)+'k'; } } }
       }
     }
   });

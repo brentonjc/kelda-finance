@@ -83,6 +83,50 @@ function go(id){
 
 
 // ══════════════════════════════════════════════════════════════
+// NAV COLLAPSE
+// ══════════════════════════════════════════════════════════════
+function navToggle(name) {
+  var hdr   = document.querySelector('.nav-group-hdr[data-group="' + name + '"]');
+  var items = document.querySelectorAll('[data-group-of="' + name + '"]');
+  if (!hdr) return;
+  var closing = !hdr.classList.contains('nav-group-closed');
+  hdr.classList.toggle('nav-group-closed', closing);
+  items.forEach(function(el) { el.classList.toggle('nav-group-item-hidden', closing); });
+  try {
+    var state = JSON.parse(localStorage.getItem('kf_nav_collapsed') || '{}');
+    state[name] = closing;
+    localStorage.setItem('kf_nav_collapsed', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function navSyncQuickStart() {
+  var data = null;
+  try { data = load(K.quickstart); } catch(e) {}
+  var done = data && data.completed;
+  var startedItem  = document.getElementById('qs-nav-started');
+  var controlsItem = document.getElementById('qs-nav-controls');
+  var startedHdr   = document.querySelector('.nav-group-hdr[data-group="started"]');
+  if (startedItem)  startedItem.style.display  = done ? 'none' : '';
+  if (controlsItem) controlsItem.style.display = done ? ''     : 'none';
+  if (startedHdr)   startedHdr.style.display   = done ? 'none' : '';
+}
+
+function navInitCollapsed() {
+  try {
+    var state = JSON.parse(localStorage.getItem('kf_nav_collapsed') || '{}');
+    Object.keys(state).forEach(function(name) {
+      if (state[name]) {
+        var hdr   = document.querySelector('.nav-group-hdr[data-group="' + name + '"]');
+        var items = document.querySelectorAll('[data-group-of="' + name + '"]');
+        if (!hdr) return;
+        hdr.classList.add('nav-group-closed');
+        items.forEach(function(el) { el.classList.add('nav-group-item-hidden'); });
+      }
+    });
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 function isTransfer(t){return TRANSFERS.some(tr=>tr.txIdA===t.id||tr.txIdB===t.id);}

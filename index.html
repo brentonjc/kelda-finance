@@ -27,6 +27,194 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" onerror="window._chartJsError=true"></script>
 
+<style id="ob-css">
+/* ══ Kelda Finance — Onboarding Overlay ═══════════════════════
+   Early-hide rule: set by inline script before body renders   */
+[data-ob-active="1"] #login-screen,
+[data-ob-active="1"] #main,
+[data-ob-active="1"] #bottom-tab-bar,
+[data-ob-active="1"] #fab,
+[data-ob-active="1"] #fab-menu,
+[data-ob-active="1"] #fab-overlay,
+[data-ob-active="1"] #mob-menu,
+[data-ob-active="1"] #mob-menu-overlay,
+[data-ob-active="1"] #nav-overlay,
+[data-ob-active="1"] #celebration-overlay { display: none !important; }
+
+#onboarding-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #080C18;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; align-items: flex-start; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+}
+#onboarding-overlay.ob-done { display: none; }
+
+.ob-wrap {
+  width: 100%; max-width: 440px;
+  padding: 48px 24px 40px;
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+.ob-screen { display: none; flex-direction: column; flex: 1; }
+.ob-screen.ob-active { display: flex; }
+.ob-screen-enter { animation: ob-fadeIn .25s ease; }
+
+/* ── Progress bar ──────────────────────────── */
+.ob-meta { margin-bottom: 28px; }
+.ob-step-lbl {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #6278A0; margin-bottom: 8px;
+}
+.ob-prog-track { height: 6px; background: #1E2A4A; border-radius: 3px; overflow: hidden; }
+.ob-prog-fill  { height: 100%; background: #F0538A; border-radius: 3px;
+  width: 0%; transition: width .3s ease; }
+
+/* ── Typography ────────────────────────────── */
+.ob-label {
+  display: block; font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: #F0538A; margin-bottom: 6px;
+}
+.ob-h1 {
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 24px;
+  color: #fff; margin: 0 0 8px; line-height: 1.25;
+}
+.ob-sub  { font-size: 15px; color: #6278A0; margin: 0 0 24px; }
+.ob-hint { font-size: .75rem; color: #6278A0; margin-top: 8px; }
+.ob-err  { font-size: .78rem; color: #F59E0B; margin-top: 6px; display: none; }
+
+/* ── Inputs ────────────────────────────────── */
+.ob-input {
+  width: 100%; box-sizing: border-box;
+  background: #18213E; border: 1.5px solid #1E2A4A; border-radius: 10px;
+  color: #fff; font-family: 'DM Sans', sans-serif; font-size: 16px;
+  padding: 13px 14px; min-height: 50px; outline: none; display: block;
+  -webkit-appearance: none; appearance: none;
+}
+.ob-input:focus { border-color: #F0538A; }
+.ob-input.ob-shake { animation: ob-shake .3s ease; border-color: #F59E0B; }
+
+/* ── Buttons ───────────────────────────────── */
+.ob-btn {
+  width: 100%; background: #F0538A; color: #fff; border: none;
+  border-radius: 9999px; height: 52px; font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px;
+  min-height: 44px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ob-btn:active { opacity: .85; }
+.ob-back {
+  background: none; border: none; color: #6278A0;
+  font-family: 'DM Sans', sans-serif; font-size: .82rem; cursor: pointer;
+  padding: 0; min-height: 44px; display: inline-flex; align-items: center;
+  gap: 4px; margin-bottom: 20px;
+}
+.ob-link-btn {
+  background: none; border: none; width: 100%;
+  font-family: 'DM Sans', sans-serif; font-size: .78rem; color: #6278A0;
+  text-align: center; cursor: pointer; margin-top: 12px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Screen 1 ──────────────────────────────── */
+.ob-s1-body {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+.ob-icon { font-size: 56px; margin-bottom: 20px; }
+.ob-s1-body .ob-h1 { font-size: 30px; }
+.ob-welcome-copy { font-size: .82rem; color: #6278A0; }
+
+/* ── Screen 4: Tiles ───────────────────────── */
+.ob-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+.ob-tile {
+  background: #111830; border: 2px solid #1E2A4A; border-radius: 16px;
+  height: 68px; display: flex; align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif; font-weight: 600; font-size: 22px;
+  color: #fff; cursor: pointer;
+  transition: border-color .15s, color .15s;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.ob-tile.ob-tile-sel { border-color: #F0538A; color: #F0538A; }
+
+/* ── Screen 5: Pills & Account cards ──────── */
+.ob-acct {
+  background: #111830; border: 1.5px solid #1E2A4A;
+  border-radius: 16px; padding: 16px; margin-bottom: 12px;
+}
+.ob-acct-num { font-size: .68rem; font-weight: 700; color: #6278A0; margin-bottom: 8px; }
+.ob-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ob-pill {
+  padding: 6px 12px; border-radius: 10px;
+  background: #18213E; border: 1px solid #1E2A4A; color: #6278A0;
+  font-size: .76rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.ob-pill.ob-pill-sel { background: #F0538A; border-color: #F0538A; color: #fff; }
+
+/* ── Screen 6 & 7 partial: PIN ─────────────── */
+.ob-dots { display: flex; gap: 18px; justify-content: center; margin: 24px 0 28px; }
+.ob-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #1E2A4A; background: transparent;
+  transition: background .12s, border-color .12s; flex-shrink: 0;
+}
+.ob-dot.ob-dot-on { background: #F0538A; border-color: #F0538A; }
+.ob-dots.ob-shaking { animation: ob-shake .3s ease; }
+.ob-numpad {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+  max-width: 280px; margin: 0 auto;
+}
+.ob-nk {
+  background: #18213E; border: 1.5px solid #1E2A4A; border-radius: 10px;
+  height: 60px; font-family: 'Sora', sans-serif; font-weight: 600; font-size: 22px;
+  color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.ob-nk:active { background: rgba(240,83,138,.18); }
+.ob-nk-blank  { height: 60px; }
+.ob-pin-err {
+  font-size: .78rem; color: #F59E0B; text-align: center;
+  margin-top: 10px; min-height: 18px;
+}
+
+/* ── Screen 7 ──────────────────────────────── */
+.ob-s7-icon { font-size: 44px; text-align: center; margin-bottom: 12px; }
+.ob-opt {
+  background: #111830; border: 2px solid #1E2A4A; border-radius: 16px;
+  padding: 16px 18px; margin-bottom: 12px; cursor: pointer;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: border-color .15s; -webkit-tap-highlight-color: transparent;
+}
+.ob-opt.ob-opt-sel { border-color: #F0538A; }
+.ob-opt-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.ob-opt-body { flex: 1; }
+.ob-opt-lbl  { font-weight: 500; font-size: 15px; color: #fff; }
+.ob-opt-sub  { font-size: .76rem; color: #6278A0; margin-top: 2px; }
+.ob-p2-form  { display: none; border-top: 1px solid #1E2A4A; margin-top: 14px; padding-top: 14px; }
+.ob-p2-form.ob-open { display: block; }
+.ob-p2-ok   { display: none; font-size: .82rem; color: #00C896; font-weight: 600; margin-top: 10px; }
+
+/* ── Animations ────────────────────────────── */
+@keyframes ob-shake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-5px); }
+  80%      { transform: translateX(5px); }
+}
+@keyframes ob-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
 <!-- Error guards -->
 <script>
 window.addEventListener('error',function(e){
@@ -40,6 +228,193 @@ window.addEventListener('unhandledrejection',function(e){
 </script>
 </head>
 <body>
+
+<!-- Onboarding: early-hide existing UI if not yet onboarded -->
+<script>
+(function(){
+  try {
+    if(localStorage.getItem('kf_onboarding_complete')!=='true'){
+      document.documentElement.setAttribute('data-ob-active','1');
+    }
+  } catch(e){}
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     ONBOARDING OVERLAY — first child of body, z-index 9999
+     ══════════════════════════════════════════════════════ -->
+<div id="onboarding-overlay">
+  <div class="ob-wrap">
+
+    <!-- Shared progress bar — shown on screens 2–6 only -->
+    <div id="ob-meta" class="ob-meta" style="display:none">
+      <div id="ob-step-lbl" class="ob-step-lbl">Step 1 of 6</div>
+      <div class="ob-prog-track"><div id="ob-prog-fill" class="ob-prog-fill"></div></div>
+    </div>
+
+    <!-- ── Screen 1: Welcome ─────────────────────────────── -->
+    <div id="ob-s1" class="ob-screen ob-active">
+      <div class="ob-s1-body">
+        <div class="ob-icon">📊</div>
+        <h1 class="ob-h1">Kelda Finance</h1>
+        <p class="ob-sub" style="margin-top:4px">Your family's finances, clear and in one place.</p>
+        <p class="ob-welcome-copy">Takes about 90 seconds to set up.</p>
+      </div>
+      <div style="padding-top:32px">
+        <button class="ob-btn" onclick="obGo(2)">Get started</button>
+        <button class="ob-link-btn" onclick="restoreFromBackup()">Already set up? Restore from backup</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 2: Your name ───────────────────────────── -->
+    <div id="ob-s2" class="ob-screen">
+      <span class="ob-label">YOUR NAME</span>
+      <h2 class="ob-h1">What should we call you?</h2>
+      <p class="ob-sub">We'll use this for your personal greeting.</p>
+      <input id="ob-name-inp" class="ob-input" type="text" placeholder="First name"
+        autocomplete="given-name"
+        oninput="document.getElementById('ob-name-err').style.display='none';this.classList.remove('ob-shake')"
+        onkeydown="if(event.key==='Enter')obS2Continue()"/>
+      <div id="ob-name-err" class="ob-err">Please enter your name</div>
+      <div style="margin-top:auto;padding-top:24px">
+        <button class="ob-btn" onclick="obS2Continue()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 3: App name ────────────────────────────── -->
+    <div id="ob-s3" class="ob-screen">
+      <button class="ob-back" onclick="obGo(2)">← Back</button>
+      <span class="ob-label">APP NAME</span>
+      <h2 class="ob-h1">What do you want to call this?</h2>
+      <p class="ob-sub">Shown on your dashboard header. You can change it any time in Settings.</p>
+      <input id="ob-appname-inp" class="ob-input" type="text" value="Kelda Finance"
+        onkeydown="if(event.key==='Enter')obGo(4)"/>
+      <div class="ob-hint">💡 Most people keep the default — tap Continue to use it.</div>
+      <div style="margin-top:auto;padding-top:24px">
+        <button class="ob-btn" onclick="obGo(4)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 4: Account count ───────────────────────── -->
+    <div id="ob-s4" class="ob-screen">
+      <button class="ob-back" onclick="obGo(3)">← Back</button>
+      <h2 class="ob-h1">How many accounts do you track?</h2>
+      <p class="ob-sub">You can add more later.</p>
+      <div class="ob-tiles">
+        <div class="ob-tile"         id="ob-tile-1" onclick="obSelectCount(1)">1</div>
+        <div class="ob-tile ob-tile-sel" id="ob-tile-2" onclick="obSelectCount(2)">2</div>
+        <div class="ob-tile"         id="ob-tile-3" onclick="obSelectCount(3)">3</div>
+        <div class="ob-tile"         id="ob-tile-4" onclick="obSelectCount(4)">4+</div>
+      </div>
+      <div style="margin-top:auto;padding-top:24px">
+        <button class="ob-btn" onclick="obGo(5)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 5: Account names (cards rendered by JS) ── -->
+    <div id="ob-s5" class="ob-screen">
+      <button class="ob-back" onclick="obGoBack5()">← Back</button>
+      <h2 class="ob-h1">Name your accounts</h2>
+      <p class="ob-sub">Just labels — no bank details needed. Tap a suggestion or type your own.</p>
+      <div id="ob-acct-cards" style="overflow-y:auto;flex:1"></div>
+      <div style="padding-top:16px">
+        <button class="ob-btn" style="margin-top:0" onclick="obS5Continue()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 6: PIN setup ───────────────────────────── -->
+    <div id="ob-s6" class="ob-screen">
+      <button class="ob-back" onclick="obGoBack6()">← Back</button>
+      <h2 class="ob-h1">Create a PIN</h2>
+      <p class="ob-sub" id="ob-pin-sub">Keeps your data private on this device. We never see it.</p>
+      <div id="ob-pin-dots" class="ob-dots">
+        <div class="ob-dot" id="ob-pd0"></div>
+        <div class="ob-dot" id="ob-pd1"></div>
+        <div class="ob-dot" id="ob-pd2"></div>
+        <div class="ob-dot" id="ob-pd3"></div>
+      </div>
+      <div id="ob-pin-err" class="ob-pin-err"></div>
+      <div class="ob-numpad">
+        <button class="ob-nk" onclick="obPinKey('1')">1</button>
+        <button class="ob-nk" onclick="obPinKey('2')">2</button>
+        <button class="ob-nk" onclick="obPinKey('3')">3</button>
+        <button class="ob-nk" onclick="obPinKey('4')">4</button>
+        <button class="ob-nk" onclick="obPinKey('5')">5</button>
+        <button class="ob-nk" onclick="obPinKey('6')">6</button>
+        <button class="ob-nk" onclick="obPinKey('7')">7</button>
+        <button class="ob-nk" onclick="obPinKey('8')">8</button>
+        <button class="ob-nk" onclick="obPinKey('9')">9</button>
+        <div class="ob-nk-blank"></div>
+        <button class="ob-nk" onclick="obPinKey('0')">0</button>
+        <button class="ob-nk" onclick="obPinBack()">⌫</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 7: Done + optional partner ─────────────── -->
+    <div id="ob-s7" class="ob-screen">
+      <div class="ob-s7-icon">✅</div>
+      <h2 class="ob-h1" style="color:#00C896;text-align:center">You're all set!</h2>
+      <p class="ob-sub" style="text-align:center">Is anyone else tracking finances with you?</p>
+
+      <!-- Option A: Add partner -->
+      <div class="ob-opt" id="ob-opt-p" onclick="obSelectPartner(true)">
+        <div class="ob-opt-icon">👥</div>
+        <div class="ob-opt-body">
+          <div class="ob-opt-lbl">Add a partner or family member</div>
+          <div class="ob-opt-sub">They'll get their own name and PIN</div>
+          <!-- Inline sub-form -->
+          <div id="ob-p2-form" class="ob-p2-form">
+            <span class="ob-label" style="margin-top:10px">THEIR NAME</span>
+            <input id="ob-p2-name" class="ob-input" type="text" placeholder="First name"
+              style="margin-top:4px"
+              onclick="event.stopPropagation()"
+              oninput="document.getElementById('ob-p2-name-err').style.display='none';this.classList.remove('ob-shake');event.stopPropagation()"/>
+            <div id="ob-p2-name-err" class="ob-err">Please enter a name</div>
+            <div style="margin-top:14px">
+              <span class="ob-label">THEIR PIN</span>
+              <div id="ob-p2-dots" class="ob-dots" style="margin:12px 0 14px">
+                <div class="ob-dot" id="ob-p2d0"></div>
+                <div class="ob-dot" id="ob-p2d1"></div>
+                <div class="ob-dot" id="ob-p2d2"></div>
+                <div class="ob-dot" id="ob-p2d3"></div>
+              </div>
+              <div id="ob-p2-pin-err" class="ob-pin-err" style="margin-bottom:10px"></div>
+              <div class="ob-numpad" style="max-width:240px" onclick="event.stopPropagation()">
+                <button class="ob-nk" onclick="obP2PinKey('1');event.stopPropagation()">1</button>
+                <button class="ob-nk" onclick="obP2PinKey('2');event.stopPropagation()">2</button>
+                <button class="ob-nk" onclick="obP2PinKey('3');event.stopPropagation()">3</button>
+                <button class="ob-nk" onclick="obP2PinKey('4');event.stopPropagation()">4</button>
+                <button class="ob-nk" onclick="obP2PinKey('5');event.stopPropagation()">5</button>
+                <button class="ob-nk" onclick="obP2PinKey('6');event.stopPropagation()">6</button>
+                <button class="ob-nk" onclick="obP2PinKey('7');event.stopPropagation()">7</button>
+                <button class="ob-nk" onclick="obP2PinKey('8');event.stopPropagation()">8</button>
+                <button class="ob-nk" onclick="obP2PinKey('9');event.stopPropagation()">9</button>
+                <div class="ob-nk-blank"></div>
+                <button class="ob-nk" onclick="obP2PinKey('0');event.stopPropagation()">0</button>
+                <button class="ob-nk" onclick="obP2PinBack();event.stopPropagation()">⌫</button>
+              </div>
+            </div>
+            <div id="ob-p2-ok" class="ob-p2-ok"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option B: Just me -->
+      <div class="ob-opt" id="ob-opt-solo" onclick="obSelectPartner(false)">
+        <div class="ob-opt-icon">👤</div>
+        <div class="ob-opt-body">
+          <div class="ob-opt-lbl">Just me for now</div>
+          <div class="ob-opt-sub">You can add someone in Settings later</div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto;padding-top:24px">
+        <button class="ob-btn" style="margin-top:0" onclick="obFinish()">Let's go →</button>
+      </div>
+    </div>
+
+  </div><!-- /.ob-wrap -->
+</div><!-- /#onboarding-overlay -->
 
 <!-- LOGIN -->
 <!-- Mobile top bar -->
@@ -346,43 +721,44 @@ window.addEventListener('unhandledrejection',function(e){
     <h1 data-app-name style="white-space:nowrap">Kelda Finance</h1>
     <p data-app-sub>Family Finance Tracker · AUD</p>
   </div>
+  <div class="nav-collapse-tip">Tap section headers to show or hide</div>
   <ul>
-    <li class="nav-group-hdr"><span class="nav-gh-icon">🚀</span>Getting Started</li>
-    <li><a onclick="go('quickstart')" id="n-quickstart"><span class="ni">🚀</span><span class="nav-lbl">Quick Start</span></a></li>
-
-    <li class="nav-group-hdr"><span class="nav-gh-icon">🏠</span>Overview</li>
     <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
-    <li><a onclick="go('insights')" id="n-insights"><span class="ni">✨</span><span class="nav-lbl">Insights</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">💳</span>Spend</li>
-    <li><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
-    <li><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
-    <li><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
+    <li class="nav-group-hdr" data-group="started" onclick="navToggle('started')">Getting Started<span class="nav-toggle-arr">▾</span></li>
+    <li id="qs-nav-started" data-group-of="started"><a onclick="go('quickstart')" id="n-quickstart"><span class="ni">🚀</span><span class="nav-lbl">Quick Start</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">💰</span>Save</li>
-    <li><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
-    <li><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Accounts</span></a></li>
-    <li><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Worth</span></a></li>
+    <li class="nav-group-hdr" data-group="spend" onclick="navToggle('spend')">Spend<span class="nav-toggle-arr">▾</span></li>
+    <li data-group-of="spend"><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
+    <li data-group-of="spend"><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
+    <li data-group-of="spend"><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
+    <li data-group-of="spend"><a onclick="go('insights')" id="n-insights"><span class="ni">✨</span><span class="nav-lbl">Insights</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">🏦</span>Borrow</li>
-    <li><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
-    <li><a onclick="go('liabilities')" id="n-liabilities"><span class="ni">⚖️</span><span class="nav-lbl">Liabilities</span></a></li>
+    <li class="nav-group-hdr" data-group="save" onclick="navToggle('save')">Save<span class="nav-toggle-arr">▾</span></li>
+    <li data-group-of="save"><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
+    <li data-group-of="save"><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Accounts</span></a></li>
+    <li data-group-of="save"><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Worth</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">📋</span>Plan</li>
-    <li><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
-    <li><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
-    <li><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
-    <li><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
+    <li class="nav-group-hdr" data-group="borrow" onclick="navToggle('borrow')">Borrow<span class="nav-toggle-arr">▾</span></li>
+    <li data-group-of="borrow"><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
+    <li data-group-of="borrow"><a onclick="go('liabilities')" id="n-liabilities"><span class="ni">⚖️</span><span class="nav-lbl">Liabilities</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">🛠️</span>Tools</li>
-    <li><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a></li>
-    <li><a onclick="go('health')" id="n-health"><span class="ni">💪</span><span class="nav-lbl">Financial Health</span></a></li>
+    <li class="nav-group-hdr" data-group="plan" onclick="navToggle('plan')">Plan<span class="nav-toggle-arr">▾</span></li>
+    <li data-group-of="plan"><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
+    <li data-group-of="plan"><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
+    <li data-group-of="plan"><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
+    <li data-group-of="plan"><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
 
-    <li class="nav-group-hdr"><span class="nav-gh-icon">⚙️</span>Controls</li>
-    <li><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
-    <li><a onclick="go('smartrules')" id="n-smartrules"><span class="ni">⚡</span><span class="nav-lbl">Smart Rules</span></a></li>
-    <li><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
-    <li><a onclick="go('settings')" id="n-settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></a></li>
+    <li class="nav-group-hdr" data-group="tools" onclick="navToggle('tools')">Tools<span class="nav-toggle-arr">▾</span></li>
+    <li data-group-of="tools"><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a></li>
+    <li data-group-of="tools"><a onclick="go('health')" id="n-health"><span class="ni">💪</span><span class="nav-lbl">Financial Health</span></a></li>
+
+    <li class="nav-group-hdr" data-group="controls" onclick="navToggle('controls')">Controls<span class="nav-toggle-arr">▾</span></li>
+    <li id="qs-nav-controls" data-group-of="controls" style="display:none"><a onclick="go('quickstart')"><span class="ni">✅</span><span class="nav-lbl">Quick Start</span></a></li>
+    <li data-group-of="controls"><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
+    <li data-group-of="controls"><a onclick="go('smartrules')" id="n-smartrules"><span class="ni">⚡</span><span class="nav-lbl">Smart Rules</span></a></li>
+    <li data-group-of="controls"><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
+    <li data-group-of="controls"><a onclick="go('settings')" id="n-settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></a></li>
   </ul>
   <div class="nav-footer">
     <button class="nav-lock-btn" onclick="lockApp()">🔒 Lock App</button>
@@ -1048,6 +1424,7 @@ window.addEventListener('unhandledrejection',function(e){
           <select id="m-linked-liability" onchange="mortgageLiabilityLinkBanner()" style="margin-bottom:8px">
             <option value="__none__">None — show as read-only in Liabilities</option>
           </select>
+          <div id="m-liab-count-hint" style="font-size:.68rem;color:var(--muted);margin-bottom:6px"></div>
           <div id="m-liab-link-banner" style="display:none;padding:8px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)"></div>
           <div style="font-size:.68rem;color:var(--muted);margin-top:6px">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
         </div>
@@ -2346,6 +2723,484 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/health.js"></script>
 <script src="js/pages/quickstart.js"></script>
 <script src="js/wizard.js"></script>
+<!-- Onboarding JS -->
+<script>
+// ══════════════════════════════════════════════════════════════
+// KELDA FINANCE — ONBOARDING FLOW
+// First-launch only. Checks kf_onboarding_complete in localStorage.
+// No template literals with expressions — string concatenation only.
+// ══════════════════════════════════════════════════════════════
+
+// ── State ─────────────────────────────────────────────────────
+var _obCurrent      = 1;
+var _obUserName     = '';
+var _obAppName      = 'Kelda Finance';
+var _obAcctCount    = 2;
+var _obAcctNames    = [];
+
+var _obPinPhase     = 1;        // 1=enter, 2=confirm
+var _obPinInput     = '';
+var _obPinFirst     = '';
+var _obPinConfirmed = '';
+
+var _obHasPartner   = false;
+var _obP2Name       = '';
+var _obP2Phase      = 1;
+var _obP2Input      = '';
+var _obP2First      = '';
+var _obP2Confirmed  = '';
+
+var _OB_PILLS = ['Everyday','Spending','Savings','Joint','Offset','Emergency fund','Credit card','Business'];
+var _OB_DEFS  = ['Everyday','Savings','Joint',''];
+
+// ── Simple PIN hash (kf_pin_hash — separate from cff_pins) ────
+function obHashPin(pin) {
+  var hash = 0;
+  var str = pin + 'kf_salt_2025';
+  for (var i = 0; i < str.length; i++) {
+    var c = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash = hash & hash;
+  }
+  return hash.toString();
+}
+
+// ── Shake helper ──────────────────────────────────────────────
+function _obShake(el) {
+  if (!el) return;
+  el.classList.add('ob-shake');
+  el.addEventListener('animationend', function _f() {
+    el.classList.remove('ob-shake');
+    el.removeEventListener('animationend', _f);
+  });
+}
+
+// ── Init — called from DOMContentLoaded ──────────────────────
+function obInit() {
+  var done = false;
+  try { done = localStorage.getItem('kf_onboarding_complete') === 'true'; } catch(e) {}
+  if (done) {
+    var ov = document.getElementById('onboarding-overlay');
+    if (ov) ov.style.display = 'none';
+    document.documentElement.removeAttribute('data-ob-active');
+    return;
+  }
+  obShowScreen(1);
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function obGo(n) {
+  if (_obCurrent === 2) {
+    _obUserName = (document.getElementById('ob-name-inp').value || '').trim();
+  }
+  if (_obCurrent === 3) {
+    var av = (document.getElementById('ob-appname-inp').value || '').trim();
+    _obAppName = av || 'Kelda Finance';
+  }
+  obShowScreen(n);
+}
+
+function obShowScreen(n) {
+  for (var i = 1; i <= 7; i++) {
+    var sc = document.getElementById('ob-s' + i);
+    if (sc) sc.classList.remove('ob-active', 'ob-screen-enter');
+  }
+  var tgt = document.getElementById('ob-s' + n);
+  if (!tgt) return;
+  _obCurrent = n;
+  tgt.classList.add('ob-active', 'ob-screen-enter');
+  tgt.addEventListener('animationend', function _ae() {
+    tgt.classList.remove('ob-screen-enter');
+    tgt.removeEventListener('animationend', _ae);
+  });
+
+  // Progress bar: screens 2–6 = steps 1–6
+  var meta = document.getElementById('ob-meta');
+  if (meta) meta.style.display = (n >= 2 && n <= 6) ? 'block' : 'none';
+  if (n >= 2 && n <= 6) {
+    var step = n - 1;
+    var lbl = document.getElementById('ob-step-lbl');
+    var fill = document.getElementById('ob-prog-fill');
+    if (lbl)  lbl.textContent = 'Step ' + step + ' of 6';
+    if (fill) fill.style.width = Math.round((step / 6) * 100) + '%';
+  }
+
+  // Per-screen setup
+  if (n === 3) {
+    var ai = document.getElementById('ob-appname-inp');
+    if (ai && !ai.value) ai.value = _obAppName;
+  }
+  if (n === 4) { _obRenderTiles(); }
+  if (n === 5) { _obRenderAcctCards(); }
+  if (n === 6) {
+    _obPinPhase = 1; _obPinInput = ''; _obPinFirst = '';
+    _obUpdatePinDots();
+    var ps = document.getElementById('ob-pin-sub');
+    var pe = document.getElementById('ob-pin-err');
+    if (ps) ps.textContent = 'Keeps your data private on this device. We never see it.';
+    if (pe) pe.textContent = '';
+  }
+  if (n === 2) {
+    setTimeout(function() {
+      var el = document.getElementById('ob-name-inp');
+      if (el) el.focus();
+    }, 280);
+  }
+}
+
+// ── Screen 2 ──────────────────────────────────────────────────
+function obS2Continue() {
+  var inp = document.getElementById('ob-name-inp');
+  var err = document.getElementById('ob-name-err');
+  var val = inp ? inp.value.trim() : '';
+  if (!val) {
+    _obShake(inp);
+    if (err) err.style.display = 'block';
+    return;
+  }
+  _obUserName = val;
+  obGo(3);
+}
+
+// ── Screen 4 ──────────────────────────────────────────────────
+function _obRenderTiles() {
+  for (var v = 1; v <= 4; v++) {
+    var el = document.getElementById('ob-tile-' + v);
+    if (el) el.classList.toggle('ob-tile-sel', v === _obAcctCount);
+  }
+}
+
+function obSelectCount(n) {
+  _obAcctCount = n;
+  _obRenderTiles();
+}
+
+// ── Screen 5 ──────────────────────────────────────────────────
+function _obRenderAcctCards() {
+  var wrap = document.getElementById('ob-acct-cards');
+  if (!wrap) return;
+  var html = '';
+  for (var i = 0; i < _obAcctCount; i++) {
+    var def  = _OB_DEFS[i] !== undefined ? _OB_DEFS[i] : '';
+    var cur  = _obAcctNames[i] !== undefined ? _obAcctNames[i] : def;
+    html += '<div class="ob-acct">';
+    html += '<div class="ob-acct-num">Account ' + (i + 1) + '</div>';
+    html += '<span class="ob-label">ACCOUNT ' + (i + 1) + '</span>';
+    html += '<input id="ob-ai-' + i + '" class="ob-input" type="text"'
+         +  ' placeholder="Account name" value="' + cur.replace(/"/g,'&quot;') + '"'
+         +  ' oninput="obPillClear(' + i + ')"'
+         +  '/>';
+    html += '<div id="ob-ae-' + i + '" class="ob-err">Please name this account</div>';
+    html += '<div class="ob-pills" id="ob-pills-' + i + '">';
+    for (var p = 0; p < _OB_PILLS.length; p++) {
+      var pt  = _OB_PILLS[p];
+      var sel = (pt === cur) ? ' ob-pill-sel' : '';
+      html += '<span class="ob-pill' + sel + '"'
+           +  ' onclick="obPillPick(' + i + ',\'' + pt.replace(/'/g,"\\'") + '\',this)">'
+           +  pt + '</span>';
+    }
+    html += '</div></div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function obPillPick(idx, text, el) {
+  var inp  = document.getElementById('ob-ai-' + idx);
+  var err  = document.getElementById('ob-ae-' + idx);
+  var wrap = document.getElementById('ob-pills-' + idx);
+  if (inp) inp.value = text;
+  if (err) err.style.display = 'none';
+  if (wrap) {
+    var pills = wrap.querySelectorAll('.ob-pill');
+    for (var i = 0; i < pills.length; i++) pills[i].classList.remove('ob-pill-sel');
+  }
+  el.classList.add('ob-pill-sel');
+}
+
+function obPillClear(idx) {
+  var err  = document.getElementById('ob-ae-' + idx);
+  var wrap = document.getElementById('ob-pills-' + idx);
+  if (err) err.style.display = 'none';
+  if (wrap) {
+    var pills = wrap.querySelectorAll('.ob-pill');
+    for (var i = 0; i < pills.length; i++) pills[i].classList.remove('ob-pill-sel');
+  }
+}
+
+function obGoBack5() {
+  for (var i = 0; i < _obAcctCount; i++) {
+    var inp = document.getElementById('ob-ai-' + i);
+    if (inp) _obAcctNames[i] = inp.value.trim();
+  }
+  obGo(4);
+}
+
+function obS5Continue() {
+  var ok = true;
+  var names = [];
+  for (var i = 0; i < _obAcctCount; i++) {
+    var inp = document.getElementById('ob-ai-' + i);
+    var err = document.getElementById('ob-ae-' + i);
+    var val = inp ? inp.value.trim() : '';
+    if (!val) {
+      ok = false;
+      _obShake(inp);
+      if (err) err.style.display = 'block';
+    } else {
+      names.push(val);
+    }
+  }
+  if (!ok) return;
+  _obAcctNames = names;
+  while (_obAcctNames.length < 4) _obAcctNames.push('');
+  obGo(6);
+}
+
+// ── Screen 6: PIN ─────────────────────────────────────────────
+function _obUpdatePinDots() {
+  for (var i = 0; i < 4; i++) {
+    var d = document.getElementById('ob-pd' + i);
+    if (d) d.classList.toggle('ob-dot-on', i < _obPinInput.length);
+  }
+}
+
+function obPinKey(digit) {
+  if (_obPinInput.length >= 4) return;
+  _obPinInput += digit;
+  _obUpdatePinDots();
+  if (_obPinInput.length === 4) setTimeout(_obPinDone, 150);
+}
+
+function obPinBack() {
+  _obPinInput = _obPinInput.slice(0, -1);
+  _obUpdatePinDots();
+}
+
+function _obPinDone() {
+  if (_obPinPhase === 1) {
+    _obPinFirst = _obPinInput;
+    _obPinInput = '';
+    _obPinPhase = 2;
+    _obUpdatePinDots();
+    var ps = document.getElementById('ob-pin-sub');
+    if (ps) ps.textContent = 'Confirm your PIN — enter it again';
+    var pe = document.getElementById('ob-pin-err');
+    if (pe) pe.textContent = '';
+  } else {
+    if (_obPinInput === _obPinFirst) {
+      _obPinConfirmed = _obPinInput;
+      obGo(7);
+    } else {
+      var dots = document.getElementById('ob-pin-dots');
+      if (dots) {
+        dots.classList.add('ob-shaking');
+        dots.addEventListener('animationend', function _f() {
+          dots.classList.remove('ob-shaking');
+          dots.removeEventListener('animationend', _f);
+        });
+      }
+      var pe2 = document.getElementById('ob-pin-err');
+      if (pe2) pe2.textContent = "PINs didn’t match — try again";
+      _obPinPhase = 1; _obPinInput = ''; _obPinFirst = '';
+      setTimeout(function() {
+        _obUpdatePinDots();
+        var ps2 = document.getElementById('ob-pin-sub');
+        if (ps2) ps2.textContent = 'Keeps your data private on this device. We never see it.';
+      }, 380);
+    }
+  }
+}
+
+function obGoBack6() {
+  _obPinPhase = 1; _obPinInput = ''; _obPinFirst = ''; _obPinConfirmed = '';
+  _obUpdatePinDots();
+  obGo(5);
+}
+
+// ── Screen 7: Optional second user ───────────────────────────
+function obSelectPartner(want) {
+  _obHasPartner = want;
+  var optP = document.getElementById('ob-opt-p');
+  var optS = document.getElementById('ob-opt-solo');
+  var form = document.getElementById('ob-p2-form');
+  if (optP) optP.classList.toggle('ob-opt-sel', want);
+  if (optS) optS.classList.toggle('ob-opt-sel', !want);
+  if (form) form.classList.toggle('ob-open', want);
+  if (!want) {
+    _obP2Phase = 1; _obP2Input = ''; _obP2First = ''; _obP2Confirmed = '';
+    _obUpdateP2Dots();
+    var ok = document.getElementById('ob-p2-ok');
+    if (ok) { ok.style.display = 'none'; ok.textContent = ''; }
+  }
+}
+
+function _obUpdateP2Dots() {
+  for (var i = 0; i < 4; i++) {
+    var d = document.getElementById('ob-p2d' + i);
+    if (d) d.classList.toggle('ob-dot-on', i < _obP2Input.length);
+  }
+}
+
+function obP2PinKey(digit) {
+  if (_obP2Confirmed) return;
+  if (_obP2Input.length >= 4) return;
+  var nameInp = document.getElementById('ob-p2-name');
+  var nameErr = document.getElementById('ob-p2-name-err');
+  var nv = nameInp ? nameInp.value.trim() : '';
+  if (!nv) {
+    _obShake(nameInp);
+    if (nameErr) nameErr.style.display = 'block';
+    return;
+  }
+  _obP2Name  = nv;
+  _obP2Input += digit;
+  _obUpdateP2Dots();
+  if (_obP2Input.length === 4) setTimeout(_obP2PinDone, 150);
+}
+
+function obP2PinBack() {
+  if (_obP2Confirmed) return;
+  _obP2Input = _obP2Input.slice(0, -1);
+  _obUpdateP2Dots();
+}
+
+function _obP2PinDone() {
+  var pe = document.getElementById('ob-p2-pin-err');
+  if (_obP2Phase === 1) {
+    _obP2First = _obP2Input;
+    _obP2Input = '';
+    _obP2Phase = 2;
+    _obUpdateP2Dots();
+    if (pe) pe.textContent = 'Enter the PIN again to confirm';
+  } else {
+    if (_obP2Input === _obP2First) {
+      _obP2Confirmed = _obP2Input;
+      if (pe) pe.textContent = '';
+      var ok = document.getElementById('ob-p2-ok');
+      var nameInp = document.getElementById('ob-p2-name');
+      var nm = nameInp ? nameInp.value.trim() : 'Partner';
+      if (ok) { ok.textContent = '✅ ' + nm + ' added'; ok.style.display = 'block'; }
+    } else {
+      var dots = document.getElementById('ob-p2-dots');
+      if (dots) {
+        dots.classList.add('ob-shaking');
+        dots.addEventListener('animationend', function _f() {
+          dots.classList.remove('ob-shaking');
+          dots.removeEventListener('animationend', _f);
+        });
+      }
+      if (pe) pe.textContent = "PINs didn’t match — try again";
+      _obP2Phase = 1; _obP2Input = ''; _obP2First = '';
+      setTimeout(function() { _obUpdateP2Dots(); if (pe) pe.textContent = ''; }, 400);
+    }
+  }
+}
+
+// ── Finish: commit to localStorage, hand off to app ──────────
+function obFinish() {
+  var p2NameEl = document.getElementById('ob-p2-name');
+  var p2Name   = (_obHasPartner && _obP2Confirmed && p2NameEl) ? p2NameEl.value.trim() : '';
+  var p2Pin    = (_obHasPartner && _obP2Confirmed) ? _obP2Confirmed : '';
+
+  // Write kf_* keys
+  try { localStorage.setItem('kf_onboarding_complete', 'true'); } catch(e) {}
+  try { localStorage.setItem('kf_user_name',      _obUserName); } catch(e) {}
+  try { localStorage.setItem('kf_app_name',       _obAppName); } catch(e) {}
+  try { localStorage.setItem('kf_account_count',  String(_obAcctCount)); } catch(e) {}
+  try { localStorage.setItem('kf_accounts',       JSON.stringify(_obAcctNames.slice(0, _obAcctCount))); } catch(e) {}
+  try { localStorage.setItem('kf_pin_hash',       obHashPin(_obPinConfirmed)); } catch(e) {}
+  try { localStorage.setItem('kf_user2_name',     p2Name); } catch(e) {}
+  try { localStorage.setItem('kf_user2_pin_hash', p2Pin ? obHashPin(p2Pin) : ''); } catch(e) {}
+
+  // Mark existing wizard as complete so it is skipped
+  try { localStorage.setItem('kelda_wizard_complete', 'true'); } catch(e) {}
+  try { localStorage.setItem('kelda_pin_salt', 'v2'); } catch(e) {}
+
+  // Write names + account labels into the existing app's config
+  try {
+    var uc = {};
+    try { uc = JSON.parse(localStorage.getItem('cff_userconfig') || '{}') || {}; } catch(e2) {}
+    if (_obUserName) uc.p1name = _obUserName;
+    if (p2Name)      uc.p2name = p2Name;
+    var acctKeys = ['acct_offset','acct_home','acct_sav1','acct_sav2'];
+    for (var ai = 0; ai < 4; ai++) {
+      if (_obAcctNames[ai]) uc[acctKeys[ai]] = _obAcctNames[ai];
+    }
+    localStorage.setItem('cff_userconfig', JSON.stringify(uc));
+  } catch(e) {}
+  try { if (_obAppName) localStorage.setItem('cff_app_name', _obAppName); } catch(e) {}
+
+  // Hash PINs with the existing app's SHA-256 system and store in cff_pins
+  function _handoff() {
+    document.documentElement.removeAttribute('data-ob-active');
+    var ov = document.getElementById('onboarding-overlay');
+    if (ov) ov.style.display = 'none';
+    applyOnboardingToApp();
+    try { if (typeof applyAppName    === 'function') applyAppName(); }    catch(e) {}
+    try { if (typeof applyUserConfig === 'function') applyUserConfig(); } catch(e) {}
+    try { if (typeof checkFirstRun   === 'function') checkFirstRun(); }   catch(e) {}
+    try { if (typeof selProfile      === 'function') selProfile('brenton'); } catch(e) {}
+  }
+
+  // hashPin() is the app's async SHA-256 version from auth.js
+  if (_obPinConfirmed && typeof hashPin === 'function') {
+    hashPin(_obPinConfirmed).then(function(h1) {
+      var pins = {};
+      try { pins = JSON.parse(localStorage.getItem('cff_pins') || '{}') || {}; } catch(e) {}
+      pins.brenton = h1;
+      if (p2Pin) {
+        hashPin(p2Pin).then(function(h2) {
+          pins.shelley = h2;
+          try { localStorage.setItem('cff_pins', JSON.stringify(pins)); } catch(e) {}
+          _handoff();
+        });
+      } else {
+        try { localStorage.setItem('cff_pins', JSON.stringify(pins)); } catch(e) {}
+        _handoff();
+      }
+    });
+  } else {
+    _handoff();
+  }
+}
+
+// ── Apply onboarding data to visible app elements ─────────────
+function applyOnboardingToApp() {
+  var name    = '';
+  var appName = 'Kelda Finance';
+  var count   = 0;
+  try { name    = localStorage.getItem('kf_user_name')      || ''; }              catch(e) {}
+  try { appName = localStorage.getItem('kf_app_name')       || 'Kelda Finance'; } catch(e) {}
+  try { count   = parseInt(localStorage.getItem('kf_account_count') || '0') || 0; } catch(e) {}
+
+  // Update app title elements
+  var titleEls = document.querySelectorAll('#app-title, .app-name, [data-app-name]');
+  for (var i = 0; i < titleEls.length; i++) {
+    if (titleEls[i]) titleEls[i].textContent = appName;
+  }
+
+  // Greeting
+  if (name) {
+    var hr  = new Date().getHours();
+    var tod = hr < 12 ? 'morning' : (hr < 18 ? 'afternoon' : 'evening');
+    var greet = 'Good ' + tod + ', ' + name;
+    var gEls = document.querySelectorAll('#dashboard-greeting, .greeting, #db-hero-greeting');
+    for (var j = 0; j < gEls.length; j++) {
+      if (gEls[j]) gEls[j].textContent = greet;
+    }
+  }
+
+  console.log('Kelda Finance onboarding complete. User: ' + name + ', Accounts: ' + count);
+}
+
+// ── Backup stub ───────────────────────────────────────────────
+function restoreFromBackup() {
+  alert('Backup restore coming soon.');
+}
+
+document.addEventListener('DOMContentLoaded', function() { obInit(); });
+</script>
+
 <!-- Init -->
 <script>
 document.addEventListener('DOMContentLoaded',function(){
@@ -2353,6 +3208,8 @@ document.addEventListener('DOMContentLoaded',function(){
   loadTheme();
   applyAppName();
   applyUserConfig();
+  navInitCollapsed();
+  if (typeof navSyncQuickStart === 'function') navSyncQuickStart();
   // Auto-fix any orphaned category IDs from legacy data on every load
   if (typeof fixOrphanedTxCats === 'function') { fixOrphanedTxCats(); }
   // First-run wizard check — mutates welcome screen or marks existing user

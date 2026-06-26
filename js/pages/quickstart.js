@@ -60,7 +60,8 @@ function qsMarkComplete(stepId) {
   }
 
   save(K.quickstart, data);
-  renderQuickStart(); // Re-render to update UI
+  renderQuickStart();
+  if (typeof navSyncQuickStart === 'function') navSyncQuickStart();
 }
 
 // Auto-complete steps based on user actions in other pages
@@ -195,7 +196,7 @@ function renderQuickStart() {
       title: 'Setup Auto-Categorisation Rules',
       body: 'Create rules to automatically categorise transactions based on merchant name. Save time on future transactions.',
       cta: 'Create Rule',
-      ctaFn: 'qsNavigateWithContext("categories", "step-3-rules")'
+      ctaFn: 'qsNavigateWithContext("smartrules", "step-3-rules")'
     },
     {
       id: 'step-4-liabilities',

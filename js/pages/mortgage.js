@@ -131,25 +131,43 @@ function mortgagePopulateLiabilitySelect() {
   var p = _mortgageActiveProp();
   var curId = p.linkedLiabilityId || '__none__';
 
-  // Read directly from localStorage as the authoritative source — avoids any
-  // stale-reference issue with the let-declared LIABILITIES global
+  // Read directly from localStorage — avoid any stale-reference issue
   var liabs = [];
-  try { liabs = JSON.parse(localStorage.getItem('cff_liabilities') || '[]') || []; } catch(e) {}
+  try {
+    var raw = localStorage.getItem('cff_liabilities');
+    if (raw) liabs = JSON.parse(raw) || [];
+    if (!Array.isArray(liabs)) liabs = [];
+  } catch(e) { liabs = []; }
 
   var opts = '<option value="__none__"' + (curId === '__none__' ? ' selected' : '') + '>None — show as read-only in Liabilities</option>';
   opts += '<option value="__create__"' + (curId === '__create__' ? ' selected' : '') + '>＋ Create new liability for this property</option>';
 
   if (liabs.length) {
-    opts += '<optgroup label="── Existing Liabilities ──" disabled></optgroup>';
+    // Use a disabled <option> as a visual separator — NOT an <optgroup disabled> which
+    // causes Safari/iOS to treat subsequent options as children of the disabled group
+    opts += '<option value="" disabled style="color:var(--muted);font-size:.78rem">── Existing Liabilities ──</option>';
     liabs.forEach(function(l) {
-      var sel = l.id === curId ? ' selected' : '';
-      var label = (l.lender || 'Unnamed') + ' — ' + (l.type || 'other');
+      var sel = (String(l.id) === String(curId)) ? ' selected' : '';
+      var label = (l.lender || l.name || 'Unnamed') + ' — ' + (l.type || 'other');
       var balStr = l.balance ? ' (' + fmt(Number(l.balance) || 0) + ')' : '';
-      opts += '<option value="' + (l.id || '') + '"' + sel + '>' + esc(label) + balStr + '</option>';
+      opts += '<option value="' + esc(String(l.id || '')) + '"' + sel + '>' + esc(label) + balStr + '</option>';
     });
   }
 
   el.innerHTML = opts;
+
+  // Update helper text showing how many real entries exist
+  var hintEl = document.getElementById('m-liab-count-hint');
+  if (hintEl) {
+    if (liabs.length === 0) {
+      hintEl.textContent = 'No liability records yet. The mortgage entry visible in the Liabilities tab is auto-generated — use "＋ Create new" above to create a linkable record.';
+      hintEl.style.display = '';
+    } else {
+      hintEl.textContent = liabs.length + ' liabilit' + (liabs.length === 1 ? 'y' : 'ies') + ' available to link.';
+      hintEl.style.display = '';
+    }
+  }
+
   mortgageLiabilityLinkBanner();
 }
 
