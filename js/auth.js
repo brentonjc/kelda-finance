@@ -233,6 +233,10 @@ function unlock(){
   BUDGETS     = load(K.budgets)      || {};
   LBUDGETS    = load(K.lbudgets)     || {};
   LRULES      = load(K.rules)        || {};
+  try { if (typeof migrateRulesToPattern === 'function') migrateRulesToPattern(); } catch(e) { console.warn('migrateRulesToPattern:', e); }
+  try { if (typeof migrateTxFields === 'function') migrateTxFields(); } catch(e) { console.warn('migrateTxFields:', e); }
+  try { if (typeof initAliasKeys === 'function') initAliasKeys(); } catch(e) { console.warn('initAliasKeys:', e); }
+  try { if (typeof seedLRulesFromCSV === 'function') seedLRulesFromCSV(); } catch(e) { console.warn('seedLRulesFromCSV:', e); }
   // Monthly tracking grids
   SUPER_MONTHLY = load(K.superMonthly) || {};
   LIAB_MONTHLY  = load(K.liabMonthly)  || {};

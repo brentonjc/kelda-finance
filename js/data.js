@@ -36,11 +36,18 @@ function migrateRulesToPattern() {
   for (var merchant in stored) {
     if (stored.hasOwnProperty(merchant)) {
       var rule = stored[merchant];
-      // If pattern field doesn't exist, add it as 'exact' (backward compatibility)
       if (rule && typeof rule === 'object' && !rule.pattern) {
         rule.pattern = 'exact';
         rule.confidence = rule.confidence || 'HIGH';
         migrated = true;
+      }
+      // Ensure all new fields exist
+      if (rule && typeof rule === 'object') {
+        if (!rule.source) { rule.source = 'manual'; migrated = true; }
+        if (typeof rule.matchCount !== 'number') { rule.matchCount = 0; migrated = true; }
+        if (!rule.lastMatchedAt) { rule.lastMatchedAt = ''; migrated = true; }
+        if (!rule.createdAt) { rule.createdAt = ''; migrated = true; }
+        if (typeof rule.userModified === 'undefined') { rule.userModified = true; migrated = true; }
       }
     }
   }
@@ -48,6 +55,22 @@ function migrateRulesToPattern() {
     try { save(K.rules, stored); } catch(e) {}
   }
   return stored;
+}
+
+// Backfill tx fields onto the live TX array (call after TX is assigned from localStorage)
+function migrateTxFields() {
+  var txMigrated = false;
+  for (var i = 0; i < TX.length; i++) {
+    var tx = TX[i];
+    if (!tx.rawDescription) { tx.rawDescription = tx.name || ''; txMigrated = true; }
+    if (typeof tx.reviewFlag === 'undefined') { tx.reviewFlag = false; txMigrated = true; }
+    if (typeof tx.correctionSource === 'undefined') { tx.correctionSource = ''; txMigrated = true; }
+    if (typeof tx.suggestedCatId === 'undefined') { tx.suggestedCatId = ''; txMigrated = true; }
+    if (typeof tx.suggestedSubcat === 'undefined') { tx.suggestedSubcat = ''; txMigrated = true; }
+  }
+  if (txMigrated) {
+    try { save(K.tx, TX); } catch(e) {}
+  }
 }
 
 let LRULES = (function() {

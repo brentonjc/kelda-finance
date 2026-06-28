@@ -172,13 +172,26 @@ function insRenderNWChart() {
 // SANKEY — INSIGHTS
 // ══════════════════════════════════════════════════════════════
 
+// Cache for current Sankey nodes — populated by insRenderSankey(), read by insSankeyTipIdx()
+let _insSankeyNodes = [];
+
 function insSankeyTip(evt, label, amt, pct, color) {
   const tip = document.getElementById('ins-sankey-tip');
   if (!tip) return;
   tip.style.display = 'block';
-  tip.innerHTML = '<div style="font-weight:700;margin-bottom:4px">' + label + '</div>'
-    + '<div style="color:' + color + ';font-size:1rem;font-weight:700">' + fmt(amt) + '</div>'
-    + '<div style="color:var(--muted);font-size:.72rem;margin-top:2px">' + pct + '% of income</div>';
+  const safeLabel = document.createElement('div');
+  safeLabel.style.cssText = 'font-weight:700;margin-bottom:4px';
+  safeLabel.textContent = label;
+  tip.innerHTML = '';
+  tip.appendChild(safeLabel);
+  const amtEl = document.createElement('div');
+  amtEl.style.cssText = 'font-size:1rem;font-weight:700;color:' + color;
+  amtEl.textContent = fmt(amt);
+  tip.appendChild(amtEl);
+  const pctEl = document.createElement('div');
+  pctEl.style.cssText = 'color:var(--muted);font-size:.72rem;margin-top:2px';
+  pctEl.textContent = pct + '% of income';
+  tip.appendChild(pctEl);
   const card = document.getElementById('ins-sankey-row');
   const cardRect = card ? card.getBoundingClientRect() : { left: 0, top: 0, width: 400 };
   const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
@@ -190,6 +203,16 @@ function insSankeyTip(evt, label, amt, pct, color) {
   tip.style.left = x + 'px';
   tip.style.top  = y + 'px';
 }
+
+// Safe variant — looks up node by index so no user data flows through onclick string
+function insSankeyTipIdx(evt, idx) {
+  const node = _insSankeyNodes[idx];
+  if (!node) return;
+  const totalIncome = _insSankeyNodes.reduce(function(s, n) { return s + (n.totalAmt || n.amt || 0); }, 0) || 1;
+  const pct = (((node.totalAmt || node.amt || 0) / totalIncome) * 100).toFixed(1);
+  insSankeyTip(evt, node.label, node.totalAmt || node.amt || 0, pct, node.color);
+}
+
 function insSankeyHide() {
   const tip = document.getElementById('ins-sankey-tip');
   if (tip) tip.style.display = 'none';
@@ -279,10 +302,12 @@ function _insDrawSankey(el) {
     const label = id === 'savings'     ? '💚 Savings'
                 : id === 'other_group' ? '📋 Other'
                 : (cat ? cat.icon + ' ' + cat.name : id);
-    const node = { id, amt, h, y: curY, color, label };
+    const node = { id, amt, h, y: curY, color, label, totalAmt: amt };
     curY += h + gap;
     return node;
   });
+
+  _insSankeyNodes = nodes;
 
   const H = Math.max(300, curY - gap + 28);
   const incomeH = H - incomeY - 28;
@@ -297,31 +322,31 @@ function _insDrawSankey(el) {
     const tgtY1 = node.y, tgtY2 = node.y + node.h;
     const cx    = Math.round((colX1 + nodeW + colX2) / 2);
     const pct   = (node.amt / totalIncome * 100).toFixed(1);
-    const safeLabel = node.label.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    const tipArgs = "'" + safeLabel + "'," + node.amt.toFixed(2) + "," + pct + ",'" + node.color + "'";
-
+    const nodeIdx = nodes.indexOf(node);
     paths += '<path d="M' + (colX1 + nodeW) + ',' + srcY1
            + ' C' + cx + ',' + srcY1 + ' ' + cx + ',' + tgtY1 + ' ' + colX2 + ',' + tgtY1
            + ' L' + colX2 + ',' + tgtY2
            + ' C' + cx + ',' + tgtY2 + ' ' + cx + ',' + srcY2 + ' ' + (colX1 + nodeW) + ',' + srcY2 + ' Z"'
            + ' fill="' + node.color + '" opacity="0.28"'
+           + ' class="ins-sankey-path" data-node="' + nodeIdx + '"'
            + ' style="cursor:pointer;transition:opacity .15s"'
-           + ' onmouseover="this.style.opacity=\'0.65\';insSankeyTip(event,' + tipArgs + ')"'
+           + ' onmouseover="this.style.opacity=\'0.65\';insSankeyTipIdx(event,' + nodeIdx + ')"'
            + ' onmouseout="this.style.opacity=\'0.28\';insSankeyHide()"'
-           + ' ontouchstart="this.style.opacity=\'0.65\';insSankeyTip(event,' + tipArgs + ')"'
+           + ' ontouchstart="this.style.opacity=\'0.65\';insSankeyTipIdx(event,' + nodeIdx + ')"'
            + ' ontouchend="this.style.opacity=\'0.28\';insSankeyHide()"/>';
 
     rects += '<rect x="' + colX2 + '" y="' + node.y + '" width="' + nodeW + '" height="' + node.h + '"'
            + ' rx="5" fill="' + node.color + '" style="cursor:pointer"'
-           + ' onmouseover="insSankeyTip(event,' + tipArgs + ')"'
+           + ' onmouseover="insSankeyTipIdx(event,' + nodeIdx + ')"'
            + ' onmouseout="insSankeyHide()"/>';
 
     const labelY   = node.y + Math.round(node.h / 2) + 4;
     const labelX   = colX2 + nodeW + labelPad;
     const maxChars = Math.max(8, Math.floor((W - labelX - 4) / 7));
+    const safeLbl  = node.label.slice(0, maxChars).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     labels += '<text x="' + labelX + '" y="' + labelY
             + '" font-size="11" fill="#d0cce8" font-family="Inter,sans-serif">'
-            + node.label.slice(0, maxChars) + '</text>'
+            + safeLbl + '</text>'
             + '<text x="' + labelX + '" y="' + (labelY + 14)
             + '" font-size="10" fill="' + node.color + '" font-family="DM Mono,monospace" font-weight="600">'
             + fmt(node.amt)
@@ -559,7 +584,7 @@ function insRenderCatChart() {
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div onclick="insGoToTxFiltered(\'expense\',\'' + r.id + '\',\'\',\'' + pfx + '\')" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
+          return '<div class="ins-tx-link" data-type="expense" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
             + '<span style="width:22px;text-align:center">' + (r.icon || '📋') + '</span>'
             + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
@@ -571,6 +596,7 @@ function insRenderCatChart() {
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
             + '</div></div>';
         }).join('');
+    insBindTxLinks(breakdownEl);
   }
 }
 
@@ -686,8 +712,7 @@ function insRenderSubcatChart() {
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          const sc   = r.subcat.replace(/'/g, "\\'");
-          return '<div onclick="insGoToTxFiltered(\'expense\',\'' + r.catId + '\',\'' + sc + '\',\'' + pfx + '\')" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
+          return '<div class="ins-tx-link" data-type="expense" data-cat="' + insAttr(r.catId) + '" data-subcat="' + insAttr(r.subcat) + '" data-period="' + insAttr(pfx) + '" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
             + '<span style="flex:1;font-size:.8rem;font-weight:600">' + r.label + '</span>'
             + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
@@ -698,6 +723,7 @@ function insRenderSubcatChart() {
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
             + '</div></div>';
         }).join('');
+    insBindTxLinks(breakdown);
   }
 }
 
@@ -713,6 +739,24 @@ function insGoToTxFiltered(type, catId, subcat, period) {
   setEl('tx-filter-cat',    catId  || '');
   setEl('tx-filter-subcat', subcat || '');
   if (typeof renderTx === 'function') renderTx();
+}
+
+function insIncSubcatViewAll() {
+  var f = document.getElementById('ins-inc-subcat-filter-cat');
+  insGoToTxFiltered('income', f ? f.value : '', '', insPeriodStr());
+}
+
+function insAttr(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+function insBindTxLinks(el) {
+  if (!el) return;
+  el.addEventListener('click', function(e) {
+    var row = e.target.closest('.ins-tx-link');
+    if (!row) return;
+    insGoToTxFiltered(row.dataset.type, row.dataset.cat, row.dataset.subcat, row.dataset.period);
+  });
 }
 
 // ── Income by Category Chart ────────────────────────────────────
@@ -788,7 +832,7 @@ function insRenderIncCatChart() {
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div onclick="insGoToTxFiltered(\'income\',\'' + r.id + '\',\'\',\'' + pfx + '\')" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
+          return '<div class="ins-tx-link" data-type="income" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
             + '<span style="width:22px;text-align:center">' + (r.icon || '💰') + '</span>'
             + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
@@ -800,6 +844,7 @@ function insRenderIncCatChart() {
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
             + '</div></div>';
         }).join('');
+    insBindTxLinks(breakdownEl);
   }
 }
 
@@ -915,8 +960,7 @@ function insRenderIncSubcatChart() {
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          const sc   = r.subcat.replace(/'/g, "\\'");
-          return '<div onclick="insGoToTxFiltered(\'income\',\'' + r.catId + '\',\'' + sc + '\',\'' + pfx + '\')" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
+          return '<div class="ins-tx-link" data-type="income" data-cat="' + insAttr(r.catId) + '" data-subcat="' + insAttr(r.subcat) + '" data-period="' + insAttr(pfx) + '" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
             + '<span style="flex:1;font-size:.8rem;font-weight:600">' + r.label + '</span>'
             + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
@@ -927,5 +971,6 @@ function insRenderIncSubcatChart() {
             + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
             + '</div></div>';
         }).join('');
+    insBindTxLinks(breakdown);
   }
 }
