@@ -2554,38 +2554,7 @@ window.addEventListener('unhandledrejection',function(e){
 
 
   <!-- ═══ TRANSFERS ═══ -->
-  <div class="page" id="page-transfers">
-    <div class="page-title">Transfers &amp; Reconciliation</div>
-    <div class="page-sub">Internal account transfers are excluded from income, expense and budget analysis.</div>
-    <div id="how-to-transfers"></div>
-    <div class="g3 mb" id="tr-summary"></div>
-    <div class="card mb">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-        <div><div class="section-label" style="margin-bottom:2px">🤖 Auto-Detected Transfer Pairs</div>
-          <div style="font-size:.76rem;color:var(--muted)">Matched by amount (exact), date (same or 1 day apart).</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="autoDetectTransfers();renderTransfersPage();toast('Rescanned')">↻ Re-scan</button>
-      </div>
-      <div id="tr-auto-list"></div>
-    </div>
-    <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">✅ Confirmed Transfer Pairs</div>
-      <div id="tr-confirmed-list"></div>
-    </div>
-    <div class="card">
-      <div class="section-label" style="margin-bottom:3px">🔗 Manually Link Two Transactions</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Select two transactions to mark as an internal transfer pair. Both will be excluded from analysis.</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-        <select id="tr-manual-filter-month" style="padding:7px 10px;font-size:.8rem;width:auto;" onchange="renderManualLinkList()"></select>
-        <input type="text" id="tr-manual-search" placeholder="Search description..." style="flex:1;min-width:160px;padding:7px 10px;font-size:.8rem;" oninput="renderManualLinkList()"/>
-      </div>
-      <div id="tr-manual-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;"></div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
-        <div id="tr-manual-selected" style="flex:1;font-size:.8rem;color:var(--muted)">Select two transactions above</div>
-        <button class="btn btn-primary btn-sm" onclick="manualLinkSelected()">🔗 Link as Transfer</button>
-        <button class="btn btn-ghost btn-sm" onclick="clearManualSelection()">Clear</button>
-      </div>
-    </div>
-  </div>
+  <div class="page" id="page-transfers"></div>
 
 
   <!-- ═══ SETTINGS ═══ -->

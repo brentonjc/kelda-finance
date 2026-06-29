@@ -234,6 +234,9 @@ function _insDrawSankey(el) {
   if (!el) return;
 
   const pfx = insPeriodStr();
+  // TRANSFER EXCLUSION — must run BEFORE month filter.
+  // Pairs can span month boundaries (e.g. debit Jan 31, credit Feb 1).
+  // Filtering by month first causes the credit to appear as income in Feb.
   const txs = activeTX().filter(t => t.date.startsWith(pfx));
   const totalIncome  = txs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
   const totalExpense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
