@@ -1114,6 +1114,35 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="ins-subcat-breakdown" style="margin-top:16px"></div>
       </div>
 
+      <!-- Income by Category -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="section-label" style="margin:0">💰 Income by Category</div>
+            <div id="ins-inc-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+          </div>
+          <a href="#" onclick="insGoToTxFiltered('income','','',insPeriodStr());return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div id="ins-inc-cat-chart-wrap"><canvas id="ins-inc-cat-chart"></canvas></div>
+        <div id="ins-inc-cat-breakdown" style="margin-top:16px"></div>
+      </div>
+
+      <!-- Income by Subcategory -->
+      <div class="card">
+        <div class="tile-hd" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="section-label" style="margin:0">🔎 Income by Subcategory</div>
+            <select id="ins-inc-subcat-filter-cat" onchange="insRenderIncSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+              <option value="">All Categories</option>
+            </select>
+            <div id="ins-inc-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+          </div>
+          <a href="#" onclick="insIncSubcatViewAll();return false;" class="tile-link">View transactions →</a>
+        </div>
+        <div id="ins-inc-subcat-chart-wrap"><canvas id="ins-inc-subcat-chart"></canvas></div>
+        <div id="ins-inc-subcat-breakdown" style="margin-top:16px"></div>
+      </div>
+
     </div><!-- /db-layout -->
   </div>
 
