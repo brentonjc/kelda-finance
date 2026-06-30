@@ -35,6 +35,7 @@ function toast(msg,dur=2400){
 const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','forecast','transfers','equities','settings','health','quickstart'];
 
 function go(id){
+  var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
   PAGES.forEach(p=>{
     var pg=document.getElementById('page-'+p);
     var nv=document.getElementById('n-'+p);
@@ -62,7 +63,7 @@ function go(id){
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
     else if(id==='smartrules'){if(typeof renderRulesList==='function')renderRulesList();}
-    else if(id==='transfers'){if(typeof renderTransfersPage==='function')renderTransfersPage();}
+    else if(id==='transfers'){if(typeof renderTransfers==='function')renderTransfers();}
     else if(id==='forecast'){detectRecurring();renderForecast();if(typeof fc2SyncBalance==='function')fc2SyncBalance();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
@@ -129,7 +130,34 @@ function navInitCollapsed() {
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
-function isTransfer(t){return TRANSFERS.some(tr=>tr.txIdA===t.id||tr.txIdB===t.id);}
+function isTransfer(t){return TRANSFERS.some(tr=>tr.txIdA===t.id||tr.txIdB===t.id||tr.debitTxId===t.id||tr.creditTxId===t.id);}
+function isTransferTx(txId){return TRANSFERS.some(function(p){return p.debitTxId===txId||p.creditTxId===txId||p.txIdA===txId||p.txIdB===txId;});}
+function showUndoToast(message,durationMs,onUndo){
+  var existing=document.getElementById('undo-toast');
+  if(existing)existing.remove();
+  var el=document.createElement('div');
+  el.id='undo-toast';
+  el.setAttribute('role','status');
+  el.setAttribute('aria-live','polite');
+  el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
+    +'background:var(--card2);border:1px solid var(--border);border-radius:10px;'
+    +'padding:12px 18px;display:flex;align-items:center;gap:14px;'
+    +'font-size:.82rem;font-family:var(--font-body);color:var(--text);'
+    +'box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9999;white-space:nowrap;';
+  var msg=document.createElement('span');
+  msg.textContent=message;
+  var btn=document.createElement('button');
+  btn.textContent='Undo';
+  btn.style.cssText='background:var(--primary);color:#fff;border:none;border-radius:999px;'
+    +'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;'
+    +'font-family:var(--font-body);';
+  btn.onclick=function(){el.remove();clearTimeout(timer);onUndo();};
+  el.appendChild(msg);
+  el.appendChild(btn);
+  document.body.appendChild(el);
+  var timer=setTimeout(function(){if(el.parentNode)el.remove();},durationMs);
+  return timer;
+}
 function activeTX(){
   const base=TX.filter(t=>!isTransfer(t));
   // Joint view shows all transactions from both profiles

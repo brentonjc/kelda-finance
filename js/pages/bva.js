@@ -66,7 +66,11 @@ function renderBVA() {
 
   // Gather actuals — exclude transfers
   const actuals = {};
-  TX.filter(function(t) {
+  // TRANSFER EXCLUSION — must run BEFORE month filter.
+  // Pairs can span month boundaries (e.g. debit Jan 31, credit Feb 1).
+  // Filtering by month first causes the credit to appear as income in Feb.
+  var analysisTxBva = TX.filter(function(t) { return !isTransferTx(t.id); });
+  analysisTxBva.filter(function(t) {
     if (t.type !== 'expense') return false;
     if (t.catId === 'transfers' || (t.category || '').toLowerCase() === 'transfers') return false;
     if (isAnnual) return t.date && t.date.startsWith(String(bvaYear));

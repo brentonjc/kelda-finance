@@ -8,6 +8,7 @@ const K={
   categories:'ledger_categories',lbudgets:'ledger_budgets',rules:'ledger_rules',
   recurring:'ledger_recurring',transfers:'cff_transfers',equities:'cff_equities',userconfig:'cff_userconfig',liabilities:'cff_liabilities',
   accounts:'cff_accounts',
+  transfersPending:'cff_transfers_pending',
   ctdates:'cff_ct_dates',quickstart:'cff_qs_progress',superAccts:'cff_super_accts',
   // Per-component monthly histories — power the Net Worth breakdown table
   superHist:    'cff_super_history',    // { 'YYYY-MM': { brenton, shelley } }
