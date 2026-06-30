@@ -2,6 +2,8 @@
 // UTILS
 // ══════════════════════════════════════════════════════════════
 const fmt=n=>'$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+// Whole-dollar AUD with a true minus sign (U+2212) — used by the redesigned dashboard tiles.
+const fmtWhole=n=>{const neg=Number(n||0)<0;const s='$'+Math.abs(Math.round(Number(n||0))).toLocaleString('en-AU');return neg?'−'+s:s;};
 const today=()=>new Date().toISOString().split('T')[0];
 const thisMonth=()=>new Date().toISOString().slice(0,7);
 

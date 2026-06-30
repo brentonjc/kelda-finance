@@ -38,6 +38,14 @@
   --shadow-sm:0 2px 8px rgba(0,0,0,.35);
   --shadow:0 8px 32px rgba(0,0,0,.45);
   --shadow-lg:0 16px 48px rgba(0,0,0,.55);
+  /* ── Aliases for the onboarding + dashboard redesign ──
+     (prototype token names → existing app tokens; follow --primary across themes) */
+  --pink:var(--primary); --green:var(--success); --amber:var(--warn);
+  --red:var(--danger); --white:#ffffff;
+  --pink-dim:rgba(240,83,138,0.08);
+  --green-dim:rgba(0,200,150,0.08);
+  --amber-dim:rgba(245,158,11,0.08);
+  --font-head:var(--font-display);
 }
 
 /* ── THEME: Light (manual) ── */
