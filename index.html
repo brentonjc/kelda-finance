@@ -3191,9 +3191,46 @@ function applyOnboardingToApp() {
   console.log('Kelda Finance onboarding complete. User: ' + name + ', Accounts: ' + count);
 }
 
-// ── Backup stub ───────────────────────────────────────────────
+// ── Restore from backup (onboarding screen) ───────────────────
 function restoreFromBackup() {
-  alert('Backup restore coming soon.');
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    document.body.removeChild(input);
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var d = JSON.parse(ev.target.result);
+        if (!d._version || !d._app) throw new Error('Not a valid backup file — please use a file exported from this app.');
+
+        if (d.transactions) save(K.tx,       d.transactions);
+        if (d.budgets)      save(K.budgets,  d.budgets);
+        if (d.goals)        save(K.goals,    d.goals);
+        if (d.bills)        save(K.bills,    d.bills);
+        if (d.mortgage)     save(K.mortgage, d.mortgage);
+        if (d.cashTracker)  save(K.ct,       d.cashTracker);
+        if (d.cashConfig)   save(K.ctcfg,    d.cashConfig);
+        if (d.insurance)    save(K.ins,      d.insurance);
+        if (d.super)        save(K.superdata,d.super);
+        if (d.pins)         save(K.pins,     d.pins);
+
+        localStorage.setItem('kf_onboarding_complete', 'true');
+
+        var exportedDate = d._exported ? new Date(d._exported).toLocaleString('en-AU') : 'unknown date';
+        localStorage.setItem('kf_restore_toast', '✅ Restored from backup (' + exportedDate + ')');
+        window.location.reload();
+      } catch(err) {
+        alert('❌ Could not restore: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 document.addEventListener('DOMContentLoaded', function() { obInit(); });
@@ -3205,6 +3242,8 @@ document.addEventListener('DOMContentLoaded',function(){
   migratePlaintextPins();
   loadTheme();
   applyAppName();
+  var _rt = localStorage.getItem('kf_restore_toast');
+  if (_rt) { localStorage.removeItem('kf_restore_toast'); setTimeout(function(){ toast(_rt); }, 800); }
   applyUserConfig();
   navInitCollapsed();
   if (typeof navSyncQuickStart === 'function') navSyncQuickStart();

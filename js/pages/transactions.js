@@ -65,7 +65,7 @@ function addTx(){
   document.getElementById('tx-desc').value='';
   const tn=document.getElementById('tx-name');if(tn)tn.value='';
   const ta=document.getElementById('tx-account');if(ta)ta.value='';
-  renderTx();renderTxCatChart();renderDashboard();toast('✅ Transaction added');
+  renderTx();renderDashboard();toast('✅ Transaction added');
   if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
@@ -211,7 +211,6 @@ function renderTx(){
   document.getElementById('tx-balance').style.color=bal>=0?'var(--primary)':'var(--danger)';
   document.getElementById('tx-inc-total').textContent=fmt(inc);
   document.getElementById('tx-exp-total').textContent=fmt(exp);
-  renderTxCatChart();
 }
 
 
