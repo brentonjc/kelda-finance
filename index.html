@@ -17,7 +17,10 @@
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<!-- Tabler Icons (dashboard + onboarding glyphs) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
 
 <!-- Stylesheets -->
 <link rel="stylesheet" href="css/tokens.css"/>
@@ -497,7 +500,6 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label">🛠️ Tools</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('health')"><span>💪</span>Financial Health</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -751,7 +753,6 @@ window.addEventListener('unhandledrejection',function(e){
 
     <li class="nav-group-hdr" data-group="tools" onclick="navToggle('tools')">Tools<span class="nav-toggle-arr">▾</span></li>
     <li data-group-of="tools"><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a></li>
-    <li data-group-of="tools"><a onclick="go('health')" id="n-health"><span class="ni">💪</span><span class="nav-lbl">Financial Health</span></a></li>
 
     <li class="nav-group-hdr" data-group="controls" onclick="navToggle('controls')">Controls<span class="nav-toggle-arr">▾</span></li>
     <li id="qs-nav-controls" data-group-of="controls" style="display:none"><a onclick="go('quickstart')"><span class="ni">✅</span><span class="nav-lbl">Quick Start</span></a></li>
@@ -986,7 +987,6 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="db-hero-period" id="db-hero-period"></div>
           <div id="db-hero-trend"></div>
         </div>
-        <div id="db-health-score"></div>
       </div>
       <!-- Full-width NW sparkline -->
       <div id="db-hero-sparkline" style="margin:4px 0 16px"></div>
@@ -1013,16 +1013,6 @@ window.addEventListener('unhandledrejection',function(e){
 
   </div>
 
-  <!-- ═══ FINANCIAL HEALTH ═══ -->
-  <div class="page" id="page-health">
-    <div class="page-title">Financial Health</div>
-    <div class="page-sub">Your personalised financial score with clear actions to improve</div>
-    <div id="how-to-health"></div>
-    <div class="card" style="margin-bottom:14px">
-      <div id="fh-ring-wrap"></div>
-    </div>
-    <div id="fh-factors"></div>
-  </div>
 
   <!-- ═══ INSIGHTS ═══ -->
   <div class="page" id="page-insights">
@@ -2718,7 +2708,6 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/equities.js"></script>
 <script src="js/pages/liabilities.js"></script>
 <script src="js/pages/settings.js"></script>
-<script src="js/pages/health.js"></script>
 <script src="js/pages/quickstart.js"></script>
 <script src="js/wizard.js"></script>
 <!-- Onboarding JS -->

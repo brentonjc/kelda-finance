@@ -32,7 +32,7 @@ function toast(msg,dur=2400){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','forecast','transfers','equities','settings','health','quickstart'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','forecast','transfers','equities','settings','quickstart'];
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -67,7 +67,6 @@ function go(id){
     else if(id==='forecast'){detectRecurring();renderForecast();if(typeof fc2SyncBalance==='function')fc2SyncBalance();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
-    else if(id==='health'){if(typeof renderHealthPage==='function')renderHealthPage();}
     else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
@@ -526,12 +525,6 @@ var _HOW_TO = {
     {icon:'💰', h:'Premium management', b:'See total annual and monthly insurance costs. Compare costs across policies to identify savings opportunities or consolidation options.'},
     {icon:'✏️', h:'Edit & archive', b:'Update policy details as you switch insurers or adjust coverage. Archive policies that lapse instead of deleting them.'}
   ]},
-  health: { title:'Financial Health Score', items:[
-    {icon:'🎯', h:'What it measures', b:'The Health Score tracks 5 key metrics: cash flow balance, savings rate, budget adherence, debt ratio, and goal progress. Each contributes to your overall score out of 100.'},
-    {icon:'📊', h:'Score interpretation', b:'Above 70 = Healthy finances. 50–70 = Room for improvement. Below 50 = Needs attention. Use the breakdown to see which areas to focus on first.'},
-    {icon:'💡', h:'Monthly reset', b:'The score resets monthly and reflects how you performed that month. Consistent good decisions drive the score up over time.'},
-    {icon:'🎯', h:'Action nudges', b:'The Dashboard shows nudges for the top improvement areas. Focus on one or two actions at a time — the Health Score will improve naturally as you build better habits.'}
-  ]}
 };
 
 function renderHowTo(pageId) {
