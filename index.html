@@ -26,12 +26,13 @@
 <link rel="stylesheet" href="css/tokens.css"/>
 <link rel="stylesheet" href="css/components.css"/>
 <link rel="stylesheet" href="css/layout.css"/>
+<link rel="stylesheet" href="css/dashboard.css"/>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" onerror="window._chartJsError=true"></script>
 
 <style id="ob-css">
-/* ══ Kelda Finance — Onboarding Overlay ═══════════════════════
+/* ══ Kelda Finance — Onboarding (two-panel redesign) ═══════════
    Early-hide rule: set by inline script before body renders   */
 [data-ob-active="1"] #login-screen,
 [data-ob-active="1"] #main,
@@ -46,175 +47,277 @@
 
 #onboarding-overlay {
   position: fixed; inset: 0; z-index: 9999;
-  background: #080C18;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-  display: flex; align-items: flex-start; justify-content: center;
-  font-family: 'DM Sans', sans-serif;
+  background: var(--n950);
+  color: var(--white);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
 }
 #onboarding-overlay.ob-done { display: none; }
 
-.ob-wrap {
-  width: 100%; max-width: 440px;
-  padding: 48px 24px 40px;
-  padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
-  box-sizing: border-box;
-  min-height: 100vh;
+.ob-shell { display: flex; height: 100%; overflow: hidden; }
+
+/* ── Left rail ── */
+.ob-left {
+  width: 360px; flex-shrink: 0; height: 100%;
   display: flex; flex-direction: column;
+  padding: 40px 36px; background: var(--n900);
+  position: relative; overflow: hidden; transition: background .5s ease;
+}
+.ob-left::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--accent-glow, transparent) 0%, transparent 55%);
+  transition: background .5s ease; pointer-events: none;
+}
+.ob-wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; position: relative; }
+.ob-wordmark-icon {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--pink-dim);
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+}
+.ob-wordmark-text { font-family: var(--font-head); font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: -0.01em; }
+.ob-tagline {
+  font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 40px;
+  transition: opacity .3s ease; position: relative; min-height: 20px;
 }
 
-.ob-screen { display: none; flex-direction: column; flex: 1; }
-.ob-screen.ob-active { display: flex; }
-.ob-screen-enter { animation: ob-fadeIn .25s ease; }
+/* Step indicator */
+.ob-steps { display: flex; flex-direction: column; gap: 0; position: relative; }
+.ob-step { display: flex; align-items: flex-start; gap: 14px; position: relative; }
+.ob-step-track { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+.ob-step-circle {
+  width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--n600);
+  background: transparent; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; color: var(--n300); transition: all .25s ease;
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.ob-step-circle.active { background: var(--pink); border-color: var(--pink); color: var(--white); }
+.ob-step-circle.complete { background: var(--green); border-color: var(--green); color: var(--white); }
+.ob-step-line { width: 1px; height: 28px; background: var(--n600); margin: 3px 0; transition: background .4s ease; }
+.ob-step-line.complete { background: var(--green); }
+.ob-step-content { padding-bottom: 32px; padding-top: 1px; }
+.ob-step-label { font-size: 14px; color: var(--n300); transition: color .25s ease; line-height: 1; margin-top: 1px; }
+.ob-step-label.active { color: var(--white); }
+.ob-step-label.complete { color: var(--green); }
 
-/* ── Progress bar ──────────────────────────── */
-.ob-meta { margin-bottom: 28px; }
-.ob-step-lbl {
-  font-size: .68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; color: #6278A0; margin-bottom: 8px;
+/* Preview card */
+.ob-preview-wrap { margin-top: auto; position: relative; }
+.ob-preview-eyebrow { font-size: 10px; font-weight: 600; color: var(--n300); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+.ob-preview-sub { font-size: 11px; color: var(--n300); margin-bottom: 10px; }
+.ob-preview-card {
+  background: var(--n800); border: 0.5px solid var(--n600); border-radius: 14px;
+  padding: 14px; width: 180px; filter: blur(5px); opacity: .45;
+  transition: filter .6s ease, opacity .6s ease; overflow: hidden;
 }
-.ob-prog-track { height: 6px; background: #1E2A4A; border-radius: 3px; overflow: hidden; }
-.ob-prog-fill  { height: 100%; background: #F0538A; border-radius: 3px;
-  width: 0%; transition: width .3s ease; }
+.ob-preview-card.reveal-1 { filter: blur(3px); opacity: .6; }
+.ob-preview-card.reveal-2 { filter: blur(1.5px); opacity: .75; }
+.ob-preview-card.reveal-3 { filter: blur(0.5px); opacity: .9; }
+.ob-preview-card.reveal-4 { filter: blur(0); opacity: 1; }
+.ob-preview-label { font-size: 8px; color: var(--n300); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; }
+.ob-preview-amount { font-family: var(--font-mono); font-size: 18px; color: var(--pink); margin-bottom: 10px; }
+.ob-preview-bar-wrap { margin-bottom: 10px; }
+.ob-preview-bar-label { font-size: 7px; color: var(--n300); margin-bottom: 2px; }
+.ob-preview-bar { height: 4px; border-radius: 2px; margin-bottom: 3px; }
+.ob-preview-tx { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.ob-preview-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ob-preview-line { height: 5px; border-radius: 2px; background: var(--n600); }
+.ob-preview-variant { display: none; }
+.ob-preview-variant.active { display: block; }
 
-/* ── Typography ────────────────────────────── */
-.ob-label {
-  display: block; font-size: .72rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em;
-  color: #F0538A; margin-bottom: 6px;
-}
-.ob-h1 {
-  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 24px;
-  color: #fff; margin: 0 0 8px; line-height: 1.25;
-}
-.ob-sub  { font-size: 15px; color: #6278A0; margin: 0 0 24px; }
-.ob-hint { font-size: .75rem; color: #6278A0; margin-top: 8px; }
-.ob-err  { font-size: .78rem; color: #F59E0B; margin-top: 6px; display: none; }
+/* ── Right panel ── */
+.ob-right { flex: 1; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 48px 40px; }
+.ob-panel { width: 100%; max-width: 460px; display: none; animation: kfFadeIn .25s ease; }
+.ob-panel.active { display: block; }
 
-/* ── Inputs ────────────────────────────────── */
-.ob-input {
-  width: 100%; box-sizing: border-box;
-  background: #18213E; border: 1.5px solid #1E2A4A; border-radius: 10px;
-  color: #fff; font-family: 'DM Sans', sans-serif; font-size: 16px;
-  padding: 13px 14px; min-height: 50px; outline: none; display: block;
-  -webkit-appearance: none; appearance: none;
-}
-.ob-input:focus { border-color: #F0538A; }
-.ob-input.ob-shake { animation: ob-shake .3s ease; border-color: #F59E0B; }
+@keyframes kfFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes kfScaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes kfShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 
-/* ── Buttons ───────────────────────────────── */
-.ob-btn {
-  width: 100%; background: #F0538A; color: #fff; border: none;
-  border-radius: 9999px; height: 52px; font-family: 'DM Sans', sans-serif;
-  font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px;
-  min-height: 44px; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.ob-btn:active { opacity: .85; }
 .ob-back {
-  background: none; border: none; color: #6278A0;
-  font-family: 'DM Sans', sans-serif; font-size: .82rem; cursor: pointer;
-  padding: 0; min-height: 44px; display: inline-flex; align-items: center;
-  gap: 4px; margin-bottom: 20px;
+  font-size: 13px; color: var(--n300); cursor: pointer; display: inline-flex; align-items: center;
+  gap: 4px; margin-bottom: 28px; background: none; border: none; font-family: var(--font-body);
+  padding: 0; transition: color .15s;
 }
-.ob-link-btn {
-  background: none; border: none; width: 100%;
-  font-family: 'DM Sans', sans-serif; font-size: .78rem; color: #6278A0;
-  text-align: center; cursor: pointer; margin-top: 12px; min-height: 44px;
-  display: flex; align-items: center; justify-content: center;
-}
+.ob-back:hover { color: var(--white); }
 
-/* ── Screen 1 ──────────────────────────────── */
-.ob-s1-body {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; text-align: center;
-}
-.ob-icon { font-size: 56px; margin-bottom: 20px; }
-.ob-s1-body .ob-h1 { font-size: 30px; }
-.ob-welcome-copy { font-size: .82rem; color: #6278A0; }
+.ob-progress-wrap { margin-bottom: 32px; }
+.ob-progress-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ob-progress-step { font-size: 11px; color: var(--n300); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.ob-progress-track { height: 4px; background: var(--n700); border-radius: 2px; overflow: hidden; }
+.ob-progress-fill { height: 100%; background: var(--pink); border-radius: 2px; transition: width .4s ease; }
 
-/* ── Screen 4: Tiles ───────────────────────── */
-.ob-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
-.ob-tile {
-  background: #111830; border: 2px solid #1E2A4A; border-radius: 16px;
-  height: 68px; display: flex; align-items: center; justify-content: center;
-  font-family: 'Sora', sans-serif; font-weight: 600; font-size: 22px;
-  color: #fff; cursor: pointer;
-  transition: border-color .15s, color .15s;
+.ob-h1 { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--white); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 8px; }
+.ob-h2 { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 8px; }
+.ob-sub { font-size: 14px; color: var(--n300); line-height: 1.6; margin-bottom: 28px; }
+
+.ob-field { margin-bottom: 20px; }
+.ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--pink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
+.ob-input {
+  width: 100%; background: var(--n700); border: 1px solid var(--n600); border-radius: 10px;
+  padding: 13px 14px; font-family: var(--font-body); font-size: 16px; color: var(--white);
+  outline: none; transition: border-color .15s; -webkit-appearance: none; appearance: none;
+}
+.ob-input::placeholder { color: var(--n300); }
+.ob-input:focus { border-color: var(--pink); }
+.ob-input.valid { border-color: var(--green); }
+.ob-input.error { border-color: var(--red); }
+.ob-input.mono { font-family: var(--font-mono); }
+.ob-input.ob-shake { animation: kfShake .3s ease; }
+.ob-error { font-size: 12px; color: var(--amber); min-height: 18px; margin-top: 5px; display: block; }
+.ob-helper { font-size: 12px; color: var(--n300); margin-top: 6px; line-height: 1.5; }
+
+.ob-btn-primary {
+  width: 100%; background: var(--pink); color: var(--white); border: none; border-radius: 999px;
+  padding: 14px 24px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: opacity .15s, transform .1s; margin-top: 8px; min-height: 48px;
+}
+.ob-btn-primary:hover { opacity: .9; }
+.ob-btn-primary:active { transform: scale(.98); }
+.ob-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.ob-link {
+  display: block; text-align: center; font-size: 13px; color: var(--n300); cursor: pointer;
+  margin-top: 14px; background: none; border: none; font-family: var(--font-body);
+  transition: color .15s; text-decoration: underline; text-decoration-color: transparent;
+}
+.ob-link:hover { color: var(--white); }
+
+/* Profile cards */
+.ob-profile-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.ob-profile-card {
+  background: var(--n800); border: 1.5px solid var(--n600); border-radius: 16px; padding: 16px 18px;
+  cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative;
+}
+.ob-profile-card:hover { border-color: var(--card-accent, var(--pink)); }
+.ob-profile-card.selected {
+  border-color: var(--card-accent, var(--pink)); border-width: 2px;
+  box-shadow: 0 0 0 3px var(--card-glow, rgba(240,83,138,0.12)); transform: scale(1.01);
+}
+.ob-profile-card-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px; }
+.ob-profile-icon {
+  width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; background: var(--card-icon-bg, rgba(240,83,138,0.12));
+}
+.ob-profile-text { flex: 1; }
+.ob-profile-headline { font-family: var(--font-head); font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 3px; }
+.ob-profile-subline { font-size: 13px; color: var(--n300); line-height: 1.5; }
+.ob-profile-check {
+  width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--n600); flex-shrink: 0;
+  margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all .15s;
+}
+.ob-profile-card.selected .ob-profile-check { background: var(--card-accent, var(--pink)); border-color: var(--card-accent, var(--pink)); color: #fff; }
+.ob-profile-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.ob-profile-pill { font-size: 11px; color: var(--n300); background: var(--n700); border: 1px solid var(--n600); border-radius: 6px; padding: 3px 8px; font-weight: 500; }
+
+/* Account count tiles */
+.ob-count-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.ob-count-tile {
+  background: var(--n800); border: 1.5px solid var(--n600); border-radius: 12px; height: 56px;
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-head);
+  font-size: 18px; font-weight: 600; color: var(--n300); cursor: pointer; transition: all .15s;
   user-select: none; -webkit-tap-highlight-color: transparent;
 }
-.ob-tile.ob-tile-sel { border-color: #F0538A; color: #F0538A; }
+.ob-count-tile:hover { border-color: var(--pink); color: var(--white); }
+.ob-count-tile.selected { border-color: var(--pink); background: var(--pink-dim); color: var(--white); }
 
-/* ── Screen 5: Pills & Account cards ──────── */
-.ob-acct {
-  background: #111830; border: 1.5px solid #1E2A4A;
-  border-radius: 16px; padding: 16px; margin-bottom: 12px;
-}
-.ob-acct-num { font-size: .68rem; font-weight: 700; color: #6278A0; margin-bottom: 8px; }
-.ob-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* Account cards */
+.ob-account-card { background: var(--n800); border: 1px solid var(--n600); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+.ob-account-num { font-size: 11px; font-weight: 600; color: var(--n300); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+.ob-pills-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .ob-pill {
-  padding: 6px 12px; border-radius: 10px;
-  background: #18213E; border: 1px solid #1E2A4A; color: #6278A0;
-  font-size: .76rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: background .12s, color .12s, border-color .12s;
+  font-size: 12px; color: var(--n300); background: var(--n700); border: 1px solid var(--n600); border-radius: 8px;
+  padding: 5px 10px; cursor: pointer; font-family: var(--font-body); user-select: none;
+  -webkit-tap-highlight-color: transparent; transition: background .12s, color .12s, border-color .12s;
 }
-.ob-pill.ob-pill-sel { background: #F0538A; border-color: #F0538A; color: #fff; }
+.ob-pill.selected { background: var(--pink); border-color: var(--pink); color: #fff; }
 
-/* ── Screen 6 & 7 partial: PIN ─────────────── */
-.ob-dots { display: flex; gap: 18px; justify-content: center; margin: 24px 0 28px; }
-.ob-dot {
-  width: 18px; height: 18px; border-radius: 50%;
-  border: 2px solid #1E2A4A; background: transparent;
-  transition: background .12s, border-color .12s; flex-shrink: 0;
+/* Divider */
+.ob-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 6px; }
+.ob-divider-line { flex: 1; height: 1px; background: var(--n600); }
+.ob-divider-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Two-col + mortgage card */
+.ob-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ob-mortgage-card { background: var(--n800); border: 1px solid var(--n600); border-radius: 14px; padding: 16px; }
+
+/* Asset tiles */
+.ob-asset-grid { display: grid; gap: 8px; margin-bottom: 10px; }
+.ob-asset-tile {
+  background: var(--n800); border: 1.5px solid var(--n600); border-radius: 12px; padding: 14px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: all .15s;
+  text-align: center; user-select: none; -webkit-tap-highlight-color: transparent;
 }
-.ob-dot.ob-dot-on { background: #F0538A; border-color: #F0538A; }
-.ob-dots.ob-shaking { animation: ob-shake .3s ease; }
-.ob-numpad {
-  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
-  max-width: 280px; margin: 0 auto;
+.ob-asset-tile:hover { border-color: var(--amber); }
+.ob-asset-tile.selected { border-color: var(--amber); background: var(--amber-dim); }
+.ob-asset-emoji { font-size: 20px; }
+.ob-asset-label { font-size: 10px; color: var(--n300); line-height: 1.2; }
+
+/* Toggle */
+.ob-toggle-row { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; padding: 4px 0; }
+.ob-toggle {
+  width: 44px; height: 26px; border-radius: 999px; background: var(--n600); position: relative;
+  flex-shrink: 0; transition: background .2s; margin-top: 2px;
 }
-.ob-nk {
-  background: #18213E; border: 1.5px solid #1E2A4A; border-radius: 10px;
-  height: 60px; font-family: 'Sora', sans-serif; font-weight: 600; font-size: 22px;
-  color: #fff; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  user-select: none; -webkit-tap-highlight-color: transparent;
-}
-.ob-nk:active { background: rgba(240,83,138,.18); }
-.ob-nk-blank  { height: 60px; }
-.ob-pin-err {
-  font-size: .78rem; color: #F59E0B; text-align: center;
-  margin-top: 10px; min-height: 18px;
+.ob-toggle.on { background: var(--pink); }
+.ob-toggle-knob { width: 20px; height: 20px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: left .2s; }
+.ob-toggle.on .ob-toggle-knob { left: 21px; }
+.ob-toggle-label { flex: 1; }
+.ob-toggle-main { font-size: 14px; color: var(--white); font-weight: 500; }
+.ob-toggle-sub { font-size: 12px; color: var(--n300); margin-top: 2px; line-height: 1.4; }
+.ob-toggle-expand { max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s ease; }
+.ob-toggle-expand.open { max-height: 120px; padding: 4px 4px 0; }
+
+.ob-pin-section { margin-bottom: 4px; }
+.ob-pin-fields { margin-top: 4px; }
+
+/* Bonus banner */
+.ob-bonus-banner {
+  text-align: center; font-size: 11px; color: var(--n300); letter-spacing: .04em; text-transform: uppercase;
+  margin-bottom: 24px; padding: 8px 16px; border: 1px solid var(--n600); border-radius: 999px; display: inline-block;
 }
 
-/* ── Screen 7 ──────────────────────────────── */
-.ob-s7-icon { font-size: 44px; text-align: center; margin-bottom: 12px; }
-.ob-opt {
-  background: #111830; border: 2px solid #1E2A4A; border-radius: 16px;
-  padding: 16px 18px; margin-bottom: 12px; cursor: pointer;
-  display: flex; align-items: flex-start; gap: 14px;
-  transition: border-color .15s; -webkit-tap-highlight-color: transparent;
+/* Welcome */
+.ob-welcome-inner { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 360px; margin: 0 auto; }
+.ob-welcome-icon {
+  width: 72px; height: 72px; border-radius: 20px; background: var(--pink-dim);
+  border: 1px solid rgba(240,83,138,0.2); display: flex; align-items: center; justify-content: center;
+  font-size: 34px; margin-bottom: 24px;
 }
-.ob-opt.ob-opt-sel { border-color: #F0538A; }
-.ob-opt-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
-.ob-opt-body { flex: 1; }
-.ob-opt-lbl  { font-weight: 500; font-size: 15px; color: #fff; }
-.ob-opt-sub  { font-size: .76rem; color: #6278A0; margin-top: 2px; }
-.ob-p2-form  { display: none; border-top: 1px solid #1E2A4A; margin-top: 14px; padding-top: 14px; }
-.ob-p2-form.ob-open { display: block; }
-.ob-p2-ok   { display: none; font-size: .82rem; color: #00C896; font-weight: 600; margin-top: 10px; }
 
-/* ── Animations ────────────────────────────── */
-@keyframes ob-shake {
-  0%,100% { transform: translateX(0); }
-  20%      { transform: translateX(-5px); }
-  40%      { transform: translateX(5px); }
-  60%      { transform: translateX(-5px); }
-  80%      { transform: translateX(5px); }
+/* Celebration / recap */
+.ob-celebration {
+  position: fixed; inset: 0; background: var(--n950); z-index: 10000; display: none;
+  flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 32px;
 }
-@keyframes ob-fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+.ob-celebration.show { display: flex; }
+.ob-recap {
+  width: 400px; max-width: 90vw; background: var(--n900); border: 0.5px solid var(--n700); border-radius: 22px;
+  padding: 30px 30px 26px; text-align: left; box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  animation: kfScaleIn .45s cubic-bezier(0.34,1.4,0.64,1);
+}
+.ob-recap-badge {
+  width: 52px; height: 52px; border-radius: 15px; background: var(--green-dim); border: 1px solid rgba(0,200,150,0.25);
+  display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 18px;
+}
+.ob-recap-title { font-family: var(--font-head); font-size: 23px; font-weight: 700; color: var(--white); letter-spacing: -0.02em; margin-bottom: 5px; }
+.ob-recap-sub { font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 22px; }
+.ob-recap-list { display: flex; flex-direction: column; gap: 11px; margin-bottom: 26px; }
+.ob-recap-item { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateY(6px); animation: kfRecapIn .4s ease forwards; }
+.ob-recap-ic { width: 28px; height: 28px; border-radius: 8px; background: var(--green-dim); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.ob-recap-item b { display: block; font-size: 14px; font-weight: 600; color: var(--white); }
+.ob-recap-item span { font-size: 12px; color: var(--n300); }
+@keyframes kfRecapIn { to { opacity: 1; transform: none; } }
+
+.ob-right::-webkit-scrollbar { width: 4px; }
+.ob-right::-webkit-scrollbar-track { background: transparent; }
+.ob-right::-webkit-scrollbar-thumb { background: var(--n600); border-radius: 2px; }
+
+/* ── Responsive: collapse the rail on mobile (iOS PWA) ── */
+@media (max-width: 760px) {
+  .ob-left { display: none; }
+  .ob-right { padding: 36px 20px; padding-top: max(36px, env(safe-area-inset-top, 36px)); align-items: flex-start; }
+  .ob-panel { max-width: 100%; }
+  .ob-h1 { font-size: 26px; }
+  .ob-two-col { grid-template-columns: 1fr; }
+  .ob-asset-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .ob-recap { padding: 24px 22px; }
 }
 </style>
 
@@ -247,176 +350,350 @@ window.addEventListener('unhandledrejection',function(e){
      ONBOARDING OVERLAY — first child of body, z-index 9999
      ══════════════════════════════════════════════════════ -->
 <div id="onboarding-overlay">
-  <div class="ob-wrap">
+  <div class="ob-shell">
 
-    <!-- Shared progress bar — shown on screens 2–6 only -->
-    <div id="ob-meta" class="ob-meta" style="display:none">
-      <div id="ob-step-lbl" class="ob-step-lbl">Step 1 of 6</div>
-      <div class="ob-prog-track"><div id="ob-prog-fill" class="ob-prog-fill"></div></div>
-    </div>
+    <!-- ═══ LEFT RAIL ═══ -->
+    <aside class="ob-left" id="ob-left">
+      <div class="ob-wordmark">
+        <div class="ob-wordmark-icon">💧</div>
+        <span class="ob-wordmark-text">Kelda Finance</span>
+      </div>
+      <p class="ob-tagline" id="ob-tagline">Your finances, clear and in one place.</p>
 
-    <!-- ── Screen 1: Welcome ─────────────────────────────── -->
-    <div id="ob-s1" class="ob-screen ob-active">
-      <div class="ob-s1-body">
-        <div class="ob-icon">📊</div>
-        <h1 class="ob-h1">Kelda Finance</h1>
-        <p class="ob-sub" style="margin-top:4px">Your family's finances, clear and in one place.</p>
-        <p class="ob-welcome-copy">Takes about 90 seconds to set up.</p>
-      </div>
-      <div style="padding-top:32px">
-        <button class="ob-btn" onclick="obGo(2)">Get started</button>
-        <button class="ob-link-btn" onclick="restoreFromBackup()">Already set up? Restore from backup</button>
-      </div>
-    </div>
+      <nav class="ob-steps" aria-label="Setup progress">
+        <div class="ob-step">
+          <div class="ob-step-track">
+            <div class="ob-step-circle active" id="step-circle-1"><span aria-hidden="true">1</span></div>
+            <div class="ob-step-line" id="step-line-1"></div>
+          </div>
+          <div class="ob-step-content"><div class="ob-step-label active" id="step-label-1">You</div></div>
+        </div>
+        <div class="ob-step">
+          <div class="ob-step-track">
+            <div class="ob-step-circle" id="step-circle-2"><span aria-hidden="true">2</span></div>
+            <div class="ob-step-line" id="step-line-2"></div>
+          </div>
+          <div class="ob-step-content"><div class="ob-step-label" id="step-label-2">Your profile</div></div>
+        </div>
+        <div class="ob-step">
+          <div class="ob-step-track">
+            <div class="ob-step-circle" id="step-circle-3"><span aria-hidden="true">3</span></div>
+            <div class="ob-step-line" id="step-line-3"></div>
+          </div>
+          <div class="ob-step-content"><div class="ob-step-label" id="step-label-3">Your accounts</div></div>
+        </div>
+        <div class="ob-step">
+          <div class="ob-step-track">
+            <div class="ob-step-circle" id="step-circle-4"><span aria-hidden="true">4</span></div>
+          </div>
+          <div class="ob-step-content"><div class="ob-step-label" id="step-label-4">Security</div></div>
+        </div>
+      </nav>
 
-    <!-- ── Screen 2: Your name ───────────────────────────── -->
-    <div id="ob-s2" class="ob-screen">
-      <span class="ob-label">YOUR NAME</span>
-      <h2 class="ob-h1">What should we call you?</h2>
-      <p class="ob-sub">We'll use this for your personal greeting.</p>
-      <input id="ob-name-inp" class="ob-input" type="text" placeholder="First name"
-        autocomplete="given-name"
-        oninput="document.getElementById('ob-name-err').style.display='none';this.classList.remove('ob-shake')"
-        onkeydown="if(event.key==='Enter')obS2Continue()"/>
-      <div id="ob-name-err" class="ob-err">Please enter your name</div>
-      <div style="margin-top:auto;padding-top:24px">
-        <button class="ob-btn" onclick="obS2Continue()">Continue →</button>
-      </div>
-    </div>
+      <!-- Dashboard preview -->
+      <div class="ob-preview-wrap">
+        <div class="ob-preview-eyebrow">Your dashboard</div>
+        <div class="ob-preview-sub">This is what you're building</div>
+        <div class="ob-preview-card" id="preview-card">
 
-    <!-- ── Screen 3: App name ────────────────────────────── -->
-    <div id="ob-s3" class="ob-screen">
-      <button class="ob-back" onclick="obGo(2)">← Back</button>
-      <span class="ob-label">APP NAME</span>
-      <h2 class="ob-h1">What do you want to call this?</h2>
-      <p class="ob-sub">Shown on your dashboard header. You can change it any time in Settings.</p>
-      <input id="ob-appname-inp" class="ob-input" type="text" value="Kelda Finance"
-        onkeydown="if(event.key==='Enter')obGo(4)"/>
-      <div class="ob-hint">💡 Most people keep the default — tap Continue to use it.</div>
-      <div style="margin-top:auto;padding-top:24px">
-        <button class="ob-btn" onclick="obGo(4)">Continue →</button>
-      </div>
-    </div>
-
-    <!-- ── Screen 4: Account count ───────────────────────── -->
-    <div id="ob-s4" class="ob-screen">
-      <button class="ob-back" onclick="obGo(3)">← Back</button>
-      <h2 class="ob-h1">How many accounts do you track?</h2>
-      <p class="ob-sub">You can add more later.</p>
-      <div class="ob-tiles">
-        <div class="ob-tile"         id="ob-tile-1" onclick="obSelectCount(1)">1</div>
-        <div class="ob-tile ob-tile-sel" id="ob-tile-2" onclick="obSelectCount(2)">2</div>
-        <div class="ob-tile"         id="ob-tile-3" onclick="obSelectCount(3)">3</div>
-        <div class="ob-tile"         id="ob-tile-4" onclick="obSelectCount(4)">4+</div>
-      </div>
-      <div style="margin-top:auto;padding-top:24px">
-        <button class="ob-btn" onclick="obGo(5)">Continue →</button>
-      </div>
-    </div>
-
-    <!-- ── Screen 5: Account names (cards rendered by JS) ── -->
-    <div id="ob-s5" class="ob-screen">
-      <button class="ob-back" onclick="obGoBack5()">← Back</button>
-      <h2 class="ob-h1">Name your accounts</h2>
-      <p class="ob-sub">Just labels — no bank details needed. Tap a suggestion or type your own.</p>
-      <div id="ob-acct-cards" style="overflow-y:auto;flex:1"></div>
-      <div style="padding-top:16px">
-        <button class="ob-btn" style="margin-top:0" onclick="obS5Continue()">Continue →</button>
-      </div>
-    </div>
-
-    <!-- ── Screen 6: PIN setup ───────────────────────────── -->
-    <div id="ob-s6" class="ob-screen">
-      <button class="ob-back" onclick="obGoBack6()">← Back</button>
-      <h2 class="ob-h1">Create a PIN</h2>
-      <p class="ob-sub" id="ob-pin-sub">Keeps your data private on this device. We never see it.</p>
-      <div id="ob-pin-dots" class="ob-dots">
-        <div class="ob-dot" id="ob-pd0"></div>
-        <div class="ob-dot" id="ob-pd1"></div>
-        <div class="ob-dot" id="ob-pd2"></div>
-        <div class="ob-dot" id="ob-pd3"></div>
-      </div>
-      <div id="ob-pin-err" class="ob-pin-err"></div>
-      <div class="ob-numpad">
-        <button class="ob-nk" onclick="obPinKey('1')">1</button>
-        <button class="ob-nk" onclick="obPinKey('2')">2</button>
-        <button class="ob-nk" onclick="obPinKey('3')">3</button>
-        <button class="ob-nk" onclick="obPinKey('4')">4</button>
-        <button class="ob-nk" onclick="obPinKey('5')">5</button>
-        <button class="ob-nk" onclick="obPinKey('6')">6</button>
-        <button class="ob-nk" onclick="obPinKey('7')">7</button>
-        <button class="ob-nk" onclick="obPinKey('8')">8</button>
-        <button class="ob-nk" onclick="obPinKey('9')">9</button>
-        <div class="ob-nk-blank"></div>
-        <button class="ob-nk" onclick="obPinKey('0')">0</button>
-        <button class="ob-nk" onclick="obPinBack()">⌫</button>
-      </div>
-    </div>
-
-    <!-- ── Screen 7: Done + optional partner ─────────────── -->
-    <div id="ob-s7" class="ob-screen">
-      <div class="ob-s7-icon">✅</div>
-      <h2 class="ob-h1" style="color:#00C896;text-align:center">You're all set!</h2>
-      <p class="ob-sub" style="text-align:center">Is anyone else tracking finances with you?</p>
-
-      <!-- Option A: Add partner -->
-      <div class="ob-opt" id="ob-opt-p" onclick="obSelectPartner(true)">
-        <div class="ob-opt-icon">👥</div>
-        <div class="ob-opt-body">
-          <div class="ob-opt-lbl">Add a partner or family member</div>
-          <div class="ob-opt-sub">They'll get their own name and PIN</div>
-          <!-- Inline sub-form -->
-          <div id="ob-p2-form" class="ob-p2-form">
-            <span class="ob-label" style="margin-top:10px">THEIR NAME</span>
-            <input id="ob-p2-name" class="ob-input" type="text" placeholder="First name"
-              style="margin-top:4px"
-              onclick="event.stopPropagation()"
-              oninput="document.getElementById('ob-p2-name-err').style.display='none';this.classList.remove('ob-shake');event.stopPropagation()"/>
-            <div id="ob-p2-name-err" class="ob-err">Please enter a name</div>
-            <div style="margin-top:14px">
-              <span class="ob-label">THEIR PIN</span>
-              <div id="ob-p2-dots" class="ob-dots" style="margin:12px 0 14px">
-                <div class="ob-dot" id="ob-p2d0"></div>
-                <div class="ob-dot" id="ob-p2d1"></div>
-                <div class="ob-dot" id="ob-p2d2"></div>
-                <div class="ob-dot" id="ob-p2d3"></div>
-              </div>
-              <div id="ob-p2-pin-err" class="ob-pin-err" style="margin-bottom:10px"></div>
-              <div class="ob-numpad" style="max-width:240px" onclick="event.stopPropagation()">
-                <button class="ob-nk" onclick="obP2PinKey('1');event.stopPropagation()">1</button>
-                <button class="ob-nk" onclick="obP2PinKey('2');event.stopPropagation()">2</button>
-                <button class="ob-nk" onclick="obP2PinKey('3');event.stopPropagation()">3</button>
-                <button class="ob-nk" onclick="obP2PinKey('4');event.stopPropagation()">4</button>
-                <button class="ob-nk" onclick="obP2PinKey('5');event.stopPropagation()">5</button>
-                <button class="ob-nk" onclick="obP2PinKey('6');event.stopPropagation()">6</button>
-                <button class="ob-nk" onclick="obP2PinKey('7');event.stopPropagation()">7</button>
-                <button class="ob-nk" onclick="obP2PinKey('8');event.stopPropagation()">8</button>
-                <button class="ob-nk" onclick="obP2PinKey('9');event.stopPropagation()">9</button>
-                <div class="ob-nk-blank"></div>
-                <button class="ob-nk" onclick="obP2PinKey('0');event.stopPropagation()">0</button>
-                <button class="ob-nk" onclick="obP2PinBack();event.stopPropagation()">⌫</button>
-              </div>
+          <div class="ob-preview-variant active" id="preview-starter">
+            <div class="ob-preview-label">Balance</div>
+            <div class="ob-preview-amount">$——</div>
+            <div class="ob-preview-bar-wrap">
+              <div class="ob-preview-bar-label">Groceries</div>
+              <div class="ob-preview-bar" style="background:var(--green);width:62%"></div>
+              <div class="ob-preview-bar-label">Bills</div>
+              <div class="ob-preview-bar" style="background:var(--amber);width:84%"></div>
+              <div class="ob-preview-bar-label">Dining</div>
+              <div class="ob-preview-bar" style="background:var(--pink);width:40%"></div>
             </div>
-            <div id="ob-p2-ok" class="ob-p2-ok"></div>
+            <div class="ob-preview-tx"><div class="ob-preview-dot" style="background:var(--green)"></div><div class="ob-preview-line" style="width:60%"></div></div>
+            <div class="ob-preview-tx"><div class="ob-preview-dot" style="background:var(--pink)"></div><div class="ob-preview-line" style="width:45%"></div></div>
+            <div class="ob-preview-tx"><div class="ob-preview-dot" style="background:var(--green)"></div><div class="ob-preview-line" style="width:70%"></div></div>
+          </div>
+
+          <div class="ob-preview-variant" id="preview-household">
+            <div class="ob-preview-label">Net Worth</div>
+            <div class="ob-preview-amount">$——</div>
+            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:3px">Mortgage equity</div>
+            <div style="height:6px;border-radius:3px;background:linear-gradient(90deg,var(--green) 38%,var(--n600) 38%);margin-bottom:10px"></div>
+            <div class="ob-preview-bar-wrap">
+              <div class="ob-preview-bar-label">Budget used</div>
+              <div class="ob-preview-bar" style="background:var(--pink);width:55%"></div>
+              <div class="ob-preview-bar-label">Bills pending</div>
+              <div class="ob-preview-bar" style="background:var(--amber);width:70%"></div>
+            </div>
+            <div class="ob-preview-tx"><div class="ob-preview-dot" style="background:var(--green)"></div><div class="ob-preview-line" style="width:65%"></div></div>
+            <div class="ob-preview-tx"><div class="ob-preview-dot" style="background:var(--pink)"></div><div class="ob-preview-line" style="width:50%"></div></div>
+          </div>
+
+          <div class="ob-preview-variant" id="preview-full">
+            <div class="ob-preview-label">Net Worth</div>
+            <div class="ob-preview-amount" style="font-size:15px">$——</div>
+            <div style="width:44px;height:44px;border-radius:50%;border:4px solid var(--amber);margin:8px auto 8px;position:relative;">
+              <div style="position:absolute;inset:4px;border-radius:50%;border:4px solid var(--green);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)"></div>
+            </div>
+            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:2px">Super</div>
+            <div class="ob-preview-bar" style="background:var(--amber);width:45%"></div>
+            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:2px;margin-top:4px">Investments</div>
+            <div class="ob-preview-bar" style="background:var(--green);width:62%"></div>
+            <div class="ob-preview-tx" style="margin-top:8px"><div class="ob-preview-dot" style="background:var(--amber)"></div><div class="ob-preview-line" style="width:55%"></div></div>
+          </div>
+
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══ RIGHT PANEL ═══ -->
+    <main class="ob-right">
+
+      <!-- 1 — Welcome -->
+      <div class="ob-panel active" id="panel-welcome">
+        <div class="ob-welcome-inner">
+          <div class="ob-welcome-icon">💧</div>
+          <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
+          <p class="ob-sub" style="margin-top:10px">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
+          <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
+          <button class="ob-link" id="ob-restore-link" onclick="obShowRestoreMsg(this)">Already set up? Restore from backup</button>
+        </div>
+      </div>
+
+      <!-- 2 — Name -->
+      <div class="ob-panel" id="panel-name">
+        <div class="ob-progress-wrap">
+          <div class="ob-progress-meta"><span class="ob-progress-step">Step 1 of 4</span></div>
+          <div class="ob-progress-track"><div class="ob-progress-fill" style="width:25%"></div></div>
+        </div>
+        <button class="ob-back" onclick="obGoTo('panel-welcome')">← Back</button>
+        <h2 class="ob-h2" tabindex="-1">What should we call you?</h2>
+        <p class="ob-sub">We'll use your first name to personalise your dashboard.</p>
+        <div class="ob-field">
+          <label class="ob-label" for="inp-name">Your name</label>
+          <input class="ob-input" id="inp-name" type="text" maxlength="40" placeholder="First name" autocomplete="given-name">
+          <span class="ob-error" id="err-name"></span>
+        </div>
+        <button class="ob-btn-primary" onclick="obSubmitName()">Continue →</button>
+      </div>
+
+      <!-- 3 — Profile -->
+      <div class="ob-panel" id="panel-profile">
+        <div class="ob-progress-wrap">
+          <div class="ob-progress-meta"><span class="ob-progress-step">Step 2 of 4</span></div>
+          <div class="ob-progress-track"><div class="ob-progress-fill" style="width:50%"></div></div>
+        </div>
+        <button class="ob-back" onclick="obGoTo('panel-name')">← Back</button>
+        <h2 class="ob-h2" tabindex="-1">What do you want Kelda<br>to help with?</h2>
+        <p class="ob-sub">Pick the one that fits — you can always add more later.</p>
+
+        <div class="ob-profile-group" role="radiogroup" aria-label="Choose your profile">
+          <div class="ob-profile-card" id="card-starter" role="radio" aria-checked="false" tabindex="0"
+               style="--card-accent:#00C896;--card-glow:rgba(0,200,150,0.12);--card-icon-bg:rgba(0,200,150,0.12)"
+               onclick="obSelectProfile('starter')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('starter')}">
+            <div class="ob-profile-card-top">
+              <div class="ob-profile-icon">🌱</div>
+              <div class="ob-profile-text">
+                <div class="ob-profile-headline">Track my spending</div>
+                <div class="ob-profile-subline">Budgets, bills, and savings goals — nothing extra.</div>
+              </div>
+              <div class="ob-profile-check" id="check-starter"></div>
+            </div>
+            <div class="ob-profile-pills">
+              <span class="ob-profile-pill">Spending</span><span class="ob-profile-pill">Budgets</span>
+              <span class="ob-profile-pill">Bills</span><span class="ob-profile-pill">Goals</span>
+            </div>
+          </div>
+
+          <div class="ob-profile-card" id="card-household" role="radio" aria-checked="false" tabindex="-1"
+               style="--card-accent:#F0538A;--card-glow:rgba(240,83,138,0.12);--card-icon-bg:rgba(240,83,138,0.12)"
+               onclick="obSelectProfile('household')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('household')}">
+            <div class="ob-profile-card-top">
+              <div class="ob-profile-icon">🏠</div>
+              <div class="ob-profile-text">
+                <div class="ob-profile-headline">Budget smarter</div>
+                <div class="ob-profile-subline">Household planning, mortgage, and forecasting.</div>
+              </div>
+              <div class="ob-profile-check" id="check-household"></div>
+            </div>
+            <div class="ob-profile-pills">
+              <span class="ob-profile-pill">Mortgage</span><span class="ob-profile-pill">Forecast</span>
+              <span class="ob-profile-pill">Bills</span><span class="ob-profile-pill">Goals</span>
+            </div>
+          </div>
+
+          <div class="ob-profile-card" id="card-full" role="radio" aria-checked="false" tabindex="-1"
+               style="--card-accent:#F59E0B;--card-glow:rgba(245,158,11,0.12);--card-icon-bg:rgba(245,158,11,0.12)"
+               onclick="obSelectProfile('full')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('full')}">
+            <div class="ob-profile-card-top">
+              <div class="ob-profile-icon">📊</div>
+              <div class="ob-profile-text">
+                <div class="ob-profile-headline">Full financial picture</div>
+                <div class="ob-profile-subline">Investments, super, property, tax — the complete view.</div>
+              </div>
+              <div class="ob-profile-check" id="check-full"></div>
+            </div>
+            <div class="ob-profile-pills">
+              <span class="ob-profile-pill">Investments</span><span class="ob-profile-pill">Super</span>
+              <span class="ob-profile-pill">Tax</span><span class="ob-profile-pill">Property</span>
+            </div>
           </div>
         </div>
+
+        <button class="ob-btn-primary" id="btn-profile-continue" disabled onclick="obSubmitProfile()">Continue →</button>
       </div>
 
-      <!-- Option B: Just me -->
-      <div class="ob-opt" id="ob-opt-solo" onclick="obSelectPartner(false)">
-        <div class="ob-opt-icon">👤</div>
-        <div class="ob-opt-body">
-          <div class="ob-opt-lbl">Just me for now</div>
-          <div class="ob-opt-sub">You can add someone in Settings later</div>
+      <!-- 4a — Accounts (starter) -->
+      <div class="ob-panel" id="panel-accounts-starter">
+        <div class="ob-progress-wrap">
+          <div class="ob-progress-meta"><span class="ob-progress-step">Step 3 of 4</span></div>
+          <div class="ob-progress-track"><div class="ob-progress-fill" style="width:75%"></div></div>
         </div>
+        <button class="ob-back" onclick="obGoTo('panel-profile')">← Back</button>
+        <h2 class="ob-h2" tabindex="-1">Set up your accounts</h2>
+        <p class="ob-sub">Just labels — no bank details or logins needed.</p>
+        <div class="ob-field">
+          <label class="ob-label">How many accounts?</label>
+          <div class="ob-count-grid">
+            <div class="ob-count-tile" onclick="obSelectCount(this,1)">1</div>
+            <div class="ob-count-tile selected" onclick="obSelectCount(this,2)">2</div>
+            <div class="ob-count-tile" onclick="obSelectCount(this,3)">3</div>
+            <div class="ob-count-tile" onclick="obSelectCount(this,4)">4+</div>
+          </div>
+        </div>
+        <div id="account-cards-starter"></div>
+        <button class="ob-btn-primary" onclick="obSubmitAccounts('starter')">Continue →</button>
       </div>
 
-      <div style="margin-top:auto;padding-top:24px">
-        <button class="ob-btn" style="margin-top:0" onclick="obFinish()">Let's go →</button>
+      <!-- 4b — Accounts + Mortgage (household) -->
+      <div class="ob-panel" id="panel-accounts-household">
+        <div class="ob-progress-wrap">
+          <div class="ob-progress-meta"><span class="ob-progress-step">Step 3 of 4</span></div>
+          <div class="ob-progress-track"><div class="ob-progress-fill" style="width:75%"></div></div>
+        </div>
+        <button class="ob-back" onclick="obGoTo('panel-profile')">← Back</button>
+        <h2 class="ob-h2" tabindex="-1">Accounts &amp; mortgage</h2>
+        <p class="ob-sub">Name your accounts, then add your mortgage details if you have one.</p>
+        <div class="ob-field">
+          <label class="ob-label">How many accounts?</label>
+          <div class="ob-count-grid">
+            <div class="ob-count-tile" onclick="obSelectCount(this,1)">1</div>
+            <div class="ob-count-tile selected" onclick="obSelectCount(this,2)">2</div>
+            <div class="ob-count-tile" onclick="obSelectCount(this,3)">3</div>
+            <div class="ob-count-tile" onclick="obSelectCount(this,4)">4+</div>
+          </div>
+        </div>
+        <div id="account-cards-household"></div>
+        <div class="ob-divider">
+          <div class="ob-divider-line"></div>
+          <span class="ob-divider-label" style="color:var(--pink)">Your mortgage</span>
+          <div class="ob-divider-line"></div>
+        </div>
+        <p class="ob-helper" style="margin-bottom:14px">Optional — rough figures are fine. You can edit this any time.</p>
+        <div class="ob-mortgage-card">
+          <div class="ob-field" style="margin-bottom:14px">
+            <label class="ob-label" for="mtg-lender">Lender</label>
+            <input class="ob-input" id="mtg-lender" type="text" maxlength="30" placeholder="e.g. ANZ Home Loan">
+          </div>
+          <div class="ob-two-col">
+            <div class="ob-field" style="margin-bottom:0">
+              <label class="ob-label" for="mtg-balance">Approx. balance (AUD)</label>
+              <input class="ob-input mono" id="mtg-balance" type="number" inputmode="decimal" placeholder="0.00">
+            </div>
+            <div class="ob-field" style="margin-bottom:0">
+              <label class="ob-label" for="mtg-payment">Monthly payment (AUD)</label>
+              <input class="ob-input mono" id="mtg-payment" type="number" inputmode="decimal" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+        <button class="ob-link" style="text-align:left;margin-top:6px" onclick="obSubmitAccounts('household')">I'll skip the mortgage for now</button>
+        <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('household')">Continue →</button>
       </div>
-    </div>
 
-  </div><!-- /.ob-wrap -->
+      <!-- 4c — Accounts + Assets (full) -->
+      <div class="ob-panel" id="panel-accounts-full">
+        <div class="ob-progress-wrap">
+          <div class="ob-progress-meta"><span class="ob-progress-step">Step 3 of 4</span></div>
+          <div class="ob-progress-track"><div class="ob-progress-fill" style="width:75%"></div></div>
+        </div>
+        <button class="ob-back" onclick="obGoTo('panel-profile')">← Back</button>
+        <h2 class="ob-h2" tabindex="-1">Accounts &amp; assets</h2>
+        <p class="ob-sub">Name your accounts, then tell us what assets you hold.</p>
+        <div class="ob-field">
+          <label class="ob-label">How many accounts?</label>
+          <div class="ob-count-grid">
+            <div class="ob-count-tile" onclick="obSelectCount(this,1)">1</div>
+            <div class="ob-count-tile selected" onclick="obSelectCount(this,2)">2</div>
+            <div class="ob-count-tile" onclick="obSelectCount(this,3)">3</div>
+            <div class="ob-count-tile" onclick="obSelectCount(this,4)">4+</div>
+          </div>
+        </div>
+        <div id="account-cards-full"></div>
+        <div class="ob-divider">
+          <div class="ob-divider-line"></div>
+          <span class="ob-divider-label" style="color:var(--amber)">What do you have?</span>
+          <div class="ob-divider-line"></div>
+        </div>
+        <p class="ob-helper" style="margin-bottom:14px">Select all that apply — we'll set these up inside the app, no details needed now.</p>
+        <div class="ob-asset-grid" style="grid-template-columns:repeat(5,1fr)">
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'property')"><span class="ob-asset-emoji">🏠</span><span class="ob-asset-label">Property</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'equities')"><span class="ob-asset-emoji">📈</span><span class="ob-asset-label">Investments</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'super')"><span class="ob-asset-emoji">🏦</span><span class="ob-asset-label">Superannuation</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'liabilities')"><span class="ob-asset-emoji">💳</span><span class="ob-asset-label">Liabilities</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'investment-property')"><span class="ob-asset-emoji">🏢</span><span class="ob-asset-label">Investment property</span></div>
+        </div>
+        <button class="ob-link" style="text-align:left" onclick="obGoTo('panel-security')">I'll set this up later</button>
+        <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('full')">Continue →</button>
+      </div>
+
+      <!-- 5 — Security -->
+      <div class="ob-panel" id="panel-security">
+        <div class="ob-progress-wrap">
+          <div class="ob-progress-meta"><span class="ob-progress-step">Step 4 of 4</span></div>
+          <div class="ob-progress-track"><div class="ob-progress-fill" style="width:100%"></div></div>
+        </div>
+        <button class="ob-back" id="btn-back-security" onclick="obBackFromSecurity()">← Back</button>
+        <h2 class="ob-h2" tabindex="-1">Secure your data</h2>
+        <p class="ob-sub">Your PIN stays on this device. We never see it.</p>
+        <div class="ob-pin-section">
+          <label class="ob-label">Your PIN</label>
+          <div class="ob-pin-fields">
+            <div class="ob-field" style="margin-bottom:10px">
+              <input class="ob-input" id="inp-pin" type="password" maxlength="4" inputmode="numeric" placeholder="4-digit PIN" autocomplete="new-password">
+            </div>
+            <div class="ob-field">
+              <input class="ob-input" id="inp-pin-confirm" type="password" maxlength="4" inputmode="numeric" placeholder="Confirm PIN">
+              <span class="ob-error" id="err-pin"></span>
+            </div>
+          </div>
+        </div>
+        <div class="ob-divider" style="margin:20px 0 16px">
+          <div class="ob-divider-line"></div>
+          <span class="ob-divider-label" style="color:var(--pink)">Second user</span>
+          <div class="ob-divider-line"></div>
+        </div>
+        <div class="ob-toggle-row" onclick="obToggleUser2()">
+          <div class="ob-toggle" id="user2-toggle"><div class="ob-toggle-knob"></div></div>
+          <div class="ob-toggle-label">
+            <div class="ob-toggle-main">Add a partner or family member</div>
+            <div class="ob-toggle-sub">They'll set up their own PIN when they first log in</div>
+          </div>
+        </div>
+        <div class="ob-toggle-expand" id="user2-expand">
+          <div class="ob-field" style="margin-top:4px">
+            <label class="ob-label" for="inp-user2">Their name</label>
+            <input class="ob-input" id="inp-user2" type="text" maxlength="40" placeholder="First name">
+            <span class="ob-error" id="err-user2"></span>
+          </div>
+        </div>
+        <button class="ob-btn-primary" style="margin-top:20px" onclick="obSubmitSecurity()">Let's go →</button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Celebration / recap overlay -->
+  <div class="ob-celebration" id="ob-celebration">
+    <div class="ob-recap" id="recap-card"><!-- filled by obBuildRecap() --></div>
+  </div>
 </div><!-- /#onboarding-overlay -->
 
 <!-- LOGIN -->
@@ -2713,56 +2990,43 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- Onboarding JS -->
 <script>
 // ══════════════════════════════════════════════════════════════
-// KELDA FINANCE — ONBOARDING FLOW
-// First-launch only. Checks kf_onboarding_complete in localStorage.
-// No template literals with expressions — string concatenation only.
+// KELDA FINANCE — ONBOARDING FLOW (two-panel redesign)
+// First-launch only. Gated by kf_onboarding_complete in localStorage.
+// String concatenation only (no template literals) — house style.
 // ══════════════════════════════════════════════════════════════
 
 // ── State ─────────────────────────────────────────────────────
-var _obCurrent      = 1;
-var _obUserName     = '';
-var _obAppName      = 'Kelda Finance';
-var _obAcctCount    = 2;
-var _obAcctNames    = [];
+var ob = {
+  name: '', profile: '', accountCount: 2, accounts: [],
+  user2Toggle: false, selectedAssets: []
+};
 
-var _obPinPhase     = 1;        // 1=enter, 2=confirm
-var _obPinInput     = '';
-var _obPinFirst     = '';
-var _obPinConfirmed = '';
+var obProfileMeta = {
+  starter:   { tagline: 'Simple, clear, and always in control.',        step3: 'Your accounts',       glow: 'rgba(0,200,150,0.06)'  },
+  household: { tagline: 'Your household finances, all in one place.',    step3: 'Accounts & mortgage', glow: 'rgba(240,83,138,0.06)' },
+  full:      { tagline: 'Complete visibility over everything you own.',  step3: 'Accounts & assets',   glow: 'rgba(245,158,11,0.06)' }
+};
+var obProfileNames = { starter: 'Track my spending', household: 'Budget smarter', full: 'Full financial picture' };
+var obAssetLabels  = { 'property': 'Property', 'equities': 'Investments', 'super': 'Superannuation', 'liabilities': 'Liabilities', 'investment-property': 'Investment property' };
 
-var _obHasPartner   = false;
-var _obP2Name       = '';
-var _obP2Phase      = 1;
-var _obP2Input      = '';
-var _obP2First      = '';
-var _obP2Confirmed  = '';
-
+var obAccountPanelMap = { starter: 'panel-accounts-starter', household: 'panel-accounts-household', full: 'panel-accounts-full' };
+var obAcctContainerMap = { starter: 'account-cards-starter', household: 'account-cards-household', full: 'account-cards-full' };
 var _OB_PILLS = ['Everyday','Spending','Savings','Joint','Offset','Emergency fund','Credit card','Business'];
 var _OB_DEFS  = ['Everyday','Savings','Joint',''];
 
-// ── Simple PIN hash (kf_pin_hash — separate from cff_pins) ────
+// ── Simple PIN hash (kf_pin_hash — separate from cff_pins SHA-256) ──
 function obHashPin(pin) {
-  var hash = 0;
-  var str = pin + 'kf_salt_2025';
-  for (var i = 0; i < str.length; i++) {
-    var c = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + c;
-    hash = hash & hash;
-  }
+  var hash = 0, str = pin + 'kf_salt_2025';
+  for (var i = 0; i < str.length; i++) { var c = str.charCodeAt(i); hash = ((hash << 5) - hash) + c; hash = hash & hash; }
   return hash.toString();
 }
-
-// ── Shake helper ──────────────────────────────────────────────
-function _obShake(el) {
+function obShake(el) {
   if (!el) return;
   el.classList.add('ob-shake');
-  el.addEventListener('animationend', function _f() {
-    el.classList.remove('ob-shake');
-    el.removeEventListener('animationend', _f);
-  });
+  el.addEventListener('animationend', function _f() { el.classList.remove('ob-shake'); el.removeEventListener('animationend', _f); });
 }
 
-// ── Init — called from DOMContentLoaded ──────────────────────
+// ── Init ──────────────────────────────────────────────────────
 function obInit() {
   var done = false;
   try { done = localStorage.getItem('kf_onboarding_complete') === 'true'; } catch(e) {}
@@ -2772,380 +3036,313 @@ function obInit() {
     document.documentElement.removeAttribute('data-ob-active');
     return;
   }
-  obShowScreen(1);
+  obUpdateSteps('panel-welcome');
+  ['starter','household','full'].forEach(function(p) { obRenderAccountCards(p, 2); });
 }
 
 // ── Navigation ────────────────────────────────────────────────
-function obGo(n) {
-  if (_obCurrent === 2) {
-    _obUserName = (document.getElementById('ob-name-inp').value || '').trim();
+function obGoTo(panelId) {
+  var panels = document.querySelectorAll('#onboarding-overlay .ob-panel');
+  for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
+  var target = document.getElementById(panelId);
+  if (target) {
+    target.classList.add('active');
+    var h = target.querySelector('[tabindex="-1"]');
+    if (h) setTimeout(function() { h.focus(); }, 260);
   }
-  if (_obCurrent === 3) {
-    var av = (document.getElementById('ob-appname-inp').value || '').trim();
-    _obAppName = av || 'Kelda Finance';
-  }
-  obShowScreen(n);
+  obUpdateSteps(panelId);
+  obUpdatePreviewBlur(panelId);
 }
 
-function obShowScreen(n) {
-  for (var i = 1; i <= 7; i++) {
-    var sc = document.getElementById('ob-s' + i);
-    if (sc) sc.classList.remove('ob-active', 'ob-screen-enter');
+function obUpdateSteps(panelId) {
+  var stepMap = {
+    'panel-welcome': 0, 'panel-name': 1, 'panel-profile': 2,
+    'panel-accounts-starter': 3, 'panel-accounts-household': 3, 'panel-accounts-full': 3,
+    'panel-security': 4
+  };
+  var step = stepMap[panelId] || 0;
+  for (var i = 1; i <= 4; i++) {
+    var circle = document.getElementById('step-circle-' + i);
+    var label  = document.getElementById('step-label-' + i);
+    var line   = document.getElementById('step-line-' + i);
+    if (!circle) continue;
+    circle.classList.remove('active','complete');
+    if (label) label.classList.remove('active','complete');
+    if (line) line.classList.remove('complete');
+    if (i < step) {
+      circle.classList.add('complete'); circle.innerHTML = '<span aria-hidden="true">✓</span>';
+      if (label) label.classList.add('complete');
+      if (line) line.classList.add('complete');
+    } else if (i === step) {
+      circle.classList.add('active'); circle.innerHTML = '<span aria-hidden="true">' + i + '</span>';
+      if (label) label.classList.add('active');
+    } else {
+      circle.innerHTML = '<span aria-hidden="true">' + i + '</span>';
+    }
   }
-  var tgt = document.getElementById('ob-s' + n);
-  if (!tgt) return;
-  _obCurrent = n;
-  tgt.classList.add('ob-active', 'ob-screen-enter');
-  tgt.addEventListener('animationend', function _ae() {
-    tgt.classList.remove('ob-screen-enter');
-    tgt.removeEventListener('animationend', _ae);
+}
+
+function obUpdatePreviewBlur(panelId) {
+  var card = document.getElementById('preview-card');
+  if (!card) return;
+  card.className = 'ob-preview-card';
+  var blurMap = {
+    'panel-name': 'reveal-1', 'panel-profile': 'reveal-2',
+    'panel-accounts-starter': 'reveal-3', 'panel-accounts-household': 'reveal-3', 'panel-accounts-full': 'reveal-3',
+    'panel-security': 'reveal-4'
+  };
+  if (blurMap[panelId]) card.classList.add(blurMap[panelId]);
+}
+
+// ── 2 — Name ──────────────────────────────────────────────────
+function obSubmitName() {
+  var inp = document.getElementById('inp-name');
+  var val = inp.value.trim();
+  var err = document.getElementById('err-name');
+  if (!val) { err.textContent = 'Please enter your name'; obShake(inp); return; }
+  err.textContent = ''; ob.name = val; obGoTo('panel-profile');
+}
+
+// ── 3 — Profile ───────────────────────────────────────────────
+function obSelectProfile(profile) {
+  ['starter','household','full'].forEach(function(p) {
+    var card = document.getElementById('card-' + p), check = document.getElementById('check-' + p);
+    card.classList.remove('selected'); card.setAttribute('aria-checked','false'); card.tabIndex = -1; check.textContent = '';
   });
+  var card = document.getElementById('card-' + profile), check = document.getElementById('check-' + profile);
+  card.classList.add('selected'); card.setAttribute('aria-checked','true'); card.tabIndex = 0; check.textContent = '✓';
+  ob.profile = profile;
 
-  // Progress bar: screens 2–6 = steps 1–6
-  var meta = document.getElementById('ob-meta');
-  if (meta) meta.style.display = (n >= 2 && n <= 6) ? 'block' : 'none';
-  if (n >= 2 && n <= 6) {
-    var step = n - 1;
-    var lbl = document.getElementById('ob-step-lbl');
-    var fill = document.getElementById('ob-prog-fill');
-    if (lbl)  lbl.textContent = 'Step ' + step + ' of 6';
-    if (fill) fill.style.width = Math.round((step / 6) * 100) + '%';
+  var meta = obProfileMeta[profile];
+  if (meta) {
+    document.getElementById('ob-tagline').textContent = meta.tagline;
+    var step3 = document.getElementById('step-label-3'); if (step3) step3.textContent = meta.step3;
+    document.getElementById('ob-left').style.setProperty('--accent-glow', meta.glow);
   }
+  var variants = document.querySelectorAll('.ob-preview-variant');
+  for (var i = 0; i < variants.length; i++) variants[i].classList.remove('active');
+  var variant = document.getElementById('preview-' + profile); if (variant) variant.classList.add('active');
 
-  // Per-screen setup
-  if (n === 3) {
-    var ai = document.getElementById('ob-appname-inp');
-    if (ai && !ai.value) ai.value = _obAppName;
-  }
-  if (n === 4) { _obRenderTiles(); }
-  if (n === 5) { _obRenderAcctCards(); }
-  if (n === 6) {
-    _obPinPhase = 1; _obPinInput = ''; _obPinFirst = '';
-    _obUpdatePinDots();
-    var ps = document.getElementById('ob-pin-sub');
-    var pe = document.getElementById('ob-pin-err');
-    if (ps) ps.textContent = 'Keeps your data private on this device. We never see it.';
-    if (pe) pe.textContent = '';
-  }
-  if (n === 2) {
-    setTimeout(function() {
-      var el = document.getElementById('ob-name-inp');
-      if (el) el.focus();
-    }, 280);
-  }
+  document.getElementById('btn-profile-continue').disabled = false;
+  setTimeout(function() { if (ob.profile === profile) obSubmitProfile(); }, 420);
 }
 
-// ── Screen 2 ──────────────────────────────────────────────────
-function obS2Continue() {
-  var inp = document.getElementById('ob-name-inp');
-  var err = document.getElementById('ob-name-err');
-  var val = inp ? inp.value.trim() : '';
-  if (!val) {
-    _obShake(inp);
-    if (err) err.style.display = 'block';
-    return;
-  }
-  _obUserName = val;
-  obGo(3);
+function obSubmitProfile() {
+  if (!ob.profile) return;
+  obRenderAccountCards(ob.profile, ob.accountCount);
+  obGoTo(obAccountPanelMap[ob.profile]);
 }
 
-// ── Screen 4 ──────────────────────────────────────────────────
-function _obRenderTiles() {
-  for (var v = 1; v <= 4; v++) {
-    var el = document.getElementById('ob-tile-' + v);
-    if (el) el.classList.toggle('ob-tile-sel', v === _obAcctCount);
-  }
-}
-
-function obSelectCount(n) {
-  _obAcctCount = n;
-  _obRenderTiles();
-}
-
-// ── Screen 5 ──────────────────────────────────────────────────
-function _obRenderAcctCards() {
-  var wrap = document.getElementById('ob-acct-cards');
-  if (!wrap) return;
+// ── 4 — Account cards ─────────────────────────────────────────
+function obRenderAccountCards(profile, count) {
+  var container = document.getElementById(obAcctContainerMap[profile]);
+  if (!container) return;
   var html = '';
-  for (var i = 0; i < _obAcctCount; i++) {
-    var def  = _OB_DEFS[i] !== undefined ? _OB_DEFS[i] : '';
-    var cur  = _obAcctNames[i] !== undefined ? _obAcctNames[i] : def;
-    html += '<div class="ob-acct">';
-    html += '<div class="ob-acct-num">Account ' + (i + 1) + '</div>';
-    html += '<span class="ob-label">ACCOUNT ' + (i + 1) + '</span>';
-    html += '<input id="ob-ai-' + i + '" class="ob-input" type="text"'
-         +  ' placeholder="Account name" value="' + cur.replace(/"/g,'&quot;') + '"'
-         +  ' oninput="obPillClear(' + i + ')"'
-         +  '/>';
-    html += '<div id="ob-ae-' + i + '" class="ob-err">Please name this account</div>';
-    html += '<div class="ob-pills" id="ob-pills-' + i + '">';
+  for (var i = 0; i < count; i++) {
+    var def = _OB_DEFS[i] || '';
+    var stored = ob.accounts[i] ? ob.accounts[i] : def;
+    html += '<div class="ob-account-card">'
+          + '<div class="ob-account-num">Account ' + (i+1) + '</div>'
+          + '<label class="ob-label" for="acct-' + profile + '-' + i + '">Account ' + (i+1) + ' name</label>'
+          + '<input class="ob-input" id="acct-' + profile + '-' + i + '" type="text" maxlength="30" value="' + obEsc(stored) + '" placeholder="Account name"'
+          + ' oninput="ob.accounts[' + i + ']=this.value.trim();obClearPills(this)">'
+          + '<span class="ob-error" id="acct-err-' + profile + '-' + i + '"></span>'
+          + '<div class="ob-pills-row">';
     for (var p = 0; p < _OB_PILLS.length; p++) {
-      var pt  = _OB_PILLS[p];
-      var sel = (pt === cur) ? ' ob-pill-sel' : '';
-      html += '<span class="ob-pill' + sel + '"'
-           +  ' onclick="obPillPick(' + i + ',\'' + pt.replace(/'/g,"\\'") + '\',this)">'
-           +  pt + '</span>';
+      var pill = _OB_PILLS[p];
+      var isSel = (stored === pill) ? ' selected' : '';
+      html += '<span class="ob-pill' + isSel + '" onclick="obPickPill(this,\'' + profile + '\',' + i + ',\'' + pill + '\')">' + pill + '</span>';
     }
     html += '</div></div>';
+    if (stored) ob.accounts[i] = stored;
   }
-  wrap.innerHTML = html;
+  container.innerHTML = html;
 }
-
-function obPillPick(idx, text, el) {
-  var inp  = document.getElementById('ob-ai-' + idx);
-  var err  = document.getElementById('ob-ae-' + idx);
-  var wrap = document.getElementById('ob-pills-' + idx);
-  if (inp) inp.value = text;
-  if (err) err.style.display = 'none';
-  if (wrap) {
-    var pills = wrap.querySelectorAll('.ob-pill');
-    for (var i = 0; i < pills.length; i++) pills[i].classList.remove('ob-pill-sel');
+function obEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function obPickPill(el, profile, idx, label) {
+  var card = el.closest('.ob-account-card');
+  var pills = card.querySelectorAll('.ob-pill'); for (var i = 0; i < pills.length; i++) pills[i].classList.remove('selected');
+  el.classList.add('selected');
+  var input = document.getElementById('acct-' + profile + '-' + idx);
+  if (input) { input.value = label; ob.accounts[idx] = label; }
+}
+function obClearPills(input) {
+  var card = input.closest('.ob-account-card');
+  if (card) { var pills = card.querySelectorAll('.ob-pill'); for (var i = 0; i < pills.length; i++) pills[i].classList.remove('selected'); }
+}
+function obSelectCount(el, count) {
+  var grid = el.closest('.ob-count-grid');
+  var tiles = grid.querySelectorAll('.ob-count-tile'); for (var i = 0; i < tiles.length; i++) tiles[i].classList.remove('selected');
+  el.classList.add('selected');
+  ob.accountCount = count;
+  obRenderAccountCards(ob.profile, count);
+}
+function obSubmitAccounts(profile) {
+  var valid = true;
+  for (var i = 0; i < ob.accountCount; i++) {
+    var input = document.getElementById('acct-' + profile + '-' + i);
+    var err   = document.getElementById('acct-err-' + profile + '-' + i);
+    if (!input) continue;
+    if (!input.value.trim()) { if (err) err.textContent = 'Please name this account'; obShake(input); valid = false; }
+    else { if (err) err.textContent = ''; ob.accounts[i] = input.value.trim(); }
   }
-  el.classList.add('ob-pill-sel');
+  if (valid) obGoTo('panel-security');
 }
 
-function obPillClear(idx) {
-  var err  = document.getElementById('ob-ae-' + idx);
-  var wrap = document.getElementById('ob-pills-' + idx);
-  if (err) err.style.display = 'none';
-  if (wrap) {
-    var pills = wrap.querySelectorAll('.ob-pill');
-    for (var i = 0; i < pills.length; i++) pills[i].classList.remove('ob-pill-sel');
+// ── Asset tiles (full) ────────────────────────────────────────
+function obToggleAsset(el, key) {
+  el.classList.toggle('selected');
+  var idx = ob.selectedAssets.indexOf(key);
+  if (idx > -1) ob.selectedAssets.splice(idx, 1); else ob.selectedAssets.push(key);
+}
+
+// ── 5 — Security ──────────────────────────────────────────────
+var obUser2Open = false;
+function obToggleUser2() {
+  obUser2Open = !obUser2Open;
+  document.getElementById('user2-toggle').classList.toggle('on', obUser2Open);
+  document.getElementById('user2-expand').classList.toggle('open', obUser2Open);
+  ob.user2Toggle = obUser2Open;
+}
+function obBackFromSecurity() { obGoTo(obAccountPanelMap[ob.profile] || 'panel-accounts-starter'); }
+
+function obSubmitSecurity() {
+  var pin = document.getElementById('inp-pin').value;
+  var confirm = document.getElementById('inp-pin-confirm').value;
+  var err = document.getElementById('err-pin');
+  if (!/^\d{4}$/.test(pin)) { err.textContent = 'PIN must be 4 digits'; obShake(document.getElementById('inp-pin')); return; }
+  if (pin !== confirm) { err.textContent = 'PINs don\'t match — try again'; document.getElementById('inp-pin-confirm').value = ''; obShake(document.getElementById('inp-pin-confirm')); return; }
+  if (obUser2Open) {
+    var u2 = document.getElementById('inp-user2').value.trim();
+    if (!u2) { document.getElementById('err-user2').textContent = 'Please enter their name'; obShake(document.getElementById('inp-user2')); return; }
+    document.getElementById('err-user2').textContent = '';
   }
+  err.textContent = '';
+  ob._pin = pin;
+  obCelebrate();
 }
 
-function obGoBack5() {
-  for (var i = 0; i < _obAcctCount; i++) {
-    var inp = document.getElementById('ob-ai-' + i);
-    if (inp) _obAcctNames[i] = inp.value.trim();
+// ── Helpers for recap/persistence ─────────────────────────────
+function obGetAccountNames() {
+  var arr = [];
+  for (var i = 0; i < ob.accountCount; i++) {
+    var nm = (ob.accounts[i] && ob.accounts[i].trim()) || _OB_DEFS[i] || ('Account ' + (i + 1));
+    arr.push(nm);
   }
-  obGo(4);
+  return arr;
+}
+function obGetMortgage() {
+  var lender = ((document.getElementById('mtg-lender') || {}).value || '').trim();
+  var bal = parseFloat((document.getElementById('mtg-balance') || {}).value);
+  var pay = parseFloat((document.getElementById('mtg-payment') || {}).value);
+  if (!lender && isNaN(bal) && isNaN(pay)) return null;
+  return { lender: lender || 'Home loan', balance: isNaN(bal) ? 0 : bal, payment: isNaN(pay) ? 0 : pay };
+}
+function obGetUser2() {
+  var nm = ((document.getElementById('inp-user2') || {}).value || '').trim();
+  return (ob.user2Toggle && nm) ? nm : '';
 }
 
-function obS5Continue() {
-  var ok = true;
-  var names = [];
-  for (var i = 0; i < _obAcctCount; i++) {
-    var inp = document.getElementById('ob-ai-' + i);
-    var err = document.getElementById('ob-ae-' + i);
-    var val = inp ? inp.value.trim() : '';
-    if (!val) {
-      ok = false;
-      _obShake(inp);
-      if (err) err.style.display = 'block';
-    } else {
-      names.push(val);
-    }
+// ── Recap card ────────────────────────────────────────────────
+function obBuildRecap() {
+  var names = obGetAccountNames();
+  var u2 = obGetUser2();
+  var items = [];
+  items.push({ ic: '◆', label: obProfileNames[ob.profile] || 'Your profile', sub: 'Your dashboard is tailored to this' });
+  items.push({ ic: '✓', label: names.length + (names.length === 1 ? ' account' : ' accounts') + ' added', sub: names.join(' · ') });
+  if (ob.profile === 'household') {
+    var m = obGetMortgage();
+    if (m) items.push({ ic: '✓', label: 'Mortgage tracked', sub: m.lender + (m.balance ? ' · ' + fmtWhole(m.balance) : '') });
+  } else if (ob.profile === 'full' && ob.selectedAssets.length) {
+    var labels = ob.selectedAssets.map(function(k) { return obAssetLabels[k] || k; });
+    items.push({ ic: '✓', label: ob.selectedAssets.length + ' asset types tracked', sub: labels.join(' · ') });
   }
-  if (!ok) return;
-  _obAcctNames = names;
-  while (_obAcctNames.length < 4) _obAcctNames.push('');
-  obGo(6);
+  items.push({ ic: '✓', label: 'Secured with a PIN', sub: 'Stored only on this device' });
+  if (u2) items.push({ ic: '✓', label: 'Shared with ' + u2, sub: 'They set their own PIN at first login' });
+
+  var html = ''
+    + '<div class="ob-recap-badge">🎉</div>'
+    + '<div class="ob-recap-title">You\'re all set, ' + obEsc(ob.name || 'there') + '</div>'
+    + '<div class="ob-recap-sub">Here\'s what we\'ve built for you. Opening your dashboard…</div>'
+    + '<div class="ob-recap-list">';
+  items.forEach(function(it, idx) {
+    html += '<div class="ob-recap-item" style="animation-delay:' + (0.15 + idx * 0.12) + 's">'
+          + '<div class="ob-recap-ic">' + it.ic + '</div>'
+          + '<div><b>' + obEsc(it.label) + '</b><span>' + obEsc(it.sub) + '</span></div></div>';
+  });
+  html += '</div><button class="ob-btn-primary" style="margin-top:0" onclick="obFinish()">Open my dashboard →</button>';
+  document.getElementById('recap-card').innerHTML = html;
 }
 
-// ── Screen 6: PIN ─────────────────────────────────────────────
-function _obUpdatePinDots() {
-  for (var i = 0; i < 4; i++) {
-    var d = document.getElementById('ob-pd' + i);
-    if (d) d.classList.toggle('ob-dot-on', i < _obPinInput.length);
-  }
+var obRecapTimer = null;
+function obCelebrate() {
+  obBuildRecap();
+  document.getElementById('ob-celebration').classList.add('show');
+  obRecapTimer = setTimeout(obFinish, 3200);
 }
 
-function obPinKey(digit) {
-  if (_obPinInput.length >= 4) return;
-  _obPinInput += digit;
-  _obUpdatePinDots();
-  if (_obPinInput.length === 4) setTimeout(_obPinDone, 150);
-}
-
-function obPinBack() {
-  _obPinInput = _obPinInput.slice(0, -1);
-  _obUpdatePinDots();
-}
-
-function _obPinDone() {
-  if (_obPinPhase === 1) {
-    _obPinFirst = _obPinInput;
-    _obPinInput = '';
-    _obPinPhase = 2;
-    _obUpdatePinDots();
-    var ps = document.getElementById('ob-pin-sub');
-    if (ps) ps.textContent = 'Confirm your PIN — enter it again';
-    var pe = document.getElementById('ob-pin-err');
-    if (pe) pe.textContent = '';
-  } else {
-    if (_obPinInput === _obPinFirst) {
-      _obPinConfirmed = _obPinInput;
-      obGo(7);
-    } else {
-      var dots = document.getElementById('ob-pin-dots');
-      if (dots) {
-        dots.classList.add('ob-shaking');
-        dots.addEventListener('animationend', function _f() {
-          dots.classList.remove('ob-shaking');
-          dots.removeEventListener('animationend', _f);
-        });
-      }
-      var pe2 = document.getElementById('ob-pin-err');
-      if (pe2) pe2.textContent = "PINs didn’t match — try again";
-      _obPinPhase = 1; _obPinInput = ''; _obPinFirst = '';
-      setTimeout(function() {
-        _obUpdatePinDots();
-        var ps2 = document.getElementById('ob-pin-sub');
-        if (ps2) ps2.textContent = 'Keeps your data private on this device. We never see it.';
-      }, 380);
-    }
-  }
-}
-
-function obGoBack6() {
-  _obPinPhase = 1; _obPinInput = ''; _obPinFirst = ''; _obPinConfirmed = '';
-  _obUpdatePinDots();
-  obGo(5);
-}
-
-// ── Screen 7: Optional second user ───────────────────────────
-function obSelectPartner(want) {
-  _obHasPartner = want;
-  var optP = document.getElementById('ob-opt-p');
-  var optS = document.getElementById('ob-opt-solo');
-  var form = document.getElementById('ob-p2-form');
-  if (optP) optP.classList.toggle('ob-opt-sel', want);
-  if (optS) optS.classList.toggle('ob-opt-sel', !want);
-  if (form) form.classList.toggle('ob-open', want);
-  if (!want) {
-    _obP2Phase = 1; _obP2Input = ''; _obP2First = ''; _obP2Confirmed = '';
-    _obUpdateP2Dots();
-    var ok = document.getElementById('ob-p2-ok');
-    if (ok) { ok.style.display = 'none'; ok.textContent = ''; }
-  }
-}
-
-function _obUpdateP2Dots() {
-  for (var i = 0; i < 4; i++) {
-    var d = document.getElementById('ob-p2d' + i);
-    if (d) d.classList.toggle('ob-dot-on', i < _obP2Input.length);
-  }
-}
-
-function obP2PinKey(digit) {
-  if (_obP2Confirmed) return;
-  if (_obP2Input.length >= 4) return;
-  var nameInp = document.getElementById('ob-p2-name');
-  var nameErr = document.getElementById('ob-p2-name-err');
-  var nv = nameInp ? nameInp.value.trim() : '';
-  if (!nv) {
-    _obShake(nameInp);
-    if (nameErr) nameErr.style.display = 'block';
-    return;
-  }
-  _obP2Name  = nv;
-  _obP2Input += digit;
-  _obUpdateP2Dots();
-  if (_obP2Input.length === 4) setTimeout(_obP2PinDone, 150);
-}
-
-function obP2PinBack() {
-  if (_obP2Confirmed) return;
-  _obP2Input = _obP2Input.slice(0, -1);
-  _obUpdateP2Dots();
-}
-
-function _obP2PinDone() {
-  var pe = document.getElementById('ob-p2-pin-err');
-  if (_obP2Phase === 1) {
-    _obP2First = _obP2Input;
-    _obP2Input = '';
-    _obP2Phase = 2;
-    _obUpdateP2Dots();
-    if (pe) pe.textContent = 'Enter the PIN again to confirm';
-  } else {
-    if (_obP2Input === _obP2First) {
-      _obP2Confirmed = _obP2Input;
-      if (pe) pe.textContent = '';
-      var ok = document.getElementById('ob-p2-ok');
-      var nameInp = document.getElementById('ob-p2-name');
-      var nm = nameInp ? nameInp.value.trim() : 'Partner';
-      if (ok) { ok.textContent = '✅ ' + nm + ' added'; ok.style.display = 'block'; }
-    } else {
-      var dots = document.getElementById('ob-p2-dots');
-      if (dots) {
-        dots.classList.add('ob-shaking');
-        dots.addEventListener('animationend', function _f() {
-          dots.classList.remove('ob-shaking');
-          dots.removeEventListener('animationend', _f);
-        });
-      }
-      if (pe) pe.textContent = "PINs didn’t match — try again";
-      _obP2Phase = 1; _obP2Input = ''; _obP2First = '';
-      setTimeout(function() { _obUpdateP2Dots(); if (pe) pe.textContent = ''; }, 400);
-    }
-  }
-}
-
-// ── Finish: commit to localStorage, hand off to app ──────────
+// ── Finish: persist everything, hand off to the existing login ──
+var _obFinished = false;
 function obFinish() {
-  var p2NameEl = document.getElementById('ob-p2-name');
-  var p2Name   = (_obHasPartner && _obP2Confirmed && p2NameEl) ? p2NameEl.value.trim() : '';
-  var p2Pin    = (_obHasPartner && _obP2Confirmed) ? _obP2Confirmed : '';
+  if (_obFinished) return; _obFinished = true;
+  if (obRecapTimer) { clearTimeout(obRecapTimer); obRecapTimer = null; }
 
-  // Write kf_* keys
+  var names = obGetAccountNames();
+  var u2 = obGetUser2();
+  var mort = (ob.profile === 'household') ? obGetMortgage() : null;
+  var pin = ob._pin || '';
+
+  // kf_* keys
   try { localStorage.setItem('kf_onboarding_complete', 'true'); } catch(e) {}
-  try { localStorage.setItem('kf_user_name',      _obUserName); } catch(e) {}
-  try { localStorage.setItem('kf_app_name',       _obAppName); } catch(e) {}
-  try { localStorage.setItem('kf_account_count',  String(_obAcctCount)); } catch(e) {}
-  try { localStorage.setItem('kf_accounts',       JSON.stringify(_obAcctNames.slice(0, _obAcctCount))); } catch(e) {}
-  try { localStorage.setItem('kf_pin_hash',       obHashPin(_obPinConfirmed)); } catch(e) {}
-  try { localStorage.setItem('kf_user2_name',     p2Name); } catch(e) {}
-  try { localStorage.setItem('kf_user2_pin_hash', p2Pin ? obHashPin(p2Pin) : ''); } catch(e) {}
+  try { localStorage.setItem('kf_user_name', ob.name); } catch(e) {}
+  try { localStorage.setItem('kf_app_name', 'Kelda Finance'); } catch(e) {}
+  try { localStorage.setItem('kf_profile', ob.profile || 'full'); } catch(e) {}
+  try { localStorage.setItem('kf_account_count', String(ob.accountCount)); } catch(e) {}
+  try { localStorage.setItem('kf_accounts', JSON.stringify(names)); } catch(e) {}
+  try { localStorage.setItem('kf_pin_hash', pin ? obHashPin(pin) : ''); } catch(e) {}
+  try { localStorage.setItem('kf_user2_name', u2); } catch(e) {}
+  try { localStorage.setItem('kf_user2_pin_hash', ''); } catch(e) {}
+  try { localStorage.setItem('kf_mortgage', mort ? JSON.stringify(mort) : ''); } catch(e) {}
+  try { localStorage.setItem('kf_assets', JSON.stringify(ob.selectedAssets || [])); } catch(e) {}
 
-  // Mark existing wizard as complete so it is skipped
+  // Mark legacy wizard complete so it is skipped; flag new salt
   try { localStorage.setItem('kelda_wizard_complete', 'true'); } catch(e) {}
   try { localStorage.setItem('kelda_pin_salt', 'v2'); } catch(e) {}
 
-  // Write names + account labels into the existing app's config
+  // Cross-pollinate into the existing app config (names + account labels)
   try {
     var uc = {};
     try { uc = JSON.parse(localStorage.getItem('cff_userconfig') || '{}') || {}; } catch(e2) {}
-    if (_obUserName) uc.p1name = _obUserName;
-    if (p2Name)      uc.p2name = p2Name;
+    if (ob.name) uc.p1name = ob.name;
+    if (u2) uc.p2name = u2;
+    uc.p2enabled = !!u2;
     var acctKeys = ['acct_offset','acct_home','acct_sav1','acct_sav2'];
-    for (var ai = 0; ai < 4; ai++) {
-      if (_obAcctNames[ai]) uc[acctKeys[ai]] = _obAcctNames[ai];
-    }
+    for (var ai = 0; ai < 4; ai++) { if (names[ai]) uc[acctKeys[ai]] = names[ai]; }
     localStorage.setItem('cff_userconfig', JSON.stringify(uc));
   } catch(e) {}
-  try { if (_obAppName) localStorage.setItem('cff_app_name', _obAppName); } catch(e) {}
+  try { localStorage.setItem('cff_app_name', 'Kelda Finance'); } catch(e) {}
 
-  // Hash PINs with the existing app's SHA-256 system and store in cff_pins
   function _handoff() {
     document.documentElement.removeAttribute('data-ob-active');
     var ov = document.getElementById('onboarding-overlay');
     if (ov) ov.style.display = 'none';
-    applyOnboardingToApp();
-    try { if (typeof applyAppName    === 'function') applyAppName(); }    catch(e) {}
+    try { if (typeof applyOnboardingToApp === 'function') applyOnboardingToApp(); } catch(e) {}
+    try { if (typeof applyAppName === 'function') applyAppName(); } catch(e) {}
     try { if (typeof applyUserConfig === 'function') applyUserConfig(); } catch(e) {}
-    try { if (typeof checkFirstRun   === 'function') checkFirstRun(); }   catch(e) {}
-    try { if (typeof selProfile      === 'function') selProfile('brenton'); } catch(e) {}
+    try { if (typeof checkFirstRun === 'function') checkFirstRun(); } catch(e) {}
+    try { if (typeof selProfile === 'function') selProfile('brenton'); } catch(e) {}
   }
 
-  // hashPin() is the app's async SHA-256 version from auth.js
-  if (_obPinConfirmed && typeof hashPin === 'function') {
-    hashPin(_obPinConfirmed).then(function(h1) {
+  // Hash the primary PIN with the app's SHA-256 system → cff_pins.brenton.
+  // Second user sets their own PIN at first login, so we store only their name.
+  if (pin && typeof hashPin === 'function') {
+    hashPin(pin).then(function(h1) {
       var pins = {};
       try { pins = JSON.parse(localStorage.getItem('cff_pins') || '{}') || {}; } catch(e) {}
       pins.brenton = h1;
-      if (p2Pin) {
-        hashPin(p2Pin).then(function(h2) {
-          pins.shelley = h2;
-          try { localStorage.setItem('cff_pins', JSON.stringify(pins)); } catch(e) {}
-          _handoff();
-        });
-      } else {
-        try { localStorage.setItem('cff_pins', JSON.stringify(pins)); } catch(e) {}
-        _handoff();
-      }
-    });
+      try { localStorage.setItem('cff_pins', JSON.stringify(pins)); } catch(e) {}
+      _handoff();
+    }).catch(function() { _handoff(); });
   } else {
     _handoff();
   }
@@ -3153,76 +3350,35 @@ function obFinish() {
 
 // ── Apply onboarding data to visible app elements ─────────────
 function applyOnboardingToApp() {
-  var name    = '';
-  var appName = 'Kelda Finance';
-  var count   = 0;
-  try { name    = localStorage.getItem('kf_user_name')      || ''; }              catch(e) {}
-  try { appName = localStorage.getItem('kf_app_name')       || 'Kelda Finance'; } catch(e) {}
-  try { count   = parseInt(localStorage.getItem('kf_account_count') || '0') || 0; } catch(e) {}
-
-  // Update app title elements
+  var name = '', appName = 'Kelda Finance';
+  try { name = localStorage.getItem('kf_user_name') || ''; } catch(e) {}
+  try { appName = localStorage.getItem('kf_app_name') || 'Kelda Finance'; } catch(e) {}
   var titleEls = document.querySelectorAll('#app-title, .app-name, [data-app-name]');
-  for (var i = 0; i < titleEls.length; i++) {
-    if (titleEls[i]) titleEls[i].textContent = appName;
-  }
-
-  // Greeting
+  for (var i = 0; i < titleEls.length; i++) { if (titleEls[i]) titleEls[i].textContent = appName; }
   if (name) {
-    var hr  = new Date().getHours();
+    var hr = new Date().getHours();
     var tod = hr < 12 ? 'morning' : (hr < 18 ? 'afternoon' : 'evening');
     var greet = 'Good ' + tod + ', ' + name;
     var gEls = document.querySelectorAll('#dashboard-greeting, .greeting, #db-hero-greeting');
-    for (var j = 0; j < gEls.length; j++) {
-      if (gEls[j]) gEls[j].textContent = greet;
-    }
+    for (var j = 0; j < gEls.length; j++) { if (gEls[j]) gEls[j].textContent = greet; }
   }
-
-  console.log('Kelda Finance onboarding complete. User: ' + name + ', Accounts: ' + count);
 }
 
-// ── Restore from backup (onboarding screen) ───────────────────
-function restoreFromBackup() {
-  var input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.style.display = 'none';
-  document.body.appendChild(input);
-  input.onchange = function(e) {
-    var file = e.target.files[0];
-    document.body.removeChild(input);
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        var d = JSON.parse(ev.target.result);
-        if (!d._version || !d._app) throw new Error('Not a valid backup file — please use a file exported from this app.');
-
-        if (d.transactions) save(K.tx,       d.transactions);
-        if (d.budgets)      save(K.budgets,  d.budgets);
-        if (d.goals)        save(K.goals,    d.goals);
-        if (d.bills)        save(K.bills,    d.bills);
-        if (d.mortgage)     save(K.mortgage, d.mortgage);
-        if (d.cashTracker)  save(K.ct,       d.cashTracker);
-        if (d.cashConfig)   save(K.ctcfg,    d.cashConfig);
-        if (d.insurance)    save(K.ins,      d.insurance);
-        if (d.super)        save(K.superdata,d.super);
-        if (d.pins)         save(K.pins,     d.pins);
-
-        localStorage.setItem('kf_onboarding_complete', 'true');
-
-        var exportedDate = d._exported ? new Date(d._exported).toLocaleString('en-AU') : 'unknown date';
-        localStorage.setItem('kf_restore_toast', '✅ Restored from backup (' + exportedDate + ')');
-        window.location.reload();
-      } catch(err) {
-        alert('❌ Could not restore: ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
+// ── Restore-from-backup link (welcome screen stub) ────────────
+function obShowRestoreMsg(el) {
+  var orig = el.getAttribute('data-orig') || el.textContent;
+  el.setAttribute('data-orig', orig);
+  el.textContent = 'Backup restore isn\'t available yet. Re-entering only takes 90 seconds.';
+  el.style.color = 'var(--n300)';
+  setTimeout(function() { el.textContent = orig; el.style.color = ''; }, 4000);
 }
 
-document.addEventListener('DOMContentLoaded', function() { obInit(); });
+// Enter submits the name field
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('inp-name');
+  if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') obSubmitName(); });
+  obInit();
+});
 </script>
 
 <!-- Init -->

@@ -1,0 +1,119 @@
+/* ══════════════════════════════════════════════════════════════
+   KELDA FINANCE — Dashboard tile grid (redesign)
+   Rendered into #page-dashboard by renderDashboard().
+   ══════════════════════════════════════════════════════════════ */
+
+.kd-dash { font-family: var(--font-body); color: #e8e8f0; }
+
+/* ── Header (greeting / date / period pills / actions) ── */
+.kd-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.kd-greeting { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text); white-space: nowrap; letter-spacing: -0.01em; }
+.kd-topdate { font-size: 12px; color: var(--muted); white-space: nowrap; margin-right: 4px; }
+.kd-pills { display: flex; gap: 5px; }
+.kd-pill { padding: 5px 13px; border-radius: 99px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; color: var(--muted); border: 0.5px solid transparent; transition: all .12s; background: none; font-family: var(--font-body); }
+.kd-pill:hover { color: var(--text); border-color: var(--border); }
+.kd-pill.active { color: var(--pink); border-color: rgba(240,83,138,0.4); background: rgba(240,83,138,0.09); }
+.kd-top-r { display: flex; align-items: center; gap: 7px; margin-left: auto; }
+.kd-ibtn { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,0.04); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); font-size: 16px; position: relative; transition: all .12s; }
+.kd-ibtn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+.kd-ndot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; background: var(--pink); border-radius: 50%; border: 1.5px solid var(--card); }
+.kd-addbtn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--pink); color: #fff; border: none; border-radius: 99px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: var(--font-body); transition: opacity .12s; }
+.kd-addbtn:hover { opacity: .9; }
+
+/* ── Tile grid ── */
+.kd-bodywrap { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; align-items: stretch; }
+.kdt { background: var(--card); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; min-height: 248px; min-width: 0; transition: border-color .15s; }
+.kdt:hover { border-color: rgba(240,83,138,0.22); }
+.kdt-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+.kdt-ttl { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+.kdt-ttl i { font-size: 12px; }
+.kdt-act { font-size: 11px; color: var(--pink); cursor: pointer; font-weight: 500; white-space: nowrap; background: none; border: none; font-family: var(--font-body); }
+.kdt-act:hover { color: var(--pink-light); }
+.kd-pillbadge { font-size: 9.5px; background: rgba(240,83,138,0.1); color: var(--pink-light); border: 0.5px solid rgba(240,83,138,0.25); border-radius: 99px; padding: 2px 8px; font-weight: 600; }
+
+/* Net worth tile */
+.kd-nw-big { font-family: var(--font-mono); font-size: 28px; font-weight: 500; color: var(--text); letter-spacing: -0.02em; line-height: 1; margin-bottom: 2px; }
+.kd-nw-delta { font-size: 11px; color: var(--green); margin-bottom: 10px; }
+.kd-sep { height: 0.5px; background: var(--border); margin: 0 0 10px; }
+.kd-cflbl { font-size: 9px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.kd-cf3 { display: flex; gap: 14px; margin-bottom: 10px; }
+.kd-cfi label { display: block; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+.kd-cfi span { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.kd-donut-wrap { display: flex; align-items: center; gap: 18px; margin-top: auto; padding-top: 14px; border-top: 0.5px solid var(--border); }
+.kd-leg { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.kd-leg-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kd-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* Simple asset/tx rows */
+.kd-acc { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+.kd-acc:last-of-type { border-bottom: none; }
+.kd-acc-ic { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.kd-acc-name { font-size: 12.5px; color: var(--text); font-weight: 500; }
+.kd-acc-sub { font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+.kd-acc-bal { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; margin-left: auto; flex-shrink: 0; }
+
+/* Account rows with trend (tile 2) */
+.kd-acc2 { display: flex; align-items: center; gap: 13px; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+.kd-acc2:first-of-type { padding-top: 4px; }
+.kd-acc2:last-of-type { border-bottom: none; }
+.kd-acc2-ic { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.kd-acc2-main { min-width: 0; }
+.kd-acc2-name { font-size: 14px; color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kd-acc2-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.kd-acc2-spark { flex: 0 1 96px; min-width: 40px; height: 40px; margin-left: auto; opacity: .95; }
+.kd-acc2-r { text-align: right; flex-shrink: 0; min-width: 74px; }
+.kd-acc2-delta { font-family: var(--font-mono); font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.kd-acc2-delta.up { color: var(--green); }
+.kd-acc2-delta.down { color: var(--amber); }
+.kd-acc2-bal { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+.kd-acc-total { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; border-top: 0.5px solid var(--border); }
+.kd-acc-total-l { font-size: 10px; color: var(--muted); }
+.kd-acc-total-v { font-family: var(--font-mono); font-size: 13px; color: var(--green); font-weight: 500; }
+
+/* Stat chips + chart area (budget / forecast) */
+.kd-bud-top { display: flex; gap: 8px; margin-bottom: 12px; }
+.kd-bs { flex: 1; text-align: center; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 7px 4px; }
+.kd-bs-l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+.kd-bs-v { font-family: var(--font-mono); font-size: 14px; font-weight: 500; }
+.kd-chart-area { flex: 1; min-height: 96px; }
+
+/* Goals (tile 4) */
+.kd-goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
+.kd-goal-card { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.kd-goal-name { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.3; margin-top: 3px; }
+.kd-goal-amt { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+
+/* Bills (tile 5) */
+.kd-bchips { display: flex; gap: 6px; margin-bottom: 10px; }
+.kd-bchip { flex: 1; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 7px 4px; text-align: center; }
+.kd-bchip-l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+.kd-bchip-v { font-family: var(--font-mono); font-size: 14px; font-weight: 500; }
+.kd-bill { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+.kd-bill:last-of-type { border-bottom: none; }
+.kd-bill-ic { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.kd-bill-name { font-size: 12px; color: var(--text); font-weight: 500; }
+.kd-bill-due { font-size: 9.5px; margin-top: 1px; }
+.kd-bill-r { margin-left: auto; text-align: right; flex-shrink: 0; }
+.kd-bill-amt { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; color: var(--text); }
+.kd-bill-pay { font-size: 9.5px; color: var(--pink); cursor: pointer; font-weight: 600; margin-top: 2px; }
+
+/* Forecast note (tile 6) */
+.kd-fc-note { display: flex; align-items: center; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 0.5px solid var(--border); font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.kd-fc-note b { font-weight: 500; }
+.kd-fc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+.kd-empty { font-size: 12px; color: var(--muted); padding: 10px 0; line-height: 1.5; }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .kd-bodywrap { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 760px) {
+  .kd-bodywrap { grid-template-columns: 1fr; }
+  .kdt { min-height: 0; }
+  .kd-top { gap: 8px; }
+  .kd-greeting { font-size: 16px; white-space: normal; }
+  .kd-pills { order: 3; width: 100%; }
+  .kd-top-r { margin-left: auto; }
+}

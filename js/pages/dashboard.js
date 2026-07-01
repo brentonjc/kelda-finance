@@ -926,47 +926,411 @@ function renderDashboard() {
   dbYear  = new Date().getFullYear();
   dbMonth = new Date().getMonth() + 1;
 
-  migrateTxCategories();
-
-  // ── Populate historical net worth data (first run only) ──────
+  // ── Data-recording side effects (kept from the previous dashboard) ──
+  try { migrateTxCategories(); } catch(e) {}
   try { populateNetWorthHistory(); } catch(e) { console.warn('populate nw history', e); }
-
-  // ── Gamification sequence ───────────────────────────────────
   try { recordNetWorthSnapshot(); } catch(e) { console.warn('nw snapshot', e); }
-  var _savStreak, _budStreak;
-  try { _savStreak = calculateSavingsStreak(); } catch(e) { _savStreak = { count:0, months:[] }; }
-  try { _budStreak = calculateBudgetStreak(); } catch(e) { _budStreak = { count:0, months:[] }; }
-  try { renderStreaks(_savStreak, _budStreak); } catch(e) {}
-  try { renderActionCards(generateActionCards()); } catch(e) { console.warn('action cards', e); }
 
-  // ── Greeting ────────────────────────────────────────────────
-  var _now  = new Date();
-  var _hr   = _now.getHours();
-  var _greetText = _hr < 12 ? 'GOOD MORNING' : _hr < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
-  var _hgEl = document.getElementById('db-hero-greeting');
-  if (_hgEl) _hgEl.textContent = _greetText;
-  var _gnEl = document.getElementById('db-greeting-name');
-  if (_gnEl) {
-    var _gname = typeof getUserName === 'function' ? getUserName(activeProfile) : activeProfile;
-    _gnEl.textContent = (_gname && _gname !== 'joint') ? _gname : 'Welcome back';
+  try { kdRenderDashboard(); }
+  catch(e) { console.error('dashboard render', e); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// REDESIGNED DASHBOARD — 3×2 tile grid, wired to real data,
+// tailored by the onboarding profile (kf_profile).
+// ══════════════════════════════════════════════════════════════
+var kdCycle = ['var(--pink)', 'var(--green)', 'var(--amber)', '#f48cb2'];
+
+function kdGet(key, def) { try { var v = localStorage.getItem(key); return v === null ? def : v; } catch(e) { return def; } }
+function kdGetJSON(key, def) { try { var v = localStorage.getItem(key); return v ? (JSON.parse(v) || def) : def; } catch(e) { return def; } }
+
+function kdShort(n) {
+  n = Math.round(Number(n) || 0); var a = Math.abs(n), s;
+  if (a >= 1000000) s = '$' + (a / 1000000).toFixed(a % 1000000 === 0 ? 0 : 1) + 'm';
+  else if (a >= 1000) s = '$' + (a / 1000).toFixed(a % 1000 === 0 ? 0 : 1) + 'k';
+  else s = '$' + a;
+  return n < 0 ? '−' + s : s;
+}
+function kdEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── deterministic helpers (decorative forecast shape only) ──
+function kdHash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function kdRng(seed){ return function(){ seed=(seed+0x6D2B79F5)>>>0; var t=seed; t=Math.imul(t^(t>>>15),1|t); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+function kdSparkReal(vals, up) {
+  vals = (vals && vals.length) ? vals : [0, 0];
+  if (vals.length === 1) vals = [vals[0], vals[0]];
+  var w = 96, h = 40, pad = 4;
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  var rng = (max - min) || 1, ih = h - pad * 2;
+  var coords = vals.map(function(v, i) {
+    var x = (i / (vals.length - 1)) * w;
+    var y = pad + (1 - ((v - min) / rng)) * ih;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  var color = up ? 'var(--green)' : 'var(--amber)';
+  var fill = up ? 'rgba(0,200,150,0.12)' : 'rgba(245,158,11,0.12)';
+  return '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="display:block">'
+    + '<polyline points="0,' + h + ' ' + coords.join(' ') + ' ' + w + ',' + h + '" fill="' + fill + '" stroke="none"/>'
+    + '<polyline points="' + coords.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '<circle cx="' + w + '" cy="' + coords[coords.length - 1].split(',')[1] + '" r="2.2" fill="' + color + '"/></svg>';
+}
+
+function kdDonut(segs) {
+  var total = segs.reduce(function(s, x) { return s + Math.max(x.value, 0); }, 0) || 1;
+  var C = 2 * Math.PI * 46, acc = 0, circles = '';
+  segs.forEach(function(x) {
+    var len = (Math.max(x.value, 0) / total) * C;
+    circles += '<circle cx="58" cy="58" r="46" fill="none" stroke="' + x.color + '" stroke-width="15" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" stroke-dashoffset="' + (-acc).toFixed(1) + '" transform="rotate(-90 58 58)"/>';
+    acc += len;
+  });
+  return '<svg width="116" height="116" viewBox="0 0 116 116" role="img" style="flex-shrink:0">'
+    + '<circle cx="58" cy="58" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="15"/>'
+    + circles
+    + '<text x="58" y="62" text-anchor="middle" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="11">assets</text></svg>';
+}
+
+function kdRing(pct, color) {
+  var C = 2 * Math.PI * 24, len = (pct / 100) * C;
+  return '<svg width="64" height="64" viewBox="0 0 64 64" role="img">'
+    + '<circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>'
+    + '<circle cx="32" cy="32" r="24" fill="none" stroke="' + color + '" stroke-width="8" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" transform="rotate(-90 32 32)"/>'
+    + '<text x="32" y="36" text-anchor="middle" fill="' + color + '" font-family="DM Mono,monospace" font-size="11" font-weight="500">' + pct + '%</text></svg>';
+}
+
+function kdForecastChart() {
+  var W=300,H=124,n=24,todayIdx=9,pad=10,rnd=kdRng(777),v=0.42,pts=[];
+  for(var i=0;i<n;i++){ v+=0.006+(rnd()-0.5)*0.05; if(i===6)v+=0.16; if(i===17)v+=0.16; if(i===11)v-=0.14; v=Math.max(0.12,Math.min(0.9,v)); pts.push(v); }
+  var ih=H-pad*2; function X(i){return (i/(n-1))*W;} function Y(p){return pad+(1-p)*ih;}
+  var coords=pts.map(function(p,i){return X(i).toFixed(1)+','+Y(p).toFixed(1);});
+  var actual=coords.slice(0,todayIdx+1), forecast=coords.slice(todayIdx);
+  var lowIdx=todayIdx,lowV=pts[todayIdx]; for(var j=todayIdx;j<n;j++){ if(pts[j]<lowV){lowV=pts[j];lowIdx=j;} }
+  var tX=X(todayIdx);
+  return '<svg width="100%" height="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img">'
+    + '<defs><linearGradient id="kdfcgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(0,200,150,0.22)"/><stop offset="100%" stop-color="rgba(0,200,150,0)"/></linearGradient></defs>'
+    + '<polyline points="0,'+H+' '+coords.join(' ')+' '+W+','+H+'" fill="url(#kdfcgrad)" stroke="none"/>'
+    + '<line x1="'+tX.toFixed(1)+'" y1="'+pad+'" x2="'+tX.toFixed(1)+'" y2="'+(H-pad)+'" stroke="rgba(255,255,255,0.14)" stroke-width="0.8" stroke-dasharray="3 3"/>'
+    + '<text x="'+(tX+4).toFixed(1)+'" y="'+(pad+8)+'" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="8">today</text>'
+    + '<polyline points="'+actual.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '<polyline points="'+forecast.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>'
+    + '<circle cx="'+X(lowIdx).toFixed(1)+'" cy="'+Y(lowV).toFixed(1)+'" r="3" fill="var(--amber)"/></svg>';
+}
+
+// ── Per-category budget vs actual for a month prefix (YYYY-MM) ──
+function dbBudgetActuals(prefix) {
+  var txns = (typeof activeTX === 'function') ? activeTX() : [];
+  var keys = Object.keys((typeof LBUDGETS !== 'undefined' && LBUDGETS) ? LBUDGETS : {});
+  var rows = [];
+  for (var i = 0; i < keys.length; i++) {
+    var catId = keys[i]; var cap = Number(LBUDGETS[catId]) || 0; if (!cap) continue;
+    var cat = (typeof LCATS !== 'undefined' && LCATS) ? LCATS.find(function(c){ return c.id === catId; }) : null;
+    var nm = cat ? cat.name : catId;
+    var col = (cat && cat.color) ? cat.color : 'var(--green)';
+    var spent = txns.filter(function(t){
+      return t.type === 'expense' && t.date && t.date.indexOf(prefix) === 0 && (t.catId === catId || t.category === nm);
+    }).reduce(function(s,t){ return s + Number(t.amount || 0); }, 0);
+    rows.push({ name: nm, color: col, cap: cap, spent: spent });
   }
-  var _gdEl = document.getElementById('db-greeting-date');
-  if (_gdEl) {
-    var _dayStr = _now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-    var _monStr = _now.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
-    _gdEl.textContent = _dayStr + ' · showing ' + _monStr;
+  var budgeted = rows.reduce(function(s,r){ return s + r.cap; }, 0);
+  var spent = rows.reduce(function(s,r){ return s + r.spent; }, 0);
+  return { rows: rows, budgeted: budgeted, spent: spent, left: budgeted - spent };
+}
+
+function kdBudgetChart(rows) {
+  rows = rows.slice().sort(function(a,b){ return b.cap - a.cap; }).slice(0, 6);
+  if (!rows.length) return '<div class="kd-empty">No budgets set yet.</div>';
+  var scale = 1;
+  rows.forEach(function(r){ scale = Math.max(scale, r.cap, r.spent); });
+  var baseY = 110, maxH = 100, bw = 34, step = 48, x0 = 10;
+  var svg = '<svg width="100%" height="100%" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid meet" role="img">'
+    + '<line x1="0" y1="110" x2="300" y2="110" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>'
+    + '<line x1="0" y1="80" x2="300" y2="80" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>'
+    + '<line x1="0" y1="50" x2="300" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>';
+  rows.forEach(function(r, i) {
+    var x = x0 + step * i;
+    var label = kdEsc((r.name || '').split(' ')[0].slice(0, 6));
+    var pct = r.cap ? (r.spent / r.cap) : 0;
+    if (r.spent > r.cap && r.cap > 0) {
+      svg += '<rect x="' + x + '" y="10" width="' + bw + '" height="100" rx="3" fill="var(--pink)"/>'
+        + '<text x="' + (x + bw/2) + '" y="6" text-anchor="middle" fill="var(--pink)" font-family="DM Mono,monospace" font-size="7">over</text>';
+    } else {
+      var capH = Math.min(maxH, (r.cap / scale) * maxH);
+      var spendH = Math.min(maxH, (r.spent / scale) * maxH);
+      var color = pct >= 1 ? 'var(--pink)' : pct >= 0.8 ? '#f48cb2' : 'var(--green)';
+      svg += '<rect x="' + x + '" y="' + (baseY - capH) + '" width="' + bw + '" height="' + capH + '" rx="3" fill="rgba(0,200,150,0.16)"/>'
+        + '<rect x="' + x + '" y="' + (baseY - spendH) + '" width="' + bw + '" height="' + spendH + '" rx="3" fill="' + color + '"/>';
+    }
+    svg += '<text x="' + (x + bw/2) + '" y="127" text-anchor="middle" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="7.5">' + label + '</text>';
+  });
+  return svg + '</svg>';
+}
+
+// ── Account kind/icon/colour inferred from the account name ──
+function kdAcctMeta(name) {
+  var n = (name || '').toLowerCase();
+  if (/sav|emerg/.test(n))   return { kind: 'Savings',     i: 'ti-pig-money',    c: 'var(--green)' };
+  if (/offset/.test(n))      return { kind: 'Offset',      i: 'ti-shield-check', c: 'var(--pink)'  };
+  if (/joint/.test(n))       return { kind: 'Joint',       i: 'ti-users',        c: 'var(--pink)'  };
+  if (/credit|card/.test(n)) return { kind: 'Credit card', i: 'ti-credit-card',  c: 'var(--muted)' };
+  if (/business/.test(n))    return { kind: 'Business',    i: 'ti-briefcase',    c: 'var(--green)' };
+  if (/everyday|spend|transac/.test(n)) return { kind: 'Everyday', i: 'ti-credit-card', c: 'var(--pink)' };
+  return { kind: 'Transaction', i: 'ti-wallet', c: 'var(--amber)' };
+}
+
+// Period-pill visual toggle
+function kdPill(el) {
+  var pills = el.parentNode.querySelectorAll('.kd-pill');
+  for (var i = 0; i < pills.length; i++) pills[i].classList.remove('active');
+  el.classList.add('active');
+}
+
+// ══ Main render ══
+function kdRenderDashboard() {
+  var host = document.getElementById('page-dashboard');
+  if (!host) return;
+
+  var profile = kdGet('kf_profile', 'full') || 'full';
+  var name = kdGet('kf_user_name', '') || (typeof getUserName === 'function' ? getUserName(activeProfile) : '');
+  if (!name || name === 'joint') name = 'there';
+  var first = name.charAt(0).toUpperCase();
+  var u2 = kdGet('kf_user2_name', '') || '';
+
+  var now = new Date(), hr = now.getHours();
+  var greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+  var dateStr = now.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+
+  // Last completed month
+  var lmDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var lmY = lmDate.getFullYear(), lmM = lmDate.getMonth() + 1;
+  var lmPrefix = lmY + '-' + String(lmM).padStart(2, '0');
+  var lmSum = (typeof getMonthSummary === 'function') ? getMonthSummary(lmY, lmM) : { income:0, expenses:0, surplus:0 };
+
+  // Cash accounts + balances
+  var months = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
+  var lm = months.length ? months[months.length - 1] : null;
+  var prevM = months.length >= 2 ? months[months.length - 2] : null;
+  var last6 = months.slice(-6);
+  var accts = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS) ? CT_ACCTS : [];
+  function bal(id, m) { return (typeof CT !== 'undefined' && CT[id] ? CT[id] : {})[m] || 0; }
+  var cash = accts.reduce(function(s, a) { return s + (lm ? bal(a.id, lm) : 0); }, 0);
+  var prevCash = accts.reduce(function(s, a) { return s + (prevM ? bal(a.id, prevM) : 0); }, 0);
+
+  var nw = (typeof computeCurrentNetWorth === 'function')
+    ? computeCurrentNetWorth()
+    : { bank: cash, super_: 0, property: 0, equities: 0, liabilities: 0, netWorth: cash };
+
+  var kfMort = kdGetJSON('kf_mortgage', null);
+  var kfAssets = kdGetJSON('kf_assets', []);
+
+  // ── TILE 1 — Net worth / Total balance ──
+  var nwTitle, nwBig, nwDelta, segs;
+  if (profile === 'household') {
+    var mlist = (typeof liabAllMortgages === 'function') ? liabAllMortgages() : [];
+    var mBal = 0, mHome = 0;
+    mlist.forEach(function(m){ mBal += Number(m.balance) || 0; mHome += Number(m.homeValue) || 0; });
+    if (!mBal && kfMort) { mBal = Number(kfMort.balance) || 0; }
+    if (!mHome) mHome = Math.max(720000, Math.round(mBal * 1.34));
+    var equity = mHome - mBal;
+    nwTitle = 'Net worth'; nwBig = fmtWhole(cash + equity);
+    nwDelta = (lmSum.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(lmSum.surplus)) + ' this month';
+    segs = [{ label: 'Cash', value: Math.max(cash, 0), color: 'var(--pink)' }, { label: 'Home equity', value: Math.max(equity, 0), color: 'var(--green)' }];
+  } else if (profile === 'full') {
+    var seed = { property: 920000, equities: 64500, 'super': 138200, liabilities: -8400, 'investment-property': 610000 };
+    segs = [{ label: 'Cash', value: Math.max(cash, 0), color: 'var(--pink)' }];
+    var assetSel = (kfAssets && kfAssets.length) ? kfAssets : [];
+    var realMap = { property: nw.property, equities: nw.equities, 'super': nw.super_, liabilities: -Math.abs(nw.liabilities || 0), 'investment-property': 0 };
+    var labelMap = { property: 'Property', equities: 'Investments', 'super': 'Super', liabilities: 'Liabilities', 'investment-property': 'Inv. property' };
+    var aTotal = 0;
+    if (assetSel.length) {
+      assetSel.forEach(function(k, i) {
+        var v = realMap[k] || seed[k] || 0;
+        aTotal += v;
+        if (v > 0) segs.push({ label: labelMap[k] || k, value: v, color: kdCycle[(i + 1) % kdCycle.length] });
+      });
+    } else {
+      // fall back to Super + Investments
+      segs.push({ label: 'Super', value: seed['super'], color: 'var(--green)' });
+      segs.push({ label: 'Investments', value: seed.equities, color: 'var(--amber)' });
+      aTotal = seed['super'] + seed.equities;
+    }
+    nwTitle = 'Net worth'; nwBig = fmtWhole(cash + aTotal);
+    nwDelta = (lmSum.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(lmSum.surplus)) + ' this quarter';
+  } else {
+    nwTitle = 'Total balance'; nwBig = fmtWhole(cash);
+    var d = cash - prevCash;
+    nwDelta = (d >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(d)) + ' this month';
+    segs = accts.filter(function(a){ return (lm ? bal(a.id, lm) : 0) > 0; })
+      .map(function(a, i){ return { label: (typeof ctLabel === 'function' ? ctLabel(a) : a.id), value: bal(a.id, lm), color: kdCycle[i % kdCycle.length] }; });
+    if (!segs.length) segs = [{ label: 'Cash', value: 1, color: 'var(--pink)' }];
+  }
+  var segTotal = segs.reduce(function(s, y){ return s + Math.max(y.value, 0); }, 0) || 1;
+  var legend = segs.map(function(x){
+    var pct = Math.round((Math.max(x.value, 0) / segTotal) * 100);
+    return '<div class="kd-leg-item"><div class="kd-leg-dot" style="background:' + x.color + '"></div>' + kdEsc(x.label) + ' · ' + pct + '%</div>';
+  }).join('');
+  var tileNW = '<div class="kdt">'
+    + '<div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-pie"></i> ' + nwTitle + '</div><button class="kdt-act" onclick="go(\'assets\')">Details</button></div>'
+    + '<div class="kd-nw-big">' + nwBig + '</div>'
+    + '<div class="kd-nw-delta" style="color:' + (lmSum.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + nwDelta + '</div>'
+    + '<div class="kd-sep"></div>'
+    + '<div class="kd-cflbl">Last month cashflow</div>'
+    + '<div class="kd-cf3"><div class="kd-cfi"><label>Income</label><span style="color:var(--green)">+' + fmtWhole(lmSum.income) + '</span></div>'
+    + '<div class="kd-cfi"><label>Spent</label><span style="color:var(--muted)">−' + fmtWhole(lmSum.expenses) + '</span></div>'
+    + '<div class="kd-cfi"><label>Saved</label><span style="color:var(--pink)">' + (lmSum.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(lmSum.surplus)) + '</span></div></div>'
+    + '<div class="kd-donut-wrap">' + kdDonut(segs) + '<div class="kd-leg">' + legend + '</div></div>'
+    + '</div>';
+
+  // ── TILE 2 — Bank accounts ──
+  var acctRows = accts.length ? accts.map(function(a) {
+    var nm = (typeof ctLabel === 'function') ? ctLabel(a) : (typeof getAccountName === 'function' ? getAccountName(a.id) : a.id);
+    var meta = kdAcctMeta(nm);
+    var b = lm ? bal(a.id, lm) : 0;
+    var pb = prevM ? bal(a.id, prevM) : b;
+    var delta = b - pb;
+    var pct = pb ? (delta / Math.abs(pb) * 100) : 0;
+    var up = delta >= 0;
+    var sparkVals = last6.length ? last6.map(function(m){ return bal(a.id, m); }) : [b, b];
+    return '<div class="kd-acc2"><div class="kd-acc2-ic" style="background:color-mix(in srgb,' + meta.c + ' 14%, transparent)"><i class="ti ' + meta.i + '" style="color:' + meta.c + '"></i></div>'
+      + '<div class="kd-acc2-main"><div class="kd-acc2-name">' + kdEsc(nm) + '</div><div class="kd-acc2-sub">' + meta.kind + '</div></div>'
+      + '<div class="kd-acc2-spark">' + kdSparkReal(sparkVals, up) + '</div>'
+      + '<div class="kd-acc2-r"><div class="kd-acc2-delta ' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + (delta < 0 ? '−' : '+') + fmtWhole(Math.abs(delta)).replace('−','') + '</div>'
+      + '<div class="kd-acc2-bal">' + fmtWhole(b) + ' · ' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</div></div></div>';
+  }).join('') : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'cash\')">add balances →</span></div>';
+  var tileAcc = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div><button class="kdt-act" onclick="go(\'cash\')">Manage</button></div>'
+    + acctRows
+    + '<div class="kd-acc-total"><span class="kd-acc-total-l">Total cash</span><span class="kd-acc-total-v">' + fmtWhole(cash) + '</span></div></div>';
+
+  // ── TILE 3 — Budget (last month) ──
+  var bud = dbBudgetActuals(lmPrefix);
+  var tileBudget = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-target"></i> Budget · last month</div><button class="kdt-act" onclick="go(\'bva\')">Edit</button></div>'
+    + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Budgeted</div><div class="kd-bs-v" style="color:var(--text)">' + fmtWhole(bud.budgeted) + '</div></div>'
+    + '<div class="kd-bs"><div class="kd-bs-l">Spent</div><div class="kd-bs-v" style="color:var(--muted)">' + fmtWhole(bud.spent) + '</div></div>'
+    + '<div class="kd-bs"><div class="kd-bs-l">Left</div><div class="kd-bs-v" style="color:' + (bud.left < 0 ? 'var(--amber)' : 'var(--green)') + '">' + fmtWhole(bud.left) + '</div></div></div>'
+    + '<div class="kd-chart-area">' + kdBudgetChart(bud.rows) + '</div></div>';
+
+  // ── TILE 4 — Savings goals ──
+  var goals = (typeof GOALS !== 'undefined' && GOALS) ? GOALS.slice(0, 4) : [];
+  var goalsInner;
+  if (goals.length) {
+    goalsInner = '<div class="kd-goals-grid">' + goals.map(function(g, i) {
+      var cur = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
+      var tgt = (typeof _goalTarget === 'function') ? _goalTarget(g) : (Number(g.targetAmount) || Number(g.target) || 0);
+      var pct = tgt ? Math.min(100, Math.round(cur / tgt * 100)) : 0;
+      var color = kdCycle[i % kdCycle.length];
+      return '<div class="kd-goal-card">' + kdRing(pct, color)
+        + '<div class="kd-goal-name">' + kdEsc(g.name || 'Goal') + '</div>'
+        + '<div class="kd-goal-amt">' + kdShort(cur) + ' / ' + kdShort(tgt) + '</div></div>';
+    }).join('') + '</div>';
+  } else {
+    goalsInner = '<div class="kd-empty">No savings goals yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'goals\')">add one →</span></div>';
+  }
+  var tileGoals = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-pig-money"></i> Savings goals</div><button class="kdt-act" onclick="go(\'goals\')">+ Add</button></div>' + goalsInner + '</div>';
+
+  // ── TILE 5 — Bills (last month / upcoming) ──
+  var bills = (typeof BILLS !== 'undefined' && BILLS) ? BILLS : [];
+  var todayDay = now.getDate();
+  var monShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function billDateLabel(b) {
+    var due = Number(b.due) || 1;
+    var diff = due - todayDay;
+    var dt = new Date(now.getFullYear(), now.getMonth() + (diff < 0 ? 1 : 0), due);
+    var lbl = 'Due ' + monShort[dt.getMonth()] + ' ' + dt.getDate();
+    if (diff === 0) return lbl + ' · today';
+    if (diff < 0) return lbl + ' · ' + Math.abs(diff) + 'd';
+    return lbl + ' · ' + diff + ' days';
+  }
+  var overdue = bills.filter(function(b){ return !b.paid && (Number(b.due)||1) < todayDay; });
+  var dueSoon = bills.filter(function(b){ return !b.paid && (Number(b.due)||1) >= todayDay; });
+  var paid = bills.filter(function(b){ return b.paid; });
+  function billSum(arr){ return arr.reduce(function(s,b){ return s + (Number(b.amount)||0); }, 0); }
+  var upcoming = bills.filter(function(b){ return !b.paid; }).sort(function(a,b){ return (Number(a.due)||1) - (Number(b.due)||1); }).slice(0, 3);
+  var billRows = bills.length ? (upcoming.map(function(b) {
+    return '<div class="kd-bill"><div class="kd-bill-ic" style="background:color-mix(in srgb,var(--pink) 12%, transparent)"><i class="ti ' + (b.icon && b.icon.indexOf('ti-') === 0 ? b.icon : 'ti-calendar-event') + '" style="color:var(--pink)"></i></div>'
+      + '<div><div class="kd-bill-name">' + kdEsc(b.name || 'Bill') + '</div><div class="kd-bill-due" style="color:#f48cb2">' + billDateLabel(b) + '</div></div>'
+      + '<div class="kd-bill-r"><div class="kd-bill-amt">' + fmtWhole(b.amount) + '</div><div class="kd-bill-pay" onclick="go(\'bills\')">Pay now</div></div></div>';
+  }).join('') + paid.slice(0, 1).map(function(b) {
+    return '<div class="kd-bill" style="opacity:.45"><div class="kd-bill-ic" style="background:rgba(255,255,255,0.04)"><i class="ti ti-check" style="color:#6278A0"></i></div>'
+      + '<div><div class="kd-bill-name" style="text-decoration:line-through;color:#6278A0">' + kdEsc(b.name || 'Bill') + '</div><div class="kd-bill-due" style="color:#6278A0">Paid</div></div>'
+      + '<div class="kd-bill-r"><div class="kd-bill-amt" style="color:#6278A0">' + fmtWhole(b.amount) + '</div></div></div>';
+  }).join('')) : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'bills\')">add one →</span></div>';
+  var dueSoonPill = dueSoon.length ? '<span class="kd-pillbadge">' + dueSoon.length + ' due soon</span>' : '';
+  var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">+ Add</button></div></div>'
+    + '<div class="kd-bchips"><div class="kd-bchip"><div class="kd-bchip-l">Overdue</div><div class="kd-bchip-v" style="color:' + (overdue.length ? 'var(--amber)' : '#3D4D70') + '">' + fmtWhole(billSum(overdue)) + '</div></div>'
+    + '<div class="kd-bchip"><div class="kd-bchip-l">Due soon</div><div class="kd-bchip-v" style="color:#f48cb2">' + fmtWhole(billSum(dueSoon)) + '</div></div>'
+    + '<div class="kd-bchip"><div class="kd-bchip-l">Paid</div><div class="kd-bchip-v" style="color:var(--green)">' + fmtWhole(billSum(paid)) + '</div></div></div>'
+    + billRows + '</div>';
+
+  // ── TILE 6 — profile specific ──
+  var tile6;
+  var fullHasProperty = (kfAssets && kfAssets.indexOf('property') > -1);
+  if (profile === 'household' || (profile === 'full' && fullHasProperty)) {
+    var fcNote = 'Projections look stable.';
+    try {
+      if (typeof fc2GetMonths === 'function') {
+        var fm = fc2GetMonths() || [];
+        var fcs = fm.filter(function(m){ return m.isForecast; });
+        if (fcs.length) {
+          var worst = fcs[0];
+          for (var wi = 1; wi < fcs.length; wi++) { if (fcs[wi].net < worst.net) worst = fcs[wi]; }
+          fcNote = 'Lowest projected net <b style="color:var(--amber)">' + fmtWhole(worst.net) + '</b> in ' + kdEsc(worst.short || worst.label || 'the months ahead') + '.';
+        }
+      }
+    } catch(e) {}
+    tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-line"></i> Cashflow forecast</div><button class="kdt-act" onclick="go(\'forecast\')">Details</button></div>'
+      + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Money in</div><div class="kd-bs-v" style="color:var(--green)">+' + fmtWhole(lmSum.income) + '</div></div>'
+      + '<div class="kd-bs"><div class="kd-bs-l">Money out</div><div class="kd-bs-v" style="color:var(--muted)">−' + fmtWhole(lmSum.expenses) + '</div></div>'
+      + '<div class="kd-bs"><div class="kd-bs-l">Net</div><div class="kd-bs-v" style="color:' + (lmSum.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + (lmSum.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(lmSum.surplus)) + '</div></div></div>'
+      + '<div class="kd-chart-area">' + kdForecastChart() + '</div>'
+      + '<div class="kd-fc-note"><span class="kd-fc-dot"></span><span>' + fcNote + '</span></div></div>';
+  } else if (profile === 'full') {
+    var seed2 = { property: 920000, equities: 64500, 'super': 138200, liabilities: -8400, 'investment-property': 610000 };
+    var realMap2 = { property: nw.property, equities: nw.equities, 'super': nw.super_, liabilities: -Math.abs(nw.liabilities || 0), 'investment-property': 0 };
+    var assetIcon = { property: 'ti-home', equities: 'ti-chart-line', 'super': 'ti-building-bank', liabilities: 'ti-credit-card', 'investment-property': 'ti-building-estate' };
+    var assetLbl = { property: 'Property', equities: 'Investments', 'super': 'Superannuation', liabilities: 'Liabilities', 'investment-property': 'Investment property' };
+    var assetAcc = { property: 'var(--green)', equities: 'var(--green)', 'super': 'var(--amber)', liabilities: 'var(--red)', 'investment-property': 'var(--pink)' };
+    var sel = (kfAssets && kfAssets.length) ? kfAssets : [];
+    var atot = 0;
+    var rows6 = sel.length ? sel.map(function(k) {
+      var v = realMap2[k] || seed2[k] || 0; atot += v;
+      var neg = v < 0;
+      return '<div class="kd-acc"><div class="kd-acc-ic" style="background:color-mix(in srgb,' + (assetAcc[k]||'var(--pink)') + ' 13%, transparent)"><i class="ti ' + (assetIcon[k]||'ti-coin') + '" style="color:' + (assetAcc[k]||'var(--pink)') + '"></i></div>'
+        + '<div><div class="kd-acc-name">' + (assetLbl[k]||k) + '</div></div>'
+        + '<div class="kd-acc-bal" style="color:' + (neg ? 'var(--muted)' : 'var(--text)') + '">' + fmtWhole(v) + '</div></div>';
+    }).join('') : '<div class="kd-empty">No assets added yet — set them up any time.</div>';
+    tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-coins"></i> Your assets</div><button class="kdt-act" onclick="go(\'assets\')">+ Add</button></div>'
+      + rows6 + '<div class="kd-acc-total"><span class="kd-acc-total-l">Total assets</span><span class="kd-acc-total-v">' + fmtWhole(atot) + '</span></div></div>';
+  } else {
+    var txns = (typeof activeTX === 'function') ? activeTX().slice() : [];
+    txns.sort(function(a, b){ return (b.date || '').localeCompare(a.date || ''); });
+    var recent = txns.slice(0, 4);
+    var actInner = recent.length ? recent.map(function(t) {
+      var pos = t.type === 'income';
+      var isTransfer = (t.catId === 'transfers' || t.category === 'Transfers');
+      var col = pos ? 'var(--green)' : isTransfer ? 'var(--pink)' : 'var(--amber)';
+      var amt = (pos ? '+' : '−') + fmtWhole(Math.abs(Number(t.amount) || 0)).replace('−','');
+      var nm = t.merchant || t.description || t.desc || t.category || 'Transaction';
+      return '<div class="kd-acc"><div class="kd-acc-ic" style="background:color-mix(in srgb,' + col + ' 13%, transparent)"><i class="ti ' + (pos ? 'ti-businessplan' : isTransfer ? 'ti-arrows-exchange' : 'ti-shopping-cart') + '" style="color:' + col + '"></i></div>'
+        + '<div><div class="kd-acc-name">' + kdEsc(nm) + '</div><div class="kd-acc-sub">' + kdEsc(t.category || '') + '</div></div>'
+        + '<div class="kd-acc-bal" style="color:' + (pos ? 'var(--green)' : 'var(--text)') + '">' + amt + '</div></div>';
+    }).join('') : '<div class="kd-empty">No transactions yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'transactions\')">add one →</span></div>';
+    tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-arrows-exchange"></i> Recent activity</div><button class="kdt-act" onclick="go(\'transactions\')">See all</button></div>' + actInner + '</div>';
   }
 
-  // ── Quick Start Guide banner for new users ────────────────────
-  var _qsData = load(K.quickstart);
-  if (_qsData && _qsData.showOnDashboard && !_qsData.completed) {
-  }
+  // ── Compose ──
+  var html = '<div class="kd-dash">'
+    + '<div class="kd-top">'
+    + '<div class="kd-greeting">' + greet + ', ' + kdEsc(name) + '</div>'
+    + '<div class="kd-topdate">' + dateStr + '</div>'
+    + '<div class="kd-pills"><button class="kd-pill active" onclick="kdPill(this)">Last Month</button><button class="kd-pill" onclick="kdPill(this)">Year to Date</button><button class="kd-pill" onclick="kdPill(this)">Last Year</button></div>'
+    + '<div class="kd-top-r">'
+    + '<button class="kd-ibtn" aria-label="Search" onclick="go(\'transactions\')"><i class="ti ti-search"></i></button>'
+    + '<button class="kd-ibtn" aria-label="Notifications" onclick="go(\'bills\')"><i class="ti ti-bell"></i><span class="kd-ndot"></span></button>'
+    + '<button class="kd-addbtn" onclick="go(\'transactions\')"><i class="ti ti-plus" style="font-size:12px"></i> Add transaction</button>'
+    + '</div></div>'
+    + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
+    + '</div>';
 
-  // ── New layout renders ───────────────────────────────────────
-  dbRenderHero();
-  dbRenderKpiRow();
-  dbRenderAcctTiles();
-  dbRenderGlanceMetrics();
+  host.innerHTML = html;
 }
 
 // ── SVG sparkline helper ──────────────────────────────────────
