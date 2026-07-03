@@ -1338,24 +1338,25 @@ function kdRenderDashboard() {
     segs.push({ label: 'Home equity', value: equity, color: 'var(--green)' });
     if (nw.equities > 0) segs.push({ label: 'Investments', value: nw.equities, color: 'var(--amber)' });
   } else if (profile === 'full') {
+    // The big number is always the canonical, comprehensive net worth (assets minus ALL
+    // liabilities) — it must never depend on which asset categories the user happened to
+    // pick at onboarding, or debt silently stops being subtracted. Onboarding selection
+    // (kfAssets) only personalises which segments appear in the donut breakdown below.
     segs = [{ label: 'Cash', value: Math.max(nw.bank, 0), color: 'var(--pink)' }];
     var assetSel = (kfAssets && kfAssets.length) ? kfAssets : [];
-    var realMap = { property: nw.property, equities: nw.equities, 'super': nw.super_, liabilities: -Math.abs(nw.liabilities || 0), 'investment-property': 0 };
-    var labelMap = { property: 'Property', equities: 'Investments', 'super': 'Super', liabilities: 'Liabilities', 'investment-property': 'Inv. property' };
-    var aTotal = 0;
+    var realMap = { property: nw.property, equities: nw.equities, 'super': nw.super_, 'investment-property': 0 };
+    var labelMap = { property: 'Property', equities: 'Investments', 'super': 'Super', 'investment-property': 'Inv. property' };
     if (assetSel.length) {
       assetSel.forEach(function(k, i) {
         var v = (typeof realMap[k] === 'number') ? realMap[k] : 0;
-        aTotal += v;
         if (v > 0) segs.push({ label: labelMap[k] || k, value: v, color: kdCycle[(i + 1) % kdCycle.length] });
       });
     } else {
       // No asset categories picked at onboarding — show whatever real Super/Investments data exists
       if (nw.super_ > 0) segs.push({ label: 'Super', value: nw.super_, color: 'var(--green)' });
       if (nw.equities > 0) segs.push({ label: 'Investments', value: nw.equities, color: 'var(--amber)' });
-      aTotal = nw.super_ + nw.equities;
     }
-    nwTitle = 'Net worth'; nwBig = fmtWhole(nw.bank + aTotal);
+    nwTitle = 'Net worth'; nwBig = fmtWhole(nw.netWorth);
     nwDelta = (periodCF.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(periodCF.surplus)) + ' ' + range.deltaSuffix;
   } else {
     nwTitle = 'Total balance'; nwBig = fmtWhole(cash);
