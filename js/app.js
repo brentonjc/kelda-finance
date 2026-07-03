@@ -129,6 +129,18 @@ function go(id){
   var stPages=['dashboard','insights','categories','smartrules','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
   if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
+  navSyncActive(id);
+}
+
+// Sync top-nav back button, flyout category "active" state, and the notif dot on every route change.
+function navSyncActive(id){
+  var back=document.getElementById('tb-back');
+  if(back) back.classList.toggle('hidden', id==='dashboard');
+  document.querySelectorAll('#nav .nav-group').forEach(function(g){
+    var cat=g.querySelector('.nav-cat');
+    if(cat) cat.classList.toggle('cat-active', !!g.querySelector('.nav-fly-item.active'));
+  });
+  updateNotifDot();
 }
 
 
@@ -169,6 +181,105 @@ function renderNavUser() {
     avs.appendChild(makeAv('p1', initial(name)));
     uname.textContent = name;
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAV FLYOUT SUBMENUS (Financial Planning · App Controls)
+// Category icons in the rail; sub-items appear as a hover flyout that
+// extends out from the rail. Positioned with JS (fixed) so it escapes
+// the rail's overflow clipping and clamps to the viewport.
+// ══════════════════════════════════════════════════════════════
+var _navFlyTimer = null;
+function navFlyShow(group) {
+  clearTimeout(_navFlyTimer);
+  document.querySelectorAll('.nav-group.fly-open').forEach(function(g){ if (g !== group) g.classList.remove('fly-open'); });
+  var fly = group.querySelector('.nav-flyout');
+  var cat = group.querySelector('.nav-cat');
+  if (!fly || !cat) return;
+  var r = cat.getBoundingClientRect();
+  var railW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-w-open')) || 200;
+  fly.style.left = railW + 'px';
+  var h = fly.offsetHeight || 260;
+  var top = Math.max(8, r.top);
+  if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - 8 - h);
+  fly.style.top = top + 'px';
+  group.classList.add('fly-open');
+  cat.setAttribute('aria-expanded', 'true');
+}
+function navFlyHideSoon(group) {
+  clearTimeout(_navFlyTimer);
+  _navFlyTimer = setTimeout(function(){
+    group.classList.remove('fly-open');
+    var cat = group.querySelector('.nav-cat');
+    if (cat) cat.setAttribute('aria-expanded', 'false');
+  }, 160);
+}
+function initNavFlyouts() {
+  document.querySelectorAll('#nav .nav-group').forEach(function(g){
+    g.addEventListener('mouseenter', function(){ navFlyShow(g); });
+    g.addEventListener('mouseleave', function(){ navFlyHideSoon(g); });
+    var cat = g.querySelector('.nav-cat');
+    if (cat) {
+      cat.addEventListener('focus', function(){ navFlyShow(g); });
+      cat.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navFlyShow(g); var first = g.querySelector('.nav-fly-item'); if (first) first.focus(); }
+        else if (e.key === 'Escape') { g.classList.remove('fly-open'); }
+      });
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// GLOBAL SEARCH MODAL (top nav) — searches transactions from any page
+// ══════════════════════════════════════════════════════════════
+function _esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function openSearchModal(){
+  var m = document.getElementById('search-modal'); if (!m) return;
+  m.classList.add('open');
+  var inp = document.getElementById('search-modal-input');
+  if (inp) { inp.value=''; setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 30); }
+  runGlobalSearch();
+}
+function closeSearchModal(){
+  var m = document.getElementById('search-modal'); if (m) m.classList.remove('open');
+}
+function runGlobalSearch(){
+  var inp = document.getElementById('search-modal-input');
+  var host = document.getElementById('search-modal-results');
+  if (!host) return;
+  var q = ((inp && inp.value) || '').trim().toLowerCase();
+  var txns = (typeof activeTX === 'function') ? activeTX().slice() : [];
+  txns.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  var list = q ? txns.filter(function(t){
+    var hay = ((t.merchant||'')+' '+(t.description||t.desc||'')+' '+(t.category||'')+' '+(t.amount||'')).toLowerCase();
+    return hay.indexOf(q) >= 0;
+  }) : txns;
+  if (!list.length) {
+    host.innerHTML = '<div class="search-empty">' + (q ? 'No transactions match “' + _esc(q) + '”.' : 'Start typing to search your transactions.') + '</div>';
+    return;
+  }
+  host.innerHTML = list.slice(0,30).map(function(t){
+    var pos = t.type === 'income';
+    var nm = t.merchant || t.description || t.desc || t.category || 'Transaction';
+    var amt = (pos ? '+' : '−') + fmt(Math.abs(Number(t.amount)||0)).replace('−','').replace('-','');
+    var col = pos ? 'var(--success)' : 'var(--text)';
+    return '<div class="search-res" onclick="searchResultGo()">'
+      + '<div class="search-res-main"><div class="search-res-name">' + _esc(nm) + '</div>'
+      + '<div class="search-res-sub">' + _esc(t.date||'') + ' · ' + _esc(t.category||'—') + '</div></div>'
+      + '<div class="search-res-amt" style="color:' + col + '">' + amt + '</div></div>';
+  }).join('');
+}
+function searchResultGo(){ closeSearchModal(); if (typeof go === 'function') go('transactions'); }
+
+// ══════════════════════════════════════════════════════════════
+// NOTIFICATION DOT (top nav bell) — reflects action cards + nudges
+// ══════════════════════════════════════════════════════════════
+function updateNotifDot(){
+  var dot = document.getElementById('tb-ndot'); if (!dot) return;
+  var n = 0;
+  try { if (typeof generateActionCards === 'function') n += (generateActionCards()||[]).length; } catch(e){}
+  try { if (typeof generateNudges === 'function') n += (generateNudges()||[]).length; } catch(e){}
+  dot.style.display = n > 0 ? 'block' : 'none';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -686,9 +797,10 @@ function closeNav(){
 }
 // Auto-close nav on link tap (mobile)
 document.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('#nav .nav-item').forEach(a=>{
+  document.querySelectorAll('#nav .nav-item, #nav .nav-fly-item').forEach(a=>{
     a.addEventListener('click',()=>{if(window.innerWidth<=680)closeNav();});
   });
+  if (typeof initNavFlyouts === 'function') initNavFlyouts();
 });
 
 // ══════════════════════════════════════════════════════════════

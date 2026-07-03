@@ -1007,34 +1007,45 @@ window.addEventListener('unhandledrejection',function(e){
     <a class="nav-item" id="n-bva" onclick="go('bva')"><span class="ni">📊</span><span class="nav-lbl">Budget</span></a>
     <a class="nav-item" id="n-goals" onclick="go('goals')"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a>
     <a class="nav-item" id="n-bills" onclick="go('bills')"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a>
-
-    <div class="nav-div"></div>
-    <div class="nav-glabel">Financial Planning Tools</div>
     <a class="nav-item" id="n-insights" onclick="go('insights')"><span class="ni">✨</span><span class="nav-lbl">Graphs</span></a>
-    <a class="nav-item" id="n-assets" onclick="go('assets')"><span class="ni">💰</span><span class="nav-lbl">Net Worth</span></a>
-    <a class="nav-item" id="n-mortgage" onclick="go('mortgage')"><span class="ni">🏡</span><span class="nav-lbl">Home Mortgage</span></a>
-    <a class="nav-item" id="n-liabilities" onclick="go('liabilities')"><span class="ni">⚖️</span><span class="nav-lbl">Liabilities</span></a>
-    <a class="nav-item" id="n-super" onclick="go('super')"><span class="ni">💼</span><span class="nav-lbl">Superannuation</span></a>
-    <a class="nav-item" id="n-equities" onclick="go('equities')"><span class="ni">📈</span><span class="nav-lbl">Investments</span></a>
-    <a class="nav-item" id="n-insurance" onclick="go('insurance')"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a>
-    <span class="nav-item nav-item-soon" role="link" aria-disabled="true" tabindex="-1"><span class="ni">🏘️</span><span class="nav-lbl">Investment Properties</span><span class="nav-soon">Soon</span></span>
-    <a class="nav-item" id="n-forecast" onclick="go('forecast')"><span class="ni">🔮</span><span class="nav-lbl">Cashflow Forecasts</span></a>
 
     <div class="nav-div"></div>
-    <div class="nav-glabel">App Controls</div>
-    <a class="nav-item" id="n-transfers" onclick="go('transfers')"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a>
-    <a class="nav-item" id="n-categories" onclick="go('categories')"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a>
-    <a class="nav-item" id="n-smartrules" onclick="go('smartrules')"><span class="ni">⚡</span><span class="nav-lbl">Smart Rules</span></a>
-    <a class="nav-item" id="n-export" onclick="go('export')"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a>
-    <a class="nav-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')"><span class="ni">✅</span><span class="nav-lbl">Quick Start</span></a>
+
+    <!-- Financial Planning Tools — category icon + hover flyout -->
+    <div class="nav-group" data-fly="planning">
+      <div class="nav-item nav-cat" id="nav-cat-planning" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-planning">
+        <span class="ni">📊</span><span class="nav-lbl">Financial Planning</span><span class="nav-cat-arr">›</span>
+      </div>
+      <div class="nav-flyout" id="fly-planning" role="menu" aria-label="Financial Planning Tools">
+        <div class="nav-flyout-hd">Financial Planning Tools</div>
+        <a class="nav-fly-item" id="n-assets" onclick="go('assets')" role="menuitem"><span class="ni">💰</span><span>Net Worth</span></a>
+        <a class="nav-fly-item" id="n-mortgage" onclick="go('mortgage')" role="menuitem"><span class="ni">🏡</span><span>Home Mortgage</span></a>
+        <a class="nav-fly-item" id="n-liabilities" onclick="go('liabilities')" role="menuitem"><span class="ni">⚖️</span><span>Liabilities</span></a>
+        <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni">💼</span><span>Superannuation</span></a>
+        <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni">📈</span><span>Investments</span></a>
+        <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni">🛡️</span><span>Life Insurance</span></a>
+        <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni">🏘️</span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
+        <a class="nav-fly-item" id="n-forecast" onclick="go('forecast')" role="menuitem"><span class="ni">🔮</span><span>Cashflow Forecasts</span></a>
+      </div>
+    </div>
+
+    <!-- App Controls — category icon + hover flyout -->
+    <div class="nav-group" data-fly="controls">
+      <div class="nav-item nav-cat" id="nav-cat-controls" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-controls">
+        <span class="ni">🛠️</span><span class="nav-lbl">App Controls</span><span class="nav-cat-arr">›</span>
+      </div>
+      <div class="nav-flyout" id="fly-controls" role="menu" aria-label="App Controls">
+        <div class="nav-flyout-hd">App Controls</div>
+        <a class="nav-fly-item" id="n-transfers" onclick="go('transfers')" role="menuitem"><span class="ni">🔄</span><span>Transfers</span></a>
+        <a class="nav-fly-item" id="n-categories" onclick="go('categories')" role="menuitem"><span class="ni">🏷️</span><span>Categories</span></a>
+        <a class="nav-fly-item" id="n-smartrules" onclick="go('smartrules')" role="menuitem"><span class="ni">⚡</span><span>Smart Rules</span></a>
+        <a class="nav-fly-item" id="n-export" onclick="go('export')" role="menuitem"><span class="ni">⬇️</span><span>Export Data</span></a>
+        <a class="nav-fly-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')" role="menuitem"><span class="ni">✅</span><span>Quick Start</span></a>
+      </div>
+    </div>
   </div>
   <div class="nav-foot">
     <button class="nav-settings-btn" id="n-settings" onclick="go('settings')" title="Settings" aria-label="Settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></button>
-    <button class="nav-lock-btn" onclick="lockApp()" title="Lock app" aria-label="Lock app"><span class="ni">🔒</span><span class="nav-lbl">Lock App</span></button>
-    <div class="nav-user" id="nav-user-row">
-      <div class="kd-avs" id="nav-avatars"></div>
-      <span class="kd-uname" id="nav-username"></span>
-    </div>
   </div>
 </nav>
 
@@ -1230,9 +1241,18 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- MAIN -->
 <div id="main">
   <div id="topbar">
-    <div class="topbar-title" data-app-name>Kelda Finance</div>
-    <div class="topbar-user">
-      <div class="user-pill"><div class="user-dot"></div><span id="topbar-user">—</span></div>
+    <div class="topbar-left">
+      <button class="tb-back" id="tb-back" onclick="go('dashboard')" aria-label="Back to dashboard" title="Back to dashboard"><i class="ti ti-arrow-left"></i></button>
+      <div class="topbar-title" data-app-name>Kelda Finance</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="tb-ibtn" aria-label="Search" title="Search" onclick="openSearchModal()"><i class="ti ti-search"></i></button>
+      <button class="tb-ibtn" aria-label="Notifications" title="Notifications" onclick="openNotifModal()"><i class="ti ti-bell"></i><span class="tb-ndot" id="tb-ndot" style="display:none"></span></button>
+      <button class="tb-addbtn" onclick="openCsvModal()"><i class="ti ti-plus"></i><span class="tb-addbtn-lbl">Add transaction</span></button>
+      <div class="topbar-user">
+        <div class="user-pill"><div class="user-dot"></div><span id="topbar-user">—</span></div>
+        <button class="tb-lock" onclick="lockApp()" aria-label="Lock app" title="Lock app"><i class="ti ti-lock"></i></button>
+      </div>
     </div>
   </div>
 
@@ -2910,7 +2930,19 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 </div>
 
-<!-- NOTIFICATIONS / INSIGHTS MODAL — opened from the Dashboard bell icon -->
+<!-- GLOBAL SEARCH MODAL — opened from the top-nav search icon (works on any page) -->
+<div class="modal-overlay" id="search-modal" onclick="if(event.target===this)closeSearchModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+    <div class="search-modal-bar">
+      <i class="ti ti-search search-modal-ic"></i>
+      <input id="search-modal-input" type="text" placeholder="Search transactions by merchant, category or amount…" autocomplete="off" oninput="runGlobalSearch()" onkeydown="if(event.key==='Escape')closeSearchModal()"/>
+      <button class="modal-close" onclick="closeSearchModal()" aria-label="Close search">✕</button>
+    </div>
+    <div id="search-modal-results" class="search-modal-results"></div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS / INSIGHTS MODAL — opened from the top-nav bell icon -->
 <div class="modal-overlay" id="notif-modal" onclick="if(event.target===this)closeNotifModal()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
