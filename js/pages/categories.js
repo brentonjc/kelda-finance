@@ -408,7 +408,7 @@ function renderCategories() {
   const filtered = filter === 'all' ? LCATS : LCATS.filter(c => !c.type || c.type === 'both' || c.type === filter);
 
   if (!filtered.length) {
-    el.innerHTML = '<div class="empty"><div class="ei">🏷️</div><p>No categories.</p></div>';
+    el.innerHTML = '<div class="empty"><div class="ei">' + ICON('tag') + '</div><p>No categories.</p></div>';
   } else {
     el.innerHTML = filtered.map(c => {
       const count    = TX.filter(t => t.catId === c.id || t.category === c.name).length;
@@ -419,7 +419,7 @@ function renderCategories() {
         '<span style="display:inline-block;font-size:.68rem;background:#2a2535;color:var(--muted);'
         + 'border-radius:99px;padding:2px 8px;margin:2px 3px 2px 0;cursor:pointer;border:1px solid var(--border)"'
         + ' onclick="deleteSubcat(\'' + c.id + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="Click to remove">'
-        + s + ' ✕</span>'
+        + s + ' ' + ICON('x') + '</span>'
       ).join('');
       return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;'
         + 'padding:14px 16px;margin-bottom:10px">'
@@ -439,8 +439,8 @@ function renderCategories() {
         + '</div>'
         + '</div>'
         + '<div style="display:flex;gap:6px;flex-shrink:0">'
-        + '<button class="del-btn" onclick="renameCategory(\'' + c.id + '\')" title="Rename" style="font-size:.9rem">✏️</button>'
-        + '<button class="del-btn" onclick="deleteCategory(\'' + c.id + '\')" title="Delete">🗑</button>'
+        + '<button class="del-btn" onclick="renameCategory(\'' + c.id + '\')" title="Rename" style="font-size:.9rem">' + ICON('pencil') + '</button>'
+        + '<button class="del-btn" onclick="deleteCategory(\'' + c.id + '\')" title="Delete">' + ICON('trash') + '</button>'
         + '</div>'
         + '</div></div>';
     }).join('');
@@ -498,7 +498,7 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     + '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">'
     + '<div style="flex:1;min-width:140px">'
     + '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">'
-    + '<span style="font-weight:700;font-size:.88rem">🏪 ' + merchant + '</span>'
+    + '<span style="font-weight:700;font-size:.88rem">' + ICON('building-store') + ' ' + merchant + '</span>'
     + sourceBadge
     + patternBadge
     + '</div>'
@@ -514,8 +514,8 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     + '</div></div>'
     + '<div style="display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap">'
     + promoteBtn
-    + '<button class="btn btn-ghost btn-sm" onclick="toggleRuleEdit(this.closest(\'.rule-card\'))">✏️ Edit</button>'
-    + '<button class="del-btn" onclick="deleteRuleCard(this.closest(\'.rule-card\'))" title="Delete">🗑</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="toggleRuleEdit(this.closest(\'.rule-card\'))">' + ICON('pencil') + ' Edit</button>'
+    + '<button class="del-btn" onclick="deleteRuleCard(this.closest(\'.rule-card\'))" title="Delete">' + ICON('trash') + '</button>'
     + '</div></div>'
     + '<div class="rule-edit-inline" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
     + '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">'
@@ -600,7 +600,7 @@ function renderRulesList() {
     + '<input type="text" id="rules-search-input" placeholder="Search rules..." value="' + (_rulesSearch || '') + '" '
     + 'style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem" '
     + 'onkeyup="rulesSearchUpdate(this.value)">'
-    + '<button class="btn btn-primary btn-sm" onclick="rulesShowCreateForm()" style="white-space:nowrap;gap:6px">⚡ New Rule</button>'
+    + '<button class="btn btn-primary btn-sm" onclick="rulesShowCreateForm()" style="white-space:nowrap;gap:6px">' + ICON('bolt') + ' New Rule</button>'
     + '</div>';
 
   // Results count and pagination info
@@ -615,9 +615,9 @@ function renderRulesList() {
   // Rules cards
   if (paginatedRules.length === 0) {
     if (search) {
-      html += '<div class="empty"><div class="ei">🔍</div><p>No rules match your search.</p></div>';
+      html += '<div class="empty"><div class="ei">' + ICON('search') + '</div><p>No rules match your search.</p></div>';
     } else {
-      html += '<div class="empty"><div class="ei">⚡</div><p>No rules yet. Assign a category to a transaction to create one automatically.</p></div>';
+      html += '<div class="empty"><div class="ei">' + ICON('bolt') + '</div><p>No rules yet. Assign a category to a transaction to create one automatically.</p></div>';
     }
   } else {
     paginatedRules.forEach(function(rule) {
@@ -982,7 +982,7 @@ function showRuleBanner(merchant, catId, subcat, cat) {
           + (subcat ? '<span style="color:var(--muted)"> › ' + esc(subcat) + '</span>' : '')
         + '</div>'
       + '</div>'
-      + '<button onclick="dismissRuleBanner()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0">✕</button>'
+      + '<button onclick="dismissRuleBanner()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0">' + ICON('x') + '</button>'
     + '</div>'
     // Pattern picker
     + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
@@ -1347,26 +1347,26 @@ function resetDefaultCategories() {
 // Blank string = not a distinct category in that bank
 var _BANK_MAP = [
   // catId, kelda label,  CBA,                        Westpac,                NAB,                  ANZ,                  Macquarie,            Up Bank,              Amex,                 HEM
-  ['home',             '🏠 Home',              'Home & Property',         'Home',                 'Home',               'Home',               'Home',               'Home',               'Home',               '04 Housing'],
-  ['car_transport',    '🚗 Car & Transport',   'Transport',               'Transport',            'Transport',          'Transport',          'Transport',          'Transport',          'Transport',          '08 Transport'],
-  ['health_beauty',    '❤ Health & Beauty',    'Health & Personal Care',  'Health & Beauty',      'Health',             'Health',             'Health & Beauty',    'Health & Medical',   'Health',             '07 Health'],
-  ['fitness',          '🏋 Fitness',           'Health & Personal Care',  'Health & Fitness',     'Health',             'Health',             'Health & Beauty',    'Fitness',            'Health',             '07 Health'],
-  ['food_eating_out',  '🍽 Food & Eating Out', 'Groceries + Dining',      'Groceries + Dining',   'Food',               'Food & Drink',       'Food & Drink',       'Groceries + Eating Out', 'Supermarkets + Dining', '01 Food & Non-alcoholic Beverages'],
-  ['children',         '👶 Children',          'Family',                  'Family',               'Family',             'Family',             '—',                  'Family & Children',  '—',                  '10 Education (partial)'],
-  ['pippen',           '🐾 Pets',              'Animals & Pets',          'Pets',                 'Personal',           'Personal',           '—',                  'Pets',               '—',                  '09 Recreation (partial)'],
-  ['insurance_utilities','🛡 Insurance',       'Insurance',               'Insurance',            'Insurance',          'Insurance',          'Insurance',          '—',                  'Insurance',          '12 Insurance & Financial Services'],
-  ['utilities',        '💡 Utilities',         'Home & Utilities',        'Bills & Payments',     'Bills',              'Bills & Utilities',  'Bills',              'Bills & Utilities',  '—',                  '05 Household Utilities'],
-  ['tax',              '🧾 Tax Payments',      'Taxes',                   '—',                    'Tax',                '—',                  'Tax',                '—',                  '—',                  '12 Insurance & Financial Services'],
-  ['entertainment',    '🎬 Entertainment',     'Entertainment',           'Entertainment',        'Entertainment',      'Entertainment',      'Entertainment',      'Entertainment',      'Entertainment',      '09 Recreation & Culture'],
-  ['holidays_travel',  '✈ Holidays & Travel',  'Travel',                  'Travel',               'Travel',             'Travel',             'Travel',             'Travel',             'Travel',             '09 Recreation & Culture'],
-  ['shopping',         '🛍 Shopping',          'Shopping',                'Shopping',             'Shopping',           'Shopping',          'Shopping',            'Shopping',           'Shopping',           '03 Clothing & Footwear (partial)'],
-  ['business',         '💼 Business',          'Business',                'Business',             'Business',           'Business',           'Business',           '—',                  'Business',           '12 Insurance & Financial Services'],
-  ['salary',           '💰 Salary',            'Income',                  'Income',               'Income',             'Income',             'Income',             'Income',             'Income',             '— (Income)'],
-  ['bonus',            '🎁 Bonus',             'Income',                  'Income',               'Income',             'Income',             'Income',             'Income',             'Income',             '— (Income)'],
-  ['interest',         '🏦 Interest',          'Savings & Investments',   'Savings',              'Investment',         'Investment',         'Investment',         '—',                  '—',                  '— (Income)'],
-  ['capital_gains',    '📈 Capital Gains',     'Savings & Investments',   'Investments',          'Investment',         'Investment',         'Investment',         'Investment',         '—',                  '— (Income)'],
-  ['transfers',        '🔄 Transfers',         'Transfers',               'Transfers',            'Transfers',          'Transfers',          'Transfers',          'Transfers',          'Transfers',          '— (Transfer)'],
-  ['other',            '📋 Other',             'Uncategorised',           'Other',                'Uncategorised',      'Uncategorised',      'Other',              'Uncategorised',      'Other',              '— (Other)'],
+  ['home',             'Home',              'Home & Property',         'Home',                 'Home',               'Home',               'Home',               'Home',               'Home',               '04 Housing'],
+  ['car_transport',    'Car & Transport',   'Transport',               'Transport',            'Transport',          'Transport',          'Transport',          'Transport',          'Transport',          '08 Transport'],
+  ['health_beauty',    'Health & Beauty',    'Health & Personal Care',  'Health & Beauty',      'Health',             'Health',             'Health & Beauty',    'Health & Medical',   'Health',             '07 Health'],
+  ['fitness',          'Fitness',           'Health & Personal Care',  'Health & Fitness',     'Health',             'Health',             'Health & Beauty',    'Fitness',            'Health',             '07 Health'],
+  ['food_eating_out',  'Food & Eating Out', 'Groceries + Dining',      'Groceries + Dining',   'Food',               'Food & Drink',       'Food & Drink',       'Groceries + Eating Out', 'Supermarkets + Dining', '01 Food & Non-alcoholic Beverages'],
+  ['children',         'Children',          'Family',                  'Family',               'Family',             'Family',             '—',                  'Family & Children',  '—',                  '10 Education (partial)'],
+  ['pippen',           'Pets',              'Animals & Pets',          'Pets',                 'Personal',           'Personal',           '—',                  'Pets',               '—',                  '09 Recreation (partial)'],
+  ['insurance_utilities','Insurance',       'Insurance',               'Insurance',            'Insurance',          'Insurance',          'Insurance',          '—',                  'Insurance',          '12 Insurance & Financial Services'],
+  ['utilities',        'Utilities',         'Home & Utilities',        'Bills & Payments',     'Bills',              'Bills & Utilities',  'Bills',              'Bills & Utilities',  '—',                  '05 Household Utilities'],
+  ['tax',              'Tax Payments',      'Taxes',                   '—',                    'Tax',                '—',                  'Tax',                '—',                  '—',                  '12 Insurance & Financial Services'],
+  ['entertainment',    'Entertainment',     'Entertainment',           'Entertainment',        'Entertainment',      'Entertainment',      'Entertainment',      'Entertainment',      'Entertainment',      '09 Recreation & Culture'],
+  ['holidays_travel',  'Holidays & Travel',  'Travel',                  'Travel',               'Travel',             'Travel',             'Travel',             'Travel',             'Travel',             '09 Recreation & Culture'],
+  ['shopping',         'Shopping',          'Shopping',                'Shopping',             'Shopping',           'Shopping',          'Shopping',            'Shopping',           'Shopping',           '03 Clothing & Footwear (partial)'],
+  ['business',         'Business',          'Business',                'Business',             'Business',           'Business',           'Business',           '—',                  'Business',           '12 Insurance & Financial Services'],
+  ['salary',           'Salary',            'Income',                  'Income',               'Income',             'Income',             'Income',             'Income',             'Income',             '— (Income)'],
+  ['bonus',            'Bonus',             'Income',                  'Income',               'Income',             'Income',             'Income',             'Income',             'Income',             '— (Income)'],
+  ['interest',         'Interest',          'Savings & Investments',   'Savings',              'Investment',         'Investment',         'Investment',         '—',                  '—',                  '— (Income)'],
+  ['capital_gains',    'Capital Gains',     'Savings & Investments',   'Investments',          'Investment',         'Investment',         'Investment',         'Investment',         '—',                  '— (Income)'],
+  ['transfers',        'Transfers',         'Transfers',               'Transfers',            'Transfers',          'Transfers',          'Transfers',          'Transfers',          'Transfers',          '— (Transfer)'],
+  ['other',            'Other',             'Uncategorised',           'Other',                'Uncategorised',      'Uncategorised',      'Other',              'Uncategorised',      'Other',              '— (Other)'],
 ];
 
 var _BANKS = ['All', 'CBA', 'Westpac', 'NAB', 'ANZ', 'Macquarie', 'Up Bank', 'Amex', 'HEM'];
@@ -1448,8 +1448,9 @@ function renderBankComparison() {
 
   // Table rows
   var rows = _BANK_MAP.map(function(row) {
+    var _bmCat = LCATS.find(function(c){ return c.id === row[0]; });
     var cells = '<td style="padding:7px 12px 7px 0;font-size:.8rem;font-weight:600;white-space:nowrap;color:var(--text)">'
-      + row[1] + '</td>';
+      + (_bmCat ? iconTag(_bmCat.icon) + ' ' : '') + row[1] + '</td>';
     bankCols.forEach(function(b) {
       var idx = _BANK_COL[b];
       var val = idx !== undefined ? (row[idx] || '—') : '—';

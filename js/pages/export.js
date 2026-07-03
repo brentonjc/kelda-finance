@@ -3,16 +3,16 @@ let _csvRaw=[], _csvHeaders=[], _csvParsed=[];
 
 const CSV_FIELDS=[
   {v:'',      l:'— Ignore —'},
-  {v:'date',  l:'📅 Date (required)'},
-  {v:'amount',l:'💲 Amount (required)'},
-  {v:'debit', l:'💲 Debit / Withdrawal'},
-  {v:'credit',l:'💲 Credit / Deposit'},
-  {v:'name',  l:'🏪 Merchant Name'},
-  {v:'desc',  l:'📝 Description / Notes'},
-  {v:'cat',   l:'🏷️ Category'},
-  {v:'subcat',l:'🏷️ Subcategory'},
-  {v:'type',  l:'🔀 Type (income/expense)'},
-  {v:'account',l:'🏦 Account'},
+  {v:'date',  l:'Date (required)'},
+  {v:'amount',l:'Amount (required)'},
+  {v:'debit', l:'Debit / Withdrawal'},
+  {v:'credit',l:'Credit / Deposit'},
+  {v:'name',  l:'Merchant Name'},
+  {v:'desc',  l:'Description / Notes'},
+  {v:'cat',   l:'Category'},
+  {v:'subcat',l:'Subcategory'},
+  {v:'type',  l:'Type (income/expense)'},
+  {v:'account',l:'Account'},
 ];
 
 // Category matching now uses LCATS dynamically
@@ -284,8 +284,8 @@ function csvRefreshPreview(){
     const skipped=(isDup&&skip)||isErr;
     if(!skipped)willImport++;
 
-    let status=isErr?`<span class="tag-err">⚠ ${r._err||'Zero amount'}</span>`:
-      isDup?`<span class="tag-dup">Duplicate</span>`:`<span class="tag-ok">✓ Ready</span>`;
+    let status=isErr?`<span class="tag-err">${ICON('alert-triangle')} ${r._err||'Zero amount'}</span>`:
+      isDup?`<span class="tag-dup">Duplicate</span>`:`<span class="tag-ok">${ICON('check')} Ready</span>`;
 
     const cls=isErr?'row-err':isDup?'row-dup':'';
     const subcatBadge=r.subcat?'<span style="font-size:.68rem;background:#2a2535;color:var(--muted);border-radius:99px;padding:1px 6px">'+r.subcat+'</span>':'—';
@@ -444,11 +444,11 @@ function restoreBackup(event) {
       renderSuperPage(); renderAssets(); renderExportPage();
 
       const exportedDate = d._exported ? new Date(d._exported).toLocaleString('en-AU') : 'unknown date';
-      statusEl.innerHTML = '<span style="color:var(--success);font-weight:700">✅ Restored from backup (' + exportedDate + ')</span>';
+      statusEl.innerHTML = '<span style="color:var(--success);font-weight:700">' + ICON('circle-check-filled') + ' Restored from backup (' + exportedDate + ')</span>';
       toast('✅ Data restored successfully!');
       event.target.value = '';
     } catch (err) {
-      statusEl.innerHTML = '<span style="color:var(--danger)">❌ Invalid file: ' + err.message + '</span>';
+      statusEl.innerHTML = '<span style="color:var(--danger)">' + ICON('x') + ' Invalid file: ' + err.message + '</span>';
       event.target.value = '';
     }
   };
@@ -508,7 +508,7 @@ function exportSummaryCSV() {
 // ── 5. SECTION-SPECIFIC EXPORTS ──────────────────────────────
 const EXPORT_SECTIONS = [
   {
-    key: 'transactions', label: 'Transactions', icon: '💳',
+    key: 'transactions', label: 'Transactions', icon: 'credit-card',
     count: () => TX.length + ' transactions',
     exportJSON: () => { downloadFile(JSON.stringify({transactions: TX}, null, 2), exportFilename('transactions', 'json'), 'application/json'); },
     exportCSV:  () => exportTransactionsCSV(),
@@ -519,7 +519,7 @@ const EXPORT_SECTIONS = [
     }
   },
   {
-    key: 'rules', label: 'Auto-Assignment Rules', icon: '⚡',
+    key: 'rules', label: 'Auto-Assignment Rules', icon: 'bolt',
     count: () => Object.keys(LRULES).length + ' rules',
     exportJSON: () => {
       downloadFile(JSON.stringify({rules: LRULES}, null, 2), exportFilename('rules', 'json'), 'application/json');
@@ -569,7 +569,7 @@ const EXPORT_SECTIONS = [
     }
   },
   {
-    key: 'budgets', label: 'Budgets', icon: '🎯',
+    key: 'budgets', label: 'Budgets', icon: 'target',
     count: () => Object.keys(BUDGETS).length + ' categories',
     exportJSON: () => { downloadFile(JSON.stringify({budgets: BUDGETS}, null, 2), exportFilename('budgets', 'json'), 'application/json'); },
     exportCSV:  () => {
@@ -591,7 +591,7 @@ const EXPORT_SECTIONS = [
     clear: () => { if(confirm('Delete all savings goals?')) { GOALS=[]; save(K.goals,GOALS); renderGoals(); toast('🗑️ Goals cleared'); renderExportPage(); } }
   },
   {
-    key: 'bills', label: 'Bills', icon: '📅',
+    key: 'bills', label: 'Bills', icon: 'calendar',
     count: () => BILLS.length + ' bills',
     exportJSON: () => { downloadFile(JSON.stringify({bills: BILLS}, null, 2), exportFilename('bills', 'json'), 'application/json'); },
     exportCSV:  () => {
@@ -602,7 +602,7 @@ const EXPORT_SECTIONS = [
     clear: () => { if(confirm('Delete all bills?')) { BILLS=[]; BILL_ALIASES={}; BILLS_DISMISSED=[]; save(K.bills,BILLS); save(K.billAliases,BILL_ALIASES); save(K.billsDismissed,BILLS_DISMISSED); renderBills(); toast('🗑️ Bills cleared'); renderExportPage(); } }
   },
   {
-    key: 'mortgage', label: 'Mortgage', icon: '🏡',
+    key: 'mortgage', label: 'Mortgage', icon: 'home-2',
     count: () => MORTGAGE.balance ? 'Balance: ' + fmt(MORTGAGE.balance) : 'Not set',
     exportJSON: () => { downloadFile(JSON.stringify({mortgage: MORTGAGE}, null, 2), exportFilename('mortgage', 'json'), 'application/json'); },
     exportCSV:  () => {
@@ -613,7 +613,7 @@ const EXPORT_SECTIONS = [
     clear: () => { if(confirm('Clear mortgage details?')) { MORTGAGE={}; save(K.mortgage,MORTGAGE); renderMortgage(); toast('🗑️ Mortgage cleared'); renderExportPage(); } }
   },
   {
-    key: 'cash', label: 'Cash Tracker', icon: '🏦',
+    key: 'cash', label: 'Cash Tracker', icon: 'building-bank',
     count: () => {
       const mos = [...new Set(Object.values(CT).flatMap(d => Object.keys(d||{})))];
       return mos.length + ' months × 4 accounts';
@@ -623,7 +623,7 @@ const EXPORT_SECTIONS = [
     clear: () => { if(confirm('Clear all cash tracker balances?')) { CT={}; save(K.ct,CT); renderCashTracker(); toast('🗑️ Cash tracker cleared'); renderExportPage(); } }
   },
   {
-    key: 'insurance', label: 'Insurance', icon: '🛡️',
+    key: 'insurance', label: 'Insurance', icon: 'shield-check',
     count: () => INS.length + ' policies',
     exportJSON: () => { downloadFile(JSON.stringify({insurance: INS}, null, 2), exportFilename('insurance', 'json'), 'application/json'); },
     exportCSV:  () => {
@@ -640,7 +640,7 @@ const EXPORT_SECTIONS = [
     clear: () => { if(confirm('Delete all insurance policies?')) { INS=[]; save(K.ins,INS); renderInsurance(); toast('🗑️ Insurance cleared'); renderExportPage(); } }
   },
   {
-    key: 'super', label: 'Superannuation', icon: '💼',
+    key: 'super', label: 'Superannuation', icon: 'briefcase',
     count: () => {
       const b = SUPER.b?.balance ? 'B: ' + fmt(SUPER.b.balance) : '';
       const s = SUPER.s?.balance ? 'S: ' + fmt(SUPER.s.balance) : '';
