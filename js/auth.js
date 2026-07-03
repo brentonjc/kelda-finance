@@ -130,6 +130,7 @@ function unlock(){
   const mu=document.getElementById('mob-user');if(mu)mu.textContent=getUserIcon(activeProfile)+' '+getUserName(activeProfile);
   try{if(typeof renderNavUser==='function')renderNavUser();}catch(e){console.warn('renderNavUser:',e);}
   try{if(typeof updateNotifDot==='function')updateNotifDot();}catch(e){console.warn('updateNotifDot:',e);}
+  try{if(typeof renderTopbarGreeting==='function')renderTopbarGreeting();}catch(e){console.warn('renderTopbarGreeting:',e);}
   var _txDate=document.getElementById('tx-date');if(_txDate)_txDate.value=today();
   try{if(typeof renderSnapshot==='function')renderSnapshot();}catch(e){console.warn('renderSnapshot:',e);}
   try{renderDashboard();}catch(e){console.warn('renderDashboard:',e);}

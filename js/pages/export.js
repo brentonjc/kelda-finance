@@ -135,8 +135,19 @@ function csvReset(){
   csvGoStep(1);
 }
 
-// ── Modal wrapper — opened from the Transactions tab and the Dashboard "Add transaction" button ──
+// ── CSV wizard host management ───────────────────────────────
+// One wizard (#csv-wizard) is shared between the Upload Transactions page
+// (#csv-mount, its default home) and the pop-up modal (#csv-modal-box).
+// Relocating the node avoids duplicate element IDs.
+function csvMountOnPage(){
+  var w = document.getElementById('csv-wizard');
+  var mount = document.getElementById('csv-mount');
+  if (w && mount && w.parentNode !== mount) mount.appendChild(w);
+}
 function openCsvModal(){
+  var w = document.getElementById('csv-wizard');
+  var box = document.getElementById('csv-modal-box');
+  if (w && box && w.parentNode !== box) box.appendChild(w);
   csvReset();
   var m = document.getElementById('csv-modal');
   if (m) m.classList.add('open');
@@ -144,6 +155,7 @@ function openCsvModal(){
 function closeCsvModal(){
   var m = document.getElementById('csv-modal');
   if (m) m.classList.remove('open');
+  csvMountOnPage();
 }
 
 // ── DRAG & DROP ──────────────────────────────────────────────
@@ -317,6 +329,7 @@ function csvConfirmImport(){
   csvReset();
   renderTx();renderDashboard();
   closeCsvModal();
+  if (typeof go === 'function') go('transactions'); // show the imported rows
   toast(`✅ Imported ${count} transaction${count!==1?'s':''}!`);
 }
 

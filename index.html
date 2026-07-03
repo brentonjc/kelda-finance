@@ -1243,7 +1243,7 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="main">
   <div id="topbar">
     <div class="topbar-left">
-      <button class="tb-back" id="tb-back" onclick="go('dashboard')" aria-label="Back to dashboard" title="Back to dashboard"><i class="ti ti-arrow-left"></i></button>
+      <button class="tb-back hidden" id="tb-back" onclick="go('dashboard')" aria-label="Back to dashboard" title="Back to dashboard"><i class="ti ti-arrow-left"></i></button>
       <div class="topbar-greeting">
         <span class="topbar-greet-hi" id="tb-greeting">Welcome back</span>
         <span class="topbar-greet-date" id="tb-greetdate"></span>
@@ -1495,15 +1495,6 @@ window.addEventListener('unhandledrejection',function(e){
             <div id="tx-exp-total" style="font-weight:700;color:var(--primary)">$0.00</div></div>
         </div>
       </div>
-    </div>
-
-    <!-- CSV IMPORT TRIGGER — the modal itself lives outside .page-content so it can also be opened from the Dashboard -->
-    <div class="card mb" id="csv-card-trigger" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <div>
-        <div class="section-label" style="margin:0 0 3px">📂 Import from CSV</div>
-        <div style="font-size:.78rem;color:var(--muted)">Bring in transactions from a bank export, Excel save, or Google Sheets download.</div>
-      </div>
-      <button class="btn btn-primary btn-sm" onclick="openCsvModal()">📂 Import CSV</button>
     </div>
 
     <div class="card">
@@ -2418,6 +2409,94 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="eq-sale-overlay" class="eq-modal-overlay" style="display:none"></div>
   </div>
 
+  <!-- ═══ UPLOAD TRANSACTIONS ═══ -->
+  <div class="page" id="page-upload">
+    <div class="page-title">Upload Transactions</div>
+    <div class="page-sub">Import transactions from a bank CSV export, Excel save, or Google Sheets download. Everything stays on this device.</div>
+    <div id="how-to-upload"></div>
+    <!-- Default home of the CSV wizard. openCsvModal() temporarily relocates #csv-wizard into the modal. -->
+    <div id="csv-mount">
+      <div class="card" id="csv-wizard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div class="section-label" style="margin:0">📂 Import from CSV</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()">⬇️ Download Template</button>
+            <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none">✕ Start over</button>
+          </div>
+        </div>
+
+        <!-- Step indicator -->
+        <div class="csv-steps">
+          <div class="csv-step-item"><div class="csv-snum active" id="csn1">1</div><span class="csv-slbl active" id="csl1">Upload</span></div>
+          <div class="csv-conn"></div>
+          <div class="csv-step-item"><div class="csv-snum" id="csn2">2</div><span class="csv-slbl" id="csl2">Map Columns</span></div>
+          <div class="csv-conn"></div>
+          <div class="csv-step-item"><div class="csv-snum" id="csn3">3</div><span class="csv-slbl" id="csl3">Preview & Import</span></div>
+        </div>
+
+        <!-- STEP 1: Upload -->
+        <div class="csv-panel show" id="csv-p1">
+          <div class="csv-drop" id="csv-drop"
+            onclick="document.getElementById('csv-file-input').click()"
+            ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
+            <div class="cd-icon">📄</div>
+            <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
+            <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
+          </div>
+          <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
+          <div class="imp-hint">
+            <strong>💡 What format does my CSV need?</strong>
+            Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
+            You'll map your columns in the next step. Download the template above for a ready-to-fill example.
+          </div>
+        </div>
+
+        <!-- STEP 2: Map Columns -->
+        <div class="csv-panel" id="csv-p2">
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
+            We found these columns in your file. Tell us what each one is — then click Preview.
+          </p>
+          <div style="overflow-x:auto">
+            <table class="map-tbl">
+              <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
+              <tbody id="csv-map-body"></tbody>
+            </table>
+          </div>
+          <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
+            💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
+            Negative amounts are treated as expenses automatically.
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
+            <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Preview -->
+        <div class="csv-panel" id="csv-p3">
+          <div class="imp-stats" id="csv-imp-stats"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div style="font-size:.76rem;color:var(--muted)">🟡 Yellow = possible duplicate &nbsp;·&nbsp; 🔴 Red = skipped (missing data)</div>
+            <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
+              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+              Skip duplicates
+            </label>
+          </div>
+          <div class="prev-wrap">
+            <table class="prev-tbl">
+              <thead><tr><th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody id="csv-prev-body"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
+            <button class="btn btn-primary" onclick="csvConfirmImport()">✅ Import Transactions</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ EXPORT DATA ═══ -->
   <div class="page" id="page-export">
     <div class="page-title">Export Data</div>
@@ -2848,87 +2927,12 @@ window.addEventListener('unhandledrejection',function(e){
   </div><!-- /page-content -->
 </div><!-- /main -->
 
-<!-- CSV IMPORT MODAL — opened from Transactions tab and the Dashboard "Add transaction" button -->
+<!-- CSV IMPORT MODAL — thin wrapper. The wizard (#csv-wizard) lives on the
+     Upload Transactions page and is relocated in here when opened as a modal. -->
 <div class="modal-overlay" id="csv-modal" onclick="if(event.target===this)closeCsvModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div class="card mb" id="csv-card" style="margin-bottom:0;box-shadow:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">📂 Import from CSV</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()">⬇️ Download Template</button>
-          <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none">✕ Cancel</button>
-          <button class="btn btn-ghost btn-sm" onclick="closeCsvModal()">✕ Close</button>
-        </div>
-      </div>
-
-      <!-- Step indicator -->
-      <div class="csv-steps">
-        <div class="csv-step-item"><div class="csv-snum active" id="csn1">1</div><span class="csv-slbl active" id="csl1">Upload</span></div>
-        <div class="csv-conn"></div>
-        <div class="csv-step-item"><div class="csv-snum" id="csn2">2</div><span class="csv-slbl" id="csl2">Map Columns</span></div>
-        <div class="csv-conn"></div>
-        <div class="csv-step-item"><div class="csv-snum" id="csn3">3</div><span class="csv-slbl" id="csl3">Preview & Import</span></div>
-      </div>
-
-      <!-- STEP 1: Upload -->
-      <div class="csv-panel show" id="csv-p1">
-        <div class="csv-drop" id="csv-drop"
-          onclick="document.getElementById('csv-file-input').click()"
-          ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
-          <div class="cd-icon">📄</div>
-          <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
-          <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
-        </div>
-        <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
-        <div class="imp-hint">
-          <strong>💡 What format does my CSV need?</strong>
-          Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
-          You'll map your columns in the next step. Download the template above for a ready-to-fill example.
-        </div>
-      </div>
-
-      <!-- STEP 2: Map Columns -->
-      <div class="csv-panel" id="csv-p2">
-        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
-          We found these columns in your file. Tell us what each one is — then click Preview.
-        </p>
-        <div style="overflow-x:auto">
-          <table class="map-tbl">
-            <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
-            <tbody id="csv-map-body"></tbody>
-          </table>
-        </div>
-        <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
-          💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
-          Negative amounts are treated as expenses automatically.
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end">
-          <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
-          <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
-        </div>
-      </div>
-
-      <!-- STEP 3: Preview -->
-      <div class="csv-panel" id="csv-p3">
-        <div class="imp-stats" id="csv-imp-stats"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div style="font-size:.76rem;color:var(--muted)">🟡 Yellow = possible duplicate &nbsp;·&nbsp; 🔴 Red = skipped (missing data)</div>
-          <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
-            <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
-            Skip duplicates
-          </label>
-        </div>
-        <div class="prev-wrap">
-          <table class="prev-tbl">
-            <thead><tr><th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
-            <tbody id="csv-prev-body"></tbody>
-          </table>
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
-          <button class="btn btn-primary" onclick="csvConfirmImport()">✅ Import Transactions</button>
-        </div>
-      </div>
+  <div class="modal-box" id="csv-modal-box" onclick="event.stopPropagation()" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:2px">
+      <button class="modal-close" onclick="closeCsvModal()" aria-label="Close">✕</button>
     </div>
   </div>
 </div>

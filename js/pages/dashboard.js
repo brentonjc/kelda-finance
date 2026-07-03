@@ -1525,19 +1525,19 @@ function kdRenderDashboard() {
   }
 
   // ── Compose ──
+  // Greeting + date now live in the static top bar (renderTopbarGreeting); the
+  // dashboard header keeps the period pills, plus a mobile-only action cluster.
   var html = '<div class="kd-dash">'
     + '<div class="kd-top">'
-    + '<div class="kd-greeting">' + greet + ', ' + kdEsc(name) + '</div>'
-    + '<div class="kd-topdate">' + dateStr + '</div>'
     + '<div class="kd-pills">'
     + '<button class="kd-pill' + (kdPeriod==='lastMonth'?' active':'') + '" onclick="kdSetPeriod(\'lastMonth\')">Last Month</button>'
     + '<button class="kd-pill' + (kdPeriod==='ytd'?' active':'') + '" onclick="kdSetPeriod(\'ytd\')">Year to Date</button>'
     + '<button class="kd-pill' + (kdPeriod==='lastYear'?' active':'') + '" onclick="kdSetPeriod(\'lastYear\')">Last Year</button>'
     + '</div>'
     + '<div class="kd-top-r">'
-    + '<button class="kd-ibtn" aria-label="Search" onclick="go(\'transactions\')"><i class="ti ti-search"></i></button>'
+    + '<button class="kd-ibtn" aria-label="Search" onclick="openSearchModal()"><i class="ti ti-search"></i></button>'
     + '<button class="kd-ibtn" aria-label="Notifications" onclick="openNotifModal()"><i class="ti ti-bell"></i><span class="kd-ndot"></span></button>'
-    + '<button class="kd-addbtn" onclick="openCsvModal()"><i class="ti ti-plus" style="font-size:12px"></i> Add transaction</button>'
+    + '<button class="kd-addbtn" onclick="go(\'upload\')"><i class="ti ti-upload" style="font-size:12px"></i> Upload</button>'
     + '</div></div>'
     + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
     + '</div>';

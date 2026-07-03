@@ -102,7 +102,7 @@ function toast(msg,dur=2400,type){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','forecast','transfers','equities','settings','quickstart'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','settings','quickstart'];
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -130,6 +130,7 @@ function go(id){
     else if(id==='super')renderSuperPage();
     else if(id==='assets')renderAssets();
     else if(id==='export')renderExportPage();
+    else if(id==='upload'){if(typeof csvMountOnPage==='function')csvMountOnPage();if(typeof csvReset==='function')csvReset();}
     else if(id==='bva')renderBVA();
     else if(id==='categories')renderCategories();
     else if(id==='smartrules'){if(typeof renderRulesList==='function')renderRulesList();}
@@ -161,6 +162,22 @@ function navSyncActive(id){
     if(cat) cat.classList.toggle('cat-active', !!g.querySelector('.nav-fly-item.active'));
   });
   updateNotifDot();
+  renderTopbarGreeting();
+}
+
+// Greeting + date shown in the top bar (item 4). Global — reflects the active profile.
+function renderTopbarGreeting(){
+  var hiEl=document.getElementById('tb-greeting');
+  var dtEl=document.getElementById('tb-greetdate');
+  if(!hiEl&&!dtEl) return;
+  var now=new Date(), hr=now.getHours();
+  var greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  var name='';
+  if(typeof activeProfile!=='undefined'){
+    name=activeProfile==='joint'?'':(typeof getUserName==='function'?getUserName(activeProfile):'');
+  }
+  if(hiEl) hiEl.textContent=name?(greet+', '+name):greet;
+  if(dtEl) dtEl.textContent=now.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 }
 
 
@@ -757,11 +774,7 @@ function fabAction(action) {
       if (addBtn) addBtn.click();
     }, 300);
   } else if (action === 'import') {
-    goMob('transactions');
-    setTimeout(function() {
-      var importSection = document.getElementById('import-section') || document.getElementById('csv-import-section');
-      if (importSection) importSection.scrollIntoView({behavior:'smooth'});
-    }, 300);
+    goMob('upload');
   } else if (action === 'bill') {
     goMob('bills');
   } else if (action === 'cash') {
