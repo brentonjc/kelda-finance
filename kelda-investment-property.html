@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="en-AU" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Kelda — Investment Property</title>
+
+<!-- Google Fonts (matches main app: Sora / DM Sans / DM Mono) -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+<!-- Chart.js (graceful fallback handled by safeChart) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" onerror="window._chartJsError=true"></script>
+
+<style>
+/* ===== Design tokens (from main app css/tokens.css) ===== */
+:root{
+  --n950:#080C18; --n900:#0D1225; --n800:#111830; --n700:#18213E; --n600:#1E2A4A; --n300:#6278A0;
+  --bg:var(--n950); --card:var(--n800); --card2:var(--n700); --card3:var(--n600);
+  --border:rgba(98,120,160,.22);
+  --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a; --purple:#818CF8;
+  --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
+  --success-bg:rgba(0,200,150,.15); --warn-bg:rgba(245,158,11,.15); --danger-bg:rgba(239,68,68,.15);
+  --text:#E8EDF5; --muted:var(--n300);
+  --input-bg:var(--n700); --input-border:rgba(98,120,160,.35);
+  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp6:24px; --sp8:32px; --sp12:48px; --sp16:64px;
+  --radius:16px; --radius-sm:10px; --radius-lg:20px; --radius-pill:9999px;
+  --font-display:'Sora',system-ui,sans-serif; --font-body:'DM Sans',system-ui,sans-serif; --font-mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; padding-bottom:env(safe-area-inset-bottom);
+}
+h1,h2,h3,h4{font-family:var(--font-display); font-weight:700; margin:0; line-height:1.2;}
+.mono{font-family:var(--font-mono); font-weight:500; font-variant-numeric:tabular-nums;}
+a{color:var(--primary);}
+
+/* ===== Layout shell ===== */
+.shell{display:flex; min-height:100vh;}
+.sidebar{
+  width:240px; flex:0 0 240px; background:var(--n900); border-right:1px solid var(--border);
+  padding:var(--sp6) var(--sp4); position:sticky; top:0; height:100vh; overflow:auto;
+}
+.brand{display:flex; align-items:center; gap:var(--sp3); margin-bottom:var(--sp8); padding:0 var(--sp2);}
+.brand-mark{width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--purple)); display:flex; align-items:center; justify-content:center; font-size:20px;}
+.brand-name{font-family:var(--font-display); font-weight:700; font-size:17px;}
+.brand-sub{font-size:11px; color:var(--muted);}
+.nav-item{
+  display:flex; align-items:center; gap:var(--sp3); width:100%; padding:var(--sp3) var(--sp3); margin-bottom:var(--sp1);
+  background:none; border:none; color:var(--muted); font-family:var(--font-body); font-size:15px; font-weight:600;
+  border-radius:var(--radius-sm); cursor:pointer; text-align:left; min-height:44px;
+}
+.nav-item:hover{background:var(--card); color:var(--text);}
+.nav-item.active{background:var(--primary); color:#fff;}
+.nav-item .ico{font-size:18px; width:22px; text-align:center;}
+.content{flex:1 1 auto; min-width:0; padding:var(--sp8) var(--sp8) 120px; max-width:1100px; margin:0 auto; width:100%;}
+.page{display:none;} .page.active{display:block;}
+
+.page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:var(--sp4); margin-bottom:var(--sp6); flex-wrap:wrap;}
+.page-title{font-size:28px;}
+.page-sub{color:var(--muted); font-size:14px; margin-top:var(--sp1);}
+
+/* ===== Cards ===== */
+.card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--sp6); margin-bottom:var(--sp4);}
+.card2{background:var(--card2);}
+.card-title{font-size:16px; margin-bottom:var(--sp4); display:flex; align-items:center; gap:var(--sp2);}
+.grid{display:grid; gap:var(--sp4);}
+.grid-2{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(3,1fr);} .grid-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:760px){ .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;} }
+
+/* KPI chips */
+.kpi{background:var(--card2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:var(--sp4);}
+.kpi-label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
+.kpi-value{font-family:var(--font-mono); font-size:22px; font-weight:500; margin-top:var(--sp2);}
+
+/* ===== Buttons ===== */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--sp2); min-height:44px; padding:0 var(--sp4);
+  border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--card2); color:var(--text);
+  font-family:var(--font-body); font-weight:600; font-size:14px; cursor:pointer;
+}
+.btn:hover{border-color:var(--primary);}
+.btn-primary{background:var(--primary); border-color:var(--primary); color:#fff;}
+.btn-primary:hover{background:var(--pink-light);}
+.btn-danger{background:var(--danger); border-color:var(--danger); color:#fff;}
+.btn-ghost{background:none;}
+.btn-sm{min-height:34px; font-size:13px; padding:0 var(--sp3);}
+.btn-block{width:100%;}
+
+/* ===== Badges ===== */
+.badge{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:var(--radius-pill);}
+.badge-rented{background:var(--success-bg); color:var(--success);}
+.badge-vacant{background:var(--warn-bg); color:var(--warn);}
+.badge-owner{background:rgba(129,140,248,.15); color:var(--purple);}
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:3px 9px; border-radius:var(--radius-pill); background:var(--card3); color:var(--text);}
+
+/* ===== Inputs ===== */
+label.field{display:block; margin-bottom:var(--sp4);}
+.field-label{display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:6px;}
+input,select,textarea{
+  width:100%; min-height:44px; background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);
+  border-radius:var(--radius-sm); padding:0 var(--sp3); font-family:var(--font-body); font-size:16px;
+}
+textarea{padding:var(--sp3); min-height:72px; resize:vertical; line-height:1.4;}
+input.mono{font-family:var(--font-mono);}
+input:focus,select:focus,textarea:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(240,83,138,.25);}
+.hint{font-size:12px; color:var(--muted); margin-top:6px;}
+.note{font-size:12.5px; color:var(--muted); background:var(--n900); border-left:3px solid var(--primary); border-radius:6px; padding:var(--sp3); margin:var(--sp3) 0;}
+
+/* Toggle / segmented */
+.seg{display:inline-flex; background:var(--card2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:3px; gap:3px; flex-wrap:wrap;}
+.seg button{min-height:38px; padding:0 var(--sp4); border:none; background:none; color:var(--muted); font-family:var(--font-body); font-weight:600; font-size:14px; border-radius:8px; cursor:pointer;}
+.seg button.active{background:var(--primary); color:#fff;}
+.switch{position:relative; display:inline-flex; align-items:center; gap:var(--sp3); cursor:pointer;}
+.switch input{display:none;}
+.switch .track{width:48px; height:28px; border-radius:var(--radius-pill); background:var(--card3); position:relative; transition:.2s; flex:0 0 48px;}
+.switch .track::after{content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:.2s;}
+.switch input:checked + .track{background:var(--success);}
+.switch input:checked + .track::after{transform:translateX(20px);}
+
+/* ===== Tables ===== */
+.table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+table{width:100%; border-collapse:collapse; font-size:14px;}
+th,td{text-align:left; padding:var(--sp3); border-bottom:1px solid var(--border);}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600;}
+td.num,th.num{text-align:right; font-family:var(--font-mono);}
+tr.total td{font-weight:700; border-top:2px solid var(--border);}
+tr.auto td{color:var(--muted); font-style:italic; background:var(--n900);}
+.pos{color:var(--success);} .neg{color:var(--danger);} .amberv{color:var(--warn);}
+
+/* Progress (traffic light) */
+.progress{height:8px; border-radius:var(--radius-pill); background:var(--card3); overflow:hidden;}
+.progress > span{display:block; height:100%; border-radius:var(--radius-pill);}
+
+/* ===== Modal / drawer ===== */
+.overlay{position:fixed; inset:0; background:rgba(4,7,16,.7); backdrop-filter:blur(4px); z-index:200; display:none; align-items:flex-end; justify-content:center;}
+.overlay.open{display:flex;}
+.sheet{
+  background:var(--n900); border:1px solid var(--border); border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  width:100%; max-width:640px; max-height:92vh; overflow:auto; padding:var(--sp6);
+  padding-bottom:calc(var(--sp6) + env(safe-area-inset-bottom));
+}
+@media(min-width:760px){ .overlay{align-items:center;} .sheet{border-radius:var(--radius-lg);} }
+.sheet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--sp4);}
+.sheet-head h3{font-size:19px;}
+.x-btn{background:none; border:none; color:var(--muted); font-size:26px; line-height:1; cursor:pointer; min-width:44px; min-height:44px;}
+
+/* Stepper */
+.stepper{display:flex; gap:6px; margin-bottom:var(--sp6);}
+.stepper .step{flex:1; height:5px; border-radius:var(--radius-pill); background:var(--card3);}
+.stepper .step.done{background:var(--success);} .stepper .step.cur{background:var(--primary);}
+.step-label{font-size:13px; color:var(--muted); margin-bottom:var(--sp4); font-weight:600;}
+
+/* Empty state */
+.empty{text-align:center; padding:var(--sp16) var(--sp4); color:var(--muted);}
+.empty .ico{font-size:54px; display:block; margin-bottom:var(--sp4);}
+.empty h3{color:var(--text); margin-bottom:var(--sp2);}
+
+/* Hero (dashboard) */
+.hero{background:linear-gradient(135deg,rgba(240,83,138,.12),rgba(129,140,248,.10)); border:1px solid var(--border);}
+.hero-addr{font-size:18px; margin-bottom:var(--sp1);}
+.metric-row{display:flex; flex-wrap:wrap; gap:var(--sp4) var(--sp8); margin-top:var(--sp4);}
+.metric .l{font-size:12px; color:var(--muted);} .metric .v{font-family:var(--font-mono); font-size:18px; margin-top:2px;}
+
+/* Filter bar */
+.filterbar{display:flex; gap:var(--sp3); flex-wrap:wrap; align-items:flex-end; margin-bottom:var(--sp4);}
+.filterbar .field{margin:0; min-width:150px; flex:1;}
+.month-head{font-family:var(--font-display); font-weight:600; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:var(--sp4) 0 var(--sp2);}
+.tx-row{display:flex; align-items:center; gap:var(--sp3); padding:var(--sp3); border-bottom:1px solid var(--border);}
+.tx-row .desc{flex:1; min-width:0;}
+.tx-row .desc small{color:var(--muted);}
+.tx-amt{font-family:var(--font-mono); font-weight:500; white-space:nowrap;}
+.tx-actions{display:flex; gap:6px;}
+
+/* Editable rental statement (standard P&L) */
+.stmt-section{font-family:var(--font-display); font-weight:600; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:var(--sp4) 0 var(--sp2);}
+.stmt-line{display:flex; align-items:center; gap:var(--sp2); padding:6px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+.stmt-line .stmt-label{flex:1 1 150px; min-width:130px; font-size:14px;}
+.stmt-line input.stmt-amt{flex:0 0 110px; width:110px; min-height:38px; text-align:right;}
+.stmt-line select.stmt-freq{flex:0 0 120px; width:120px; min-height:38px;}
+.stmt-line .stmt-ann{flex:0 0 92px; text-align:right; color:var(--muted); font-size:13px;}
+.stmt-line.stmt-total{border-top:2px solid var(--border); font-weight:700; padding-top:10px;}
+.stmt-line.stmt-total .stmt-ann{color:var(--text); font-size:15px;}
+.stmt-ro{margin-left:auto; color:var(--muted);}
+
+.bracket-table td{font-family:var(--font-mono); font-size:13px;}
+.bracket-table td:first-child{font-family:var(--font-body);}
+
+.disclaimer{font-size:11.5px; color:var(--muted); text-align:center; padding:var(--sp6) var(--sp4); border-top:1px solid var(--border); margin-top:var(--sp8);}
+
+/* ===== Bottom nav (mobile) ===== */
+.bottomnav{display:none;}
+@media(max-width:760px){
+  .sidebar{display:none;}
+  .content{padding:var(--sp4) var(--sp4) 120px;}
+  .bottomnav{
+    display:flex; position:fixed; bottom:0; left:0; right:0; z-index:150; background:var(--n900); border-top:1px solid var(--border);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom)); justify-content:space-around; align-items:center;
+  }
+  .bottomnav button{background:none; border:none; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10px; font-weight:600; min-width:56px; min-height:48px; cursor:pointer;}
+  .bottomnav button .ico{font-size:20px;}
+  .bottomnav button.active{color:var(--primary);}
+  .page-title{font-size:23px;}
+}
+
+/* ===== Print ===== */
+@media print{
+  body{background:#fff; color:#000;}
+  .sidebar,.bottomnav,.no-print,.disclaimer,.page-head .btn{display:none !important;}
+  .content{padding:0; max-width:none;}
+  .page{display:none !important;}
+  .page.active{display:block !important;}
+  .card{border:1px solid #ccc; box-shadow:none; background:#fff; color:#000; page-break-inside:avoid;}
+  .card2,.kpi{background:#f5f5f5;}
+  table,th,td{color:#000; border-color:#bbb;}
+  tr.auto td{background:#f0f0f0; color:#333;}
+  .note{color:#333; background:#f5f5f5;}
+  .mono,td.num{color:#000;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar (desktop) -->
+  <aside class="sidebar no-print">
+    <div class="brand">
+      <div class="brand-mark">🏘️</div>
+      <div>
+        <div class="brand-name">Kelda</div>
+        <div class="brand-sub">Investment Property</div>
+      </div>
+    </div>
+    <nav id="sideNav"></nav>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+    <section id="page-dashboard" class="page active"></section>
+    <section id="page-properties" class="page"></section>
+    <section id="page-transactions" class="page"></section>
+    <section id="page-tax" class="page"></section>
+    <section id="page-settings" class="page"></section>
+
+    <footer class="disclaimer">
+      Kelda Finance is a personal record-keeping tool, not financial or tax advice. All calculations are estimates.
+      Consult a registered tax agent (RTA) or accountant for your specific situation.
+    </footer>
+  </main>
+</div>
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottomnav no-print" id="bottomNav"></nav>
+
+<!-- Modal / sheet host -->
+<div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
+
+<script>
+"use strict";
+/* =================================================================
+   KELDA — INVESTMENT PROPERTY MODULE  (standalone single-file)
+   Data prefix: kf_ip_   |  Vanilla JS  |  string concat only
+   ================================================================= */
+
+/* ---------- Storage keys ---------- */
+var K = {
+  properties:'kf_ip_properties',
+  transactions:'kf_ip_transactions',
+  vacancies:'kf_ip_vacancies',
+  taxSettings:'kf_ip_tax_settings',
+  settings:'kf_ip_settings',
+  summary:'kf_ip_summary'
+};
+// KELDA INTEGRATION: main app stores under cff_ prefix (confirmed). When connected we read these read-only.
+var KELDA_KEYS = { mortgage:'cff_mortgage', tx:'cff_tx', userconfig:'cff_userconfig' };
+
+/* ---------- Storage helpers (try/catch for private browsing) ---------- */
+function load(k){ try{ return JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){ return null; } }
+function save(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.warn('Storage unavailable:', e); } }
+
+/* ---------- Utils ---------- */
+function fmt(n){ return '$' + Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmt0(n){ return '$' + Math.round(Number(n||0)).toLocaleString('en-AU'); }
+function pct(n){ return (Math.round(Number(n||0)*10)/10) + '%'; }
+function esc(s){ s = String(s==null?'':s); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uuid(){ try{ if(crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){} return 'id-' + Date.now() + '-' + Math.floor(Math.random()*1e9); }
+function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+/* ---------- Financial-year helpers (AU: 1 Jul – 30 Jun) ---------- */
+function fyOf(dateStr){
+  var d = new Date(dateStr); if(isNaN(d)) return null;
+  var y = d.getFullYear(), m = d.getMonth();
+  var start = (m >= 6) ? y : y - 1;
+  return start + '-' + String(start+1).slice(2);
+}
+function fyBounds(fy){
+  var start = parseInt(fy.slice(0,4), 10);
+  return { from:new Date(start,6,1), to:new Date(start+1,5,30) };
+}
+function fyDays(fy){ var b = fyBounds(fy); return Math.round((b.to - b.from)/86400000) + 1; }
+function fyLabel(fy){ var p = fy.split('-'); return p[0] + '–' + p[1]; } // en dash
+var ALL_FYS = ['2022-23','2023-24','2024-25','2025-26'];
+
+// inclusive day count of overlap between [aFrom,aTo] and [bFrom,bTo] (Date objects)
+function overlapDays(aFrom,aTo,bFrom,bTo){
+  var s = aFrom > bFrom ? aFrom : bFrom;
+  var e = aTo < bTo ? aTo : bTo;
+  if(e < s) return 0;
+  return Math.round((e - s)/86400000) + 1;
+}
+function parseD(s){ var d = new Date(s); return isNaN(d) ? null : d; }
+
+/* ---------- State ---------- */
+var PROPERTIES = load(K.properties) || [];
+var TRANSACTIONS = load(K.transactions) || [];
+var VACANCIES = load(K.vacancies) || [];
+var TAX_SETTINGS = load(K.taxSettings) || { owners:[] };
+var SETTINGS = load(K.settings) || { financialYear:'2024-25', keldaConnect:false };
+var CURRENT_TAB = 'dashboard';
+
+/* ---------- Categories (ATO worksheet order) ---------- */
+var INCOME_CATS = [
+  ['rental-income','Rental income','🏠'],
+  ['other-rental-income','Other rental related income','💰']
+];
+var EXPENSE_CATS = [
+  ['advertising','Advertising for tenants','📣'],
+  ['body-corporate','Body corporate fees and charges','🏢'],
+  ['borrowing-expenses','Borrowing expenses','📄'],
+  ['cleaning','Cleaning','🧹'],
+  ['council-rates','Council rates','🏛️'],
+  ['decline-in-value','Deductions for decline in value (Div 40)','📉'],
+  ['gardening','Gardening / lawn mowing','🌿'],
+  ['insurance','Insurance','🛡️'],
+  ['interest-on-loans','Interest on loans','🏦'],
+  ['land-tax','Land tax','🗺️'],
+  ['legal-expenses','Legal expenses','⚖️'],
+  ['pest-control','Pest control','🐜'],
+  ['agent-fees','Property agent fees / commission','🤝'],
+  ['repairs-maintenance','Repairs and maintenance','🔧'],
+  ['capital-works','Capital works deductions (Div 43)','🏗️'],
+  ['stationery','Stationery, telephone and postage','✉️'],
+  ['water-charges','Water charges','💧'],
+  ['sundry','Sundry rental expenses','📦']
+];
+var AUTO_CATS = ['interest-on-loans','capital-works','decline-in-value'];
+// Expense categories the user can schedule (excludes auto-calculated ones)
+function scheduleableExpenseCats(){ return EXPENSE_CATS.filter(function(c){ return AUTO_CATS.indexOf(c[0])===-1; }); }
+
+/* ---------- Frequency / annualisation ---------- */
+var FREQUENCIES = [['weekly','Weekly',52],['fortnightly','Fortnightly',26],['monthly','Monthly',12],['quarterly','Quarterly',4],['annual','Annual',1]];
+function freqMult(f){ for(var i=0;i<FREQUENCIES.length;i++){ if(FREQUENCIES[i][0]===f) return FREQUENCIES[i][2]; } return 1; }
+function annualize(amount, freq){ return num(amount) * freqMult(freq); }
+function freqOptions(id, selected){
+  var o='<select id="'+id+'">';
+  for(var i=0;i<FREQUENCIES.length;i++) o+='<option value="'+FREQUENCIES[i][0]+'"'+(selected===FREQUENCIES[i][0]?' selected':'')+'>'+FREQUENCIES[i][1]+'</option>';
+  return o+'</select>';
+}
+function catLabel(id){
+  var all = INCOME_CATS.concat(EXPENSE_CATS);
+  for(var i=0;i<all.length;i++){ if(all[i][0]===id) return all[i][1]; }
+  return id;
+}
+function catIcon(id){
+  var all = INCOME_CATS.concat(EXPENSE_CATS);
+  for(var i=0;i<all.length;i++){ if(all[i][0]===id) return all[i][2]; }
+  return '📋';
+}
+
+/* ---------- Tax brackets (2024-25, Stage 3) ---------- */
+var BRACKETS = [
+  ['$0 – $18,200','0% (tax-free)','0%',0],
+  ['$18,201 – $45,000','19%','21%',19],
+  ['$45,001 – $135,000','32.5%','34.5%',32.5],
+  ['$135,001 – $190,000','37%','39%',37],
+  ['$190,001+','45%','47%',45]
+];
+function withMedicare(rate){ return rate === 0 ? 0 : rate + 2; }
+
+/* ---------- Persistence + summary ---------- */
+function persistAll(){
+  save(K.properties, PROPERTIES);
+  save(K.transactions, TRANSACTIONS);
+  save(K.vacancies, VACANCIES);
+  save(K.taxSettings, TAX_SETTINGS);
+  save(K.settings, SETTINGS);
+  writeSummary();
+}
+// KELDA INTEGRATION: Expose kf_ip_summary object for Kelda Dashboard widget
+function writeSummary(){
+  var fy = SETTINGS.financialYear;
+  var totalEquity = 0, totalNet = 0, totalRefund = 0;
+  for(var i=0;i<PROPERTIES.length;i++){
+    var p = PROPERTIES[i];
+    totalEquity += equityOf(p);
+    var ws = computeWorksheet(p, fy);
+    totalNet += ws.net;
+    var ti = taxImpact(p, fy);
+    for(var j=0;j<ti.length;j++){ if(ti[j].refund) totalRefund += ti[j].amount; }
+  }
+  save(K.summary, {
+    totalEquity:totalEquity, totalNetRentalIncome:totalNet, totalEstimatedTaxRefund:totalRefund,
+    propertyCount:PROPERTIES.length, lastUpdated:new Date().toISOString()
+  });
+}
+
+/* =================================================================
+   CALCULATION ENGINE
+   ================================================================= */
+function netDebt(p){ var l = p.loan||{}; return num(l.currentBalance) - num(l.offsetBalance); }
+function equityOf(p){ return num(p.currentMarketValue) - Math.max(0, netDebt(p)); }
+
+function deductibleInterestAnnual(p){
+  var l = p.loan||{};
+  return Math.max(0, (num(l.currentBalance) - num(l.offsetBalance))) * (num(l.interestRate)/100);
+}
+// Calculated monthly repayment (so the user never has to enter it).
+// Interest-only: interest on the gross balance. P&I: standard amortised payment over the remaining term.
+function calcRepayment(l){
+  l = l || {};
+  var P = num(l.currentBalance);
+  var r = num(l.interestRate)/100/12;
+  if(l.type === 'interest-only') return P * r;
+  var n = num(l.termYears) * 12;
+  if(n <= 0) return 0;
+  if(r === 0) return P / n;
+  return P * r / (1 - Math.pow(1 + r, -n));
+}
+
+// Div 43 capital works (2.5% pa, building must be post 16 Sep 1987)
+function div43Annual(p, fy){
+  var d = (p.depreciation||{}).div43; if(!d) return 0;
+  var yr = fy.slice(0,4); // start year as key
+  if(d.annualAmounts && d.annualAmounts[yr] != null) return num(d.annualAmounts[yr]);
+  var cd = parseD(d.constructionDate);
+  if(!cd || cd < new Date(1987,8,16)) return 0; // 16 Sep 1987
+  return num(d.constructionCost) * (num(d.annualRate || 2.5)/100);
+}
+
+// Div 40 plant & equipment annual deduction for a FY (sum of all assets)
+function div40Annual(p, fy){
+  var d40 = ((p.depreciation||{}).div40)||{}; var assets = d40.assets||[];
+  var b = fyBounds(fy); var total = 0;
+  for(var i=0;i<assets.length;i++){
+    var a = assets[i];
+    if(a.annualDeduction != null && a.annualDeduction !== '') { total += num(a.annualDeduction); continue; }
+    var life = num(a.effectiveLife); if(life<=0) continue;
+    var sd = parseD(a.startDate);
+    if(sd && sd > b.to) continue; // not yet in service
+    if(a.method === 'prime-cost'){ total += num(a.originalValue)/life; }
+    else { total += num(a.openingValue || a.originalValue) * (2/life); } // diminishing value 200%
+  }
+  return total;
+}
+
+// Apportionment: rental days / total days in FY
+function apportionment(p, fy){
+  var b = fyBounds(fy); var total = fyDays(fy);
+  var avail = parseD(p.availableForRentDate) || parseD(p.purchaseDate) || b.from;
+  var winFrom = avail > b.from ? avail : b.from;
+  if(winFrom > b.to){ return { total:total, rental:0, ppor:0, vacant:0, factor:0 }; }
+  var baseDays = overlapDays(winFrom, b.to, b.from, b.to);
+  // PPOR days within window
+  var pporDays = 0; var mrp = p.mainResidencePeriods||[];
+  for(var i=0;i<mrp.length;i++){
+    if(mrp[i].type !== 'ppor') continue; // 6-year-absence periods are treated as available for rent
+    var f = parseD(mrp[i].from), t = parseD(mrp[i].to) || b.to;
+    if(f) pporDays += overlapDays(f, t, winFrom, b.to);
+  }
+  // Vacancy-log days within window (logged not-available periods)
+  var vacDays = 0;
+  for(var k=0;k<VACANCIES.length;k++){
+    if(VACANCIES[k].propertyId !== p.id) continue;
+    var vf = parseD(VACANCIES[k].from), vt = parseD(VACANCIES[k].to);
+    if(vf && vt) vacDays += overlapDays(vf, vt, winFrom, b.to);
+  }
+  var rental = Math.max(0, baseDays - pporDays - vacDays);
+  return { total:total, rental:rental, ppor:pporDays, vacant:vacDays, factor: total ? rental/total : 0 };
+}
+
+// Sum manual transactions for a property+fy by category
+function txSums(propertyId, fy){
+  var sums = {};
+  for(var i=0;i<TRANSACTIONS.length;i++){
+    var t = TRANSACTIONS[i];
+    if(t.propertyId !== propertyId) continue;
+    if(fyOf(t.date) !== fy) continue;
+    sums[t.category] = (sums[t.category]||0) + num(t.amount);
+  }
+  return sums;
+}
+
+/* ---------- Monthly performance series (operating P&L, rolling) ---------- */
+var FY_MONTHS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+function fyMonthIndex(dateStr){ var d=parseD(dateStr); if(!d) return 0; var m=d.getMonth(); return m>=6 ? m-6 : m+6; }
+// Returns {inc:[12], exp:[12]} for a property+fy. Recurring schedule is spread evenly across
+// the 12 months; logged transactions land in their actual month and add on top.
+// Operating (un-apportioned) view; the Tax Report applies rental-day apportionment for deductibility.
+function monthlySeries(p, fy){
+  var inc=[0,0,0,0,0,0,0,0,0,0,0,0], exp=[0,0,0,0,0,0,0,0,0,0,0,0];
+  var ri = p.rentalIncome||{};
+  var schedIncMo = (annualize(ri.rentAmount, ri.rentFrequency) + annualize(ri.otherAmount, ri.otherFrequency)) / 12;
+  var schedExpMo = 0; var es = p.expenseSchedule||[];
+  for(var s=0;s<es.length;s++) schedExpMo += annualize(es[s].amount, es[s].frequency) / 12;
+  // auto deductions spread monthly, unless a manual tx already covers that category
+  var sums = txSums(p.id, fy); var autoMo = 0;
+  if(sums['interest-on-loans'] == null) autoMo += deductibleInterestAnnual(p) / 12;
+  if(sums['capital-works'] == null) autoMo += div43Annual(p, fy) / 12;
+  if(sums['decline-in-value'] == null) autoMo += div40Annual(p, fy) / 12;
+  for(var m=0;m<12;m++){ inc[m]+=schedIncMo; exp[m]+=schedExpMo+autoMo; }
+  for(var i=0;i<TRANSACTIONS.length;i++){
+    var t = TRANSACTIONS[i];
+    if(t.propertyId !== p.id || fyOf(t.date) !== fy) continue;
+    var mi = fyMonthIndex(t.date);
+    if(t.type === 'income') inc[mi] += num(t.amount); else exp[mi] += num(t.amount);
+  }
+  return { inc:inc, exp:exp };
+}
+// Combine monthly series across multiple properties
+function monthlySeriesCombined(targets, fy){
+  var inc=[0,0,0,0,0,0,0,0,0,0,0,0], exp=[0,0,0,0,0,0,0,0,0,0,0,0];
+  for(var p=0;p<targets.length;p++){ var s=monthlySeries(targets[p], fy);
+    for(var m=0;m<12;m++){ inc[m]+=s.inc[m]; exp[m]+=s.exp[m]; } }
+  return { inc:inc, exp:exp };
+}
+
+// Full ATO worksheet for one property + fy
+function computeWorksheet(p, fy){
+  var ap = apportionment(p, fy);
+  var sums = txSums(p.id, fy);
+  var ownPct = ownerSharePct(p);
+
+  // Income (not apportioned): recurring schedule (annualised) + any logged one-off transactions
+  var ri = p.rentalIncome || {};
+  var schedRent = annualize(ri.rentAmount, ri.rentFrequency);
+  var schedOther = annualize(ri.otherAmount, ri.otherFrequency);
+  var income = {};
+  income['rental-income'] = (sums['rental-income']||0) + schedRent;
+  income['other-rental-income'] = (sums['other-rental-income']||0) + schedOther;
+  var grossRent = income['rental-income'] + income['other-rental-income'];
+
+  // Scheduled recurring expenses by category (annualised)
+  var sched = {}; var esList = p.expenseSchedule || [];
+  for(var s=0;s<esList.length;s++){ var sc = esList[s].category; sched[sc] = (sched[sc]||0) + annualize(esList[s].amount, esList[s].frequency); }
+
+  // Auto-calculated deductions (used unless a manual tx overrides that category)
+  var autoVals = {
+    'interest-on-loans': deductibleInterestAnnual(p) * ap.factor,
+    'capital-works': div43Annual(p, fy) * ap.factor,
+    'decline-in-value': div40Annual(p, fy) * ap.factor
+  };
+
+  var expenses = {}; var totalExp = 0;
+  for(var e=0;e<EXPENSE_CATS.length;e++){
+    var cid = EXPENSE_CATS[e][0]; var val;
+    if(AUTO_CATS.indexOf(cid) !== -1){
+      val = (sums[cid] != null) ? sums[cid] : autoVals[cid]; // manual override if logged
+    } else {
+      val = ((sums[cid]||0) + (sched[cid]||0)) * ap.factor; // scheduled + one-off, apportioned
+    }
+    expenses[cid] = val; totalExp += val;
+  }
+  var net = grossRent - totalExp;
+  return {
+    fy:fy, factor:ap.factor, apportion:ap, ownPct:ownPct,
+    income:income, grossRent:grossRent, expenses:expenses, totalExpenses:totalExp, net:net,
+    autoVals:autoVals
+  };
+}
+
+/* ---------- Ownership / tax impact ---------- */
+function ownerSharePct(p){
+  // primary share = first owner's percentage (used for "your share" column); default 100
+  var os = p.ownershipSplit||[]; return os.length ? num(os[0].percentage) : 100;
+}
+function rateForOwner(name){
+  var ow = (TAX_SETTINGS.owners)||[];
+  for(var i=0;i<ow.length;i++){ if(ow[i].name === name) return num(ow[i].marginalRate); }
+  return 32.5;
+}
+function taxImpact(p, fy){
+  var ws = computeWorksheet(p, fy);
+  var os = p.ownershipSplit||[{name:'Owner 1', percentage:100}];
+  var out = [];
+  for(var i=0;i<os.length;i++){
+    var share = ws.net * (num(os[i].percentage)/100);
+    var rate = withMedicare(rateForOwner(os[i].name)) / 100;
+    var refund = share < 0;
+    out.push({
+      name:os[i].name, pct:num(os[i].percentage), share:share,
+      rate:withMedicare(rateForOwner(os[i].name)),
+      amount: Math.abs(share) * rate, refund:refund
+    });
+  }
+  return out;
+}
+
+/* ---------- CGT ---------- */
+function cgtEstimate(p){
+  var purchase = num(p.purchasePrice);
+  var pc = p.purchaseCosts||{};
+  var costs = num(pc.stampDuty) + num(pc.legalFees) + num(pc.otherCosts);
+  var improv = 0; var ci = p.capitalImprovements||[];
+  for(var i=0;i<ci.length;i++) improv += num(ci[i].amount);
+  var costBase = purchase + costs + improv;
+  var mv = num(p.currentMarketValue);
+  var gain = mv - costBase;
+  var pd = parseD(p.purchaseDate);
+  var heldMonths = pd ? (Date.now() - pd.getTime())/(86400000*30.44) : 0;
+  var discountEligible = heldMonths > 12 && gain > 0;
+  var discount = discountEligible ? gain*0.5 : 0;
+  var taxable = gain - discount;
+  return {
+    purchase:purchase, costs:costs, improv:improv, costBase:costBase, marketValue:mv,
+    gain:gain, discount:discount, taxable:taxable, heldMonths:heldMonths, discountEligible:discountEligible
+  };
+}
+
+/* =================================================================
+   NAVIGATION
+   ================================================================= */
+var TABS = [
+  ['dashboard','Dashboard','📊','Home'],
+  ['properties','Properties','🏠','Property'],
+  ['transactions','Income & Expenses','💰','Income'],
+  ['tax','Tax Report','📄','Tax'],
+  ['settings','Settings','⚙️','Settings']
+];
+function buildNav(){
+  var side = document.getElementById('sideNav'); side.innerHTML='';
+  for(var i=0;i<TABS.length;i++){
+    (function(t){
+      var b = document.createElement('button');
+      b.className = 'nav-item' + (t[0]===CURRENT_TAB?' active':'');
+      b.innerHTML = '<span class="ico">'+t[2]+'</span><span>'+esc(t[1])+'</span>';
+      b.onclick = function(){ go(t[0]); };
+      side.appendChild(b);
+    })(TABS[i]);
+  }
+  // bottom nav (mobile): all five tabs, evenly spaced. Add actions live inside the Income & Expenses tab.
+  var bn = document.getElementById('bottomNav'); bn.innerHTML='';
+  for(var j=0;j<TABS.length;j++){
+    (function(t){
+      var b = document.createElement('button');
+      b.className = (t[0]===CURRENT_TAB?'active':'');
+      b.innerHTML = '<span class="ico">'+t[2]+'</span><span>'+esc(t[3]||t[1])+'</span>';
+      b.onclick = function(){ go(t[0]); };
+      bn.appendChild(b);
+    })(TABS[j]);
+  }
+}
+function go(tab){
+  CURRENT_TAB = tab;
+  var pages = document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++) pages[i].classList.remove('active');
+  document.getElementById('page-'+tab).classList.add('active');
+  buildNav();
+  render(tab);
+  window.scrollTo(0,0);
+}
+function render(tab){
+  if(tab==='dashboard') renderDashboard();
+  else if(tab==='properties') renderProperties();
+  else if(tab==='transactions') renderTransactions();
+  else if(tab==='tax') renderTax();
+  else if(tab==='settings') renderSettings();
+}
+
+/* ---------- Overlay helpers ---------- */
+function openSheet(html){
+  var s = document.getElementById('sheet'); s.innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSheet(){
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+document.getElementById('overlay').addEventListener('click', function(e){ if(e.target===this) closeSheet(); });
+
+/* =================================================================
+   DASHBOARD
+   ================================================================= */
+function renderDashboard(){
+  var el = document.getElementById('page-dashboard');
+  var fy = SETTINGS.financialYear;
+  var h = '<div class="page-head"><div><h1 class="page-title">Dashboard</h1>'+
+    '<div class="page-sub">Financial year '+esc(fyLabel(fy))+'</div></div>'+
+    '<button class="btn btn-primary" onclick="openPropForm()">+ Property</button></div>';
+
+  if(!PROPERTIES.length){
+    el.innerHTML = h + emptyState('🏘️','No investment properties yet','Add your first property to get started.','+ Add property',"openPropForm()");
+    return;
+  }
+
+  var totRent=0, totExp=0, totNet=0, totRefund=0, totEquity=0, totPayable=0;
+  var cards='';
+  for(var i=0;i<PROPERTIES.length;i++){
+    var p = PROPERTIES[i];
+    var ws = computeWorksheet(p, fy);
+    var eq = equityOf(p); var nd = netDebt(p);
+    var unreal = num(p.currentMarketValue) - num(p.purchasePrice);
+    totRent += ws.grossRent; totExp += ws.totalExpenses; totNet += ws.net; totEquity += eq;
+    var ti = taxImpact(p, fy);
+    var tiHtml='';
+    for(var t=0;t<ti.length;t++){
+      var o = ti[t];
+      if(o.refund) totRefund += o.amount; else totPayable += o.amount;
+      tiHtml += '<div class="metric"><div class="l">'+esc(o.name)+' tax '+(o.refund?'refund':'payable')+'</div>'+
+        '<div class="v '+(o.refund?'pos':'amberv')+'">'+(o.refund?'+':'−')+fmt0(o.amount)+'</div></div>';
+    }
+    cards += '<div class="card hero">'+
+      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">'+
+        '<div class="hero-addr">'+esc(p.address||'(no address)')+'</div>'+ statusBadge(p.rentalStatus)+
+      '</div>'+
+      '<div class="metric-row">'+
+        '<div class="metric"><div class="l">Market value</div><div class="v">'+fmt0(p.currentMarketValue)+'</div></div>'+
+        '<div class="metric"><div class="l">Unrealised gain</div><div class="v '+(unreal>=0?'pos':'neg')+'">'+(unreal>=0?'+':'−')+fmt0(Math.abs(unreal))+'</div></div>'+
+        '<div class="metric"><div class="l">Net debt (loan − offset)</div><div class="v">'+fmt0(nd)+'</div></div>'+
+        '<div class="metric"><div class="l">Equity</div><div class="v pos">'+fmt0(eq)+'</div></div>'+
+      '</div>'+
+      '<div class="metric-row" style="border-top:1px solid var(--border);padding-top:12px">'+
+        '<div class="metric"><div class="l">Gross rent ('+esc(fyLabel(fy))+')</div><div class="v pos">'+fmt0(ws.grossRent)+'</div></div>'+
+        '<div class="metric"><div class="l">Deductible expenses</div><div class="v">'+fmt0(ws.totalExpenses)+'</div></div>'+
+        '<div class="metric"><div class="l">Net rental '+(ws.net<0?'loss':'income')+'</div><div class="v '+(ws.net<0?'neg':'pos')+'">'+(ws.net<0?'−':'')+fmt0(Math.abs(ws.net))+'</div></div>'+
+        tiHtml +
+      '</div>'+
+      '<div style="margin-top:14px"><button class="btn btn-sm" onclick="openPropForm(\''+p.id+'\')">Edit</button></div>'+
+      '</div>';
+  }
+
+  var combined = totRent - totExp;
+  var kpis = '<div class="grid grid-4">'+
+    kpi('Total rental income', fmt0(totRent), 'pos')+
+    kpi('Total deductible expenses', fmt0(totExp))+
+    kpi('Combined net '+(combined<0?'loss':'income'), (combined<0?'−':'')+fmt0(Math.abs(combined)), combined<0?'neg':'pos')+
+    kpi('Est. net tax '+(totRefund-totPayable>=0?'refund':'payable'), (totRefund-totPayable>=0?'+':'−')+fmt0(Math.abs(totRefund-totPayable)), totRefund-totPayable>=0?'pos':'amberv')+
+  '</div>';
+
+  el.innerHTML = h + kpis + '<h3 style="margin:24px 0 12px;font-size:16px">Properties</h3>' + cards;
+}
+function kpi(label, value, cls){
+  return '<div class="kpi"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value '+(cls||'')+'">'+value+'</div></div>';
+}
+function statusBadge(s){
+  if(s==='rented') return '<span class="badge badge-rented">● Rented</span>';
+  if(s==='vacant') return '<span class="badge badge-vacant">● Vacant</span>';
+  return '<span class="badge badge-owner">● Owner-Occupied</span>';
+}
+function emptyState(ico,title,sub,btn,onclick){
+  var b = btn ? '<button class="btn btn-primary" onclick="'+onclick+'">'+esc(btn)+'</button>' : '';
+  return '<div class="card"><div class="empty"><span class="ico">'+ico+'</span><h3>'+esc(title)+'</h3><p>'+esc(sub)+'</p>'+b+'</div></div>';
+}
+
+/* =================================================================
+   PROPERTIES
+   ================================================================= */
+function renderProperties(){
+  var el = document.getElementById('page-properties');
+  var h = '<div class="page-head"><div><h1 class="page-title">Properties</h1>'+
+    '<div class="page-sub">'+PROPERTIES.length+' propert'+(PROPERTIES.length===1?'y':'ies')+'</div></div>'+
+    '<button class="btn btn-primary" onclick="openPropForm()">+ Add property</button></div>';
+  if(!PROPERTIES.length){
+    el.innerHTML = h + emptyState('🏠','No investment properties yet','Add your first property to get started.','+ Add property',"openPropForm()");
+    return;
+  }
+  var cards='';
+  for(var i=0;i<PROPERTIES.length;i++){
+    var p = PROPERTIES[i];
+    cards += '<div class="card">'+
+      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start">'+
+        '<div><div style="font-family:var(--font-display);font-weight:600;font-size:16px">'+esc(p.address||'(no address)')+'</div>'+
+        '<div class="hint">Purchased '+esc(p.purchaseDate||'—')+' · '+fmt0(p.purchasePrice)+'</div></div>'+
+        statusBadge(p.rentalStatus)+
+      '</div>'+
+      '<div class="metric-row">'+
+        '<div class="metric"><div class="l">Loan balance</div><div class="v">'+fmt0((p.loan||{}).currentBalance)+'</div></div>'+
+        '<div class="metric"><div class="l">Offset</div><div class="v">'+fmt0((p.loan||{}).offsetBalance)+'</div></div>'+
+        '<div class="metric"><div class="l">Equity</div><div class="v pos">'+fmt0(equityOf(p))+'</div></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+
+        '<button class="btn btn-sm" onclick="openPropForm(\''+p.id+'\')">Edit</button>'+
+        '<button class="btn btn-sm" onclick="go(\'tax\')">Tax report</button>'+
+        '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteProperty(\''+p.id+'\')">Delete</button>'+
+      '</div></div>';
+  }
+  el.innerHTML = h + cards;
+}
+function deleteProperty(id){
+  if(!confirm('Delete this property and ALL its transactions and vacancy entries? This cannot be undone.')) return;
+  PROPERTIES = PROPERTIES.filter(function(p){return p.id!==id;});
+  TRANSACTIONS = TRANSACTIONS.filter(function(t){return t.propertyId!==id;});
+  VACANCIES = VACANCIES.filter(function(v){return v.propertyId!==id;});
+  persistAll(); syncOwnersFromProperties(); render(CURRENT_TAB);
+}
+
+/* ---------- Multi-step property form ---------- */
+var FORM = null; // working copy
+var FORM_STEP = 1; var FORM_DEPR_TAB = '43';
+var STEP_NAMES = ['Property details','Ownership','Investment loan','Rental income','Expense schedule','Depreciation','Capital improvements'];
+var TOTAL_STEPS = STEP_NAMES.length;
+
+function blankProperty(){
+  return {
+    id:uuid(), address:'', purchaseDate:'', purchasePrice:0,
+    purchaseCosts:{stampDuty:0, legalFees:0, otherCosts:0},
+    currentMarketValue:0, rentalStatus:'rented', availableForRentDate:'',
+    ownershipSplit:[{name:'Owner 1', percentage:100}],
+    wasMainResidence:false, mainResidencePeriods:[],
+    loan:{type:'interest-only', lender:'', originalAmount:0, currentBalance:0, interestRate:0, offsetBalance:0, termYears:25, repaymentMonthly:0},
+    rentalIncome:{rentAmount:0, rentFrequency:'weekly', otherAmount:0, otherFrequency:'annual'},
+    expenseSchedule:[],
+    capitalImprovements:[],
+    depreciation:{ source:'manual', scheduleFile:null, scheduleFileName:null,
+      div43:{constructionCost:0, constructionDate:'', annualRate:2.5, startYear:'', annualAmounts:{}},
+      div40:{assets:[]} }
+  };
+}
+function openPropForm(id){
+  var src = id ? PROPERTIES.filter(function(p){return p.id===id;})[0] : null;
+  FORM = src ? JSON.parse(JSON.stringify(src)) : blankProperty();
+  FORM._editing = !!src;
+  FORM_STEP = 1;
+  renderForm();
+}
+function renderForm(){
+  var steps='';
+  for(var i=1;i<=TOTAL_STEPS;i++){
+    var c = i<FORM_STEP?'done':(i===FORM_STEP?'cur':'');
+    steps += '<div class="step '+c+'"></div>';
+  }
+  var body = '';
+  if(FORM_STEP===1) body = formStep1();
+  else if(FORM_STEP===2) body = formStep2();
+  else if(FORM_STEP===3) body = formStep3();
+  else if(FORM_STEP===4) body = formStepIncome();
+  else if(FORM_STEP===5) body = formStepExpenses();
+  else if(FORM_STEP===6) body = formStep4();
+  else body = formStep5();
+
+  var nav = '<div style="display:flex;gap:8px;margin-top:20px">'+
+    (FORM_STEP>1?'<button class="btn" onclick="formStep('+(FORM_STEP-1)+')">Back</button>':'')+
+    (FORM_STEP<TOTAL_STEPS?'<button class="btn btn-primary btn-block" onclick="formNext()">Next →</button>'
+                :'<button class="btn btn-primary btn-block" onclick="saveProperty()">Save property</button>')+
+  '</div>';
+
+  openSheet(
+    '<div class="sheet-head"><h3>'+(FORM._editing?'Edit':'Add')+' property</h3>'+
+    '<button class="x-btn" onclick="closeSheet()">×</button></div>'+
+    '<div class="stepper">'+steps+'</div>'+
+    '<div class="step-label">Step '+FORM_STEP+' of '+TOTAL_STEPS+' — '+STEP_NAMES[FORM_STEP-1]+'</div>'+
+    body + nav
+  );
+}
+function formStep(n){ collectStep(); FORM_STEP=n; renderForm(); }
+function collectStep(){
+  // read inputs of current step into FORM (called before navigating)
+  var g = function(id){ var e=document.getElementById(id); return e?e.value:undefined; };
+  if(FORM_STEP===1){
+    FORM.address = g('f_addr')||'';
+    FORM.purchaseDate = g('f_pdate')||'';
+    FORM.purchasePrice = num(g('f_price'));
+    FORM.purchaseCosts = {stampDuty:num(g('f_stamp')), legalFees:num(g('f_legal')), otherCosts:num(g('f_other'))};
+    FORM.currentMarketValue = num(g('f_mv'));
+    FORM.availableForRentDate = g('f_avail')||'';
+  } else if(FORM_STEP===2){
+    var oRows = document.querySelectorAll('[data-owner]');
+    var arr=[];
+    for(var i=0;i<oRows.length;i++){ var oi=oRows[i].getAttribute('data-owner');
+      arr.push({name:g('f_oname'+oi)||('Owner '+(arr.length+1)), percentage:num(g('f_opct'+oi))}); }
+    if(arr.length) FORM.ownershipSplit = arr;
+    FORM.wasMainResidence = (g('f_wasmr')==='yes');
+    if(FORM.wasMainResidence){
+      var mrp=[]; var rows = document.querySelectorAll('[data-mrp]');
+      for(var r=0;r<rows.length;r++){ var idx=rows[r].getAttribute('data-mrp');
+        var fr=g('f_mrfrom'+idx), to=g('f_mrto'+idx), ty=g('f_mrtype'+idx);
+        if(fr) mrp.push({from:fr,to:to||'',type:ty||'ppor'}); }
+      FORM.mainResidencePeriods = mrp;
+    } else FORM.mainResidencePeriods=[];
+  } else if(FORM_STEP===3){
+    var term = g('f_term'); // only present for P&I
+    FORM.loan = {
+      type:FORM.loan.type||'interest-only', lender:g('f_lender')||'',
+      originalAmount:num(g('f_orig')), currentBalance:num(g('f_bal')),
+      interestRate:num(g('f_rate')), offsetBalance:num(g('f_offset')),
+      termYears:(term!=null && term!=='') ? num(term) : (FORM.loan.termYears||25)
+    };
+    FORM.loan.repaymentMonthly = calcRepayment(FORM.loan); // calculated, never entered
+  } else if(FORM_STEP===4){
+    FORM.rentalIncome = {
+      rentAmount:num(g('f_rent')), rentFrequency:g('f_rentfreq')||'weekly',
+      otherAmount:num(g('f_otherinc')), otherFrequency:g('f_otherfreq')||'annual'
+    };
+  } else if(FORM_STEP===5){
+    collectExpenseStatement(FORM, 'fes');
+  } else if(FORM_STEP===6){
+    var d = FORM.depreciation;
+    d.div43.constructionCost = num(g('f_d43cost'));
+    d.div43.constructionDate = g('f_d43date')||'';
+    d.div43.annualRate = num(g('f_d43rate'))||2.5;
+    // div43 annual overrides
+    var aRows = document.querySelectorAll('[data-d43y]');
+    var amounts={};
+    for(var a=0;a<aRows.length;a++){ var yk=aRows[a].getAttribute('data-d43y');
+      var yv=g('f_d43yV'+yk), yy=g('f_d43yY'+yk); if(yy) amounts[yy]=num(yv); }
+    d.div43.annualAmounts = amounts;
+    // div40 assets
+    var dRows = document.querySelectorAll('[data-d40]');
+    var assets=[];
+    for(var x=0;x<dRows.length;x++){ var k=dRows[x].getAttribute('data-d40');
+      var desc=g('f_d40desc'+k); if(!desc) continue;
+      assets.push({ id:k, description:desc, originalValue:num(g('f_d40val'+k)),
+        method:g('f_d40method'+k)||'diminishing', effectiveLife:num(g('f_d40life'+k)),
+        startDate:g('f_d40start'+k)||'', openingValue:num(g('f_d40wdv'+k)),
+        annualDeduction:g('f_d40ded'+k) });
+    }
+    d.div40.assets = assets;
+  }
+}
+function formNext(){ collectStep(); if(!validateStep()) return; FORM_STEP++; renderForm(); }
+
+function validateStep(){
+  if(FORM_STEP===1){
+    if(!FORM.address.trim()){ alert('Enter the property address.'); return false; }
+    if(FORM.purchaseDate && FORM.purchaseDate > todayISO()){ alert('Purchase date cannot be in the future.'); return false; }
+    if(FORM.availableForRentDate && FORM.purchaseDate && FORM.availableForRentDate < FORM.purchaseDate){ alert('Available-for-rent date must be on or after the purchase date.'); return false; }
+    if(FORM.purchasePrice<0 || FORM.purchasePrice>99999999){ alert('Purchase price must be between $0 and $99,999,999.'); return false; }
+  } else if(FORM_STEP===2){
+    var sum=0; for(var i=0;i<FORM.ownershipSplit.length;i++) sum+=num(FORM.ownershipSplit[i].percentage);
+    if(Math.round(sum)!==100){ alert('Ownership percentages must sum to exactly 100%. Currently '+sum+'%.'); return false; }
+    // overlapping MRP check
+    var mrp = FORM.mainResidencePeriods||[];
+    for(var a=0;a<mrp.length;a++) for(var b=a+1;b<mrp.length;b++){
+      var af=parseD(mrp[a].from), at=parseD(mrp[a].to)||new Date(2999,0,1);
+      var bf=parseD(mrp[b].from), bt=parseD(mrp[b].to)||new Date(2999,0,1);
+      if(af && bf && overlapDays(af,at,bf,bt)>0){ alert('Main residence periods must not overlap.'); return false; }
+    }
+  } else if(FORM_STEP===3){
+    var l=FORM.loan;
+    if(l.currentBalance>l.originalAmount && l.originalAmount>0){ alert('Current loan balance cannot exceed the original loan amount.'); return false; }
+    if(l.interestRate && (l.interestRate<0.01 || l.interestRate>30)){ alert('Interest rate must be between 0.01% and 30%.'); return false; }
+    if(l.type==='principal-and-interest' && l.termYears && (l.termYears<1 || l.termYears>40)){ alert('Loan term must be between 1 and 40 years.'); return false; }
+  } else if(FORM_STEP===4){
+    var ri=FORM.rentalIncome||{};
+    if(num(ri.rentAmount)<0 || num(ri.rentAmount)>99999999 || num(ri.otherAmount)<0 || num(ri.otherAmount)>99999999){ alert('Income amounts must be between $0 and $99,999,999.'); return false; }
+  } else if(FORM_STEP===5){
+    var es=FORM.expenseSchedule||[];
+    for(var x=0;x<es.length;x++){ if(num(es[x].amount)<0 || num(es[x].amount)>99999999){ alert('Expense amounts must be between $0 and $99,999,999.'); return false; } }
+  }
+  return true;
+}
+
+function fieldRow(label, id, type, val, attrs){
+  return '<label class="field"><span class="field-label">'+esc(label)+'</span>'+
+    '<input id="'+id+'" type="'+type+'" '+(attrs||'')+' value="'+esc(val==null?'':val)+'"/></label>';
+}
+function formStep1(){
+  var p=FORM;
+  return fieldRow('Street address','f_addr','text',p.address,'placeholder="123 Example St, Suburb VIC 3000"')+
+    fieldRow('Purchase date','f_pdate','date',p.purchaseDate,'max="'+todayISO()+'"')+
+    '<div class="grid grid-2">'+
+      fieldRow('Purchase price (AUD)','f_price','number',p.purchasePrice,'class="mono" inputmode="decimal" min="0"')+
+      fieldRow('Current market value (AUD)','f_mv','number',p.currentMarketValue,'class="mono" inputmode="decimal" min="0"')+
+    '</div>'+
+    '<div class="field-label">Purchase costs</div><div class="grid grid-3">'+
+      fieldRow('Stamp duty','f_stamp','number',p.purchaseCosts.stampDuty,'class="mono" inputmode="decimal" min="0"')+
+      fieldRow('Legal fees','f_legal','number',p.purchaseCosts.legalFees,'class="mono" inputmode="decimal" min="0"')+
+      fieldRow('Other costs','f_other','number',p.purchaseCosts.otherCosts,'class="mono" inputmode="decimal" min="0"')+
+    '</div>'+
+    '<div class="field-label">Property status</div>'+
+    '<div class="seg" id="f_status">'+
+      segBtn('rented','Rented',p.rentalStatus,'setStatus')+
+      segBtn('vacant','Vacant',p.rentalStatus,'setStatus')+
+      segBtn('owner-occupied','Owner-Occupied',p.rentalStatus,'setStatus')+
+    '</div>'+
+    '<div id="f_availWrap" style="margin-top:16px;'+(p.rentalStatus==='rented'?'':'display:none')+'">'+
+      fieldRow('Available for rent from','f_avail','date',p.availableForRentDate,'')+
+    '</div>';
+}
+function segBtn(val,label,cur,fn){ return '<button type="button" class="'+(cur===val?'active':'')+'" onclick="'+fn+'(\''+val+'\')">'+esc(label)+'</button>'; }
+function setStatus(v){ collectStep(); FORM.rentalStatus=v; renderForm(); }
+
+function formStep2(){
+  var p=FORM;
+  if(!p.ownershipSplit || !p.ownershipSplit.length) p.ownershipSplit=[{name:'Owner 1', percentage:100}];
+  var n = p.ownershipSplit.length;
+  var sum=0; for(var s=0;s<n;s++) sum+=num(p.ownershipSplit[s].percentage);
+  var ownerFields='';
+  for(var i=0;i<n;i++){
+    var o = p.ownershipSplit[i];
+    var rm = n>1 ? '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="removeOwner('+i+')">×</button>' : '';
+    ownerFields += '<div data-owner="'+i+'" class="card2" style="padding:12px;border-radius:10px;margin-bottom:8px">'+
+      '<div class="grid grid-2">'+
+        fieldRow('Owner '+(i+1)+' name','f_oname'+i,'text',o.name,'')+
+        fieldRow('Ownership %','f_opct'+i,'number',o.percentage,'class="mono" inputmode="decimal" min="0" max="100"')+
+      '</div>'+(rm?'<div style="text-align:right">'+rm+'</div>':'')+
+    '</div>';
+  }
+  var sumCls = Math.round(sum)===100 ? 'pos' : 'amberv';
+  var ownerBlock = '<div class="field-label">Owners</div>'+ownerFields+
+    '<button class="btn btn-sm" onclick="addOwner()">+ Add owner</button>'+
+    '<div class="hint">Ownership total: <span class="mono '+sumCls+'">'+pct(sum)+'</span> (must sum to 100%).</div>';
+  var mrpHtml='';
+  if(p.wasMainResidence){
+    var rows = p.mainResidencePeriods.length ? p.mainResidencePeriods : [{from:'',to:'',type:'ppor'}];
+    for(var r=0;r<rows.length;r++){
+      mrpHtml += '<div data-mrp="'+r+'" class="card2" style="padding:12px;border-radius:10px;margin-bottom:8px">'+
+        '<div class="grid grid-2">'+
+          fieldRow('From','f_mrfrom'+r,'date',rows[r].from,'')+
+          fieldRow('To','f_mrto'+r,'date',rows[r].to,'')+
+        '</div>'+
+        '<label class="field"><span class="field-label">Type</span><select id="f_mrtype'+r+'">'+
+          '<option value="ppor"'+(rows[r].type==='ppor'?' selected':'')+'>PPOR (main residence)</option>'+
+          '<option value="absence"'+(rows[r].type==='absence'?' selected':'')+'>Used as rental during 6-year absence</option>'+
+        '</select></label></div>';
+    }
+    mrpHtml = '<div class="field-label">Main residence periods</div>'+mrpHtml+
+      '<button class="btn btn-sm" onclick="addMrp()">+ Add period</button>';
+  }
+  return ownerBlock +
+    '<div class="field-label" style="margin-top:16px">Was this property ever your main residence?</div>'+
+    '<div class="seg">'+
+      '<button type="button" class="'+(p.wasMainResidence?'active':'')+'" onclick="setWasMR(\'yes\')">Yes</button>'+
+      '<button type="button" class="'+(!p.wasMainResidence?'active':'')+'" onclick="setWasMR(\'no\')">No</button>'+
+    '</div><div style="margin-top:16px">'+mrpHtml+'</div>';
+}
+function addOwner(){ collectStep(); FORM.ownershipSplit.push({name:'Owner '+(FORM.ownershipSplit.length+1), percentage:0}); renderForm(); }
+function removeOwner(i){ collectStep(); if(FORM.ownershipSplit.length>1) FORM.ownershipSplit.splice(i,1); renderForm(); }
+function setWasMR(v){ collectStep(); FORM.wasMainResidence=(v==='yes'); if(FORM.wasMainResidence && !FORM.mainResidencePeriods.length) FORM.mainResidencePeriods=[{from:'',to:'',type:'ppor'}]; renderForm(); }
+function addMrp(){ collectStep(); FORM.mainResidencePeriods.push({from:'',to:'',type:'ppor'}); renderForm(); }
+
+function formStep3(){
+  var l=FORM.loan;
+  var di = deductibleInterestAnnual(FORM);
+  var rep = calcRepayment(l);
+  var termField = (l.type==='principal-and-interest')
+    ? fieldRow('Remaining loan term (years)','f_term','number',l.termYears||25,'class="mono" inputmode="decimal" min="1" max="40"')
+    : '';
+  return fieldRow('Lender name','f_lender','text',l.lender,'placeholder="e.g. ANZ"')+
+    '<div class="field-label">Loan type</div><div class="seg">'+
+      segBtn('interest-only','Interest Only',l.type,'setLoanType')+
+      segBtn('principal-and-interest','Principal & Interest',l.type,'setLoanType')+
+    '</div><div class="grid grid-2" style="margin-top:16px">'+
+      fieldRow('Original loan amount','f_orig','number',l.originalAmount,'class="mono" inputmode="decimal" min="0"')+
+      fieldRow('Current loan balance','f_bal','number',l.currentBalance,'class="mono" inputmode="decimal" min="0"')+
+      fieldRow('Annual interest rate %','f_rate','number',l.interestRate,'class="mono" inputmode="decimal" step="0.01" min="0.01" max="30"')+
+      fieldRow('Offset account balance','f_offset','number',l.offsetBalance,'class="mono" inputmode="decimal" min="0"')+
+    '</div>'+ termField +
+    '<div class="hint">Only the interest on the balance net of offset is deductible.</div>'+
+    '<div class="note">Calculated monthly repayment ('+(l.type==='interest-only'?'interest-only':'principal &amp; interest')+'): <span class="mono">'+fmt(rep)+'</span><br>'+
+    'Deductible annual interest = (balance − offset) × rate = <span class="mono">'+fmt(di)+'</span><br>'+
+    'Interest on the offset portion is not deductible. For P&I loans only the interest component is deductible, not principal.</div>';
+}
+function setLoanType(v){ collectStep(); FORM.loan.type=v; renderForm(); }
+
+/* Step 4 — Rental income (rent payments + recoveries) */
+function formStepIncome(){
+  var ri = FORM.rentalIncome || {rentAmount:0,rentFrequency:'weekly',otherAmount:0,otherFrequency:'annual'};
+  var annualGross = annualize(ri.rentAmount, ri.rentFrequency) + annualize(ri.otherAmount, ri.otherFrequency);
+  return '<div class="field-label">Rent payments</div>'+
+    '<div class="grid grid-2">'+
+      fieldRow('Rent amount (AUD)','f_rent','number',ri.rentAmount,'class="mono" inputmode="decimal" min="0" oninput="liveGross()"')+
+      '<label class="field"><span class="field-label">Frequency</span>'+freqOptions('f_rentfreq', ri.rentFrequency||'weekly')+'</label>'+
+    '</div>'+
+    '<div class="field-label">Other rental income / recoveries</div>'+
+    '<div class="hint" style="margin-top:-4px">e.g. water/utility recoveries from tenant, bond retained, insurance payouts.</div>'+
+    '<div class="grid grid-2" style="margin-top:8px">'+
+      fieldRow('Amount (AUD)','f_otherinc','number',ri.otherAmount,'class="mono" inputmode="decimal" min="0" oninput="liveGross()"')+
+      '<label class="field"><span class="field-label">Frequency</span>'+freqOptions('f_otherfreq', ri.otherFrequency||'annual')+'</label>'+
+    '</div>'+
+    '<div class="note">Annualised gross rent: <span class="mono" id="liveGrossVal">'+fmt(annualGross)+'</span><br>'+
+    'This recurring income flows into your tax worksheet automatically. Log one-off or irregular income on the Income &amp; Expenses tab — it is added on top of this schedule.</div>';
+}
+function liveGross(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value:0;};
+  var fq=function(id){var e=document.getElementById(id);return e?e.value:'annual';};
+  var v=annualize(g('f_rent'),fq('f_rentfreq'))+annualize(g('f_otherinc'),fq('f_otherfreq'));
+  var el=document.getElementById('liveGrossVal'); if(el) el.textContent=fmt(v);
+}
+
+/* ===== Shared editable rental statement (standard ATO P&L view) ===== */
+function gv(id){ var e=document.getElementById(id); return e?e.value:''; }
+function setTxt(id, v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+// Collapse a property's expense schedule into one {amount,frequency} per category
+function scheduleMap(p){
+  var m={}; var es=(p&&p.expenseSchedule)||[];
+  for(var i=0;i<es.length;i++){ var c=es[i].category;
+    if(m[c]) m[c]={amount:annualize(m[c].amount,m[c].frequency)+annualize(es[i].amount,es[i].frequency), frequency:'annual'};
+    else m[c]={amount:num(es[i].amount), frequency:es[i].frequency||'monthly'};
+  }
+  return m;
+}
+function freqSelectInline(id, sel, onInput){
+  var o='<select id="'+id+'" class="stmt-freq" onchange="'+onInput+'">';
+  for(var i=0;i<FREQUENCIES.length;i++) o+='<option value="'+FREQUENCIES[i][0]+'"'+(sel===FREQUENCIES[i][0]?' selected':'')+'>'+FREQUENCIES[i][1]+'</option>';
+  return o+'</select>';
+}
+function stmtInputLine(label, idAmt, idFreq, idAnn, amount, frequency, onInput){
+  return '<div class="stmt-line"><span class="stmt-label">'+label+'</span>'+
+    '<input id="'+idAmt+'" type="number" class="mono stmt-amt" inputmode="decimal" min="0" max="99999999" placeholder="0" value="'+esc(amount||'')+'" oninput="'+onInput+'"/>'+
+    freqSelectInline(idFreq, frequency||'monthly', onInput)+
+    '<span class="stmt-ann mono" id="'+idAnn+'">'+fmt0(annualize(amount,frequency))+'</span></div>';
+}
+// Editable income lines (writes to p.rentalIncome on collect)
+function incomeLinesHtml(prefix, ri, onInput){
+  ri = ri || {};
+  var gross = annualize(ri.rentAmount,ri.rentFrequency) + annualize(ri.otherAmount,ri.otherFrequency);
+  return stmtInputLine('🏠 Rental income', prefix+'_inc_rent', prefix+'_incfreq_rent', prefix+'_inc_ann_rent', ri.rentAmount, ri.rentFrequency||'weekly', onInput)+
+    stmtInputLine('💰 Other rental income', prefix+'_inc_other', prefix+'_incfreq_other', prefix+'_inc_ann_other', ri.otherAmount, ri.otherFrequency||'annual', onInput)+
+    '<div class="stmt-line stmt-total"><span class="stmt-label">Gross rental income</span><span class="stmt-ann mono pos" id="'+prefix+'_inctotal">'+fmt0(gross)+'</span></div>';
+}
+// Editable expense lines for every standard category (writes to p.expenseSchedule on collect)
+function expenseLinesHtml(prefix, p, onInput){
+  var map=scheduleMap(p); var cats=scheduleableExpenseCats(); var rows=''; var expTotal=0;
+  for(var i=0;i<cats.length;i++){ var c=cats[i]; var v=map[c[0]]||{amount:'',frequency:'monthly'};
+    expTotal += annualize(v.amount, v.frequency);
+    rows += stmtInputLine(c[2]+' '+esc(c[1]), prefix+'_amt_'+c[0], prefix+'_freq_'+c[0], prefix+'_ann_'+c[0], v.amount, v.frequency||'monthly', onInput);
+  }
+  rows += '<div class="stmt-line stmt-total"><span class="stmt-label">Total scheduled expenses</span><span class="stmt-ann mono" id="'+prefix+'_exptotal">'+fmt0(expTotal)+'</span></div>';
+  return rows;
+}
+function autoLineRO(label, val){
+  return '<div class="stmt-line"><span class="stmt-label">'+label+'</span><span class="mono stmt-ro">'+fmt0(val)+'</span></div>';
+}
+// Read current statement inputs back into a property object
+function collectIncomeStatement(p, prefix){
+  p.rentalIncome={ rentAmount:num(gv(prefix+'_inc_rent')), rentFrequency:gv(prefix+'_incfreq_rent')||'weekly',
+    otherAmount:num(gv(prefix+'_inc_other')), otherFrequency:gv(prefix+'_incfreq_other')||'annual' };
+}
+function collectExpenseStatement(p, prefix){
+  var cats=scheduleableExpenseCats(); var es=[];
+  for(var i=0;i<cats.length;i++){ var c=cats[i][0]; var amt=num(gv(prefix+'_amt_'+c));
+    if(amt>0) es.push({id:uuid(), category:c, amount:amt, frequency:gv(prefix+'_freq_'+c)||'monthly'}); }
+  p.expenseSchedule=es;
+}
+// Recompute and update the live annualised displays; returns the totals
+function recalcStatement(prefix, includeIncome){
+  var cats=scheduleableExpenseCats(); var expTotal=0;
+  for(var i=0;i<cats.length;i++){ var c=cats[i][0]; var ann=annualize(gv(prefix+'_amt_'+c), gv(prefix+'_freq_'+c));
+    expTotal+=ann; setTxt(prefix+'_ann_'+c, fmt0(ann)); }
+  setTxt(prefix+'_exptotal', fmt0(expTotal));
+  var incTotal=0;
+  if(includeIncome){
+    var r=annualize(gv(prefix+'_inc_rent'),gv(prefix+'_incfreq_rent'));
+    var o=annualize(gv(prefix+'_inc_other'),gv(prefix+'_incfreq_other'));
+    incTotal=r+o; setTxt(prefix+'_inc_ann_rent', fmt0(r)); setTxt(prefix+'_inc_ann_other', fmt0(o)); setTxt(prefix+'_inctotal', fmt0(incTotal));
+  }
+  return {incTotal:incTotal, expTotal:expTotal};
+}
+
+/* Property form Step 5 — standard rental statement (expenses) */
+function formStepExpenses(){
+  var ri=FORM.rentalIncome||{};
+  var grossAnnual=annualize(ri.rentAmount,ri.rentFrequency)+annualize(ri.otherAmount,ri.otherFrequency);
+  var fy=SETTINGS.financialYear;
+  return '<div class="hint">Enter the expected amount for each standard rental expense and how often it occurs. Leave blank for any that don’t apply — this is your editable P&amp;L and populates the Income &amp; Expenses tab and tax report.</div>'+
+    '<div class="stmt-section">Income (from previous step)</div>'+
+    '<div class="stmt-line"><span class="stmt-label">Gross rental income</span><span class="mono stmt-ro pos">'+fmt0(grossAnnual)+' / yr</span></div>'+
+    '<div class="stmt-section">Deductible expenses</div>'+
+    expenseLinesHtml('fes', FORM, 'fesRecalc()')+
+    '<div class="stmt-section">Auto-calculated (from loan &amp; depreciation)</div>'+
+    autoLineRO('🏦 Interest on loans', deductibleInterestAnnual(FORM))+
+    autoLineRO('🏗️ Capital works (Div 43)', div43Annual(FORM,fy))+
+    autoLineRO('📉 Decline in value (Div 40)', div40Annual(FORM,fy))+
+    '<div class="note">Interest, Div 43 and Div 40 are calculated automatically from your loan and depreciation details — no need to enter them here. Scheduled expenses are apportioned by rental-use days in the tax report.</div>';
+}
+function fesRecalc(){ recalcStatement('fes', false); }
+
+function formStep4(){
+  var d=FORM.depreciation;
+  var tabs = '<div class="seg" style="margin-bottom:16px">'+
+    '<button type="button" class="'+(FORM_DEPR_TAB==='43'?'active':'')+'" onclick="setDeprTab(\'43\')">Div 43 (Capital Works)</button>'+
+    '<button type="button" class="'+(FORM_DEPR_TAB==='40'?'active':'')+'" onclick="setDeprTab(\'40\')">Div 40 (Plant &amp; Equipment)</button>'+
+  '</div>';
+  var srcToggle = '<div class="field-label">Source</div><div class="seg" style="margin-bottom:16px">'+
+    '<button type="button" class="'+(d.source==='manual'?'active':'')+'" onclick="setDeprSource(\'manual\')">Enter Manually</button>'+
+    '<button type="button" class="'+(d.source==='schedule'?'active':'')+'" onclick="setDeprSource(\'schedule\')">Upload QS Schedule (PDF)</button>'+
+  '</div>';
+  var uploadHtml='';
+  if(d.source==='schedule'){
+    uploadHtml = '<label class="field"><span class="field-label">QS schedule PDF</span>'+
+      '<input type="file" accept="application/pdf" onchange="uploadQS(this)"/></label>'+
+      (d.scheduleFileName?'<div class="note">Stored: '+esc(d.scheduleFileName)+'. Values from your QS schedule must be manually verified and entered below. PDF stored for your records.</div>':'')+
+      '<div class="hint">Enter values from your QS schedule below.</div>';
+  }
+  var content='';
+  if(FORM_DEPR_TAB==='43'){
+    var auto = num(d.div43.constructionCost)*(num(d.div43.annualRate||2.5)/100);
+    var yearRows='';
+    var keys = Object.keys(d.div43.annualAmounts||{});
+    var rows = keys.length ? keys.map(function(y){return {y:y,v:d.div43.annualAmounts[y]};}) : [];
+    for(var i=0;i<rows.length;i++){
+      yearRows += '<div data-d43y="'+i+'" class="grid grid-2">'+
+        fieldRow('FY start year','f_d43yY'+i,'number',rows[i].y,'class="mono" placeholder="2024"')+
+        fieldRow('Div 43 amount','f_d43yV'+i,'number',rows[i].v,'class="mono"')+'</div>';
+    }
+    content = srcToggle + uploadHtml +
+      '<div class="grid grid-2">'+
+        fieldRow('Construction cost','f_d43cost','number',d.div43.constructionCost,'class="mono" inputmode="decimal" min="0"')+
+        fieldRow('Construction date','f_d43date','date',d.div43.constructionDate,'')+
+      '</div>'+
+      fieldRow('Annual rate %','f_d43rate','number',d.div43.annualRate||2.5,'class="mono" step="0.1"')+
+      '<div class="note">Auto-calculated annual deduction = cost × '+pct(d.div43.annualRate||2.5)+' = <span class="mono">'+fmt(auto)+'</span>. Only available if construction date is post 16 Sep 1987.</div>'+
+      '<div class="field-label">Per-year overrides (if QS schedule differs)</div>'+yearRows+
+      '<button class="btn btn-sm" onclick="addD43Year()">+ Add year override</button>';
+  } else {
+    var assets = d.div40.assets||[];
+    var assetRows=''; var runTotal=0;
+    for(var a=0;a<assets.length;a++){
+      var as=assets[a]; var k=as.id||('a'+a);
+      var calc = as.method==='prime-cost' ? num(as.originalValue)/Math.max(1,num(as.effectiveLife)) : num(as.openingValue||as.originalValue)*(2/Math.max(1,num(as.effectiveLife)));
+      runTotal += (as.annualDeduction!=null&&as.annualDeduction!=='')?num(as.annualDeduction):calc;
+      assetRows += '<div data-d40="'+k+'" class="card2" style="padding:12px;border-radius:10px;margin-bottom:8px">'+
+        fieldRow('Description','f_d40desc'+k,'text',as.description,'')+
+        '<div class="grid grid-2">'+
+          fieldRow('Original value','f_d40val'+k,'number',as.originalValue,'class="mono"')+
+          fieldRow('Effective life (yrs)','f_d40life'+k,'number',as.effectiveLife,'class="mono"')+
+        '</div>'+
+        '<label class="field"><span class="field-label">Method</span><select id="f_d40method'+k+'">'+
+          '<option value="diminishing"'+(as.method==='diminishing'?' selected':'')+'>Diminishing Value (200%)</option>'+
+          '<option value="prime-cost"'+(as.method==='prime-cost'?' selected':'')+'>Prime Cost</option>'+
+        '</select></label>'+
+        '<div class="grid grid-2">'+
+          fieldRow('Start date','f_d40start'+k,'date',as.startDate,'')+
+          fieldRow('Opening WDV','f_d40wdv'+k,'number',as.openingValue,'class="mono"')+
+        '</div>'+
+        fieldRow('Annual deduction (override, optional)','f_d40ded'+k,'number',as.annualDeduction,'class="mono" placeholder="auto: '+(Math.round(calc*100)/100)+'"')+
+        '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="removeD40(\''+k+'\')">Remove asset</button>'+
+      '</div>';
+    }
+    content = srcToggle + uploadHtml + assetRows +
+      '<button class="btn btn-sm" onclick="addD40()">+ Add asset</button>'+
+      '<div class="note">Running Div 40 total (current entries): <span class="mono">'+fmt(runTotal)+'</span><br>'+
+      'Prime Cost = cost ÷ effective life. Diminishing Value = WDV × (200% ÷ effective life).<br>'+
+      'Second-hand depreciating assets in residential rental properties purchased after 9 May 2017 are not deductible unless an exception applies (new property, or substantially renovated). Verify with your accountant.</div>';
+  }
+  return tabs + content;
+}
+function setDeprTab(t){ collectStep(); FORM_DEPR_TAB=t; renderForm(); }
+function setDeprSource(s){ collectStep(); FORM.depreciation.source=s; renderForm(); }
+function addD43Year(){ collectStep(); var a=FORM.depreciation.div43.annualAmounts||{}; var sy=SETTINGS.financialYear.slice(0,4); if(!a[sy]) a[sy]=0; else a[(parseInt(sy)+Object.keys(a).length)]=0; FORM.depreciation.div43.annualAmounts=a; renderForm(); }
+function addD40(){ collectStep(); FORM.depreciation.div40.assets.push({id:uuid(),description:'',originalValue:0,method:'diminishing',effectiveLife:10,startDate:'',openingValue:0,annualDeduction:''}); renderForm(); }
+function removeD40(k){ collectStep(); FORM.depreciation.div40.assets=FORM.depreciation.div40.assets.filter(function(a){return (a.id||'')!==k;}); renderForm(); }
+function uploadQS(input){
+  var f = input.files[0]; if(!f) return;
+  if(f.size > 500*1024 && !confirm('This PDF is larger than 500KB and may affect localStorage limits. Store it anyway?')){ input.value=''; return; }
+  var reader = new FileReader();
+  reader.onload = function(){ collectStep(); FORM.depreciation.scheduleFile=reader.result; FORM.depreciation.scheduleFileName=f.name; FORM.depreciation.source='schedule'; renderForm(); };
+  reader.readAsDataURL(f);
+}
+
+function formStep5(){
+  collectStep();
+  var ci = FORM.capitalImprovements||[];
+  var rows=''; var total=0;
+  for(var i=0;i<ci.length;i++){
+    total += num(ci[i].amount);
+    rows += '<tr><td>'+esc(ci[i].date)+'</td><td>'+esc(ci[i].description)+'</td><td class="num">'+fmt(ci[i].amount)+'</td>'+
+      '<td><button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="removeImprov('+i+')">×</button></td></tr>';
+  }
+  var table = ci.length ? '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>' : '<div class="hint">No improvements logged yet.</div>';
+  return '<div class="field-label">Capital improvements log</div>'+ table +
+    '<div class="card2" style="padding:12px;border-radius:10px;margin-top:12px">'+
+      '<div class="grid grid-3">'+
+        '<label class="field"><span class="field-label">Date</span><input id="ci_date" type="date" min="'+esc(FORM.purchaseDate||'')+'"/></label>'+
+        '<label class="field"><span class="field-label">Description</span><input id="ci_desc" type="text"/></label>'+
+        '<label class="field"><span class="field-label">Amount</span><input id="ci_amt" type="number" class="mono" inputmode="decimal" min="0"/></label>'+
+      '</div><button class="btn btn-sm" onclick="addImprov()">+ Add improvement</button></div>'+
+    '<div class="note">Total capital improvements added to cost base: <span class="mono">'+fmt(total)+'</span><br>'+
+    'Capital improvements are added to your cost base for CGT purposes, not deducted as repairs.</div>';
+}
+function addImprov(){
+  var d=document.getElementById('ci_date').value, desc=document.getElementById('ci_desc').value, amt=num(document.getElementById('ci_amt').value);
+  if(!d || !desc){ alert('Enter a date and description.'); return; }
+  if(FORM.purchaseDate && d < FORM.purchaseDate){ alert('Improvement date must be on or after the purchase date.'); return; }
+  if(amt<0 || amt>99999999){ alert('Amount must be between $0 and $99,999,999.'); return; }
+  FORM.capitalImprovements.push({id:uuid(), date:d, description:desc, amount:amt});
+  renderForm();
+}
+function removeImprov(i){ FORM.capitalImprovements.splice(i,1); renderForm(); }
+
+function saveProperty(){
+  collectStep();
+  // final validation across steps
+  FORM_STEP=2; if(!validateStep()){ renderForm(); return; }
+  FORM_STEP=TOTAL_STEPS;
+  delete FORM._numOwners; var editing=FORM._editing; delete FORM._editing;
+  if(editing){ for(var i=0;i<PROPERTIES.length;i++){ if(PROPERTIES[i].id===FORM.id){ PROPERTIES[i]=FORM; break; } } }
+  else PROPERTIES.push(FORM);
+  syncOwnersFromProperties();
+  persistAll(); closeSheet(); go('properties');
+}
+
+/* Keep TAX_SETTINGS.owners in sync with names used across properties */
+function syncOwnersFromProperties(){
+  var names=[];
+  for(var i=0;i<PROPERTIES.length;i++){ var os=PROPERTIES[i].ownershipSplit||[];
+    for(var j=0;j<os.length;j++){ if(names.indexOf(os[j].name)===-1) names.push(os[j].name); } }
+  var existing = TAX_SETTINGS.owners||[];
+  var merged=[];
+  for(var n=0;n<names.length;n++){
+    var found=existing.filter(function(o){return o.name===names[n];})[0];
+    merged.push(found || {name:names[n], marginalRate:32.5});
+  }
+  TAX_SETTINGS.owners = merged.length ? merged : existing;
+  save(K.taxSettings, TAX_SETTINGS);
+}
+
+/* =================================================================
+   INCOME & EXPENSES (statements + editable P&L + ledger)
+   ================================================================= */
+var TX_FILTER = { property:'all', fy:'all', type:'all' };
+var IE_VIEW = 'overview';   // 'overview' | 'pnl'
+var PNL_PROP = null;        // selected property id for the editable P&L
+var PNL_AUTO = 0;           // cached auto-calc total for the P&L net
+function setIeView(v){ IE_VIEW=v; renderTransactions(); }
+function renderTransactions(){
+  var el = document.getElementById('page-transactions');
+  var h = '<div class="page-head"><div><h1 class="page-title">Income &amp; Expenses</h1>'+
+    '<div class="page-sub">Rolling statements of position &amp; performance</div></div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button class="btn pos" style="border-color:var(--success);color:var(--success)" onclick="openTxForm(null,\'income\')">+ Income</button>'+
+      '<button class="btn btn-primary" onclick="openTxForm(null,\'expense\')">+ Expense</button>'+
+    '</div></div>';
+
+  if(!PROPERTIES.length){
+    el.innerHTML = h + emptyState('💰','No income or expenses yet','Add a property — its rental income and expense schedule populate this tab automatically.','+ Add property',"openPropForm()");
+    return;
+  }
+
+  var viewToggle = '<div class="seg" style="margin-bottom:16px">'+
+    '<button class="'+(IE_VIEW==='overview'?'active':'')+'" onclick="setIeView(\'overview\')">Overview</button>'+
+    '<button class="'+(IE_VIEW==='pnl'?'active':'')+'" onclick="setIeView(\'pnl\')">P&amp;L statement</button>'+
+  '</div>';
+
+  if(IE_VIEW==='pnl'){ el.innerHTML = h + viewToggle + renderPnlView(); return; }
+
+  // resolve current selection for the statements (fall back to active FY)
+  var selFy = (TX_FILTER.fy && TX_FILTER.fy!=='all') ? TX_FILTER.fy : SETTINGS.financialYear;
+  var targets = (TX_FILTER.property && TX_FILTER.property!=='all')
+    ? PROPERTIES.filter(function(x){return x.id===TX_FILTER.property;}) : PROPERTIES;
+  if(!targets.length) targets = PROPERTIES;
+
+  // filter bar
+  var propOpts='<option value="all">All properties</option>';
+  for(var i=0;i<PROPERTIES.length;i++) propOpts+='<option value="'+PROPERTIES[i].id+'"'+(TX_FILTER.property===PROPERTIES[i].id?' selected':'')+'>'+esc(PROPERTIES[i].address)+'</option>';
+  var fysInData = availableFYs();
+  var fyOpts='<option value="all">All years</option>';
+  for(var f=0;f<fysInData.length;f++) fyOpts+='<option value="'+fysInData[f]+'"'+(TX_FILTER.fy===fysInData[f]?' selected':'')+'>'+esc(fyLabel(fysInData[f]))+'</option>';
+
+  var filter = '<div class="card"><div class="filterbar">'+
+    '<label class="field"><span class="field-label">Property</span><select onchange="TX_FILTER.property=this.value;renderTransactions()">'+propOpts+'</select></label>'+
+    '<label class="field"><span class="field-label">Financial year</span><select onchange="TX_FILTER.fy=this.value;renderTransactions()">'+fyOpts+'</select></label>'+
+    '<label class="field"><span class="field-label">Type</span><select onchange="TX_FILTER.type=this.value;renderTransactions()">'+
+      '<option value="all"'+(TX_FILTER.type==='all'?' selected':'')+'>All</option>'+
+      '<option value="income"'+(TX_FILTER.type==='income'?' selected':'')+'>Income</option>'+
+      '<option value="expense"'+(TX_FILTER.type==='expense'?' selected':'')+'>Expenses</option>'+
+    '</select></label>'+
+  '</div></div>';
+
+  // auto-calculated rows (shown when a single property + single FY selected)
+  var autoHtml='';
+  if(TX_FILTER.property!=='all' && TX_FILTER.fy!=='all'){
+    var pp = PROPERTIES.filter(function(x){return x.id===TX_FILTER.property;})[0];
+    if(pp){
+      var wsA = computeWorksheet(pp, TX_FILTER.fy);
+      autoHtml = '<div class="card"><div class="card-title">Auto-calculated deductions — '+esc(fyLabel(TX_FILTER.fy))+'</div>'+
+        '<div class="table-wrap"><table><tbody>'+
+          autoRow('Interest on loans', wsA.expenses['interest-on-loans'])+
+          autoRow('Capital works (Div 43)', wsA.expenses['capital-works'])+
+          autoRow('Decline in value (Div 40)', wsA.expenses['decline-in-value'])+
+        '</tbody></table></div>'+
+        '<div class="hint">Auto-calculated — edit in Property settings. Add a manual transaction in the same category to override.</div></div>';
+    }
+  }
+
+  // filtered + grouped list
+  var list = TRANSACTIONS.filter(function(t){
+    if(TX_FILTER.property!=='all' && t.propertyId!==TX_FILTER.property) return false;
+    if(TX_FILTER.fy!=='all' && fyOf(t.date)!==TX_FILTER.fy) return false;
+    if(TX_FILTER.type!=='all' && t.type!==TX_FILTER.type) return false;
+    return true;
+  }).sort(function(a,b){ return b.date<a.date?-1:1; });
+
+  var listHtml='';
+  if(!list.length){
+    listHtml = '<div class="card"><div class="hint" style="text-align:center;padding:20px">No one-off transactions for this filter. Recurring rent and scheduled expenses still appear in the statements above.</div></div>';
+  } else {
+    var curMonth='';
+    for(var x=0;x<list.length;x++){
+      var t=list[x]; var mk=t.date.slice(0,7);
+      if(mk!==curMonth){ curMonth=mk; listHtml += '<div class="month-head">'+esc(monthName(mk))+'</div>'; }
+      var sign = t.type==='income'?'+':'−';
+      var cls = t.type==='income'?'pos':'';
+      listHtml += '<div class="tx-row">'+
+        '<span style="font-size:20px">'+catIcon(t.category)+'</span>'+
+        '<div class="desc"><div>'+esc(t.description||catLabel(t.category))+'</div>'+
+          '<small>'+esc(t.date)+' · '+esc(catLabel(t.category))+(t.receiptRef?' · '+esc(t.receiptRef):'')+'</small></div>'+
+        '<span class="tx-amt '+cls+'">'+sign+fmt(t.amount)+'</span>'+
+        '<span class="tx-actions"><button class="btn btn-sm" onclick="openTxForm(\''+t.id+'\')">Edit</button>'+
+        '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteTx(\''+t.id+'\')">×</button></span>'+
+      '</div>';
+    }
+    listHtml = '<div class="card"><div class="card-title">📒 Transaction ledger</div>'+listHtml+'</div>';
+  }
+
+  var statements = statementPosition(targets, selFy) + statementPerformance(targets, selFy);
+  var ledgerHead = '<h3 style="margin:24px 0 4px;font-size:17px">Detailed ledger</h3>'+
+    '<div class="hint" style="margin-bottom:12px">Recurring rent &amp; scheduled expenses (set per property) flow into the statements automatically. Log one-off or irregular amounts here — they are added on top.</div>';
+
+  el.innerHTML = h + viewToggle + statements + ledgerHead + scheduleSummary(targets) + filter + vacancyLogCard() + autoHtml + listHtml;
+  drawPerformanceChart(targets, selFy);
+}
+
+/* ---------- Editable P&L statement (standard rental statement view) ---------- */
+function renderPnlView(){
+  if(TX_FILTER.property && TX_FILTER.property!=='all') PNL_PROP = TX_FILTER.property;
+  if(!PNL_PROP || !PROPERTIES.some(function(p){return p.id===PNL_PROP;})) PNL_PROP = PROPERTIES[0].id;
+  var p = PROPERTIES.filter(function(x){return x.id===PNL_PROP;})[0];
+  var fy = SETTINGS.financialYear;
+  PNL_AUTO = deductibleInterestAnnual(p) + div43Annual(p,fy) + div40Annual(p,fy);
+
+  var ri=p.rentalIncome||{};
+  var gross = annualize(ri.rentAmount,ri.rentFrequency)+annualize(ri.otherAmount,ri.otherFrequency);
+  var schedExp=0; var es=p.expenseSchedule||[]; for(var i=0;i<es.length;i++) schedExp+=annualize(es[i].amount,es[i].frequency);
+  var net = gross - schedExp - PNL_AUTO;
+
+  var propPicker='';
+  if(PROPERTIES.length>1){
+    var opts=''; for(var j=0;j<PROPERTIES.length;j++) opts+='<option value="'+PROPERTIES[j].id+'"'+(PROPERTIES[j].id===PNL_PROP?' selected':'')+'>'+esc(PROPERTIES[j].address)+'</option>';
+    propPicker='<label class="field"><span class="field-label">Property</span><select onchange="PNL_PROP=this.value;renderTransactions()">'+opts+'</select></label>';
+  } else {
+    propPicker='<div class="hint">'+esc(p.address)+'</div>';
+  }
+
+  return '<div class="card">'+
+    '<div class="card-title">🧾 Rental statement (annualised) '+
+      '<span class="chip" style="margin-left:auto">'+esc(fyLabel(fy))+'</span></div>'+
+    propPicker+
+    '<div class="hint">Type each expected amount and how often it occurs. Changes save automatically and flow into your statements and tax report.</div>'+
+    '<div class="stmt-section">Income</div>'+
+    incomeLinesHtml('pnl', ri, 'pnlSave()')+
+    '<div class="stmt-section">Deductible expenses</div>'+
+    expenseLinesHtml('pnl', p, 'pnlSave()')+
+    '<div class="stmt-section">Auto-calculated (from loan &amp; depreciation)</div>'+
+    autoLineRO('🏦 Interest on loans', deductibleInterestAnnual(p))+
+    autoLineRO('🏗️ Capital works (Div 43)', div43Annual(p,fy))+
+    autoLineRO('📉 Decline in value (Div 40)', div40Annual(p,fy))+
+    '<div class="stmt-line stmt-total"><span class="stmt-label">Net rental result (annualised)</span>'+
+      '<span class="stmt-ann mono '+(net<0?'neg':'pos')+'" id="pnl_net">'+fmt0(net)+'</span></div>'+
+    '<div class="note">Net = gross income − scheduled expenses − auto-calculated deductions, before rental-day apportionment (applied in the Tax Report). A loss indicates negative gearing.</div>'+
+  '</div>';
+}
+function pnlSave(){
+  var p = PROPERTIES.filter(function(x){return x.id===PNL_PROP;})[0]; if(!p) return;
+  collectIncomeStatement(p, 'pnl');
+  collectExpenseStatement(p, 'pnl');
+  persistAll();
+  var t = recalcStatement('pnl', true);
+  var net = t.incTotal - t.expTotal - PNL_AUTO;
+  setTxt('pnl_net', fmt0(net));
+  var el=document.getElementById('pnl_net'); if(el) el.className = 'stmt-ann mono '+(net<0?'neg':'pos');
+}
+
+/* ---------- Statement of Financial Position (balance sheet snapshot) ---------- */
+function statementPosition(targets, fy){
+  var rows=''; var tAsset=0, tCash=0, tLoan=0, tEquity=0;
+  for(var i=0;i<targets.length;i++){
+    var p=targets[i]; var mv=num(p.currentMarketValue); var cash=num((p.loan||{}).offsetBalance);
+    var loan=num((p.loan||{}).currentBalance); var eq=(mv+cash)-loan;
+    tAsset+=mv; tCash+=cash; tLoan+=loan; tEquity+=eq;
+    if(targets.length>1){
+      rows += '<tr><td>'+esc(p.address)+'</td><td class="num">'+fmt(mv)+'</td><td class="num">'+fmt(cash)+'</td>'+
+        '<td class="num">'+fmt(loan)+'</td><td class="num pos">'+fmt(eq)+'</td></tr>';
+    }
+  }
+  var perRows = targets.length>1
+    ? '<thead><tr><th>Property</th><th class="num">Value</th><th class="num">Offset cash</th><th class="num">Loan</th><th class="num">Equity</th></tr></thead><tbody>'+rows+
+      '<tr class="total"><td>Total</td><td class="num">'+fmt(tAsset)+'</td><td class="num">'+fmt(tCash)+'</td><td class="num">'+fmt(tLoan)+'</td><td class="num pos">'+fmt(tEquity)+'</td></tr></tbody>'
+    : '<tbody>'+
+        '<tr><td>Property market value</td><td class="num">'+fmt(tAsset)+'</td></tr>'+
+        '<tr><td>Offset account cash</td><td class="num">'+fmt(tCash)+'</td></tr>'+
+        '<tr class="total"><td>Total assets</td><td class="num">'+fmt(tAsset+tCash)+'</td></tr>'+
+        '<tr><td>Loan liability</td><td class="num neg">('+fmt(tLoan)+')</td></tr>'+
+        '<tr class="total"><td>Net equity</td><td class="num pos">'+fmt(tEquity)+'</td></tr>'+
+      '</tbody>';
+  return '<div class="card"><div class="card-title">📐 Statement of financial position <span class="chip" style="margin-left:auto">as at '+esc(todayISO())+'</span></div>'+
+    '<div class="table-wrap"><table>'+perRows+'</table></div>'+
+    '<div class="hint">Assets (market value + offset cash) less the loan liability. A point-in-time snapshot — update values on each property as they change.</div></div>';
+}
+
+/* ---------- Statement of Financial Performance (rolling monthly P&L) ---------- */
+function statementPerformance(targets, fy){
+  var s = monthlySeriesCombined(targets, fy);
+  var totInc=0, totExp=0, cum=0, cumCells='';
+  for(var m=0;m<12;m++){
+    totInc+=s.inc[m]; totExp+=s.exp[m]; var net=s.inc[m]-s.exp[m]; cum+=net;
+    cumCells += '<td class="num '+(cum<0?'neg':'pos')+'">'+fmt0(cum)+'</td>';
+  }
+  var head='<tr><th>Month</th>'; var incRow='<tr><td>Income</td>'; var expRow='<tr><td>Expenses</td>'; var netRow='<tr class="total"><td>Net</td>';
+  for(var x=0;x<12;x++){
+    head += '<th class="num">'+FY_MONTHS[x]+'</th>';
+    incRow += '<td class="num pos">'+fmt0(s.inc[x])+'</td>';
+    expRow += '<td class="num">'+fmt0(s.exp[x])+'</td>';
+    var n=s.inc[x]-s.exp[x]; netRow += '<td class="num '+(n<0?'neg':'pos')+'">'+fmt0(n)+'</td>';
+  }
+  var totNet=totInc-totExp;
+  head += '<th class="num">FY total</th></tr>';
+  incRow += '<td class="num pos">'+fmt0(totInc)+'</td></tr>';
+  expRow += '<td class="num">'+fmt0(totExp)+'</td></tr>';
+  netRow += '<td class="num '+(totNet<0?'neg':'pos')+'">'+fmt0(totNet)+'</td></tr>';
+  var cumRow = '<tr class="auto"><td>Cumulative</td>'+cumCells+'<td class="num">'+fmt0(cum)+'</td></tr>';
+
+  return '<div class="card"><div class="card-title">📈 Statement of financial performance <span class="chip" style="margin-left:auto">'+esc(fyLabel(fy))+'</span></div>'+
+    '<div class="grid grid-3" style="margin-bottom:16px">'+
+      kpi('Income', fmt0(totInc), 'pos')+
+      kpi('Expenses', fmt0(totExp))+
+      kpi('Net '+(totNet<0?'loss':'profit'), (totNet<0?'−':'')+fmt0(Math.abs(totNet)), totNet<0?'neg':'pos')+
+    '</div>'+
+    '<canvas id="chartPerf" height="110" style="margin-bottom:8px"></canvas>'+
+    '<div class="table-wrap"><table><thead>'+head+'</thead><tbody>'+incRow+expRow+netRow+cumRow+'</tbody></table></div>'+
+    '<div class="hint">Operating view: recurring rent &amp; scheduled expenses spread evenly across the year, plus logged one-offs in their month. The Tax Report applies rental-day apportionment for deductible figures.</div></div>';
+}
+
+function drawPerformanceChart(targets, fy){
+  var s = monthlySeriesCombined(targets, fy);
+  var net=[], cum=0, cumArr=[];
+  for(var m=0;m<12;m++){ var n=s.inc[m]-s.exp[m]; net.push(Math.round(n)); cum+=n; cumArr.push(Math.round(cum)); }
+  var c=document.getElementById('chartPerf'); if(!c) return;
+  if(_charts.perf){ _charts.perf.destroy(); }
+  _charts.perf = safeChart(c, {
+    type:'bar',
+    data:{ labels:FY_MONTHS, datasets:[
+      {type:'bar', label:'Monthly net', data:net, backgroundColor:net.map(function(v){return v<0?'#EF4444':'#00C896';})},
+      {type:'line', label:'Cumulative net', data:cumArr, borderColor:'#F0538A', backgroundColor:'transparent', tension:.3, pointRadius:2}
+    ]},
+    options:{ responsive:true, plugins:{legend:{labels:{color:'#E8EDF5'}}}, scales:{
+      x:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.12)'}},
+      y:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.12)'}} } }
+  });
+}
+
+/* Compact recurring-schedule summary with quick edit link */
+function scheduleSummary(targets){
+  if(targets.length!==1) return '';
+  var p=targets[0]; var ri=p.rentalIncome||{}; var es=p.expenseSchedule||[];
+  var annRent=annualize(ri.rentAmount,ri.rentFrequency)+annualize(ri.otherAmount,ri.otherFrequency);
+  var annExp=0; for(var i=0;i<es.length;i++) annExp+=annualize(es[i].amount,es[i].frequency);
+  return '<div class="card card2"><div class="card-title">🔁 Recurring schedule '+
+    '<button class="btn btn-sm" style="margin-left:auto" onclick="openPropForm(\''+p.id+'\')">Edit</button></div>'+
+    '<div class="metric-row">'+
+      '<div class="metric"><div class="l">Rent &amp; recoveries (annual)</div><div class="v pos">'+fmt0(annRent)+'</div></div>'+
+      '<div class="metric"><div class="l">Scheduled expenses (annual)</div><div class="v">'+fmt0(annExp)+'</div></div>'+
+      '<div class="metric"><div class="l">Scheduled line items</div><div class="v">'+es.length+'</div></div>'+
+    '</div></div>';
+}
+function autoRow(label,val){ return '<tr class="auto"><td>'+esc(label)+'</td><td class="num">'+fmt(val)+'</td><td style="width:120px">auto-calculated</td></tr>'; }
+function monthName(mk){ var p=mk.split('-'); var d=new Date(parseInt(p[0]),parseInt(p[1])-1,1); return d.toLocaleDateString('en-AU',{month:'long',year:'numeric'}); }
+function availableFYs(){
+  var set={}; for(var i=0;i<TRANSACTIONS.length;i++){ var f=fyOf(TRANSACTIONS[i].date); if(f) set[f]=1; }
+  set[SETTINGS.financialYear]=1;
+  return Object.keys(set).sort().reverse();
+}
+function deleteTx(id){ if(!confirm('Delete this transaction?')) return; TRANSACTIONS=TRANSACTIONS.filter(function(t){return t.id!==id;}); persistAll(); renderTransactions(); }
+
+/* Vacancy log */
+function vacancyLogCard(){
+  var rows='';
+  var vlist = VACANCIES.filter(function(v){ return TX_FILTER.property==='all' || v.propertyId===TX_FILTER.property; });
+  for(var i=0;i<vlist.length;i++){
+    var v=vlist[i]; var pName=(PROPERTIES.filter(function(p){return p.id===v.propertyId;})[0]||{}).address||'—';
+    rows += '<tr><td>'+esc(pName)+'</td><td class="mono">'+esc(v.from)+' → '+esc(v.to)+'</td><td>'+esc(v.reason)+'</td>'+
+      '<td><button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteVacancy(\''+v.id+'\')">×</button></td></tr>';
+  }
+  var table = vlist.length ? '<div class="table-wrap"><table><thead><tr><th>Property</th><th>Period</th><th>Reason</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>' : '<div class="hint">No vacancy periods logged. These reduce the rental apportionment factor.</div>';
+  return '<div class="card"><div class="card-title">📅 Vacancy log</div>'+table+
+    '<button class="btn btn-sm" style="margin-top:10px" onclick="openVacancyForm()">+ Add vacancy period</button>'+
+    '<div class="hint">Days logged here are treated as not available for rent and reduce deductible apportionment.</div></div>';
+}
+function openVacancyForm(){
+  if(!PROPERTIES.length){ alert('Add a property first.'); return; }
+  var propOpts=''; for(var i=0;i<PROPERTIES.length;i++) propOpts+='<option value="'+PROPERTIES[i].id+'">'+esc(PROPERTIES[i].address)+'</option>';
+  openSheet('<div class="sheet-head"><h3>Add vacancy period</h3><button class="x-btn" onclick="closeSheet()">×</button></div>'+
+    '<label class="field"><span class="field-label">Property</span><select id="v_prop">'+propOpts+'</select></label>'+
+    '<div class="grid grid-2">'+
+      '<label class="field"><span class="field-label">From</span><input id="v_from" type="date"/></label>'+
+      '<label class="field"><span class="field-label">To</span><input id="v_to" type="date"/></label>'+
+    '</div>'+
+    '<label class="field"><span class="field-label">Reason</span><select id="v_reason">'+
+      '<option value="Vacant">Vacant</option><option value="Owner Use">Owner Use</option><option value="Repairs">Repairs</option>'+
+    '</select></label>'+
+    '<button class="btn btn-primary btn-block" onclick="saveVacancy()">Save</button>');
+}
+function saveVacancy(){
+  var pid=document.getElementById('v_prop').value, from=document.getElementById('v_from').value, to=document.getElementById('v_to').value, reason=document.getElementById('v_reason').value;
+  if(!from||!to){ alert('Enter both dates.'); return; }
+  if(to<from){ alert('End date must be after start date.'); return; }
+  VACANCIES.push({id:uuid(), propertyId:pid, from:from, to:to, reason:reason});
+  persistAll(); closeSheet(); renderTransactions();
+}
+function deleteVacancy(id){ VACANCIES=VACANCIES.filter(function(v){return v.id!==id;}); persistAll(); renderTransactions(); }
+
+/* Add/Edit transaction */
+function openTxForm(id, presetType){
+  if(!PROPERTIES.length){ alert('Add a property first.'); return; }
+  var t = id ? TRANSACTIONS.filter(function(x){return x.id===id;})[0] : null;
+  var type = presetType || 'expense';
+  var defCat = type==='income' ? 'rental-income' : 'repairs-maintenance';
+  var defProp = (TX_FILTER.property && TX_FILTER.property!=='all') ? TX_FILTER.property : PROPERTIES[0].id;
+  var tx = t ? JSON.parse(JSON.stringify(t)) : {id:uuid(), propertyId:defProp, date:todayISO(), type:type, category:defCat, description:'', amount:'', receiptRef:''};
+  TXFORM = tx; TXFORM._editing=!!t;
+  renderTxForm();
+}
+var TXFORM=null;
+function renderTxForm(){
+  var tx=TXFORM;
+  var propOpts=''; for(var i=0;i<PROPERTIES.length;i++) propOpts+='<option value="'+PROPERTIES[i].id+'"'+(tx.propertyId===PROPERTIES[i].id?' selected':'')+'>'+esc(PROPERTIES[i].address)+'</option>';
+  var cats = tx.type==='income'?INCOME_CATS:EXPENSE_CATS;
+  var catOpts=''; for(var c=0;c<cats.length;c++) catOpts+='<option value="'+cats[c][0]+'"'+(tx.category===cats[c][0]?' selected':'')+'>'+cats[c][2]+' '+esc(cats[c][1])+'</option>';
+  var fy = tx.date?fyOf(tx.date):'';
+  openSheet('<div class="sheet-head"><h3>'+(tx._editing?'Edit':'Add')+' transaction</h3><button class="x-btn" onclick="closeSheet()">×</button></div>'+
+    '<label class="field"><span class="field-label">Property</span><select id="t_prop">'+propOpts+'</select></label>'+
+    '<div class="field-label">Type</div><div class="seg" style="margin-bottom:16px;width:100%">'+
+      '<button type="button" style="flex:1" class="'+(tx.type==='income'?'active':'')+'" onclick="setTxType(\'income\')">Income</button>'+
+      '<button type="button" style="flex:1" class="'+(tx.type==='expense'?'active':'')+'" onclick="setTxType(\'expense\')">Expense</button>'+
+    '</div>'+
+    '<label class="field"><span class="field-label">Date</span><input id="t_date" type="date" value="'+esc(tx.date)+'" onchange="TXFORM.date=this.value;document.getElementById(\'t_fy\').textContent=fyLabel(fyOf(this.value)||\'\')"/></label>'+
+    '<div class="hint" style="margin-top:-10px">Financial year: <span id="t_fy" class="mono">'+esc(fy?fyLabel(fy):'—')+'</span></div>'+
+    '<label class="field"><span class="field-label">Category</span><select id="t_cat">'+catOpts+'</select></label>'+
+    '<label class="field"><span class="field-label">Description</span><input id="t_desc" type="text" value="'+esc(tx.description)+'"/></label>'+
+    '<label class="field"><span class="field-label">Amount (AUD)</span><input id="t_amt" type="number" class="mono" inputmode="decimal" min="0" max="99999999" value="'+esc(tx.amount)+'"/></label>'+
+    '<label class="field"><span class="field-label">Receipt reference (optional)</span><input id="t_ref" type="text" value="'+esc(tx.receiptRef)+'"/></label>'+
+    '<button class="btn btn-primary btn-block" onclick="saveTx()">Save transaction</button>');
+}
+function setTxType(t){
+  TXFORM.type=t; TXFORM.category = t==='income'?'rental-income':'repairs-maintenance';
+  var g=function(id){var e=document.getElementById(id);return e?e.value:undefined;};
+  TXFORM.propertyId=g('t_prop')||TXFORM.propertyId; TXFORM.date=g('t_date')||TXFORM.date;
+  TXFORM.description=g('t_desc')||''; TXFORM.amount=g('t_amt')||''; TXFORM.receiptRef=g('t_ref')||'';
+  renderTxForm();
+}
+function saveTx(){
+  var g=function(id){return document.getElementById(id).value;};
+  var amt=num(g('t_amt'));
+  if(amt<0 || amt>99999999){ alert('Amount must be between $0 and $99,999,999.'); return; }
+  if(!g('t_date')){ alert('Enter a date.'); return; }
+  TXFORM.propertyId=g('t_prop'); TXFORM.date=g('t_date'); TXFORM.category=g('t_cat');
+  TXFORM.description=g('t_desc'); TXFORM.amount=amt; TXFORM.receiptRef=g('t_ref');
+  TXFORM.financialYear=fyOf(TXFORM.date);
+  var editing=TXFORM._editing; delete TXFORM._editing;
+  if(editing){ for(var i=0;i<TRANSACTIONS.length;i++){ if(TRANSACTIONS[i].id===TXFORM.id){ TRANSACTIONS[i]=TXFORM; break; } } }
+  else TRANSACTIONS.push(TXFORM);
+  persistAll(); closeSheet(); if(CURRENT_TAB!=='transactions') go('transactions'); else renderTransactions();
+}
+
+/* =================================================================
+   TAX REPORT
+   ================================================================= */
+var TAX_PROP='all';
+function renderTax(){
+  var el=document.getElementById('page-tax');
+  var h='<div class="page-head no-print"><div><h1 class="page-title">Tax Report</h1>'+
+    '<div class="page-sub">ATO rental property worksheet</div></div></div>';
+  if(!PROPERTIES.length){
+    el.innerHTML=h+emptyState('📄','Nothing to report yet','Add at least one property (with its rental income and expense schedule) to generate your tax report.','+ Add property',"openPropForm()");
+    return;
+  }
+  var fys=availableFYs();
+  var fyOpts=''; for(var i=0;i<fys.length;i++) fyOpts+='<option value="'+fys[i]+'"'+(SETTINGS.financialYear===fys[i]?' selected':'')+'>'+esc(fyLabel(fys[i]))+'</option>';
+  var propOpts='<option value="all">All properties</option>';
+  for(var p=0;p<PROPERTIES.length;p++) propOpts+='<option value="'+PROPERTIES[p].id+'"'+(TAX_PROP===PROPERTIES[p].id?' selected':'')+'>'+esc(PROPERTIES[p].address)+'</option>';
+
+  var controls='<div class="card no-print"><div class="filterbar">'+
+    '<label class="field"><span class="field-label">Financial year</span><select onchange="SETTINGS.financialYear=this.value;save(K.settings,SETTINGS);renderTax()">'+fyOpts+'</select></label>'+
+    '<label class="field"><span class="field-label">Property</span><select onchange="TAX_PROP=this.value;renderTax()">'+propOpts+'</select></label>'+
+    '<button class="btn" onclick="window.print()">🖨️ Print</button>'+
+  '</div></div>';
+
+  var fy=SETTINGS.financialYear;
+  var targets = TAX_PROP==='all' ? PROPERTIES : PROPERTIES.filter(function(x){return x.id===TAX_PROP;});
+
+  var report='<div id="printArea">';
+  if(TAX_PROP==='all' && PROPERTIES.length>1){
+    report += combinedWorksheet(fy);
+  }
+  for(var t=0;t<targets.length;t++){
+    report += propertyTaxBlock(targets[t], fy);
+  }
+  report += '<div class="card"><div class="card-title">📈 Income vs expenses</div><canvas id="chartIE" height="120"></canvas></div>';
+  report += '<div class="card"><div class="card-title">🥧 Expense breakdown — '+esc(fyLabel(fy))+'</div><canvas id="chartPie" height="160"></canvas></div>';
+  report += '</div>';
+
+  el.innerHTML = h + controls + report;
+  drawCharts(targets, fy);
+}
+
+function worksheetTable(ws, title){
+  var rows='';
+  for(var i=0;i<EXPENSE_CATS.length;i++){
+    var id=EXPENSE_CATS[i][0]; var val=ws.expenses[id]||0;
+    var share=val*(ws.ownPct/100);
+    var auto = AUTO_CATS.indexOf(id)!==-1 ? ' auto':'';
+    rows += '<tr class="'+(auto?'auto':'')+'"><td>'+esc(EXPENSE_CATS[i][1])+'</td><td class="num">'+fmt(val)+'</td><td class="num">'+fmt(share)+'</td></tr>';
+  }
+  var ri=ws.income['rental-income'], oi=ws.income['other-rental-income'];
+  return '<div class="card">'+(title?'<div class="card-title">'+esc(title)+'</div>':'')+
+    '<div class="table-wrap"><table>'+
+    '<thead><tr><th>Income</th><th class="num">Total</th><th class="num">Your share ('+pct(ws.ownPct)+')</th></tr></thead><tbody>'+
+      '<tr><td>Rental income</td><td class="num">'+fmt(ri)+'</td><td class="num">'+fmt(ri*ws.ownPct/100)+'</td></tr>'+
+      '<tr><td>Other rental related income</td><td class="num">'+fmt(oi)+'</td><td class="num">'+fmt(oi*ws.ownPct/100)+'</td></tr>'+
+      '<tr class="total"><td>Gross rent</td><td class="num">'+fmt(ws.grossRent)+'</td><td class="num">'+fmt(ws.grossRent*ws.ownPct/100)+'</td></tr>'+
+    '</tbody>'+
+    '<thead><tr><th>Expenses'+(ws.factor<1?' (apportioned '+pct(ws.factor*100)+')':'')+'</th><th class="num">Total</th><th class="num">Your share</th></tr></thead><tbody>'+
+      rows+
+      '<tr class="total"><td>Total expenses</td><td class="num">'+fmt(ws.totalExpenses)+'</td><td class="num">'+fmt(ws.totalExpenses*ws.ownPct/100)+'</td></tr>'+
+      '<tr class="total"><td>Net rental income / (loss)</td><td class="num '+(ws.net<0?'neg':'pos')+'">'+fmt(ws.net)+'</td><td class="num '+(ws.net<0?'neg':'pos')+'">'+fmt(ws.net*ws.ownPct/100)+'</td></tr>'+
+    '</tbody></table></div></div>';
+}
+
+function apportionPanel(p, fy){
+  var ap=apportionment(p,fy);
+  if(ap.factor>=0.999 && ap.ppor===0 && ap.vacant===0) return '';
+  return '<div class="card card2"><div class="card-title">Apportionment</div>'+
+    '<div class="table-wrap"><table><tbody>'+
+      '<tr><td>Property available for rent</td><td class="num">'+ap.rental+' days</td></tr>'+
+      '<tr><td>Total days in financial year</td><td class="num">'+ap.total+'</td></tr>'+
+      '<tr><td>Main residence (PPOR)</td><td class="num">'+ap.ppor+' days</td></tr>'+
+      '<tr><td>Vacant / not available</td><td class="num">'+ap.vacant+' days</td></tr>'+
+      '<tr class="total"><td>Apportionment factor</td><td class="num">'+pct(ap.factor*100)+'</td></tr>'+
+    '</tbody></table></div>'+
+    '<div class="note">Only expenses relating to the period the property was available for rent are deductible. Deductible expenses are multiplied by the apportionment factor. Verify with your accountant for your specific situation.</div></div>';
+}
+
+function propertyTaxBlock(p, fy){
+  var ws=computeWorksheet(p,fy);
+  var out='<h3 style="margin:24px 0 12px;font-size:18px">'+esc(p.address)+' — '+esc(fyLabel(fy))+'</h3>';
+  out += apportionPanel(p,fy);
+  out += worksheetTable(ws,'ATO rental property worksheet');
+  var ti=taxImpact(p,fy); var tiHtml='';
+  for(var i=0;i<ti.length;i++){
+    var o=ti[i];
+    tiHtml += '<div style="padding:12px 0;border-bottom:1px solid var(--border)">'+
+      '<div style="font-weight:600">Owner '+(i+1)+' — '+esc(o.name)+'</div>'+
+      '<div class="metric-row">'+
+        '<div class="metric"><div class="l">Share of net ('+pct(o.pct)+')</div><div class="v '+(o.share<0?'neg':'pos')+'">'+fmt(o.share)+'</div></div>'+
+        '<div class="metric"><div class="l">Marginal rate (incl. Medicare)</div><div class="v">'+pct(o.rate)+'</div></div>'+
+        '<div class="metric"><div class="l">'+(o.refund?'Estimated tax refund (negative gearing)':'Estimated additional tax payable')+'</div>'+
+          '<div class="v '+(o.refund?'pos':'amberv')+'">'+(o.refund?'+':'')+fmt(o.amount)+'</div></div>'+
+      '</div></div>';
+  }
+  out += '<div class="card"><div class="card-title">Tax impact</div>'+tiHtml+
+    '<div class="note">This is an estimate only based on your selected marginal rate. Your actual tax outcome depends on your total taxable income and should be confirmed with a registered tax agent.</div></div>';
+  out += cgtPanel(p);
+  out += prefillCard(p, fy, ws, ti);
+  return out;
+}
+
+function cgtPanel(p){
+  var c=cgtEstimate(p);
+  if(c.heldMonths<=12) return '';
+  var rate = withMedicare(rateForOwner((p.ownershipSplit||[{}])[0].name))/100;
+  var perOwnerPct = ownerSharePct(p);
+  var perOwner = c.taxable*(perOwnerPct/100);
+  var cgtPayable = perOwner*rate;
+  return '<div class="card"><div class="card-title">CGT estimate (held &gt;12 months)</div>'+
+    '<div class="table-wrap"><table><tbody>'+
+      '<tr><td>Purchase price</td><td class="num">'+fmt(c.purchase)+'</td></tr>'+
+      '<tr><td>+ Stamp duty &amp; purchase costs</td><td class="num">'+fmt(c.costs)+'</td></tr>'+
+      '<tr><td>+ Capital improvements</td><td class="num">'+fmt(c.improv)+'</td></tr>'+
+      '<tr class="total"><td>= Cost base</td><td class="num">'+fmt(c.costBase)+'</td></tr>'+
+      '<tr><td>Current market value</td><td class="num">'+fmt(c.marketValue)+'</td></tr>'+
+      '<tr><td>− Cost base</td><td class="num">'+fmt(c.costBase)+'</td></tr>'+
+      '<tr class="total"><td>= Estimated capital gain</td><td class="num '+(c.gain<0?'neg':'pos')+'">'+fmt(c.gain)+'</td></tr>'+
+      '<tr><td>50% CGT discount (held &gt;12m)</td><td class="num">'+fmt(c.discount)+'</td></tr>'+
+      '<tr class="total"><td>= Taxable capital gain</td><td class="num">'+fmt(c.taxable)+'</td></tr>'+
+      '<tr><td>Per owner share ('+pct(perOwnerPct)+')</td><td class="num">'+fmt(perOwner)+'</td></tr>'+
+      '<tr class="total"><td>Estimated CGT payable (at marginal rate)</td><td class="num amberv">'+fmt(cgtPayable)+'</td></tr>'+
+    '</tbody></table></div>'+
+    '<div class="note">CGT is only realised on sale. This is an estimate only. Main residence exemption periods affect the calculation — see your accountant.</div></div>';
+}
+
+function prefillCard(p, fy, ws, ti){
+  var owners='';
+  for(var i=0;i<ti.length;i++){ owners += '<tr><td>'+esc(ti[i].name)+' net rental '+(ti[i].share<0?'loss':'income')+'</td><td class="num">'+fmt(ti[i].share)+'</td></tr>'; }
+  return '<div class="card card2"><div class="card-title">📝 Tax return pre-fill</div>'+
+    '<div class="hint">Section 20 — Rental property income and expenses</div>'+
+    '<div class="table-wrap"><table><tbody>'+
+      '<tr><td>Property address</td><td class="num">'+esc(p.address)+'</td></tr>'+
+      '<tr><td>Financial year</td><td class="num">'+esc(fyLabel(fy))+'</td></tr>'+
+      '<tr><td>Gross rent</td><td class="num">'+fmt(ws.grossRent)+'</td></tr>'+
+      '<tr><td>Total expenses</td><td class="num">'+fmt(ws.totalExpenses)+'</td></tr>'+
+      '<tr class="total"><td>Net rental income / (loss)</td><td class="num '+(ws.net<0?'neg':'pos')+'">'+fmt(ws.net)+'</td></tr>'+
+      owners+
+    '</tbody></table></div>'+
+    '<div class="note">These figures are suitable for pre-filling your Individual Tax Return, Schedule of Rental Property Income and Deductions.</div>'+
+    '<button class="btn no-print" onclick="window.print()">🖨️ Print this report</button></div>';
+}
+
+function combinedWorksheet(fy){
+  var agg={income:{}, expenses:{}, grossRent:0, totalExpenses:0, net:0, factor:1, ownPct:100};
+  for(var i=0;i<INCOME_CATS.length;i++) agg.income[INCOME_CATS[i][0]]=0;
+  for(var e=0;e<EXPENSE_CATS.length;e++) agg.expenses[EXPENSE_CATS[e][0]]=0;
+  for(var p=0;p<PROPERTIES.length;p++){
+    var ws=computeWorksheet(PROPERTIES[p],fy);
+    for(var a=0;a<INCOME_CATS.length;a++) agg.income[INCOME_CATS[a][0]]+=ws.income[INCOME_CATS[a][0]];
+    for(var b=0;b<EXPENSE_CATS.length;b++) agg.expenses[EXPENSE_CATS[b][0]]+=ws.expenses[EXPENSE_CATS[b][0]];
+    agg.grossRent+=ws.grossRent; agg.totalExpenses+=ws.totalExpenses; agg.net+=ws.net;
+  }
+  return '<h3 style="margin:0 0 12px;font-size:18px">All properties combined — '+esc(fyLabel(fy))+'</h3>'+worksheetTable(agg,'Combined worksheet');
+}
+
+/* ---------- Charts ---------- */
+var _charts={};
+function safeChart(canvas, config){
+  if(typeof Chart==='undefined' || window._chartJsError){
+    if(canvas){ var ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#6278A0'; ctx.font='13px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Charts unavailable — check internet connection', canvas.width/2, canvas.height/2); }
+    return null;
+  }
+  try{ return new Chart(canvas, config); }catch(e){ console.error('Chart error:',e); return null; }
+}
+function drawCharts(targets, selFy){
+  var fys=availableFYs().slice().reverse();
+  var rentByFy=[], expByFy=[];
+  for(var i=0;i<fys.length;i++){
+    var r=0,ex=0;
+    for(var t=0;t<targets.length;t++){ var ws=computeWorksheet(targets[t],fys[i]); r+=ws.grossRent; ex+=ws.totalExpenses; }
+    rentByFy.push(Math.round(r)); expByFy.push(Math.round(ex));
+  }
+  var ie=document.getElementById('chartIE');
+  if(_charts.ie){ _charts.ie.destroy(); }
+  _charts.ie = safeChart(ie, {
+    type:'bar',
+    data:{ labels:fys.map(fyLabel), datasets:[
+      {label:'Gross rent', data:rentByFy, backgroundColor:'#00C896'},
+      {label:'Total expenses', data:expByFy, backgroundColor:'#F0538A'}
+    ]},
+    options:{ responsive:true, plugins:{legend:{labels:{color:'#E8EDF5'}}}, scales:{
+      x:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.15)'}},
+      y:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.15)'}} } }
+  });
+
+  var labels=[], data=[];
+  var colors=['#F0538A','#00C896','#818CF8','#F59E0B','#EF4444','#F56CA0','#22D3EE','#A78BFA','#FB923C','#34D399','#60A5FA','#F472B6','#FBBF24','#4ADE80','#C084FC','#2DD4BF','#FACC15','#FB7185'];
+  var agg={};
+  for(var e=0;e<EXPENSE_CATS.length;e++) agg[EXPENSE_CATS[e][0]]=0;
+  for(var tt=0;tt<targets.length;tt++){ var w=computeWorksheet(targets[tt],selFy);
+    for(var c=0;c<EXPENSE_CATS.length;c++) agg[EXPENSE_CATS[c][0]]+=w.expenses[EXPENSE_CATS[c][0]]; }
+  for(var k=0;k<EXPENSE_CATS.length;k++){ var v=agg[EXPENSE_CATS[k][0]]; if(v>0.5){ labels.push(EXPENSE_CATS[k][1]); data.push(Math.round(v)); } }
+  var pie=document.getElementById('chartPie');
+  if(_charts.pie){ _charts.pie.destroy(); }
+  if(!data.length){ var ctx=pie.getContext('2d'); ctx.clearRect(0,0,pie.width,pie.height); ctx.fillStyle='#6278A0'; ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillText('No expenses for this year', pie.width/2, pie.height/2); return; }
+  _charts.pie = safeChart(pie, {
+    type:'doughnut',
+    data:{ labels:labels, datasets:[{data:data, backgroundColor:colors, borderColor:'#0D1225', borderWidth:2}] },
+    options:{ responsive:true, plugins:{legend:{position:'right', labels:{color:'#E8EDF5', boxWidth:12, font:{size:11}}}} }
+  });
+}
+
+/* =================================================================
+   SETTINGS
+   ================================================================= */
+function renderSettings(){
+  var el=document.getElementById('page-settings');
+  var fyOpts=''; for(var i=0;i<ALL_FYS.length;i++) fyOpts+='<option value="'+ALL_FYS[i]+'"'+(SETTINGS.financialYear===ALL_FYS[i]?' selected':'')+'>'+esc(fyLabel(ALL_FYS[i]))+'</option>';
+
+  var brRows=''; for(var b=0;b<BRACKETS.length;b++){ brRows+='<tr><td>'+esc(BRACKETS[b][0])+'</td><td>'+esc(BRACKETS[b][1])+'</td><td>'+esc(BRACKETS[b][2])+'</td></tr>'; }
+
+  var ownerHtml='';
+  var owners=TAX_SETTINGS.owners||[];
+  if(!owners.length) ownerHtml='<div class="hint">Owners appear here once you add a property.</div>';
+  for(var o=0;o<owners.length;o++){
+    var rateOpts=''; var rates=[0,19,32.5,37,45];
+    for(var r=0;r<rates.length;r++) rateOpts+='<option value="'+rates[r]+'"'+(num(owners[o].marginalRate)===rates[r]?' selected':'')+'>'+rates[r]+'% (incl. Medicare: '+withMedicare(rates[r])+'%)</option>';
+    ownerHtml += '<div class="grid grid-2" style="align-items:end">'+
+      '<label class="field"><span class="field-label">Owner name</span><input type="text" value="'+esc(owners[o].name)+'" onchange="updateOwnerName('+o+',this.value)"/></label>'+
+      '<label class="field"><span class="field-label">Marginal rate</span><select onchange="updateOwnerRate('+o+',this.value)">'+rateOpts+'</select></label>'+
+    '</div>';
+  }
+
+  var connected=SETTINGS.keldaConnect;
+  var keldaStatus = connected ? keldaStatusText() : '';
+  var usage = storageKB();
+
+  el.innerHTML =
+    '<div class="page-head"><div><h1 class="page-title">Settings</h1></div></div>'+
+    '<div class="card"><div class="card-title">Financial year</div>'+
+      '<label class="field"><span class="field-label">Active financial year</span><select onchange="SETTINGS.financialYear=this.value;persistAll();render(CURRENT_TAB)">'+fyOpts+'</select></label></div>'+
+    '<div class="card"><div class="card-title">Tax bracket configuration</div>'+ownerHtml+
+      '<div class="field-label" style="margin-top:16px">2024–25 ATO brackets (reference)</div>'+
+      '<div class="table-wrap"><table class="bracket-table"><thead><tr><th>Taxable income</th><th>Marginal rate</th><th>With Medicare (2%)</th></tr></thead><tbody>'+brRows+'</tbody></table></div>'+
+      '<div class="note">Stage 3 tax cuts apply from 1 July 2024. Rates shown are for 2024–25. Select your rate; the app adds the 2% Medicare levy for display.</div></div>'+
+    '<div class="card"><div class="card-title">Kelda Finance integration</div>'+
+      '<label class="switch"><input type="checkbox" '+(connected?'checked':'')+' onchange="toggleKelda(this.checked)"/><span class="track"></span><span>Connect to Kelda Finance data</span></label>'+
+      '<div id="keldaStatus" class="note" style="'+(connected?'':'display:none')+'">'+keldaStatus+'</div>'+
+      '<div class="hint">When on, reads <span class="mono">cff_mortgage</span> / <span class="mono">cff_tx</span> from the main app (read-only) to surface matching data.</div></div>'+
+    '<div class="card"><div class="card-title">Data management</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="btn" onclick="exportData()">⬇️ Export JSON</button>'+
+        '<button class="btn" onclick="document.getElementById(\'importFile\').click()">⬆️ Import JSON</button>'+
+        '<button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear all data</button>'+
+      '</div>'+
+      '<input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(this)"/>'+
+      '<div class="hint" style="margin-top:12px">Storage usage: <span class="mono">'+usage+' KB</span> of localStorage (investment-property data).</div></div>';
+}
+function updateOwnerName(i,v){ TAX_SETTINGS.owners[i].name=v; save(K.taxSettings,TAX_SETTINGS); }
+function updateOwnerRate(i,v){ TAX_SETTINGS.owners[i].marginalRate=num(v); save(K.taxSettings,TAX_SETTINGS); }
+
+// KELDA INTEGRATION: Read cff_ mortgage + transactions from localStorage when connected
+function readKeldaData(){
+  var mortgage=load(KELDA_KEYS.mortgage);
+  var tx=load(KELDA_KEYS.tx);
+  // KELDA INTEGRATION: Pull owner names from cff_userconfig if available
+  var cfg=load(KELDA_KEYS.userconfig);
+  return { mortgage:mortgage, tx:tx, cfg:cfg, found:(mortgage!=null || (tx&&tx.length)) };
+}
+function keldaStatusText(){
+  var d=readKeldaData();
+  if(d.found){
+    var bits=[];
+    if(d.mortgage) bits.push('mortgage data');
+    if(d.tx&&d.tx.length) bits.push(d.tx.length+' transactions');
+    return '✅ Kelda Finance data found ('+bits.join(', ')+'). Available for pre-fill.';
+  }
+  return '⚠️ No Kelda Finance data found in this browser (cff_ keys empty).';
+}
+function toggleKelda(on){ SETTINGS.keldaConnect=on; save(K.settings,SETTINGS);
+  var s=document.getElementById('keldaStatus'); s.style.display=on?'':'none'; if(on) s.innerHTML=keldaStatusText();
+}
+
+function storageKB(){
+  var total=0;
+  for(var k in K){ try{ var v=localStorage.getItem(K[k]); if(v) total+=v.length; }catch(e){} }
+  return (Math.round(total/1024*10)/10);
+}
+// KELDA INTEGRATION: Map kf_ip_transactions to cff_transactions format on export
+function exportData(){
+  var data={ properties:PROPERTIES, transactions:TRANSACTIONS, vacancies:VACANCIES, taxSettings:TAX_SETTINGS, settings:SETTINGS, exportedAt:new Date().toISOString() };
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='kelda-investment-property-'+todayISO()+'.json'; a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+}
+function importData(input){
+  var f=input.files[0]; if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var d=JSON.parse(reader.result);
+      if(!confirm('Import will REPLACE all current investment-property data. Continue?')){ input.value=''; return; }
+      PROPERTIES=d.properties||[]; TRANSACTIONS=d.transactions||[]; VACANCIES=d.vacancies||[];
+      TAX_SETTINGS=d.taxSettings||{owners:[]}; SETTINGS=d.settings||SETTINGS;
+      persistAll(); go('dashboard'); alert('Data imported successfully.');
+    }catch(e){ alert('Could not read that file: '+e.message); }
+    input.value='';
+  };
+  reader.readAsText(f);
+}
+function clearAllData(){
+  if(!confirm('This permanently deletes ALL investment-property data (properties, transactions, vacancies, settings). This cannot be undone. Continue?')) return;
+  if(!confirm('Are you absolutely sure? Last chance.')) return;
+  for(var k in K){ try{ localStorage.removeItem(K[k]); }catch(e){} }
+  PROPERTIES=[]; TRANSACTIONS=[]; VACANCIES=[]; TAX_SETTINGS={owners:[]}; SETTINGS={financialYear:'2024-25',keldaConnect:false};
+  go('dashboard');
+}
+
+/* =================================================================
+   INIT
+   ================================================================= */
+function boot(){
+  syncOwnersFromProperties();
+  writeSummary();
+  buildNav();
+  go('dashboard');
+}
+boot();
+</script>
+</body>
+</html>
