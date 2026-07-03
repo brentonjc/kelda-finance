@@ -653,11 +653,11 @@ function renderExportSectionList() {
   if (!el) return;
   el.innerHTML = EXPORT_SECTIONS.map(s => {
     var importBtn = s.importJSON
-      ? '<button class="btn btn-ghost btn-sm" onclick="EXPORT_SECTIONS.find(x=>x.key===\'' + s.key + '\').importJSON()">📥 Import</button>'
+      ? '<button class="btn btn-ghost btn-sm" onclick="EXPORT_SECTIONS.find(x=>x.key===\'' + s.key + '\').importJSON()">' + ICON('download') + ' Import</button>'
       : '';
     return '<div class="export-section-row">'
       + '<div class="export-section-info">'
-      + '<div class="export-section-name">' + s.icon + ' ' + s.label + '</div>'
+      + '<div class="export-section-name">' + iconTag(s.icon) + ' ' + s.label + '</div>'
       + '<div class="export-section-count">' + s.count() + '</div>'
       + '</div>'
       + '<div class="export-section-btns">'
@@ -681,20 +681,20 @@ function renderExportDataSummary() {
   const sizeKB = (totalSize / 1024).toFixed(1);
 
   sumEl.innerHTML = [
-    ['💳 Transactions',     TX.length + ' records'],
-    ['⚡ Auto-Assignment Rules', Object.keys(LRULES).length + ' rules'],
-    ['🎯 Budget Categories', Object.keys(BUDGETS).length + ' limits'],
-    ['⭐ Savings Goals',     GOALS.length + ' goals'],
-    ['📅 Bills',             BILLS.length + ' bills'],
-    ['🛡️ Insurance Policies', INS.length + ' policies'],
-    ['🏦 Cash Tracker Months', [...new Set(Object.values(CT).flatMap(d => Object.keys(d||{})))].length + ' months'],
-    ['💼 Super Profiles',    ([SUPER.b?.balance, SUPER.s?.balance].filter(Boolean).length) + ' / 2 set'],
-    ['💾 Total Data Size',   sizeKB + ' KB'],
+    [ICON('credit-card') + ' Transactions',     TX.length + ' records'],
+    [ICON('bolt') + ' Auto-Assignment Rules', Object.keys(LRULES).length + ' rules'],
+    [ICON('target') + ' Budget Categories', Object.keys(BUDGETS).length + ' limits'],
+    [ICON('star') + ' Savings Goals',     GOALS.length + ' goals'],
+    [ICON('calendar') + ' Bills',             BILLS.length + ' bills'],
+    [ICON('shield-check') + ' Insurance Policies', INS.length + ' policies'],
+    [ICON('building-bank') + ' Cash Tracker Months', [...new Set(Object.values(CT).flatMap(d => Object.keys(d||{})))].length + ' months'],
+    [ICON('briefcase') + ' Super Profiles',    ([SUPER.b?.balance, SUPER.s?.balance].filter(Boolean).length) + ' / 2 set'],
+    [ICON('device-floppy') + ' Total Data Size',   sizeKB + ' KB'],
   ].map(([k, v]) => '<div class="dr"><span class="dr-k">' + k + '</span><span class="dr-v">' + v + '</span></div>').join('');
 
   clearEl.innerHTML = EXPORT_SECTIONS.map(s => {
     return '<button class="btn btn-danger btn-sm" onclick="EXPORT_SECTIONS.find(x=>x.key===\'' + s.key + '\').clear()" title="Clear ' + s.label + '">'
-      + s.icon + ' ' + s.label + '</button>';
+      + iconTag(s.icon) + ' ' + s.label + '</button>';
   }).join('');
 }
 

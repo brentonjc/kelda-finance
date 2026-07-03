@@ -493,7 +493,7 @@ function generateActionCards() {
     var pct1 = Math.round((cur1/tgt1)*100);
     var need1 = tgt1 - cur1;
     cards.push({
-      num: 1, icon: g1.icon || '🎯', label: 'SAVINGS GOAL',
+      num: 1, icon: g1.icon || 'target', label: 'SAVINGS GOAL',
       title: g1.name,
       body: pct1 + '% complete · ' + fmt(need1) + ' to go',
       status: pct1 >= 80 ? 'green' : pct1 >= 40 ? 'amber' : 'pink',
@@ -595,7 +595,7 @@ function renderActionCards(cards) {
     var s  = sc[c.status] || sc.muted;
     html += '<div class="action-card-item">'
       + '<div class="ac-num">' + c.num + '</div>'
-      + '<div class="ac-icon">' + c.icon + '</div>'
+      + '<div class="ac-icon">' + iconTag(c.icon) + '</div>'
       + '<div class="ac-body">'
       + '<div class="ac-label">' + c.label + '</div>'
       + '<div class="ac-title">' + c.title + '</div>'
@@ -829,7 +829,7 @@ function renderNudges(nudges) {
       }
     }
     el.innerHTML = '<div class="nudge-card">'
-      + '<div class="nudge-icon">' + n.icon + '</div>'
+      + '<div class="nudge-icon">' + iconTag(n.icon) + '</div>'
       + '<div class="nudge-content">'
       + '<div class="nudge-tag">Smart Insight</div>'
       + '<div class="nudge-text">' + n.text + '</div>'
@@ -1179,7 +1179,7 @@ function renderNotifModal() {
   var cardsHtml = cards.map(function(c) {
     var s = sc[c.status] || sc.muted;
     return '<div class="notif-item">'
-      + '<div class="notif-item-ic" style="background:' + s.bg + '">' + c.icon + '</div>'
+      + '<div class="notif-item-ic" style="background:' + s.bg + '">' + iconTag(c.icon) + '</div>'
       + '<div class="notif-item-body">'
       + '<div class="notif-item-lbl">' + kdEsc(c.label) + '</div>'
       + '<div class="notif-item-title">' + kdEsc(c.title) + '</div>'
@@ -1191,7 +1191,7 @@ function renderNotifModal() {
   }).join('');
 
   var nudgesHtml = nudges.map(function(n) {
-    return '<div class="notif-nudge"><span class="notif-nudge-ic">' + n.icon + '</span><span>' + n.text + '</span></div>';
+    return '<div class="notif-nudge"><span class="notif-nudge-ic">' + iconTag(n.icon) + '</span><span>' + n.text + '</span></div>';
   }).join('');
 
   el.innerHTML = (cardsHtml ? '<div class="notif-section-lbl">Priorities</div>' + cardsHtml : '')
@@ -1715,7 +1715,7 @@ function dbRenderAcctTiles() {
     { id:'sav1',   name:'Savings 1',         icon:'💰' },
     { id:'sav2',   name:'Savings 2',         icon:'💎' }
   ]).map(function(a, i) {
-    return { id: a.id, label: a.name || a.id, icon: a.icon || '🏦', color: a.color || _acctColors[i % _acctColors.length] };
+    return { id: a.id, label: a.name || a.id, icon: a.icon || 'building-bank', color: a.color || _acctColors[i % _acctColors.length] };
   });
 
   var dateLbl = new Date(lm + '-02').toLocaleString('en-AU', { month: 'long', year: 'numeric' });
@@ -1733,7 +1733,7 @@ function dbRenderAcctTiles() {
         + '</div>'
       : '';
     tilesHtml += '<div class="db-acct-tile">'
-      + '<div class="db-acct-tile-lbl">' + a.icon + ' ' + a.label + '</div>'
+      + '<div class="db-acct-tile-lbl">' + iconTag(a.icon) + ' ' + a.label + '</div>'
       + '<div class="db-acct-tile-val" style="color:' + a.color + '">' + fmt(currBal) + '</div>'
       + deltaHtml
       + '<div style="margin-top:7px">' + _dbSparkline(sparkVals, a.color) + '</div>'
@@ -1854,7 +1854,7 @@ function _dbRenderGlanceGoals() {
     var cur = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
     var tgt = Number(g.targetAmount) || Number(g.target) || 0;
     var pct = tgt > 0 ? Math.min(Math.round((cur / tgt) * 100), 100) : 0;
-    return { name: g.name, icon: g.icon || '🎯', pct: pct, done: pct >= 100 };
+    return { name: g.name, icon: g.icon || 'target', pct: pct, done: pct >= 100 };
   });
 
   var doneCount  = goalRows.filter(function(g){ return g.done; }).length;
@@ -1866,7 +1866,7 @@ function _dbRenderGlanceGoals() {
     var barColor = g.done ? 'var(--success)' : g.pct >= 80 ? 'var(--warn)' : 'var(--success)';
     return '<div class="db-glance-goal-row">'
       + '<div class="db-glance-goal-name">'
-      + '<span>' + g.icon + ' ' + g.name + '</span>'
+      + '<span>' + iconTag(g.icon) + ' ' + g.name + '</span>'
       + '<span class="db-glance-goal-pct" style="color:' + (g.done ? 'var(--success)' : 'var(--muted)') + '">' + g.pct + '%</span>'
       + '</div>'
       + '<div class="db-glance-prog"><div class="db-glance-prog-fill" style="width:' + g.pct + '%;background:' + barColor + '"></div></div>'

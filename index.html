@@ -1036,6 +1036,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div class="nav-flyout" id="fly-controls" role="menu" aria-label="App Controls">
         <div class="nav-flyout-hd">App Controls</div>
+        <a class="nav-fly-item" id="n-upload" onclick="go('upload')" role="menuitem"><span class="ni">📤</span><span>Upload Transactions</span></a>
         <a class="nav-fly-item" id="n-transfers" onclick="go('transfers')" role="menuitem"><span class="ni">🔄</span><span>Transfers</span></a>
         <a class="nav-fly-item" id="n-categories" onclick="go('categories')" role="menuitem"><span class="ni">🏷️</span><span>Categories</span></a>
         <a class="nav-fly-item" id="n-smartrules" onclick="go('smartrules')" role="menuitem"><span class="ni">⚡</span><span>Smart Rules</span></a>
@@ -1243,12 +1244,15 @@ window.addEventListener('unhandledrejection',function(e){
   <div id="topbar">
     <div class="topbar-left">
       <button class="tb-back" id="tb-back" onclick="go('dashboard')" aria-label="Back to dashboard" title="Back to dashboard"><i class="ti ti-arrow-left"></i></button>
-      <div class="topbar-title" data-app-name>Kelda Finance</div>
+      <div class="topbar-greeting">
+        <span class="topbar-greet-hi" id="tb-greeting">Welcome back</span>
+        <span class="topbar-greet-date" id="tb-greetdate"></span>
+      </div>
     </div>
     <div class="topbar-actions">
       <button class="tb-ibtn" aria-label="Search" title="Search" onclick="openSearchModal()"><i class="ti ti-search"></i></button>
       <button class="tb-ibtn" aria-label="Notifications" title="Notifications" onclick="openNotifModal()"><i class="ti ti-bell"></i><span class="tb-ndot" id="tb-ndot" style="display:none"></span></button>
-      <button class="tb-addbtn" onclick="openCsvModal()"><i class="ti ti-plus"></i><span class="tb-addbtn-lbl">Add transaction</span></button>
+      <button class="tb-addbtn" onclick="go('upload')"><i class="ti ti-upload"></i><span class="tb-addbtn-lbl">Upload Transactions</span></button>
       <div class="topbar-user">
         <div class="user-pill"><div class="user-dot"></div><span id="topbar-user">—</span></div>
         <button class="tb-lock" onclick="lockApp()" aria-label="Lock app" title="Lock app"><i class="ti ti-lock"></i></button>
@@ -2548,12 +2552,11 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="section-label" style="margin-bottom:14px">Add New Category</div>
       <div style="margin-bottom:12px">
         <label class="lbl" style="margin-bottom:8px">Icon — click to select</label>
-        <div id="cat-icon-picker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-          <input type="text" id="cat-icon-input" placeholder="Or type emoji" maxlength="4"
-            style="width:120px;text-align:center;font-size:1.1rem;" oninput="syncIconFromInput(this.value)"/>
-          <span id="cat-icon-preview" style="font-size:1.8rem">🏷️</span>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span id="cat-icon-preview" style="width:40px;height:40px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary)"></span>
+          <input type="hidden" id="cat-icon-input" value="tag"/>
         </div>
+        <div id="cat-icon-picker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
       </div>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div style="flex:1 1 160px"><label class="lbl">Name</label><input type="text" id="cat-name-input" placeholder="e.g. Subscriptions" maxlength="30"/></div>
@@ -3138,6 +3141,7 @@ window.addEventListener('unhandledrejection',function(e){
 
 
 <!-- ═══════════ JAVASCRIPT MODULES ═══════════ -->
+<script src="js/icons.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/data.js"></script>
 <script src="js/auth.js"></script>

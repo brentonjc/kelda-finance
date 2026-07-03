@@ -143,7 +143,7 @@
 
 /* ══ DESKTOP TOPBAR — static across every page (items 5–8, 10, 11) ══ */
 #topbar{
-  position:sticky;top:0;z-index:200;
+  position:relative;z-index:200;
   background:color-mix(in srgb, var(--nav-bg) 94%, transparent);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
@@ -151,6 +151,11 @@
 }
 .topbar-left{display:flex;align-items:center;gap:12px;min-width:0;}
 .topbar-title{font-family:var(--font-display);font-size:1rem;color:var(--primary);white-space:nowrap;}
+/* Greeting + date in the top bar (item 4) — replaces the app title */
+.topbar-greeting{display:flex;align-items:baseline;gap:8px;min-width:0;overflow:hidden;}
+.topbar-greet-hi{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);white-space:nowrap;}
+.topbar-greet-date{font-size:.78rem;color:var(--muted);white-space:nowrap;}
+@media(max-width:1080px){ .topbar-greet-date{display:none;} }
 .topbar-actions{display:flex;align-items:center;gap:10px;}
 .topbar-user{display:flex;align-items:center;gap:8px;}
 .user-pill{display:flex;align-items:center;gap:7px;background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:5px 14px 5px 8px;font-size:.8rem;font-weight:600;}
@@ -193,8 +198,10 @@
 .search-empty{padding:28px 8px;text-align:center;color:var(--muted);font-size:.82rem;}
 
 /* ══ MAIN LAYOUT ══ */
-#main{flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;margin-left:var(--nav-w);}
-.page-content{padding:28px;flex:1;width:100%;box-sizing:border-box;max-width:1200px;margin-left:auto;margin-right:auto;}
+/* #main is a fixed-height flex column: the top bar is a static header and the
+   page content scrolls beneath it, so the top nav never scrolls away (item 2). */
+#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;margin-left:var(--nav-w);}
+.page-content{padding:28px;flex:1;min-height:0;width:100%;box-sizing:border-box;max-width:1200px;margin-left:auto;margin-right:auto;overflow-y:auto;}
 
 /* ══ PAGE VISIBILITY ══ */
 .page{display:none;}
@@ -360,10 +367,12 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
   #main{
     margin-left:0!important;
     width:100%!important;
+    height:auto!important;overflow:visible!important;
     padding-top:var(--topbar-h);
     padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))!important;
     min-height:100svh;
   }
+  .page-content{overflow-y:visible!important;}
 
   /* Show bottom tab bar and FAB */
   #bottom-tab-bar{display:flex!important;}

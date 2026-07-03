@@ -346,9 +346,8 @@ function buildCatOptions(currentCatIdOrName) {
   const currentId = catIdFor(currentCatIdOrName);
   return '<option value="">Uncategorised</option>'
     + LCATS.map(c => {
-        const safeIcon = c.icon.replace(/\ufe0f|\ufe0e/g, '');
         return '<option value="' + c.id + '"' + (c.id === currentId ? ' selected' : '') + '>'
-          + safeIcon + ' ' + c.name + '</option>';
+          + c.name + '</option>';
       }).join('');
 }
 
@@ -356,7 +355,7 @@ function updateTxBulkSelects() {
   const sel = document.getElementById('tx-bulk-cat');
   if (!sel) return;
   sel.innerHTML = '<option value="">— Pick category —</option>'
-    + LCATS.map(c => '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>').join('');
+    + LCATS.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
 }
 
 // Sync existing transactions: map old string category names to new cat IDs if needed
@@ -427,7 +426,7 @@ function renderCategories() {
         + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
         + '<div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;'
         + 'justify-content:center;font-size:1.2rem;flex-shrink:0;background:' + c.color + '33;color:' + c.color + '">'
-        + c.icon + '</div>'
+        + iconTag(c.icon) + '</div>'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + c.name
@@ -454,11 +453,11 @@ function renderCategories() {
 function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
   var cat      = LCATS.find(function(c) { return c.id === catId; });
   var txCount  = TX.filter(function(t) { return ruleKey(t) === merchant; }).length;
-  var catName  = cat ? (cat.icon + ' ' + cat.name) : (catId || 'Unknown');
+  var catName  = cat ? (iconTag(cat.icon) + ' ' + cat.name) : (catId || 'Unknown');
   var catColor = cat ? (cat.color || 'var(--primary)') : 'var(--muted)';
   var catOpts  = LCATS.map(function(c) {
     return '<option value="' + c.id + '"' + (c.id === catId ? ' selected' : '') + '>'
-      + c.icon + ' ' + c.name + '</option>';
+      + c.name + '</option>';
   }).join('');
   var subcatOpts = (cat ? (cat.subcats || []) : []).map(function(s) {
     return '<option value="' + s + '"' + (s === subcat ? ' selected' : '') + '>' + s + '</option>';
@@ -466,8 +465,8 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
 
   // Source badge + meta line
   var sourceBadge = source === 'lrule'
-    ? '<span style="font-size:.65rem;background:#1a2540;color:var(--primary);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">⚡ RULE</span>'
-    : '<span style="font-size:.65rem;background:#1a2520;color:var(--success);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">🤖 AUTO-LEARNED</span>';
+    ? '<span style="font-size:.65rem;background:#1a2540;color:var(--primary);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">' + ICON('bolt') + ' RULE</span>'
+    : '<span style="font-size:.65rem;background:#1a2520;color:var(--success);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">' + ICON('robot') + ' AUTO-LEARNED</span>';
 
   var metaLine = '';
   if (source === 'learned' && meta) {
@@ -671,7 +670,7 @@ function rulesShowCreateForm() {
   if (categorySelect) {
     categorySelect.innerHTML = '<option value="">— Select Category —</option>'
       + LCATS.map(function(c) {
-        return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>';
+        return '<option value="' + c.id + '">' + c.name + '</option>';
       }).join('');
     categorySelect.value = '';
   }
@@ -963,7 +962,7 @@ function showRuleBanner(merchant, catId, subcat, cat) {
   var banner = document.getElementById('tx-rule-banner');
   if (!banner) return;
   if (!cat) cat = LCATS.find(function(c) { return c.id === catId; });
-  var catLabel = cat ? cat.icon + ' ' + cat.name : catId;
+  var catLabel = cat ? iconTag(cat.icon) + ' ' + cat.name : catId;
   var catColor = cat ? cat.color : 'var(--primary)';
 
   // Store rule data on element
@@ -976,7 +975,7 @@ function showRuleBanner(merchant, catId, subcat, cat) {
   banner.innerHTML =
     '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
       + '<div style="flex:1;min-width:220px">'
-        + '<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">⚡ Save as a rule?</div>'
+        + '<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">' + ICON('bolt') + ' Save as a rule?</div>'
         + '<div style="font-size:.8rem;color:var(--muted)">'
           + '<strong style="color:var(--text)">' + esc(merchant) + '</strong>'
           + ' → <strong style="color:' + catColor + '">' + catLabel + '</strong>'
@@ -1174,35 +1173,31 @@ function bulkAssignCategory() {
 // SUBCATEGORIES, ICON PICKER, CATEGORY IMPORT/EXPORT
 // ══════════════════════════════════════════════════════════════
 
-const ICON_PICKER_EMOJIS = [
-  '🛒','🍽','🚗','💡','❤','🎬','🛍','📚','💰','💻','📈','🏠','✈','🎵',
-  '⚽','🌿','💊','🐾','🎁','☕','🍕','🚌','💧','📱','🏋','🎮','📷','🧴',
-  '🔧','🌍','🍺','🚀','🎓','👶','🐶','🏖','🎭','🍎','🚿','🔑','💈','🌺',
-];
-
 function renderIconPicker() {
   const el = document.getElementById('cat-icon-picker');
   if (!el) return;
-  const cur = document.getElementById('cat-icon-input')?.value || '🏷';
-  el.innerHTML = ICON_PICKER_EMOJIS.map(e =>
-    '<div onclick="pickIcon(\'' + e + '\')" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;background:'
-    + (cur === e ? 'var(--primary)' : 'var(--card)') + ';border:1.5px solid '
-    + (cur === e ? 'var(--primary)' : 'var(--border)') + ';transition:all .15s">'
-    + e + '</div>'
+  const cur = document.getElementById('cat-icon-input')?.value || 'tag';
+  const prev = document.getElementById('cat-icon-preview');
+  if (prev) prev.innerHTML = ICON(cur);
+  el.innerHTML = ICON_PICKER_SET.map(k =>
+    '<div onclick="pickIcon(\'' + k + '\')" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;background:'
+    + (cur === k ? 'var(--primary)' : 'var(--card)') + ';color:' + (cur === k ? '#fff' : 'var(--muted)') + ';border:1.5px solid '
+    + (cur === k ? 'var(--primary)' : 'var(--border)') + ';transition:all .15s">'
+    + ICON(k) + '</div>'
   ).join('');
 }
 
-function pickIcon(emoji) {
+function pickIcon(key) {
   const inp = document.getElementById('cat-icon-input');
-  if (inp) inp.value = emoji;
+  if (inp) inp.value = key;
   const prev = document.getElementById('cat-icon-preview');
-  if (prev) prev.textContent = emoji;
+  if (prev) prev.innerHTML = ICON(key);
   renderIconPicker();
 }
 
 function syncIconFromInput(val) {
   const prev = document.getElementById('cat-icon-preview');
-  if (prev) prev.textContent = val || '🏷';
+  if (prev) prev.innerHTML = ICON(legacyIconToKey(val || 'tag'));
   renderIconPicker();
 }
 
@@ -1223,7 +1218,7 @@ function populateCatSelect() {
     return !c.type || c.type === "both" || c.type === type;
   });
   catSel.innerHTML = filtered.map(function(c) {
-    return "<option value=\"" + c.id + "\">" + c.icon + " " + c.name + "</option>";
+    return "<option value=\"" + c.id + "\">" + c.name + "</option>";
   }).join("");
   // Restore previous selection if still valid
   if (curVal && catSel.querySelector("option[value=\"" + curVal + "\"]")) {
@@ -1257,7 +1252,7 @@ function updateSubcat() {
 // ── Enhanced addCategory ──────────────────────────────────────
 // Extend to support subcats editing and type
 function addCategoryWithSubcats() {
-  const icon  = document.getElementById('cat-icon-input')?.value?.trim() || '🏷';
+  const icon  = document.getElementById('cat-icon-input')?.value?.trim() || 'tag';
   const name  = document.getElementById('cat-name-input')?.value?.trim();
   const color = document.getElementById('cat-color-input')?.value || '#e8457a';
   const type  = document.getElementById('cat-type-input')?.value || 'expense';
@@ -1267,7 +1262,7 @@ function addCategoryWithSubcats() {
   LCATS.push({ id, name, icon, color, type, subcats: [] });
   save(K.categories, LCATS);
   document.getElementById('cat-name-input').value = '';
-  document.getElementById('cat-icon-input').value = '';
+  document.getElementById('cat-icon-input').value = 'tag';
   renderCategories();
   renderIconPicker();
   populateTxCatSelect();
@@ -1317,6 +1312,10 @@ function importCategories(event) {
       if (!Array.isArray(imported) || !imported[0]?.name) throw new Error('Invalid format');
       if (!confirm('Replace your current categories with ' + imported.length + ' imported categories? This cannot be undone.')) return;
       LCATS = imported;
+      // Normalise icons on import too (imports may carry legacy emoji from an older export).
+      if (typeof legacyIconToKey === 'function') {
+        LCATS.forEach(function(c) { c.icon = legacyIconToKey(c.icon); });
+      }
       save(K.categories, LCATS);
       renderCategories();
       populateTxCatSelect();

@@ -103,7 +103,7 @@ function renderBVA() {
   catIds.forEach(function(id) {
     const cat    = LCATS.find(function(c) { return c.id === id; });
     const name   = cat ? cat.name : id;
-    const icon   = cat ? cat.icon : '📋';
+    const icon   = cat ? cat.icon : 'clipboard-list';
     const color  = cat ? cat.color : '#8a8095';
     const budget = getBudget(id);
     const actual = actuals[id] || 0;
@@ -162,7 +162,7 @@ function renderBVA() {
     const remText  = remain === null ? 'No budget' : (remain < 0 ? '-' + fmt(Math.abs(remain)) : fmt(remain));
     const pctText  = r.budget ? (pct > 999 ? '>999%' : pct.toFixed(0) + '%') : '—';
     return '<tr>'
-      + '<td><div class="bva-cat-cell"><div class="bva-icon" style="background:' + r.color + '33;color:' + r.color + '">' + r.icon + '</div><span>' + r.name + '</span></div></td>'
+      + '<td><div class="bva-cat-cell"><div class="bva-icon" style="background:' + r.color + '33;color:' + r.color + '">' + iconTag(r.icon) + '</div><span>' + r.name + '</span></div></td>'
       + '<td>' + (r.budget ? fmt(r.budget) : '<span class="bva-no-budget">No budget</span>') + '</td>'
       + '<td>' + fmt(r.actual) + '</td>'
       + '<td class="' + remClass + '">' + remText + '</td>'
@@ -198,7 +198,7 @@ function renderBVAInputs() {
     const annualNote = mo ? '<span style="font-size:.7rem;color:var(--muted);margin-left:4px">= ' + fmt(mo * 12) + '/yr</span>' : '';
     return '<div class="dr">'
       + '<div class="dr-k" style="display:flex;align-items:center;gap:8px">'
-      + '<span style="font-size:.9rem">' + c.icon + '</span><span>' + c.name + '</span>'
+      + '<span style="font-size:.9rem">' + iconTag(c.icon) + '</span><span>' + c.name + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
       + '<input type="number" placeholder="No limit" value="' + mo + '" min="0" step="50"'

@@ -293,7 +293,7 @@ function _settAcctsList() {
     var a = ACCOUNTS[i];
     var meta = (a.currency || 'AUD') + (a.bank ? ' &middot; ' + _settEsc(a.bank) : '') + (a.isCore ? '' : ' &middot; <span style="color:var(--muted);font-size:.68rem">Custom</span>');
     html += '<div class="sett-acct-row" id="sett-acct-row-' + _settEsc(a.id) + '">'
-      + '<div class="sett-acct-icon">' + (a.icon || '🏦') + '</div>'
+      + '<div class="sett-acct-icon">' + iconTag(a.icon || 'building-bank') + '</div>'
       + '<div class="sett-acct-info">'
       + '<div class="sett-acct-name">' + _settEsc(a.name) + '</div>'
       + '<div class="sett-acct-meta">' + meta + '</div>'
@@ -307,11 +307,30 @@ function _settAcctsList() {
   return html;
 }
 
+// Shared account icon picker (hidden input + preview swatch + Tabler icon grid),
+// used by both the add-account and edit-account forms.
+function _settIconPickerHtml(inputId, previewId, currentIcon) {
+  currentIcon = currentIcon || 'building-bank';
+  return '<input type="hidden" id="' + inputId + '" value="' + currentIcon + '"/>'
+    + '<div id="' + previewId + '" style="width:44px;height:44px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);cursor:default">' + iconTag(currentIcon) + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;max-width:220px">'
+    + ICON_PICKER_SET.map(function(k) {
+        return '<span style="cursor:pointer;font-size:1.05rem;padding:5px;border-radius:5px;background:var(--card2);color:var(--muted)" onclick="_settPickIcon(\'' + inputId + '\',\'' + previewId + '\',\'' + k + '\')">' + ICON(k) + '</span>';
+      }).join('')
+    + '</div>';
+}
+function _settPickIcon(inputId, previewId, key) {
+  var input = document.getElementById(inputId);
+  if (input) input.value = key;
+  var prev = document.getElementById(previewId);
+  if (prev) prev.innerHTML = iconTag(key);
+}
+
 function _settAcctAddForm() {
   return '<div class="sett-acct-form">'
     + '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px">New Account</div>'
     + '<div class="form-grid" style="grid-template-columns:56px 1fr">'
-    + '<div><label class="lbl">Icon</label><input type="text" id="sett-acct-new-icon" value="🏦" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>'
+    + '<div><label class="lbl">Icon</label>' + _settIconPickerHtml('sett-acct-new-icon', 'sett-acct-new-icon-preview', 'building-bank') + '</div>'
     + '<div><label class="lbl">Nickname</label><input type="text" id="sett-acct-new-name" placeholder="e.g. US Investment Account" style="font-size:16px"/></div>'
     + '</div>'
     + '<div class="form-grid" style="margin-top:8px">'
@@ -338,7 +357,7 @@ function settAcctAdd() {
   if (ACCOUNTS.length >= 8) { toast('Maximum 8 accounts reached'); return; }
   var name = (document.getElementById('sett-acct-new-name') || {}).value.trim();
   if (!name) { toast('Please enter an account nickname'); return; }
-  var icon = (document.getElementById('sett-acct-new-icon') || {}).value.trim() || '🏦';
+  var icon = (document.getElementById('sett-acct-new-icon') || {}).value.trim() || 'building-bank';
   var cur  = (document.getElementById('sett-acct-cur') || {}).value || 'AUD';
   var bank = (document.getElementById('sett-acct-bank') || {}).value || '';
   var newId = 'acct_' + Date.now().toString(36);
@@ -357,7 +376,7 @@ function settAcctEdit(id) {
   if (!row) return;
   row.innerHTML = '<div class="sett-acct-form" style="width:100%">'
     + '<div class="form-grid" style="grid-template-columns:56px 1fr">'
-    + '<div><label class="lbl">Icon</label><input type="text" id="sett-edit-icon-' + _settEsc(id) + '" value="' + _settEsc(a.icon||'🏦') + '" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>'
+    + '<div><label class="lbl">Icon</label>' + _settIconPickerHtml('sett-edit-icon-' + _settEsc(id), 'sett-edit-icon-preview-' + _settEsc(id), a.icon || 'building-bank') + '</div>'
     + '<div><label class="lbl">Nickname</label><input type="text" id="sett-edit-name-' + _settEsc(id) + '" value="' + _settEsc(a.name) + '" placeholder="Account nickname" style="font-size:16px"/></div>'
     + '</div>'
     + '<div class="form-grid" style="margin-top:8px">'
@@ -379,7 +398,7 @@ function settAcctSave(id) {
   var curEl  = document.getElementById('sett-acct-cur-' + id);
   var bankEl = document.getElementById('sett-acct-bank-' + id);
   if (nameEl) a.name = nameEl.value.trim() || a.name;
-  if (iconEl) a.icon = iconEl.value.trim() || a.icon;
+  if (iconEl) a.icon = iconEl.value.trim() || a.icon || 'building-bank';
   if (curEl)  a.currency = curEl.value;
   if (bankEl) a.bank = bankEl.value;
   save(K.accounts, ACCOUNTS);

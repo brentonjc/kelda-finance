@@ -450,7 +450,7 @@ function renderEquitiesList() {
     EQ_TYPES.forEach(function(tc) {
         var group = byType[tc.key];
         if (!group || !group.length) return;
-        html += '<div class="eq-group-label">' + tc.icon + ' ' + tc.label + 's</div>';
+        html += '<div class="eq-group-label">' + iconTag(tc.icon) + ' ' + tc.label + 's</div>';
         group.forEach(function(h){ html += renderEqHoldingRow(h); });
     });
 
@@ -497,7 +497,7 @@ function renderEqHoldingRow(h) {
 
     return '<div class="eq-row" id="eq-row-'+h.id+'">'
         + '<div class="eq-row-main" onclick="eqToggleExpand('+h.id+')">'
-        + '<div class="eq-row-icon">'+tc.icon+'</div>'
+        + '<div class="eq-row-icon">'+iconTag(tc.icon)+'</div>'
         + '<div class="eq-row-info">'
         + '<div class="eq-row-name">'+(h.ticker?'<span style="font-weight:700">'+h.ticker+'</span> ':'')+( h.company||'')+ ' '+badge+'</div>'
         + '<div class="eq-row-sub">'+qtyLine+(updated?' &nbsp;·&nbsp; Updated '+updated:'')+'</div>'
@@ -671,9 +671,9 @@ function openEqModal(id) {
     var h = id ? EQUITIES.find(function(e){ return e.id===id; }) : null;
     var selType = h ? (h.type||'stock') : 'stock';
     var tc = eqTypeCfg(selType);
-    var title = h ? ('Edit ' + tc.icon + ' ' + tc.label) : 'Add Holding';
+    var title = h ? ('Edit ' + iconTag(tc.icon) + ' ' + tc.label) : 'Add Holding';
 
-    var typeOpts = EQ_TYPES.map(function(t){ return '<option value="'+t.key+'"'+(selType===t.key?' selected':'')+'>'+t.icon+' '+t.label+'</option>'; }).join('');
+    var typeOpts = EQ_TYPES.map(function(t){ return '<option value="'+t.key+'"'+(selType===t.key?' selected':'')+'>'+t.label+'</option>'; }).join('');
     var ownerOpts = '<option value="brenton"'+(!h||h.owner==='brenton'?' selected':'')+'>'+getUserName('brenton')+'</option>'
         +'<option value="shelley"'+(h&&h.owner==='shelley'?' selected':'')+'>'+getUserName('shelley')+'</option>'
         +'<option value="joint"'+(h&&h.owner==='joint'?' selected':'')+'>Joint</option>';
@@ -968,7 +968,7 @@ function openBatchPriceModal() {
     var priceable = EQUITIES.filter(function(h){ return h.type!=='bond'; });
     var rows = priceable.map(function(h) {
         var tc    = eqTypeCfg(h.type);
-        var label = (h.ticker||h.company||'—')+' ('+tc.icon+' '+tc.label+')';
+        var label = (h.ticker||h.company||'—')+' ('+iconTag(tc.icon)+' '+tc.label+')';
         return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
             +'<div style="flex:1;font-size:.84rem">'+label+'</div>'
             +'<div style="flex:0 0 150px"><input type="number" value="'+(h.currentPrice||'')+'" placeholder="Enter price" min="0" step="0.01" inputmode="decimal"'

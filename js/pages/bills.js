@@ -26,20 +26,20 @@ var BILL_CATEGORY_MAP = {
 
 function billSuggestIcon(name, cat) {
   var n = (name||'').toLowerCase();
-  if (/insurance|insur|bupa|medibank|nrma|allianz|ahm|hcf|nib/.test(n) || cat === 'insurance' || cat === 'insurance_utilities') return '❤️';
-  if (/phone|mobile|telstra|optus|vodafone|amaysim|boost/.test(n) || cat === 'phone' || cat === 'mobile') return '📱';
-  if (/electricity|energy|gas|power|agl|origin|alinta|ausgrid/.test(n) || cat === 'utilities') return '💡';
-  if (/childcare|kindy|kindergarten|daycare|goodstart|c&k/.test(n) || cat === 'childcare' || cat === 'children') return '👶';
-  if (/internet|broadband|iinet|aussie|tpg|superloop/.test(n) || cat === 'internet') return '📡';
-  if (/strata|body corporate|deft/.test(n) || cat === 'home') return '🏠';
-  if (/netflix|stan|binge|disney|kayo|foxtel|paramount/.test(n) || cat === 'entertainment') return '🎬';
-  return '🧾';
+  if (/insurance|insur|bupa|medibank|nrma|allianz|ahm|hcf|nib/.test(n) || cat === 'insurance' || cat === 'insurance_utilities') return 'heart';
+  if (/phone|mobile|telstra|optus|vodafone|amaysim|boost/.test(n) || cat === 'phone' || cat === 'mobile') return 'device-mobile';
+  if (/electricity|energy|gas|power|agl|origin|alinta|ausgrid/.test(n) || cat === 'utilities') return 'bulb';
+  if (/childcare|kindy|kindergarten|daycare|goodstart|c&k/.test(n) || cat === 'childcare' || cat === 'children') return 'baby-carriage';
+  if (/internet|broadband|iinet|aussie|tpg|superloop/.test(n) || cat === 'internet') return 'antenna';
+  if (/strata|body corporate|deft/.test(n) || cat === 'home') return 'home';
+  if (/netflix|stan|binge|disney|kayo|foxtel|paramount/.test(n) || cat === 'entertainment') return 'movie';
+  return 'receipt';
 }
 function blPickIcon(key, catId, subcat, billType) {
   var icon = billSuggestIcon(key, catId);
-  if (icon !== '🧾') return icon;
-  if (billType === 'subscription' || /streaming/i.test(subcat||'')) return '🎬';
-  return '🧾';
+  if (icon !== 'receipt') return icon;
+  if (billType === 'subscription' || /streaming/i.test(subcat||'')) return 'movie';
+  return 'receipt';
 }
 
 // ── Date / math utilities ────────────────────────────────────
@@ -400,7 +400,7 @@ function migrateBillsSchema() {
       if (billType === 'direct_debit') billType = 'bill';
       return {
         id: b.id || ('bd_migrated_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)),
-        merchantKey: mkey, displayName: name, icon: b.icon || '🧾',
+        merchantKey: mkey, displayName: name, icon: legacyIconToKey(b.icon || 'receipt'),
         category: b.category || 'other', subcategory: '', account: '',
         billType: billType || 'bill', frequency: freq,
         amountType: 'fixed', amount: Number(b.amount) || 0,
@@ -654,7 +654,7 @@ function blRenderSankey() {
   var el = document.getElementById('bl-sankey');
   if (!el) return;
   var confirmed = blFilteredBills(true);
-  if (!confirmed.length) { el.innerHTML = '<div class="empty" style="min-height:120px;padding:20px"><div class="ei">📊</div><p style="font-size:.78rem">No confirmed bills yet.</p></div>'; return; }
+  if (!confirmed.length) { el.innerHTML = '<div class="empty" style="min-height:120px;padding:20px"><div class="ei">' + ICON('chart-bar') + '</div><p style="font-size:.78rem">No confirmed bills yet.</p></div>'; return; }
 
   var nodes, srcLabel, srcAmt, backLink = '', drillHint = '';
   if (blSankeyDrill) {
@@ -662,7 +662,7 @@ function blRenderSankey() {
     var subTotals = {};
     inCat.forEach(function(b){ var s = b.subcategory || 'Other'; subTotals[s] = (subTotals[s]||0) + blAnnualizedAmount(b); });
     var catObj = LCATS.find(function(c){ return c.id === blSankeyDrill; });
-    srcLabel = catObj ? (catObj.icon + ' ' + catObj.name) : blSankeyDrill;
+    srcLabel = catObj ? catObj.name : blSankeyDrill;
     srcAmt = Object.keys(subTotals).reduce(function(s,k){ return s + subTotals[k]; }, 0);
     nodes = Object.keys(subTotals).sort(function(a,b2){ return subTotals[b2]-subTotals[a]; }).map(function(s,i) {
       return { label: s, amt: subTotals[s], color: BL_SANKEY_PALETTE[i % BL_SANKEY_PALETTE.length] };
@@ -675,11 +675,11 @@ function blRenderSankey() {
     srcAmt = Object.keys(catTotals).reduce(function(s,k){ return s + catTotals[k]; }, 0);
     nodes = Object.keys(catTotals).sort(function(a,b2){ return catTotals[b2]-catTotals[a]; }).map(function(c,i) {
       var cat = LCATS.find(function(x){ return x.id === c; });
-      return { id: c, label: cat ? (cat.icon + ' ' + cat.name) : c, amt: catTotals[c], color: cat && cat.color ? cat.color : BL_SANKEY_PALETTE[i % BL_SANKEY_PALETTE.length] };
+      return { id: c, label: cat ? cat.name : c, amt: catTotals[c], color: cat && cat.color ? cat.color : BL_SANKEY_PALETTE[i % BL_SANKEY_PALETTE.length] };
     });
     drillHint = '<div style="font-size:.6rem;color:var(--muted);margin-top:10px">Tap a category to explore subcategories →</div>';
   }
-  if (!srcAmt) { el.innerHTML = '<div class="empty" style="min-height:120px;padding:20px"><div class="ei">📊</div><p style="font-size:.78rem">No confirmed bills yet.</p></div>'; return; }
+  if (!srcAmt) { el.innerHTML = '<div class="empty" style="min-height:120px;padding:20px"><div class="ei">' + ICON('chart-bar') + '</div><p style="font-size:.78rem">No confirmed bills yet.</p></div>'; return; }
 
   var W = 320, nodeW = 12, leftPad = 78, rightPad = 8, gap = 6, incomeY = 6;
   var MIN_H = 12, MAX_H = 26;
@@ -871,12 +871,12 @@ function blRenderTable() {
     if (pending) {
       actionCell = '<button class="btn btn-primary btn-sm" onclick="blOpenReviewModal()" style="white-space:nowrap;font-size:.68rem;padding:5px 10px">Review →</button>';
     } else if (b.pendingAmountUpdate) {
-      actionCell = '<span style="font-size:.68rem;color:var(--warn);font-weight:600;background:rgba(245,158,11,.1);padding:2px 7px;border-radius:99px;white-space:nowrap;cursor:pointer" onclick="blOpenReviewModal()">↑ Price change</span>';
+      actionCell = '<span style="font-size:.68rem;color:var(--warn);font-weight:600;background:rgba(245,158,11,.1);padding:2px 7px;border-radius:99px;white-space:nowrap;cursor:pointer" onclick="blOpenReviewModal()">' + ICON('trending-up') + ' Price change</span>';
     }
     return '<tr' + trCls + '>' +
       '<td style="padding:11px 18px' + (pending ? ';border-left:3px solid var(--warn);padding-left:15px' : '') + '">' +
         '<div style="display:flex;align-items:center;gap:9px">' +
-        '<div style="width:30px;height:30px;border-radius:7px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">' + esc(b.icon||'🧾') + '</div>' +
+        '<div style="width:30px;height:30px;border-radius:7px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">' + iconTag(b.icon) + '</div>' +
         '<div><div style="font-weight:600">' + esc(b.displayName||'Bill') + '</div>' +
         '<div style="font-size:.68rem;color:var(--muted)">' + esc(blFreqAmountLabel(b)) + '</div></div></div></td>' +
       '<td style="padding:11px 12px;position:relative">' +
@@ -966,7 +966,7 @@ function blRenderReviewModal() {
   var priceChanges = BILLS.filter(function(b){ return b.status === 'confirmed' && b.pendingAmountUpdate; });
   var total = newDetections.length + priceChanges.length;
   if (sub) sub.textContent = total ? (total + ' bill' + (total===1?' needs':'s need') + ' your review — confirm to add, or dismiss permanently.') : 'Nothing needs review right now.';
-  if (!total) { el.innerHTML = '<div class="empty"><div class="ei">✅</div><p>All caught up!</p></div>'; return; }
+  if (!total) { el.innerHTML = '<div class="empty"><div class="ei">' + ICON('circle-check-filled') + '</div><p>All caught up!</p></div>'; return; }
 
   var html = '';
   newDetections.forEach(function(b) {
@@ -975,9 +975,9 @@ function blRenderReviewModal() {
     var typeLbl = BILL_TYPE_LABELS[b.billType] || 'Direct Debit';
     var occText = Math.round((b.confidence||0)*100) + '%';
     html += '<div class="review-row" id="' + rowId + '">' +
-      '<div class="review-icon">' + esc(b.icon||'🧾') + '</div>' +
+      '<div class="review-icon">' + iconTag(b.icon) + '</div>' +
       '<div class="review-main">' +
-      '<div class="review-kind review-kind-new">✦ New detection</div>' +
+      '<div class="review-kind review-kind-new">' + ICON('sparkles') + ' New detection</div>' +
       '<div class="review-name">' + esc(b.displayName||'Bill') + ' <span class="badge ' + typeCls + '">' + typeLbl + '</span></div>' +
       '<div class="review-meta">' + esc(BILL_FREQ_LABELS[b.frequency]||'Monthly') + ' · ~' + fmt(b.amount) + ' · confidence ' + occText + '</div>' +
       '</div>' +
@@ -1002,9 +1002,9 @@ function blRenderReviewModal() {
     var pct = oldAmt ? Math.abs(((newAmt-oldAmt)/oldAmt)*100).toFixed(1) : '0.0';
     var dir = newAmt > oldAmt ? 'increase' : 'decrease';
     html += '<div class="review-row" id="' + rowId + '">' +
-      '<div class="review-icon">' + esc(b.icon||'🧾') + '</div>' +
+      '<div class="review-icon">' + iconTag(b.icon) + '</div>' +
       '<div class="review-main">' +
-      '<div class="review-kind review-kind-price">↑ Price change detected</div>' +
+      '<div class="review-kind review-kind-price">' + ICON('trending-up') + ' Price change detected</div>' +
       '<div class="review-name">' + esc(b.displayName||'Bill') + ' <span class="badge ' + typeCls + '">' + typeLbl + '</span></div>' +
       '<div class="review-meta">Was ' + fmt(oldAmt) + ' · Now ' + fmt(newAmt) + ' · ' + pct + '% ' + dir + '</div>' +
       '</div>' +
@@ -1101,7 +1101,7 @@ function blRenderTimeline() {
   if (!card || !el) return;
   var confirmed = blFilteredBills(true);
   if (label) label.textContent = 'Upcoming — Next ' + (blHorizon === 365 ? '12 Months' : blHorizon + ' Days');
-  if (!confirmed.length) { el.innerHTML = '<div class="empty"><div class="ei">🧾</div><p>No confirmed bills yet.</p></div>'; return; }
+  if (!confirmed.length) { el.innerHTML = '<div class="empty"><div class="ei">' + ICON('receipt') + '</div><p>No confirmed bills yet.</p></div>'; return; }
 
   var rows = [];
   confirmed.forEach(function(b) {
@@ -1110,7 +1110,7 @@ function blRenderTimeline() {
   });
   rows.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
 
-  if (!rows.length) { el.innerHTML = '<div class="empty"><div class="ei">🧾</div><p>Nothing due in this window.</p></div>'; return; }
+  if (!rows.length) { el.innerHTML = '<div class="empty"><div class="ei">' + ICON('receipt') + '</div><p>Nothing due in this window.</p></div>'; return; }
 
   el.innerHTML = rows.map(function(r) {
     var b = r.bill;
@@ -1121,7 +1121,7 @@ function blRenderTimeline() {
     if (b.isAnnual || b.frequency === 'annual') badges += ' <span class="badge b-annual" style="margin-left:3px">Annual</span>';
     if (dueSoon) badges += ' <span class="badge b-soon" style="margin-left:3px">Due Soon</span>';
     return '<div class="bill-row">' +
-      '<div class="bill-icon">' + esc(b.icon||'🧾') + '</div>' +
+      '<div class="bill-icon">' + iconTag(b.icon) + '</div>' +
       '<div class="bill-main"><div class="bill-name">' + esc(b.displayName||'Bill') + badges + '</div>' +
       '<div class="bill-meta">' + blDateLabel(r.date) + ' · ' + esc(BILL_FREQ_LABELS[b.frequency]||'Monthly') + '</div></div>' +
       '<div class="bill-amt mono">' + (b.amountType === 'variable' ? '~' : '') + fmt(b.amount) + '</div></div>';
@@ -1146,7 +1146,7 @@ function blPopulateBillCatSelect() {
   var catSel = document.getElementById('bill-cat');
   if (!catSel) return;
   var filtered = LCATS.filter(function(c){ return !c.type || c.type === 'both' || c.type === 'expense'; });
-  catSel.innerHTML = filtered.map(function(c){ return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>'; }).join('');
+  catSel.innerHTML = filtered.map(function(c){ return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
   blRefreshBillSubcatSelect();
 }
 function blRefreshBillSubcatSelect() {

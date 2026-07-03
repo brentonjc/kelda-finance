@@ -73,9 +73,29 @@ function safeChart(canvas, config) {
   catch(e) { console.error('Chart error:', e); return null; }
 }
 
-function toast(msg,dur=2400){
+// Legacy emoji prefix → toast type, so hundreds of existing toast('✅ ...')
+// call sites upgrade to the new icon+color toast with zero call-site edits.
+const TOAST_EMOJI_TYPE = {
+  '✅':'success','✓':'success','✔':'success','✔️':'success','🎉':'success',
+  '⚠':'warn','⚠️':'warn',
+  '🗑':'danger','🗑️':'danger','❌':'danger','✕':'danger','🔴':'danger'
+};
+const TOAST_TYPE_ICON = { success:'circle-check-filled', warn:'alert-triangle', danger:'trash', info:'info-circle' };
+
+function toast(msg,dur=2400,type){
   const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
+  let text = String(msg==null?'':msg);
+  // Strip a leading legacy emoji + following space, inferring type if not given.
+  const m = text.match(/^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}])️?\s*/u);
+  if (m) {
+    if (!type) type = TOAST_EMOJI_TYPE[m[1]] || TOAST_EMOJI_TYPE[m[0].trim()] || 'info';
+    text = text.slice(m[0].length);
+  }
+  if (!type) type = 'info';
+  const iconKey = TOAST_TYPE_ICON[type] || TOAST_TYPE_ICON.info;
+  t.className = 'toast-' + type;
+  t.innerHTML = (typeof ICON === 'function' ? ICON(iconKey, {cls:'toast-ico'}) : '') + '<span>' + text + '</span>';
+  t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),dur);
 }
 

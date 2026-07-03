@@ -15,7 +15,7 @@ function _buildCTAccts() {
       var def = _CT_ACCTS_DEFAULTS.find(function(d){ return d.id === a.id; }) || {};
       return {
         id:    a.id,
-        icon:  a.icon  || def.icon  || '🏦',
+        icon:  a.icon  || def.icon  || 'building-bank',
         color: a.color || def.color || '#e8457a',
         light: def.light || '#2a1030',
         owner: a.owner || def.owner || 'shared',
@@ -262,7 +262,7 @@ function ctRenderAcct(a) {
     : '';
 
   el.innerHTML = '<div class="acct-hd" style="background:' + a.light + '">'
-    + '<div class="acct-ic" style="background:' + a.color + '">' + a.icon + '</div>'
+    + '<div class="acct-ic" style="background:' + a.color + '">' + iconTag(a.icon) + '</div>'
     + '<div class="acct-meta" style="flex:1;min-width:0">'
     + '<div class="acct-title" style="color:' + a.color + '">' + label + '</div>'
     + '<div class="acct-sub" style="color:' + a.color + '">' + subLine + '</div>'
@@ -378,7 +378,7 @@ function ctRenderNet(){
     grandNow+=now;if(prev!==null)grandPrev+=prev;
     const diff=prev!==null?now-prev:null;
     const ds=diff===null?'—':`<span style="color:${diff>=0?'var(--success)':'var(--danger)'};font-weight:600">${diff>=0?'+':''}${fmt(diff)}</span>`;
-    rows+=`<div class="dr"><div class="dr-k">${a.icon} ${ctLabel(a)}</div><div style="display:flex;gap:18px;align-items:center"><div class="dr-v">${fmt(now)}</div><div style="min-width:80px;text-align:right;font-size:.76rem">${ds}</div></div></div>`;
+    rows+=`<div class="dr"><div class="dr-k">${iconTag(a.icon)} ${ctLabel(a)}</div><div style="display:flex;gap:18px;align-items:center"><div class="dr-v">${fmt(now)}</div><div style="min-width:80px;text-align:right;font-size:.76rem">${ds}</div></div></div>`;
   });
   const gd=grandNow-grandPrev;
   rows+=`<div class="dr" style="background:var(--card2);border-radius:8px;padding:8px 10px;margin-top:6px">

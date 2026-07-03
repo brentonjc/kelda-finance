@@ -60,7 +60,7 @@ function renderAssets() {
 
   document.getElementById('assets-bank').innerHTML =
     bankRows.map(function(r) {
-      return '<div class="dr"><span class="dr-k">' + r.icon + ' ' + r.label + '</span><span class="dr-v">' + fmt(r.value) + '</span></div>';
+      return '<div class="dr"><span class="dr-k">' + iconTag(r.icon) + ' ' + r.label + '</span><span class="dr-v">' + fmt(r.value) + '</span></div>';
     }).join('')
     + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
     + '<span class="dr-k" style="font-weight:700">Total Bank</span>'

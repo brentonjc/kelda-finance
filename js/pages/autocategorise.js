@@ -1381,7 +1381,7 @@ var AutoCat = (function() {
     if (!result || result.confidence === CONF_NONE || result.catId === 'other') { hideSuggestion(); return; }
     var catObj = (typeof LCATS !== 'undefined') ? LCATS.find(function(c) { return c.id === result.catId; }) : null;
     if (!catObj) { hideSuggestion(); return; }
-    var label = catObj.icon + ' ' + catObj.name + (result.subcat ? ' › ' + result.subcat : '');
+    var label = catObj.name + (result.subcat ? ' › ' + result.subcat : '');
     var confColor = result.confidence === CONF_HIGH ? 'var(--success)' : 'var(--warn)';
     pill.innerHTML = '<span style="color:var(--muted);font-size:.72rem">Suggested: </span>'
       + '<button class="btn btn-ghost btn-sm acat-apply-btn" style="color:' + confColor + ';font-size:.78rem;padding:3px 10px;border-color:' + confColor + '"></button>'

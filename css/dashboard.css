@@ -3,7 +3,9 @@
    Rendered into #page-dashboard by renderDashboard().
    ══════════════════════════════════════════════════════════════ */
 
-.kd-dash { font-family: var(--font-body); color: #e8e8f0; }
+/* Dashboard fills the available content height so the 3×2 tiles size to fit (item 1). */
+.kd-dash { font-family: var(--font-body); color: #e8e8f0; display: flex; flex-direction: column; height: 100%; min-height: 0; }
+#page-dashboard.active { display: flex; flex-direction: column; height: 100%; }
 
 /* ── Header (greeting / date / period pills / actions) ── */
 .kd-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -20,9 +22,9 @@
 .kd-addbtn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--pink); color: #fff; border: none; border-radius: 99px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: var(--font-body); transition: opacity .12s; }
 .kd-addbtn:hover { opacity: .9; }
 
-/* ── Tile grid ── */
-.kd-bodywrap { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; align-items: stretch; }
-.kdt { background: var(--card); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; min-height: 248px; min-width: 0; transition: border-color .15s; }
+/* ── Tile grid — flexbox: 3 per row, wrapping to 2 rows, filling the space ── */
+.kd-bodywrap { display: flex; flex-wrap: wrap; gap: 12px; align-content: stretch; flex: 1 1 auto; min-height: 0; }
+.kdt { background: var(--card); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; flex: 1 1 calc(33.333% - 8px); min-width: 0; min-height: 232px; overflow: hidden; transition: border-color .15s; }
 .kdt:hover { border-color: rgba(240,83,138,0.22); }
 .kdt-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
 .kdt-ttl { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
@@ -119,15 +121,12 @@
 .notif-nudge { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; font-size: 12.5px; color: var(--text); line-height: 1.5; }
 .notif-nudge-ic { font-size: 15px; flex-shrink: 0; }
 
-/* ── Responsive: keep every tile fully visible with no horizontal scroll ── */
+/* ── Responsive: flex-basis controls tiles per row; keep every tile visible ── */
 .kd-dash { max-width: 100%; overflow-x: hidden; }
 .kd-top { min-width: 0; }
 .kd-greeting, .kd-topdate { min-width: 0; }
-@media (min-width: 1500px) {
-  .kd-bodywrap { grid-template-columns: repeat(3, minmax(0,1fr)); }
-}
 @media (max-width: 1100px) {
-  .kd-bodywrap { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .kdt { flex-basis: calc(50% - 6px); }
 }
 @media (max-width: 900px) {
   .kd-pills { order: 3; width: 100%; }
@@ -135,8 +134,11 @@
   .kd-top-r { margin-left: auto; }
 }
 @media (max-width: 760px) {
-  .kd-bodywrap { grid-template-columns: 1fr; }
-  .kdt { min-height: 0; }
+  /* Mobile: let the dashboard scroll naturally, single-column tiles */
+  #page-dashboard.active { height: auto; display: block; }
+  .kd-dash { height: auto; display: block; }
+  .kd-bodywrap { display: flex; flex-direction: column; }
+  .kdt { flex: 1 1 auto; min-height: 0; overflow: visible; }
   .kd-top { gap: 8px; }
   .kd-greeting { font-size: 16px; white-space: normal; }
   .kd-pills { order: 3; width: 100%; }
