@@ -475,7 +475,7 @@ function settingsEraseAll() {
     K.tx, K.budgets, K.goals, K.bills, K.mortgage,
     K.ct, K.ctcfg, K.ins, K.superdata, K.pins,
     K.categories, K.lbudgets, K.rules, K.recurring,
-    K.transfers, K.equities,
+    K.transfers, K.equities, K.billAliases, K.billsDismissed, K.billsHorizon,
     'cff_userconfig', 'cff_app_name', 'cff_app_sub',
     'cff_cat_version', 'cff_settings', 'learnedMappings',
     'kelda_wizard_complete', 'kelda_pin_salt'
@@ -488,6 +488,7 @@ function settingsEraseAll() {
 
 function settingsRunWizard() {
   if (!confirm("Re-run the setup wizard?\n\nThis will lock the app and walk you through setup again. Your financial data will NOT be deleted.")) return;
-  if (typeof wzRestart === "function") wzRestart();
-  else { toast('⚠️ Wizard not available — reload the app'); }
+  if (typeof obRelaunch === "function") obRelaunch();
+  else if (typeof wzRestart === "function") wzRestart();
+  else { toast('⚠️ Setup not available — reload the app'); }
 }

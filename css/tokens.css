@@ -33,7 +33,7 @@
   --font-body:'DM Sans',system-ui,sans-serif;
   --font-mono:'DM Mono',monospace;
   /* ── Layout ── */
-  --nav-w:240px; --topbar-h:52px;
+  --nav-w:56px; --nav-w-open:200px; --topbar-h:52px;
   /* ── Shadows ── */
   --shadow-sm:0 2px 8px rgba(0,0,0,.35);
   --shadow:0 8px 32px rgba(0,0,0,.45);
@@ -43,6 +43,7 @@
   --pink:var(--primary); --green:var(--success); --amber:var(--warn);
   --red:var(--danger); --white:#ffffff;
   --pink-dim:rgba(240,83,138,0.08);
+  --pink-dim-strong:rgba(240,83,138,0.13);
   --green-dim:rgba(0,200,150,0.08);
   --amber-dim:rgba(245,158,11,0.08);
   --font-head:var(--font-display);

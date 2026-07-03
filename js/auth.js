@@ -221,6 +221,8 @@ function unlock(){
   // Reload data from localStorage (may have been scrubbed on lock)
   TX          = load(K.tx)           || [];
   BILLS       = load(K.bills)        || [];
+  BILL_ALIASES    = load(K.billAliases)    || {};
+  BILLS_DISMISSED = load(K.billsDismissed) || [];
   MORTGAGE    = load(K.mortgage)     || {};
   INS         = load(K.ins)          || [];
   SUPER       = load(K.superdata)    || {};
@@ -256,6 +258,7 @@ function unlock(){
   var _tu=document.getElementById('topbar-user');
   if(_tu)_tu.textContent=activeProfile==='joint'?'Joint':(typeof getUserName==='function'?getUserName(activeProfile):activeProfile);
   const mu=document.getElementById('mob-user');if(mu)mu.textContent=getUserIcon(activeProfile)+' '+getUserName(activeProfile);
+  try{if(typeof renderNavUser==='function')renderNavUser();}catch(e){console.warn('renderNavUser:',e);}
   var _txDate=document.getElementById('tx-date');if(_txDate)_txDate.value=today();
   try{if(typeof renderSnapshot==='function')renderSnapshot();}catch(e){console.warn('renderSnapshot:',e);}
   try{renderDashboard();}catch(e){console.warn('renderDashboard:',e);}
@@ -271,6 +274,13 @@ function unlock(){
   try{renderIconPicker();}catch(e){console.warn('renderIconPicker:',e);}
   try{detectRecurring();}catch(e){console.warn('detectRecurring:',e);}
   try{autoDetectTransfers();}catch(e){console.warn('autoDetectTransfers:',e);}
+  // First login after onboarding → open the Quick Start guide (one-shot).
+  try {
+    if (localStorage.getItem('kf_show_quickstart') === 'true') {
+      localStorage.removeItem('kf_show_quickstart');
+      setTimeout(function(){ try { if (typeof go === 'function') go('quickstart'); } catch(e){} }, 350);
+    }
+  } catch(e) {}
   // Deferred init: DOM-dependent work after render cycle completes
   setTimeout(() => {
     renderD293Section();
@@ -300,7 +310,7 @@ function lockApp(){
   clearTimeout(_sessionTimer); _sessionTimer = null;
 
   // Scrub financial data from memory — forces reload from localStorage on next unlock
-  TX = []; BILLS = []; MORTGAGE = {}; INS = []; SUPER = {};
+  TX = []; BILLS = []; BILL_ALIASES = {}; BILLS_DISMISSED = []; MORTGAGE = {}; INS = []; SUPER = {};
   GOALS = []; CT = {}; LRECURRING = []; TRANSFERS = []; EQUITIES = [];
   LIABILITIES = []; BUDGETS = {}; LBUDGETS = {}; LRULES = {};
   SUPER_MONTHLY = {}; LIAB_MONTHLY = {}; EQ_MONTHLY = {};

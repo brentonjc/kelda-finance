@@ -995,51 +995,49 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="wizard-screen"></div>
 
 <!-- SIDEBAR -->
-<nav id="nav">
+<nav id="nav" aria-label="Main navigation">
   <div class="nav-logo">
-    <h1 data-app-name style="white-space:nowrap">Kelda Finance</h1>
-    <p data-app-sub>Family Finance Tracker · AUD</p>
+    <div class="nav-logo-bug">💧</div>
+    <h1 data-app-name>Kelda Finance</h1>
   </div>
-  <div class="nav-collapse-tip">Tap section headers to show or hide</div>
-  <ul>
-    <li><a onclick="go('dashboard')" id="n-dashboard" class="active"><span class="ni">🏠</span><span class="nav-lbl">Dashboard</span></a></li>
+  <div class="nav-body">
 
-    <li class="nav-group-hdr" data-group="started" onclick="navToggle('started')">Getting Started<span class="nav-toggle-arr">▾</span></li>
-    <li id="qs-nav-started" data-group-of="started"><a onclick="go('quickstart')" id="n-quickstart"><span class="ni">🚀</span><span class="nav-lbl">Quick Start</span></a></li>
+    <div class="nav-glabel">Core Features</div>
+    <a class="nav-item active" id="n-dashboard" onclick="go('dashboard')" aria-current="page"><span class="ni">🏠</span><span class="nav-lbl">My Dashboard</span></a>
+    <a class="nav-item" id="n-quickstart" onclick="go('quickstart')"><span class="ni">🚀</span><span class="nav-lbl">Quick Start</span></a>
+    <a class="nav-item" id="n-transactions" onclick="go('transactions')"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a>
+    <a class="nav-item" id="n-cash" onclick="go('cash')"><span class="ni">🏦</span><span class="nav-lbl">Bank Accounts</span></a>
+    <a class="nav-item" id="n-bva" onclick="go('bva')"><span class="ni">📊</span><span class="nav-lbl">Budget</span></a>
+    <a class="nav-item" id="n-goals" onclick="go('goals')"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a>
+    <a class="nav-item" id="n-bills" onclick="go('bills')"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a>
 
-    <li class="nav-group-hdr" data-group="spend" onclick="navToggle('spend')">Spend<span class="nav-toggle-arr">▾</span></li>
-    <li data-group-of="spend"><a onclick="go('transactions')" id="n-transactions"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a></li>
-    <li data-group-of="spend"><a onclick="go('transfers')" id="n-transfers"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a></li>
-    <li data-group-of="spend"><a onclick="go('bills')" id="n-bills"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a></li>
-    <li data-group-of="spend"><a onclick="go('insights')" id="n-insights"><span class="ni">✨</span><span class="nav-lbl">Insights</span></a></li>
+    <div class="nav-div"></div>
+    <div class="nav-glabel">Financial Planning Tools</div>
+    <a class="nav-item" id="n-insights" onclick="go('insights')"><span class="ni">✨</span><span class="nav-lbl">Graphs</span></a>
+    <a class="nav-item" id="n-assets" onclick="go('assets')"><span class="ni">💰</span><span class="nav-lbl">Net Worth</span></a>
+    <a class="nav-item" id="n-mortgage" onclick="go('mortgage')"><span class="ni">🏡</span><span class="nav-lbl">Home Mortgage</span></a>
+    <a class="nav-item" id="n-liabilities" onclick="go('liabilities')"><span class="ni">⚖️</span><span class="nav-lbl">Liabilities</span></a>
+    <a class="nav-item" id="n-super" onclick="go('super')"><span class="ni">💼</span><span class="nav-lbl">Superannuation</span></a>
+    <a class="nav-item" id="n-equities" onclick="go('equities')"><span class="ni">📈</span><span class="nav-lbl">Investments</span></a>
+    <a class="nav-item" id="n-insurance" onclick="go('insurance')"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a>
+    <span class="nav-item nav-item-soon" role="link" aria-disabled="true" tabindex="-1"><span class="ni">🏘️</span><span class="nav-lbl">Investment Properties</span><span class="nav-soon">Soon</span></span>
+    <a class="nav-item" id="n-forecast" onclick="go('forecast')"><span class="ni">🔮</span><span class="nav-lbl">Cashflow Forecasts</span></a>
 
-    <li class="nav-group-hdr" data-group="save" onclick="navToggle('save')">Save<span class="nav-toggle-arr">▾</span></li>
-    <li data-group-of="save"><a onclick="go('goals')" id="n-goals"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a></li>
-    <li data-group-of="save"><a onclick="go('cash')" id="n-cash"><span class="ni">🏦</span><span class="nav-lbl">Accounts</span></a></li>
-    <li data-group-of="save"><a onclick="go('assets')" id="n-assets"><span class="ni">💰</span><span class="nav-lbl">Net Worth</span></a></li>
-
-    <li class="nav-group-hdr" data-group="borrow" onclick="navToggle('borrow')">Borrow<span class="nav-toggle-arr">▾</span></li>
-    <li data-group-of="borrow"><a onclick="go('mortgage')" id="n-mortgage"><span class="ni">🏡</span><span class="nav-lbl">Mortgage</span></a></li>
-    <li data-group-of="borrow"><a onclick="go('liabilities')" id="n-liabilities"><span class="ni">⚖️</span><span class="nav-lbl">Liabilities</span></a></li>
-
-    <li class="nav-group-hdr" data-group="plan" onclick="navToggle('plan')">Plan<span class="nav-toggle-arr">▾</span></li>
-    <li data-group-of="plan"><a onclick="go('super')" id="n-super"><span class="ni">💼</span><span class="nav-lbl">Super</span></a></li>
-    <li data-group-of="plan"><a onclick="go('equities')" id="n-equities"><span class="ni">📈</span><span class="nav-lbl">Equities</span></a></li>
-    <li data-group-of="plan"><a onclick="go('bva')" id="n-bva"><span class="ni">📊</span><span class="nav-lbl">Budget vs Actuals</span></a></li>
-    <li data-group-of="plan"><a onclick="go('forecast')" id="n-forecast"><span class="ni">🔮</span><span class="nav-lbl">Forecast</span></a></li>
-
-    <li class="nav-group-hdr" data-group="tools" onclick="navToggle('tools')">Tools<span class="nav-toggle-arr">▾</span></li>
-    <li data-group-of="tools"><a onclick="go('insurance')" id="n-insurance"><span class="ni">🛡️</span><span class="nav-lbl">Life Insurance</span></a></li>
-
-    <li class="nav-group-hdr" data-group="controls" onclick="navToggle('controls')">Controls<span class="nav-toggle-arr">▾</span></li>
-    <li id="qs-nav-controls" data-group-of="controls" style="display:none"><a onclick="go('quickstart')"><span class="ni">✅</span><span class="nav-lbl">Quick Start</span></a></li>
-    <li data-group-of="controls"><a onclick="go('categories')" id="n-categories"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a></li>
-    <li data-group-of="controls"><a onclick="go('smartrules')" id="n-smartrules"><span class="ni">⚡</span><span class="nav-lbl">Smart Rules</span></a></li>
-    <li data-group-of="controls"><a onclick="go('export')" id="n-export"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a></li>
-    <li data-group-of="controls"><a onclick="go('settings')" id="n-settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></a></li>
-  </ul>
-  <div class="nav-footer">
-    <button class="nav-lock-btn" onclick="lockApp()">🔒 Lock App</button>
+    <div class="nav-div"></div>
+    <div class="nav-glabel">App Controls</div>
+    <a class="nav-item" id="n-transfers" onclick="go('transfers')"><span class="ni">🔄</span><span class="nav-lbl">Transfers</span></a>
+    <a class="nav-item" id="n-categories" onclick="go('categories')"><span class="ni">🏷️</span><span class="nav-lbl">Categories</span></a>
+    <a class="nav-item" id="n-smartrules" onclick="go('smartrules')"><span class="ni">⚡</span><span class="nav-lbl">Smart Rules</span></a>
+    <a class="nav-item" id="n-export" onclick="go('export')"><span class="ni">⬇️</span><span class="nav-lbl">Export Data</span></a>
+    <a class="nav-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')"><span class="ni">✅</span><span class="nav-lbl">Quick Start</span></a>
+  </div>
+  <div class="nav-foot">
+    <button class="nav-settings-btn" id="n-settings" onclick="go('settings')" title="Settings" aria-label="Settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></button>
+    <button class="nav-lock-btn" onclick="lockApp()" title="Lock app" aria-label="Lock app"><span class="ni">🔒</span><span class="nav-lbl">Lock App</span></button>
+    <div class="nav-user" id="nav-user-row">
+      <div class="kd-avs" id="nav-avatars"></div>
+      <span class="kd-uname" id="nav-username"></span>
+    </div>
   </div>
 </nav>
 
@@ -1478,84 +1476,13 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <!-- CSV IMPORT CARD -->
-    <div class="card mb" id="csv-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">📂 Import from CSV</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()">⬇️ Download Template</button>
-          <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none">✕ Cancel</button>
-        </div>
+    <!-- CSV IMPORT TRIGGER — the modal itself lives outside .page-content so it can also be opened from the Dashboard -->
+    <div class="card mb" id="csv-card-trigger" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="section-label" style="margin:0 0 3px">📂 Import from CSV</div>
+        <div style="font-size:.78rem;color:var(--muted)">Bring in transactions from a bank export, Excel save, or Google Sheets download.</div>
       </div>
-
-      <!-- Step indicator -->
-      <div class="csv-steps">
-        <div class="csv-step-item"><div class="csv-snum active" id="csn1">1</div><span class="csv-slbl active" id="csl1">Upload</span></div>
-        <div class="csv-conn"></div>
-        <div class="csv-step-item"><div class="csv-snum" id="csn2">2</div><span class="csv-slbl" id="csl2">Map Columns</span></div>
-        <div class="csv-conn"></div>
-        <div class="csv-step-item"><div class="csv-snum" id="csn3">3</div><span class="csv-slbl" id="csl3">Preview & Import</span></div>
-      </div>
-
-      <!-- STEP 1: Upload -->
-      <div class="csv-panel show" id="csv-p1">
-        <div class="csv-drop" id="csv-drop"
-          onclick="document.getElementById('csv-file-input').click()"
-          ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
-          <div class="cd-icon">📄</div>
-          <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
-          <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
-        </div>
-        <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
-        <div class="imp-hint">
-          <strong>💡 What format does my CSV need?</strong>
-          Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
-          You'll map your columns in the next step. Download the template above for a ready-to-fill example.
-        </div>
-      </div>
-
-      <!-- STEP 2: Map Columns -->
-      <div class="csv-panel" id="csv-p2">
-        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
-          We found these columns in your file. Tell us what each one is — then click Preview.
-        </p>
-        <div style="overflow-x:auto">
-          <table class="map-tbl">
-            <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
-            <tbody id="csv-map-body"></tbody>
-          </table>
-        </div>
-        <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
-          💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
-          Negative amounts are treated as expenses automatically.
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end">
-          <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
-          <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
-        </div>
-      </div>
-
-      <!-- STEP 3: Preview -->
-      <div class="csv-panel" id="csv-p3">
-        <div class="imp-stats" id="csv-imp-stats"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div style="font-size:.76rem;color:var(--muted)">🟡 Yellow = possible duplicate &nbsp;·&nbsp; 🔴 Red = skipped (missing data)</div>
-          <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
-            <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
-            Skip duplicates
-          </label>
-        </div>
-        <div class="prev-wrap">
-          <table class="prev-tbl">
-            <thead><tr><th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
-            <tbody id="csv-prev-body"></tbody>
-          </table>
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
-          <button class="btn btn-primary" onclick="csvConfirmImport()">✅ Import Transactions</button>
-        </div>
-      </div>
+      <button class="btn btn-primary btn-sm" onclick="openCsvModal()">📂 Import CSV</button>
     </div>
 
     <div class="card">
@@ -1613,46 +1540,105 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ BILLS ═══ -->
   <div class="page" id="page-bills">
-    <div class="page-title">Bills &amp; Due Dates</div>
-    <div class="page-sub">Track recurring bills and mark them paid</div>
+    <div class="bl-page-header">
+      <div>
+        <div class="page-title">Bills</div>
+        <div class="page-sub">Forecast, subscriptions and annual bill savings — nothing to mark paid</div>
+      </div>
+      <div class="bl-header-actions">
+        <button class="review-btn notif-pulse" id="bl-review-btn" style="display:none" onclick="blOpenReviewModal()">
+          <span>⚠️ Review Bills</span>
+          <div class="notif-dot" id="bl-review-dot">0</div>
+        </button>
+        <button class="btn btn-primary btn-sm" style="border-radius:var(--radius-pill)" onclick="blOpenAddModal()">＋ Add Bill</button>
+      </div>
+    </div>
     <div id="how-to-bills"></div>
 
-    <!-- Auto-detected suggestions -->
-    <div id="bills-suggestions"></div>
+    <!-- KPIs -->
+    <div class="kpi-row" id="bl-kpis"></div>
 
-    <div class="g2 mb">
-      <div class="card">
-        <div class="section-label">Add Bill</div>
-        <div class="form-grid"><div><label class="lbl">Bill Name</label><input type="text" id="bill-name" placeholder="e.g. Power Bill"/></div></div>
-        <div class="form-grid">
-          <div><label class="lbl">Amount (AUD)</label><input type="number" id="bill-amount" placeholder="120.00" step="0.01" inputmode="decimal"/></div>
-          <div><label class="lbl">Next Due Date</label><input type="date" id="bill-due"/></div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Frequency</label>
-            <select id="bill-frequency">
-              <option value="monthly">Monthly</option>
-              <option value="fortnightly">Fortnightly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="yearly">Yearly</option>
-              <option value="weekly">Weekly</option>
-            </select>
-          </div>
-          <div><label class="lbl">Icon / Type</label>
-            <select id="bill-icon">
-              <option value="💡">💡 Electricity</option><option value="💧">💧 Water</option>
-              <option value="📡">📡 Internet</option><option value="📱">📱 Phone</option>
-              <option value="🏠">🏠 Rent/Mortgage</option><option value="🚗">🚗 Car Insurance</option>
-              <option value="❤️">❤️ Health Insurance</option><option value="👶">👶 Childcare</option>
-              <option value="🎬">🎬 Streaming</option><option value="🧾">🧾 Other</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="addBill()">➕ Add Bill</button>
+    <!-- Cash demand chart -->
+    <div class="chart-card" id="bl-chart-card" style="display:none">
+      <div class="chart-header">
+        <div class="section-label" style="margin:0">Cash Demand</div>
+        <span style="font-size:.66rem;color:var(--muted)">confirmed bills · projected</span>
       </div>
-      <div class="card"><div class="section-label">Summary</div><div id="bills-summary"></div></div>
+      <div style="height:170px"><canvas id="bl-cash-chart"></canvas></div>
+      <div class="chart-legend" id="bl-chart-legend"></div>
     </div>
-    <div class="card"><div class="section-label" style="margin-bottom:14px">All Bills</div><div id="bills-list"></div></div>
+
+    <!-- Graph tiles -->
+    <div class="graph-tiles">
+      <div class="tile">
+        <div class="tile-label">Bill Category Flow</div>
+        <div id="bl-sankey"></div>
+      </div>
+      <div class="tile" id="bl-yoy-card" style="display:none">
+        <div class="tile-label">Bills — Year on Year</div>
+        <div style="height:100px"><canvas id="bl-yoy-chart"></canvas></div>
+        <div class="yoy-deltas" id="bl-yoy-deltas"></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <button class="filter-btn" id="bl-h-30" onclick="blSetHorizon(30)">30d</button>
+        <button class="filter-btn" id="bl-h-90" onclick="blSetHorizon(90)">90d</button>
+        <button class="filter-btn" id="bl-h-365" onclick="blSetHorizon(365)">12m</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <button class="filter-btn" id="bl-t-all" onclick="blSetTypeFilter('all')">All</button>
+        <button class="filter-btn" id="bl-t-bill" onclick="blSetTypeFilter('bill')">Bills</button>
+        <button class="filter-btn" id="bl-t-subscription" onclick="blSetTypeFilter('subscription')">Subscriptions</button>
+        <button class="filter-btn" id="bl-t-direct_debit" onclick="blSetTypeFilter('direct_debit')">Direct Debits</button>
+      </div>
+    </div>
+
+    <!-- Recurring payments table -->
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="section-label" style="margin:0 0 2px">All Recurring Payments</div>
+          <div style="font-size:.7rem;color:var(--muted)" id="bl-table-meta"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" placeholder="Search billers…" id="bl-search" oninput="blTableSearch(this.value)" style="background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.76rem;font-family:var(--font-body);width:140px;outline:none"/>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+          <thead>
+            <tr style="border-bottom:1.5px solid var(--border)">
+              <th style="padding:8px 18px 8px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Biller</th>
+              <th style="padding:8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Type / Category</th>
+              <th style="padding:8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Account</th>
+              <th style="padding:8px 12px;text-align:right;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Amount</th>
+              <th style="padding:8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Next Due</th>
+              <th style="padding:8px 12px;text-align:center;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Confidence</th>
+              <th style="padding:8px 18px 8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Action</th>
+            </tr>
+          </thead>
+          <tbody id="bl-table-body"></tbody>
+        </table>
+        <div class="empty" id="bl-table-empty" style="display:none"><div class="ei">🧾</div><p>No recurring bills detected yet — add transactions or add a bill manually.</p></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--border)" id="bl-pagination"></div>
+    </div>
+
+    <!-- Annual bills spotlight -->
+    <div class="card" id="bl-annual-card" style="display:none">
+      <div class="section-label" style="margin-bottom:12px">Annual Bills</div>
+      <div id="bl-annual-list"></div>
+    </div>
+
+    <!-- Upcoming timeline -->
+    <div class="card" id="bl-timeline-card">
+      <div class="section-label" style="margin-bottom:12px" id="bl-timeline-label">Upcoming</div>
+      <div id="bl-timeline-list"></div>
+    </div>
   </div>
 
   <!-- ═══ GOALS ═══ -->
@@ -2842,6 +2828,114 @@ window.addEventListener('unhandledrejection',function(e){
   </div><!-- /page-content -->
 </div><!-- /main -->
 
+<!-- CSV IMPORT MODAL — opened from Transactions tab and the Dashboard "Add transaction" button -->
+<div class="modal-overlay" id="csv-modal" onclick="if(event.target===this)closeCsvModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="card mb" id="csv-card" style="margin-bottom:0;box-shadow:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="section-label" style="margin:0">📂 Import from CSV</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()">⬇️ Download Template</button>
+          <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none">✕ Cancel</button>
+          <button class="btn btn-ghost btn-sm" onclick="closeCsvModal()">✕ Close</button>
+        </div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="csv-steps">
+        <div class="csv-step-item"><div class="csv-snum active" id="csn1">1</div><span class="csv-slbl active" id="csl1">Upload</span></div>
+        <div class="csv-conn"></div>
+        <div class="csv-step-item"><div class="csv-snum" id="csn2">2</div><span class="csv-slbl" id="csl2">Map Columns</span></div>
+        <div class="csv-conn"></div>
+        <div class="csv-step-item"><div class="csv-snum" id="csn3">3</div><span class="csv-slbl" id="csl3">Preview & Import</span></div>
+      </div>
+
+      <!-- STEP 1: Upload -->
+      <div class="csv-panel show" id="csv-p1">
+        <div class="csv-drop" id="csv-drop"
+          onclick="document.getElementById('csv-file-input').click()"
+          ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
+          <div class="cd-icon">📄</div>
+          <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
+          <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
+        </div>
+        <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
+        <div class="imp-hint">
+          <strong>💡 What format does my CSV need?</strong>
+          Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
+          You'll map your columns in the next step. Download the template above for a ready-to-fill example.
+        </div>
+      </div>
+
+      <!-- STEP 2: Map Columns -->
+      <div class="csv-panel" id="csv-p2">
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
+          We found these columns in your file. Tell us what each one is — then click Preview.
+        </p>
+        <div style="overflow-x:auto">
+          <table class="map-tbl">
+            <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
+            <tbody id="csv-map-body"></tbody>
+          </table>
+        </div>
+        <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
+          💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
+          Negative amounts are treated as expenses automatically.
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
+          <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Preview -->
+      <div class="csv-panel" id="csv-p3">
+        <div class="imp-stats" id="csv-imp-stats"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:.76rem;color:var(--muted)">🟡 Yellow = possible duplicate &nbsp;·&nbsp; 🔴 Red = skipped (missing data)</div>
+          <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
+            <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+            Skip duplicates
+          </label>
+        </div>
+        <div class="prev-wrap">
+          <table class="prev-tbl">
+            <thead><tr><th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody id="csv-prev-body"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
+          <button class="btn btn-primary" onclick="csvConfirmImport()">✅ Import Transactions</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS / INSIGHTS MODAL — opened from the Dashboard bell icon -->
+<div class="modal-overlay" id="notif-modal" onclick="if(event.target===this)closeNotifModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="section-label" style="margin:0">🔔 Recommended for you</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeNotifModal()">✕ Close</button>
+    </div>
+    <div id="notif-modal-body"></div>
+  </div>
+</div>
+
+<!-- BANK ACCOUNTS VISIBILITY MODAL — opened from the Dashboard Bank Accounts tile -->
+<div class="modal-overlay" id="acct-vis-modal" onclick="if(event.target===this)closeAcctVisModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div class="section-label" style="margin:0">👁️ Show / hide accounts</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAcctVisModal()">✕ Close</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">Hide accounts with no active balance so they don't clutter your dashboard. This only affects what's shown here — nothing is deleted.</div>
+    <div id="acct-vis-modal-body"></div>
+  </div>
+</div>
+
 <!-- FORECAST MONTH DETAIL MODAL -->
 <div class="modal-overlay" id="fc2-month-overlay" onclick="fc2CloseMonthModal()">
   <div class="modal-box" id="fc2-month-box" onclick="event.stopPropagation()" style="max-width:440px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
@@ -2953,6 +3047,60 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="updateGoal()">💾 Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD BILL MODAL ═══ -->
+<div class="modal-overlay" id="bill-modal" onclick="if(event.target===this)blCloseAddModal()">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">＋ Add Bill</div>
+      <button class="modal-close" onclick="blCloseAddModal()">✕</button></div>
+    <div class="modal-sub">Manually track a future-dated or one-off bill. Detection engine will absorb it later if a matching transaction appears.</div>
+    <form id="bill-add-form" onsubmit="event.preventDefault();blSaveManualBill()">
+      <div class="form-grid"><div><label class="lbl">Bill Name</label><input type="text" id="bill-name-input" placeholder="e.g. Car Insurance"/></div></div>
+      <div class="form-grid">
+        <div><label class="lbl">Category</label><select id="bill-cat" onchange="blRefreshBillSubcatSelect()"></select></div>
+        <div><label class="lbl">Subcategory</label><select id="bill-subcat"></select></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Amount (AUD)</label><input type="number" id="bill-amount-input" placeholder="120.00" step="0.01" inputmode="decimal"/></div>
+        <div><label class="lbl">Next Due Date</label><input type="date" id="bill-due-input"/></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Frequency</label>
+          <select id="bill-frequency-input">
+            <option value="weekly">Weekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div><label class="lbl">Bill Type</label>
+          <select id="bill-type-input">
+            <option value="bill" selected>Bill</option>
+            <option value="subscription">Subscription</option>
+            <option value="direct_debit">Direct Debit</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="blCloseAddModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">➕ Add Bill</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ REVIEW BILLS MODAL ═══ -->
+<div class="modal-overlay" id="bill-review-modal" onclick="if(event.target===this)blCloseReviewModal()">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">⚠️ Review Detected Bills</div>
+      <button class="modal-close" onclick="blCloseReviewModal()">✕</button></div>
+    <div class="modal-sub" id="bl-review-sub"></div>
+    <div id="bl-review-list"></div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="blCloseReviewModal()">Done</button>
     </div>
   </div>
 </div>
@@ -3304,6 +3452,8 @@ function obFinish() {
   try { localStorage.setItem('kf_user2_pin_hash', ''); } catch(e) {}
   try { localStorage.setItem('kf_mortgage', mort ? JSON.stringify(mort) : ''); } catch(e) {}
   try { localStorage.setItem('kf_assets', JSON.stringify(ob.selectedAssets || [])); } catch(e) {}
+  // One-shot: open the Quick Start guide on the first login after onboarding.
+  try { localStorage.setItem('kf_show_quickstart', 'true'); } catch(e) {}
 
   // Mark legacy wizard complete so it is skipped; flag new salt
   try { localStorage.setItem('kelda_wizard_complete', 'true'); } catch(e) {}
@@ -3326,6 +3476,9 @@ function obFinish() {
     document.documentElement.removeAttribute('data-ob-active');
     var ov = document.getElementById('onboarding-overlay');
     if (ov) ov.style.display = 'none';
+    // Refresh the in-memory PIN store so the login screen goes straight to
+    // "enter your PIN" (verify) rather than treating the profile as unset.
+    try { if (typeof load === 'function' && typeof PINS !== 'undefined') PINS = load(K.pins) || {}; } catch(e) {}
     try { if (typeof applyOnboardingToApp === 'function') applyOnboardingToApp(); } catch(e) {}
     try { if (typeof applyAppName === 'function') applyAppName(); } catch(e) {}
     try { if (typeof applyUserConfig === 'function') applyUserConfig(); } catch(e) {}
@@ -3346,6 +3499,55 @@ function obFinish() {
   } else {
     _handoff();
   }
+}
+
+// ── Re-launch onboarding from Settings ("Re-run Setup Wizard") ──
+function obRelaunch() {
+  // Reset flow state
+  ob = { name: '', profile: '', accountCount: 2, accounts: [], user2Toggle: false, selectedAssets: [] };
+  ob._pin = ''; _obFinished = false; obUser2Open = false;
+  try { localStorage.removeItem('kf_onboarding_complete'); } catch(e) {}
+
+  // Clear inputs
+  ['inp-name','inp-pin','inp-pin-confirm','inp-user2','mtg-lender','mtg-balance','mtg-payment'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['err-name','err-pin','err-user2'].forEach(function(id){ var el = document.getElementById(id); if (el) el.textContent = ''; });
+
+  // Reset second-user toggle
+  var u2t = document.getElementById('user2-toggle'); if (u2t) u2t.classList.remove('on');
+  var u2e = document.getElementById('user2-expand'); if (u2e) u2e.classList.remove('open');
+
+  // Reset profile cards
+  ['starter','household','full'].forEach(function(p){
+    var c = document.getElementById('card-' + p);
+    if (c) { c.classList.remove('selected'); c.setAttribute('aria-checked','false'); c.tabIndex = (p === 'starter') ? 0 : -1; }
+    var ck = document.getElementById('check-' + p); if (ck) ck.textContent = '';
+  });
+  var pbtn = document.getElementById('btn-profile-continue'); if (pbtn) pbtn.disabled = true;
+
+  // Reset rail tagline / glow / preview
+  var tag = document.getElementById('ob-tagline'); if (tag) tag.textContent = 'Your finances, clear and in one place.';
+  var left = document.getElementById('ob-left'); if (left) left.style.setProperty('--accent-glow', 'transparent');
+  var pvs = document.querySelectorAll('.ob-preview-variant');
+  for (var i = 0; i < pvs.length; i++) pvs[i].classList.remove('active');
+  var pv0 = document.getElementById('preview-starter'); if (pv0) pv0.classList.add('active');
+
+  // Reset account count tiles to default (2) + re-render cards
+  var grids = document.querySelectorAll('#onboarding-overlay .ob-count-grid');
+  for (var g = 0; g < grids.length; g++) {
+    var tiles = grids[g].querySelectorAll('.ob-count-tile');
+    for (var t = 0; t < tiles.length; t++) tiles[t].classList.toggle('selected', tiles[t].textContent.trim() === '2');
+  }
+  ['starter','household','full'].forEach(function(p){ obRenderAccountCards(p, 2); });
+
+  // Show the overlay again, hide any recap, hide the app behind it
+  var cel = document.getElementById('ob-celebration'); if (cel) cel.classList.remove('show');
+  var ov = document.getElementById('onboarding-overlay'); if (ov) { ov.style.display = ''; ov.classList.remove('ob-done'); }
+  document.documentElement.setAttribute('data-ob-active','1');
+
+  obGoTo('panel-welcome');
+  try { var r = ov ? ov.querySelector('.ob-right') : null; if (r) r.scrollTop = 0; } catch(e) {}
 }
 
 // ── Apply onboarding data to visible app elements ─────────────
@@ -3390,25 +3592,87 @@ document.addEventListener('DOMContentLoaded',function(){
   var _rt = localStorage.getItem('kf_restore_toast');
   if (_rt) { localStorage.removeItem('kf_restore_toast'); setTimeout(function(){ toast(_rt); }, 800); }
   applyUserConfig();
-  navInitCollapsed();
   if (typeof navSyncQuickStart === 'function') navSyncQuickStart();
   // Auto-fix any orphaned category IDs from legacy data on every load
   if (typeof fixOrphanedTxCats === 'function') { fixOrphanedTxCats(); }
   // First-run wizard check — mutates welcome screen or marks existing user
   checkFirstRun();
   selProfile('brenton');
-  // Register service worker for offline / PWA
+  // Register service worker for offline / PWA, with an "update available" prompt
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js').catch(function(e){
-      console.warn('SW registration failed:',e);
-    });
-    // Auto-reload when a new service worker takes over — picks up code changes
+    var _swReloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (_swReloading) return;      // guard against reload loops
+      _swReloading = true;
       window.location.reload();
     });
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      // A worker is already waiting from a previous visit
+      if (reg.waiting && navigator.serviceWorker.controller) showSwUpdatePrompt(reg);
+      // A new worker starts installing
+      reg.addEventListener('updatefound', function(){
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function(){
+          // Installed + an existing controller ⇒ this is an update, not first install
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) showSwUpdatePrompt(reg);
+        });
+      });
+      // Re-check for updates whenever the app regains focus
+      document.addEventListener('visibilitychange', function(){
+        if (document.visibilityState === 'visible') { try { reg.update(); } catch(e){} }
+      });
+    }).catch(function(e){ console.warn('SW registration failed:', e); });
   }
 });
+
+// Show the update banner and wire its buttons
+function showSwUpdatePrompt(reg){
+  var bar = document.getElementById('sw-update-bar');
+  if (!bar) return;
+  bar.classList.add('show');
+  var btn = document.getElementById('sw-update-btn');
+  if (btn) btn.onclick = function(){
+    btn.disabled = true; btn.textContent = 'Updating…';
+    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    else window.location.reload();
+  };
+  var dismiss = document.getElementById('sw-update-dismiss');
+  if (dismiss) dismiss.onclick = function(){ bar.classList.remove('show'); };
+}
 </script>
+
+<!-- Service-worker "update available" prompt -->
+<style>
+  .sw-update-bar{
+    position:fixed; left:50%; bottom:20px;
+    transform:translateX(-50%) translateY(160%);
+    z-index:10001; display:flex; align-items:center; gap:12px;
+    background:var(--n800,#111830); border:1px solid var(--n600,#1E2A4A);
+    border-radius:14px; padding:12px 12px 12px 18px;
+    box-shadow:0 14px 44px rgba(0,0,0,.5);
+    transition:transform .3s ease; max-width:calc(100vw - 32px);
+    font-family:var(--font-body,'DM Sans',sans-serif);
+  }
+  .sw-update-bar.show{ transform:translateX(-50%) translateY(0); }
+  .sw-update-text{ font-size:.85rem; color:var(--text,#E8EDF5); }
+  .sw-update-btn{
+    background:var(--primary,#F0538A); color:#fff; border:none; border-radius:999px;
+    padding:9px 18px; font-size:.82rem; font-weight:600; cursor:pointer; white-space:nowrap;
+    font-family:var(--font-body,'DM Sans',sans-serif); min-height:40px;
+  }
+  .sw-update-btn:disabled{ opacity:.6; cursor:default; }
+  .sw-update-dismiss{
+    background:none; border:none; color:var(--muted,#6278A0); cursor:pointer;
+    font-size:15px; line-height:1; padding:8px; min-height:40px;
+  }
+  @media (max-width:760px){ .sw-update-bar{ bottom:88px; } }
+</style>
+<div class="sw-update-bar" id="sw-update-bar" role="status" aria-live="polite">
+  <span class="sw-update-text">A new version of Kelda Finance is ready.</span>
+  <button class="sw-update-btn" id="sw-update-btn">Reload</button>
+  <button class="sw-update-dismiss" id="sw-update-dismiss" aria-label="Dismiss">✕</button>
+</div>
 
 <!-- Celebration overlay (singleton, shared by all triggers) -->
 <div class="celebration-overlay" id="celebration-overlay">

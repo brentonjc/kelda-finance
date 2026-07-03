@@ -681,9 +681,23 @@ function liabSave() {
 
   if (addToBills && dueDay && payment > 0 && type !== 'hecs') {
     try {
-      var billExists = BILLS.some(function(b) { return b.name && b.name.toLowerCase() === lender.toLowerCase(); });
+      var billMerchantKey = (typeof preprocessMerchantString === 'function' ? preprocessMerchantString(lender) : lender.toLowerCase()) || lender.toLowerCase();
+      var billExists = BILLS.some(function(b) { return b.merchantKey === billMerchantKey; });
       if (!billExists) {
-        BILLS.push({ id: 'bill_liab_' + Date.now(), name: lender, amount: payment, dueDay: dueDay, category: 'home', notes: 'From Liabilities', paid: false });
+        var liabNextDue = (function() {
+          var d = new Date();
+          var day = Math.min(dueDay, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate());
+          d.setDate(day);
+          if (d < new Date(new Date().toDateString())) d.setMonth(d.getMonth() + 1);
+          return d.toISOString().slice(0, 10);
+        })();
+        BILLS.push({
+          id: 'bill_liab_' + Date.now(), merchantKey: billMerchantKey, displayName: lender,
+          icon: '🏦', category: 'home', subcategory: 'Loan Repayment', billType: 'bill',
+          frequency: 'monthly', amountType: 'fixed', amount: payment, amountTrend: 'stable',
+          pendingAmountUpdate: null, nextDueDate: liabNextDue, lastSeenDate: '',
+          confidence: null, source: 'manual', status: 'confirmed', isAnnual: false
+        });
         save(K.bills, BILLS);
         toast('✅ Liability saved and added to Bills');
       } else {

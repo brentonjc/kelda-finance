@@ -20,9 +20,12 @@ function _assetsLiabSegments() {
     segs[label].value += value;
   };
 
-  // Mortgage from MORTGAGE object (primary property)
-  var mortgageBal = Number(MORTGAGE.balance) || 0;
-  if (mortgageBal > 0) addSeg('Mortgage', mortgageBal, '#EF4444');
+  // All mortgages (supports multi-property; liabAllMortgages() already excludes any
+  // property that's linked to a LIABILITIES entry, so it's never double-counted below)
+  (typeof liabAllMortgages === 'function' ? liabAllMortgages() : []).forEach(function(m) {
+    var bal = Number(m.balance) || 0;
+    if (bal > 0) addSeg('Mortgage', bal, '#EF4444');
+  });
 
   // Each liability by type
   (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).forEach(function(l) {
@@ -75,45 +78,58 @@ function renderAssets() {
     + '<span class="dr-k" style="font-weight:700">Total Super</span>'
     + '<span class="dr-v" style="color:var(--primary)">' + fmt(supTotal) + '</span></div>';
 
-  // ── Property ──────────────────────────────────────────────
-  var hv  = MORTGAGE.homeValue     || 0;
-  var mb  = MORTGAGE.balance       || 0;
-  var off = MORTGAGE.offset        || 0;
-  var eq  = hv - mb;
-  var pp  = MORTGAGE.purchasePrice || 0;
-  var ad  = MORTGAGE.acquiredDate  || '';
+  // ── Property (supports multiple properties — sums across all of them) ──
+  var mortProps = (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length)
+    ? MORTGAGE.properties : (MORTGAGE && MORTGAGE.homeValue ? [MORTGAGE] : []);
+  var hv = 0, mb = 0, off = 0, pp = 0;
+  mortProps.forEach(function(p) {
+    hv += Number(p.homeValue) || 0;
+    mb += Number(p.balance) || 0;
+    off += Number(p.offset) || 0;
+    pp += Number(p.purchasePrice) || 0;
+  });
+  var eq = hv - mb;
 
   // Acquired-date helpers (inline — no dependency on mortgage.js being loaded)
-  var acqHoldStr = '';
-  var acqDateStr = '';
-  if (ad) {
+  function acqInfo(ad) {
+    if (!ad) return null;
     var then = new Date(ad + 'T00:00:00'), now = new Date();
-    if (!isNaN(then.getTime()) && then <= now) {
-      var yrs = now.getFullYear() - then.getFullYear();
-      var mos = now.getMonth() - then.getMonth();
-      if (mos < 0) { yrs--; mos += 12; }
-      acqHoldStr = yrs === 0 ? mos + ' mo' : (mos === 0 ? yrs + ' yr' : yrs + ' yr ' + mos + ' mo');
-      acqDateStr = then.toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'});
-    }
-  }
-  var capGainHtml = '';
-  if (pp > 0 && hv > 0) {
-    var gain    = hv - pp;
-    var gainPct = (gain / pp * 100).toFixed(1);
-    var gainColor = gain >= 0 ? 'var(--success)' : 'var(--danger)';
-    capGainHtml = '<div class="dr"><span class="dr-k">Purchase Price</span><span class="dr-v">' + fmt(pp) + '</span></div>'
-      + '<div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v" style="color:' + gainColor + '">'
-      + (gain >= 0 ? '+' : '') + fmt(gain) + ' (' + (gain >= 0 ? '+' : '') + gainPct + '%)</span></div>';
+    if (isNaN(then.getTime()) || then > now) return null;
+    var yrs = now.getFullYear() - then.getFullYear();
+    var mos = now.getMonth() - then.getMonth();
+    if (mos < 0) { yrs--; mos += 12; }
+    return {
+      hold: yrs === 0 ? mos + ' mo' : (mos === 0 ? yrs + ' yr' : yrs + ' yr ' + mos + ' mo'),
+      date: then.toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'})
+    };
   }
 
+  var propertyRowsHtml = mortProps.map(function(p) {
+    var pHv = Number(p.homeValue) || 0, pMb = Number(p.balance) || 0, pOff = Number(p.offset) || 0, pPp = Number(p.purchasePrice) || 0;
+    var pEq = pHv - pMb;
+    var ai = acqInfo(p.acquiredDate);
+    var gainHtml = '';
+    if (pPp > 0 && pHv > 0) {
+      var gain = pHv - pPp, gainPct = (gain / pPp * 100).toFixed(1);
+      var gainColor = gain >= 0 ? 'var(--success)' : 'var(--danger)';
+      gainHtml = '<div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v" style="color:' + gainColor + '">'
+        + (gain >= 0 ? '+' : '') + fmt(gain) + ' (' + (gain >= 0 ? '+' : '') + gainPct + '%)</span></div>';
+    }
+    return '<div style="margin-bottom:10px">'
+      + (mortProps.length > 1 ? '<div class="dr-k" style="font-weight:700;margin-bottom:4px">🏡 ' + (p.name || 'Property') + '</div>' : '')
+      + '<div class="dr"><span class="dr-k">Home Value</span><span class="dr-v">' + fmt(pHv) + '</span></div>'
+      + '<div class="dr"><span class="dr-k">Mortgage</span><span class="dr-v" style="color:var(--danger)">-' + fmt(pMb) + '</span></div>'
+      + (pOff ? '<div class="dr"><span class="dr-k">Offset</span><span class="dr-v" style="color:var(--success)">' + fmt(pOff) + '</span></div>' : '')
+      + (ai ? '<div class="dr"><span class="dr-k">Acquired</span><span class="dr-v">' + ai.date + ' · ' + ai.hold + '</span></div>' : '')
+      + gainHtml
+      + '<div class="dr"><span class="dr-k">Equity</span><span class="dr-v" style="color:var(--primary)">' + fmt(pEq) + '</span></div>'
+      + '</div>';
+  }).join('');
+
   document.getElementById('assets-property').innerHTML = hv
-    ? '<div class="dr"><span class="dr-k">🏡 Home Value</span><span class="dr-v">' + fmt(hv) + '</span></div>'
-      + '<div class="dr"><span class="dr-k">📉 Mortgage</span><span class="dr-v" style="color:var(--danger)">-' + fmt(mb) + '</span></div>'
-      + '<div class="dr"><span class="dr-k">🏦 Offset</span><span class="dr-v" style="color:var(--success)">' + fmt(off) + '</span></div>'
-      + (acqDateStr ? '<div class="dr"><span class="dr-k">📅 Acquired</span><span class="dr-v">' + acqDateStr + (acqHoldStr ? ' · ' + acqHoldStr : '') + '</span></div>' : '')
-      + capGainHtml
+    ? propertyRowsHtml
       + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
-      + '<span class="dr-k" style="font-weight:700">Net Equity</span>'
+      + '<span class="dr-k" style="font-weight:700">Net Equity' + (mortProps.length > 1 ? ' (all properties)' : '') + '</span>'
       + '<span class="dr-v" style="color:var(--primary)">' + fmt(eq) + '</span></div>'
     : '<div class="empty" style="padding:12px 0"><p>Add mortgage details</p></div>';
 

@@ -85,47 +85,42 @@ function go(id){
 
 
 // ══════════════════════════════════════════════════════════════
-// NAV COLLAPSE
+// NAV — Quick Start visibility + user footer
 // ══════════════════════════════════════════════════════════════
-function navToggle(name) {
-  var hdr   = document.querySelector('.nav-group-hdr[data-group="' + name + '"]');
-  var items = document.querySelectorAll('[data-group-of="' + name + '"]');
-  if (!hdr) return;
-  var closing = !hdr.classList.contains('nav-group-closed');
-  hdr.classList.toggle('nav-group-closed', closing);
-  items.forEach(function(el) { el.classList.toggle('nav-group-item-hidden', closing); });
-  try {
-    var state = JSON.parse(localStorage.getItem('kf_nav_collapsed') || '{}');
-    state[name] = closing;
-    localStorage.setItem('kf_nav_collapsed', JSON.stringify(state));
-  } catch(e) {}
-}
-
 function navSyncQuickStart() {
   var data = null;
   try { data = load(K.quickstart); } catch(e) {}
   var done = data && data.completed;
-  var startedItem  = document.getElementById('qs-nav-started');
+  var coreItem     = document.getElementById('n-quickstart');
   var controlsItem = document.getElementById('qs-nav-controls');
-  var startedHdr   = document.querySelector('.nav-group-hdr[data-group="started"]');
-  if (startedItem)  startedItem.style.display  = done ? 'none' : '';
+  if (coreItem)     coreItem.style.display     = done ? 'none' : '';
   if (controlsItem) controlsItem.style.display = done ? ''     : 'none';
-  if (startedHdr)   startedHdr.style.display   = done ? 'none' : '';
 }
 
-function navInitCollapsed() {
-  try {
-    var state = JSON.parse(localStorage.getItem('kf_nav_collapsed') || '{}');
-    Object.keys(state).forEach(function(name) {
-      if (state[name]) {
-        var hdr   = document.querySelector('.nav-group-hdr[data-group="' + name + '"]');
-        var items = document.querySelectorAll('[data-group-of="' + name + '"]');
-        if (!hdr) return;
-        hdr.classList.add('nav-group-closed');
-        items.forEach(function(el) { el.classList.add('nav-group-item-hidden'); });
-      }
-    });
-  } catch(e) {}
+// Populates the nav rail's user footer (avatar initials + name), driven by the active profile.
+function renderNavUser() {
+  var avs  = document.getElementById('nav-avatars');
+  var uname = document.getElementById('nav-username');
+  if (!avs || !uname) return;
+  avs.innerHTML = '';
+  var p1name = (typeof getUserName === 'function' ? getUserName('brenton') : 'Brenton') || 'Brenton';
+  var p2name = (typeof getUserName === 'function' ? getUserName('shelley') : 'Shelley') || 'Shelley';
+  function initial(n) { return (n || '?').trim().charAt(0).toUpperCase() || '?'; }
+  function makeAv(cls, letter) {
+    var d = document.createElement('div');
+    d.className = 'kd-av ' + cls;
+    d.textContent = letter;
+    return d;
+  }
+  if (activeProfile === 'joint') {
+    avs.appendChild(makeAv('p1', initial(p1name)));
+    avs.appendChild(makeAv('p2', initial(p2name)));
+    uname.textContent = p1name + ' & ' + p2name;
+  } else {
+    var name = activeProfile === 'shelley' ? p2name : p1name;
+    avs.appendChild(makeAv('p1', initial(name)));
+    uname.textContent = name;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -643,7 +638,7 @@ function closeNav(){
 }
 // Auto-close nav on link tap (mobile)
 document.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('#nav ul li a').forEach(a=>{
+  document.querySelectorAll('#nav .nav-item').forEach(a=>{
     a.addEventListener('click',()=>{if(window.innerWidth<=680)closeNav();});
   });
 });

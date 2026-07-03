@@ -10,6 +10,7 @@ const K={
   accounts:'cff_accounts',
   transfersPending:'cff_transfers_pending',
   ctdates:'cff_ct_dates',quickstart:'cff_qs_progress',superAccts:'cff_super_accts',
+  billAliases:'cff_bill_aliases',billsDismissed:'cff_bills_dismissed',billsHorizon:'cff_bills_horizon',
   // Per-component monthly histories — power the Net Worth breakdown table
   superHist:    'cff_super_history',    // { 'YYYY-MM': { brenton, shelley } }
   mortgageHist: 'cff_mortgage_history', // { 'YYYY-MM': { homeValue, balance } }

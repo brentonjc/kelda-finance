@@ -1,6 +1,13 @@
 // Dashboard always shows the current month — no period navigation needed here.
 // Analytical/trend views live in js/pages/insights.js
 
+function _dbDaysDiff(dateStr) {
+  if (!dateStr) return 9999;
+  var a = new Date(today() + 'T00:00:00');
+  var b = new Date(dateStr + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+
 // ══════════════════════════════════════════════════════════════
 // GAMIFICATION — Health Score · Streaks · Nudges · NW History
 // ══════════════════════════════════════════════════════════════
@@ -12,11 +19,13 @@ function computeCurrentNetWorth() {
   var months  = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
   var lm      = months.length ? months[months.length - 1] : null;
 
-  // Bank: all CT accounts for the most recent month
+  // Bank: all CT accounts for the most recent month, projected forward with any
+  // income/expenses logged since — so net worth stays live between manual balance updates.
   var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
     ? CT_ACCTS.map(function(a){ return a.id; })
     : ['offset','home','sav1','sav2'];
   var bank = lm ? ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[lm]||0); }, 0) : 0;
+  bank += _nwUnreconciledCashflow(lm);
 
   // Super: use multi-account totals if available, fall back to legacy SUPER fields
   var super_ = _nwSuperCurrentTotal();
@@ -38,6 +47,25 @@ function computeCurrentNetWorth() {
   return { bank: Math.round(bank), super_: Math.round(super_), property: Math.round(property),
            equities: Math.round(equities), liabilities: Math.round(liabilities),
            netWorth: Math.round(netWorth * 100) / 100 };
+}
+
+// ── Link income/expenses into net worth between Cash Tracker updates ──
+// If the user hasn't yet entered this month's account balances, project the
+// last known bank total forward using transactions logged after that month.
+function _nwUnreconciledCashflow(lastCtMonth) {
+  try {
+    var nowMonth = _nwCurrentMonth();
+    if (!lastCtMonth || lastCtMonth >= nowMonth) return 0;
+    var txns = (typeof activeTX === 'function') ? activeTX() : (TX || []);
+    var net = 0;
+    txns.forEach(function(t) {
+      if (!t.date || t.date.slice(0,7) <= lastCtMonth) return;
+      if (t.catId === 'transfers' || (t.category||'').toLowerCase() === 'transfers') return;
+      if (t.type === 'income') net += Number(t.amount) || 0;
+      else if (t.type === 'expense') net -= Number(t.amount) || 0;
+    });
+    return net;
+  } catch(e) { return 0; }
 }
 
 // Helper: current super total across both profiles
@@ -664,17 +692,17 @@ function generateNudges() {
   // Rule 4: Bill due soon
   if (nudges.length < 3) {
     var soonBill = null;
-    for (var bli = 0; bli < BILLS.length; bli++) {
-      var b = BILLS[bli];
-      if (b.paid) continue;
-      var daysUntil = b.due - day;
+    var confirmedBills = (typeof BILLS !== 'undefined' ? BILLS : []).filter(function(b){ return b.status === 'confirmed' && b.nextDueDate; });
+    for (var bli = 0; bli < confirmedBills.length; bli++) {
+      var b = confirmedBills[bli];
+      var daysUntil = _dbDaysDiff(b.nextDueDate);
       if (daysUntil >= 0 && daysUntil <= 7) {
-        if (!soonBill || daysUntil < soonBill.daysUntil) soonBill = { name: b.name, daysUntil: daysUntil, amount: b.amount };
+        if (!soonBill || daysUntil < soonBill.daysUntil) soonBill = { name: b.displayName, daysUntil: daysUntil, amount: b.amount };
       }
     }
     if (soonBill) {
       var dStr = soonBill.daysUntil === 0 ? 'today' : ('in ' + soonBill.daysUntil + ' day' + (soonBill.daysUntil === 1 ? '' : 's'));
-      nudges.push({ icon: '📅', text: '<strong>' + soonBill.name + '</strong> is due ' + dStr + ' (' + fmt(soonBill.amount) + '). Don\'t forget to mark it paid once done.' });
+      nudges.push({ icon: '📅', text: '<strong>' + soonBill.name + '</strong> is due ' + dStr + ' (' + fmt(soonBill.amount) + ').' });
     }
   }
 
@@ -930,6 +958,7 @@ function renderDashboard() {
   try { migrateTxCategories(); } catch(e) {}
   try { populateNetWorthHistory(); } catch(e) { console.warn('populate nw history', e); }
   try { recordNetWorthSnapshot(); } catch(e) { console.warn('nw snapshot', e); }
+  try { if (typeof blEnsureBillsReady === 'function') blEnsureBillsReady(); } catch(e) { console.warn('bills ready', e); }
 
   try { kdRenderDashboard(); }
   catch(e) { console.error('dashboard render', e); }
@@ -953,9 +982,6 @@ function kdShort(n) {
 }
 function kdEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ── deterministic helpers (decorative forecast shape only) ──
-function kdHash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
-function kdRng(seed){ return function(){ seed=(seed+0x6D2B79F5)>>>0; var t=seed; t=Math.imul(t^(t>>>15),1|t); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 
 function kdSparkReal(vals, up) {
   vals = (vals && vals.length) ? vals : [0, 0];
@@ -990,29 +1016,36 @@ function kdDonut(segs) {
     + '<text x="58" y="62" text-anchor="middle" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="11">assets</text></svg>';
 }
 
-function kdRing(pct, color) {
-  var C = 2 * Math.PI * 24, len = (pct / 100) * C;
-  return '<svg width="64" height="64" viewBox="0 0 64 64" role="img">'
-    + '<circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>'
-    + '<circle cx="32" cy="32" r="24" fill="none" stroke="' + color + '" stroke-width="8" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" transform="rotate(-90 32 32)"/>'
-    + '<text x="32" y="36" text-anchor="middle" fill="' + color + '" font-family="DM Mono,monospace" font-size="11" font-weight="500">' + pct + '%</text></svg>';
+function kdRing(pct, color, size) {
+  size = size || 64;
+  var r = size * 0.375, cx = size / 2, sw = size * 0.125;
+  var C = 2 * Math.PI * r, len = (pct / 100) * C;
+  var fs = Math.round(size * 0.172);
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img">'
+    + '<circle cx="' + cx + '" cy="' + cx + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="' + sw + '"/>'
+    + '<circle cx="' + cx + '" cy="' + cx + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" stroke-linecap="round" transform="rotate(-90 ' + cx + ' ' + cx + ')"/>'
+    + '<text x="' + cx + '" y="' + (cx + fs * 0.32) + '" text-anchor="middle" fill="' + color + '" font-family="DM Mono,monospace" font-size="' + fs + '" font-weight="600">' + pct + '%</text></svg>';
 }
 
-function kdForecastChart() {
-  var W=300,H=124,n=24,todayIdx=9,pad=10,rnd=kdRng(777),v=0.42,pts=[];
-  for(var i=0;i<n;i++){ v+=0.006+(rnd()-0.5)*0.05; if(i===6)v+=0.16; if(i===17)v+=0.16; if(i===11)v-=0.14; v=Math.max(0.12,Math.min(0.9,v)); pts.push(v); }
-  var ih=H-pad*2; function X(i){return (i/(n-1))*W;} function Y(p){return pad+(1-p)*ih;}
-  var coords=pts.map(function(p,i){return X(i).toFixed(1)+','+Y(p).toFixed(1);});
-  var actual=coords.slice(0,todayIdx+1), forecast=coords.slice(todayIdx);
-  var lowIdx=todayIdx,lowV=pts[todayIdx]; for(var j=todayIdx;j<n;j++){ if(pts[j]<lowV){lowV=pts[j];lowIdx=j;} }
-  var tX=X(todayIdx);
+// Real 12-month forecast chart, sourced from the Forecast tab's own fc2GetMonths() data
+function kdForecastChartReal(months) {
+  if (!months || months.length < 2) return '<div class="kd-empty">Add income &amp; expenses to see a forecast.</div>';
+  var W = 300, H = 124, pad = 10, n = months.length;
+  var nets = months.map(function(m){ return Number(m.net) || 0; });
+  var min = Math.min.apply(null, nets.concat([0])), max = Math.max.apply(null, nets.concat([0]));
+  var rng = (max - min) || 1;
+  function X(i){ return (i / (n - 1)) * W; }
+  function Y(v){ return pad + (1 - ((v - min) / rng)) * (H - pad * 2); }
+  var coords = nets.map(function(v, i){ return X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
+  var zeroY = Y(0).toFixed(1);
+  var lowIdx = 0, lowV = nets[0];
+  for (var i = 1; i < n; i++) { if (nets[i] < lowV) { lowV = nets[i]; lowIdx = i; } }
   return '<svg width="100%" height="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img">'
     + '<defs><linearGradient id="kdfcgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(0,200,150,0.22)"/><stop offset="100%" stop-color="rgba(0,200,150,0)"/></linearGradient></defs>'
-    + '<polyline points="0,'+H+' '+coords.join(' ')+' '+W+','+H+'" fill="url(#kdfcgrad)" stroke="none"/>'
-    + '<line x1="'+tX.toFixed(1)+'" y1="'+pad+'" x2="'+tX.toFixed(1)+'" y2="'+(H-pad)+'" stroke="rgba(255,255,255,0.14)" stroke-width="0.8" stroke-dasharray="3 3"/>'
-    + '<text x="'+(tX+4).toFixed(1)+'" y="'+(pad+8)+'" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="8">today</text>'
-    + '<polyline points="'+actual.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-    + '<polyline points="'+forecast.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>'
+    + '<line x1="0" y1="'+zeroY+'" x2="'+W+'" y2="'+zeroY+'" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" stroke-dasharray="2 3"/>'
+    + '<polyline points="0,'+zeroY+' '+coords.join(' ')+' '+W+','+zeroY+'" fill="url(#kdfcgrad)" stroke="none"/>'
+    + '<text x="4" y="'+(pad+8)+'" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="8">today</text>'
+    + '<polyline points="'+coords.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>'
     + '<circle cx="'+X(lowIdx).toFixed(1)+'" cy="'+Y(lowV).toFixed(1)+'" r="3" fill="var(--amber)"/></svg>';
 }
 
@@ -1077,11 +1110,173 @@ function kdAcctMeta(name) {
   return { kind: 'Transaction', i: 'ti-wallet', c: 'var(--amber)' };
 }
 
-// Period-pill visual toggle
-function kdPill(el) {
-  var pills = el.parentNode.querySelectorAll('.kd-pill');
-  for (var i = 0; i < pills.length; i++) pills[i].classList.remove('active');
-  el.classList.add('active');
+// ── Show/hide accounts on the Bank accounts dashboard tile ────
+var KD_HIDDEN_ACCTS_KEY = 'kf_dashboard_hidden_accounts';
+function kdHiddenAccounts() {
+  return kdGetJSON(KD_HIDDEN_ACCTS_KEY, []) || [];
+}
+function kdToggleAcctVisible(id) {
+  var hidden = kdHiddenAccounts();
+  var idx = hidden.indexOf(id);
+  if (idx === -1) hidden.push(id); else hidden.splice(idx, 1);
+  try { localStorage.setItem(KD_HIDDEN_ACCTS_KEY, JSON.stringify(hidden)); } catch(e) {}
+  renderAcctVisModal();
+  kdRenderDashboard();
+}
+function openAcctVisModal() {
+  renderAcctVisModal();
+  var m = document.getElementById('acct-vis-modal');
+  if (m) m.classList.add('open');
+}
+function closeAcctVisModal() {
+  var m = document.getElementById('acct-vis-modal');
+  if (m) m.classList.remove('open');
+}
+function renderAcctVisModal() {
+  var el = document.getElementById('acct-vis-modal-body');
+  if (!el) return;
+  var accts = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS) ? CT_ACCTS : [];
+  var hidden = kdHiddenAccounts();
+  var months = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
+  var lm = months.length ? months[months.length - 1] : null;
+  if (!accts.length) { el.innerHTML = '<div class="kd-empty">No accounts yet.</div>'; return; }
+  el.innerHTML = accts.map(function(a) {
+    var nm = (typeof ctLabel === 'function') ? ctLabel(a) : a.id;
+    var bal = lm ? ((CT[a.id]||{})[lm] || 0) : 0;
+    var isHidden = hidden.indexOf(a.id) !== -1;
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer">'
+      + '<input type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--primary)" ' + (isHidden ? '' : 'checked') + ' onchange="kdToggleAcctVisible(\'' + a.id + '\')"/>'
+      + '<span style="flex:1;font-size:.85rem;color:var(--text)">' + kdEsc(nm) + '</span>'
+      + '<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">' + fmtWhole(bal) + '</span>'
+      + '</label>';
+  }).join('');
+}
+
+// ── Notifications modal — recommended actions & insights ───────
+function openNotifModal() {
+  renderNotifModal();
+  var m = document.getElementById('notif-modal');
+  if (m) m.classList.add('open');
+}
+function closeNotifModal() {
+  var m = document.getElementById('notif-modal');
+  if (m) m.classList.remove('open');
+}
+function renderNotifModal() {
+  var el = document.getElementById('notif-modal-body');
+  if (!el) return;
+  var cards = [], nudges = [];
+  try { cards = generateActionCards() || []; } catch(e) { console.warn('generateActionCards', e); }
+  try { nudges = generateNudges() || []; } catch(e) { console.warn('generateNudges', e); }
+
+  var sc = {
+    green: { bg:'rgba(0,200,150,0.12)', color:'var(--success)', bdr:'rgba(0,200,150,0.25)' },
+    amber: { bg:'rgba(245,158,11,0.12)', color:'var(--warn)', bdr:'rgba(245,158,11,0.25)' },
+    pink:  { bg:'rgba(240,83,138,0.12)', color:'var(--primary)', bdr:'rgba(240,83,138,0.25)' },
+    muted: { bg:'rgba(98,120,160,0.1)', color:'var(--muted)', bdr:'rgba(98,120,160,0.2)' }
+  };
+
+  var cardsHtml = cards.map(function(c) {
+    var s = sc[c.status] || sc.muted;
+    return '<div class="notif-item">'
+      + '<div class="notif-item-ic" style="background:' + s.bg + '">' + c.icon + '</div>'
+      + '<div class="notif-item-body">'
+      + '<div class="notif-item-lbl">' + kdEsc(c.label) + '</div>'
+      + '<div class="notif-item-title">' + kdEsc(c.title) + '</div>'
+      + '<div class="notif-item-desc">' + c.body + '</div>'
+      + '<a href="#" onclick="closeNotifModal();' + c.link + ';return false;" class="notif-item-link">' + kdEsc(c.linkTxt) + '</a>'
+      + '</div>'
+      + '<div class="notif-item-status" style="background:' + s.bg + ';color:' + s.color + ';border:1px solid ' + s.bdr + '">' + kdEsc(c.statusTxt) + '</div>'
+      + '</div>';
+  }).join('');
+
+  var nudgesHtml = nudges.map(function(n) {
+    return '<div class="notif-nudge"><span class="notif-nudge-ic">' + n.icon + '</span><span>' + n.text + '</span></div>';
+  }).join('');
+
+  el.innerHTML = (cardsHtml ? '<div class="notif-section-lbl">Priorities</div>' + cardsHtml : '')
+    + (nudgesHtml ? '<div class="notif-section-lbl" style="margin-top:16px">Smart insights</div>' + nudgesHtml : '')
+    + (!cardsHtml && !nudgesHtml ? '<div class="kd-empty">Nothing to flag right now — you\'re all caught up.</div>' : '');
+}
+
+// ── Period selector — drives the cashflow & budget tiles ───────
+var kdPeriod = 'lastMonth'; // 'lastMonth' | 'ytd' | 'lastYear'
+
+function kdSetPeriod(p) {
+  kdPeriod = p;
+  kdRenderDashboard();
+}
+
+function kdMonthPrefixesInRange(startYM, endYM) {
+  var out = [];
+  var sy = +startYM.slice(0,4), sm = +startYM.slice(5,7);
+  var ey = +endYM.slice(0,4), em = +endYM.slice(5,7);
+  var y = sy, m = sm;
+  while (y < ey || (y === ey && m <= em)) {
+    out.push(y + '-' + String(m).padStart(2,'0'));
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return out;
+}
+
+function kdPeriodRange(period) {
+  var now = new Date();
+  if (period === 'ytd') {
+    var yStart = now.getFullYear() + '-01';
+    var yNow   = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    return {
+      start: yStart + '-01', end: today(), label: 'Year to date', deltaSuffix: 'year to date',
+      months: kdMonthPrefixesInRange(yStart, yNow)
+    };
+  }
+  if (period === 'lastYear') {
+    var y = now.getFullYear() - 1;
+    return {
+      start: y + '-01-01', end: y + '-12-31', label: 'Last year', deltaSuffix: 'last year',
+      months: kdMonthPrefixesInRange(y + '-01', y + '-12')
+    };
+  }
+  // lastMonth (default)
+  var lmDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var lmPfx  = lmDate.getFullYear() + '-' + String(lmDate.getMonth()+1).padStart(2, '0');
+  var lastDay = new Date(lmDate.getFullYear(), lmDate.getMonth()+1, 0).getDate();
+  return {
+    start: lmPfx + '-01', end: lmPfx + '-' + String(lastDay).padStart(2,'0'), label: 'Last month', deltaSuffix: 'this month',
+    months: [lmPfx]
+  };
+}
+
+// Income/expenses/surplus for a date range (inclusive), transfers excluded
+function kdPeriodCashflow(range) {
+  var txns = (typeof activeTX === 'function') ? activeTX() : [];
+  var inc = 0, exp = 0;
+  txns.forEach(function(t) {
+    if (!t.date || t.date < range.start || t.date > range.end) return;
+    if (t.catId === 'transfers' || (t.category||'').toLowerCase() === 'transfers') return;
+    if (t.type === 'income') inc += Number(t.amount) || 0;
+    else if (t.type === 'expense') exp += Number(t.amount) || 0;
+  });
+  return { income: inc, expenses: exp, surplus: inc - exp };
+}
+
+// Budget vs actual summed across every month in the period (budgets are monthly caps)
+function kdBudgetActualsRange(months) {
+  var txns = (typeof activeTX === 'function') ? activeTX() : [];
+  var keys = Object.keys((typeof LBUDGETS !== 'undefined' && LBUDGETS) ? LBUDGETS : {});
+  var rows = [];
+  for (var i = 0; i < keys.length; i++) {
+    var catId = keys[i]; var capPerMonth = Number(LBUDGETS[catId]) || 0; if (!capPerMonth) continue;
+    var cat = (typeof LCATS !== 'undefined' && LCATS) ? LCATS.find(function(c){ return c.id === catId; }) : null;
+    var nm  = cat ? cat.name : catId;
+    var col = (cat && cat.color) ? cat.color : 'var(--green)';
+    var spent = txns.filter(function(t){
+      return t.type === 'expense' && t.date && months.indexOf(t.date.slice(0,7)) !== -1 && (t.catId === catId || t.category === nm);
+    }).reduce(function(s,t){ return s + Number(t.amount || 0); }, 0);
+    rows.push({ name: nm, color: col, cap: capPerMonth * months.length, spent: spent });
+  }
+  var budgeted = rows.reduce(function(s,r){ return s + r.cap; }, 0);
+  var spent = rows.reduce(function(s,r){ return s + r.spent; }, 0);
+  return { rows: rows, budgeted: budgeted, spent: spent, left: budgeted - spent };
 }
 
 // ══ Main render ══
@@ -1099,11 +1294,15 @@ function kdRenderDashboard() {
   var greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
   var dateStr = now.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
 
-  // Last completed month
+  // Last completed month (still used as the Budget/Bills tiles' "as of" anchor)
   var lmDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   var lmY = lmDate.getFullYear(), lmM = lmDate.getMonth() + 1;
   var lmPrefix = lmY + '-' + String(lmM).padStart(2, '0');
   var lmSum = (typeof getMonthSummary === 'function') ? getMonthSummary(lmY, lmM) : { income:0, expenses:0, surplus:0 };
+
+  // Period selector (Last Month / Year to Date / Last Year) — drives cashflow & budget tiles
+  var range = kdPeriodRange(kdPeriod);
+  var periodCF = kdPeriodCashflow(range);
 
   // Cash accounts + balances
   var months = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
@@ -1123,38 +1322,41 @@ function kdRenderDashboard() {
   var kfAssets = kdGetJSON('kf_assets', []);
 
   // ── TILE 1 — Net worth / Total balance ──
+  // nw (computeCurrentNetWorth) is the single source of truth shared with the Assets tab,
+  // so the figure shown here always matches go('assets').
   var nwTitle, nwBig, nwDelta, segs;
   if (profile === 'household') {
     var mlist = (typeof liabAllMortgages === 'function') ? liabAllMortgages() : [];
     var mBal = 0, mHome = 0;
     mlist.forEach(function(m){ mBal += Number(m.balance) || 0; mHome += Number(m.homeValue) || 0; });
-    if (!mBal && kfMort) { mBal = Number(kfMort.balance) || 0; }
-    if (!mHome) mHome = Math.max(720000, Math.round(mBal * 1.34));
-    var equity = mHome - mBal;
-    nwTitle = 'Net worth'; nwBig = fmtWhole(cash + equity);
-    nwDelta = (lmSum.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(lmSum.surplus)) + ' this month';
-    segs = [{ label: 'Cash', value: Math.max(cash, 0), color: 'var(--pink)' }, { label: 'Home equity', value: Math.max(equity, 0), color: 'var(--green)' }];
+    if (!mHome && nw.property) mHome = nw.property;
+    var equity = Math.max(0, mHome - mBal);
+    nwTitle = 'Net worth'; nwBig = fmtWhole(nw.netWorth);
+    nwDelta = (periodCF.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(periodCF.surplus)) + ' ' + range.deltaSuffix;
+    segs = [{ label: 'Cash', value: Math.max(nw.bank, 0), color: 'var(--pink)' }];
+    if (nw.super_ > 0) segs.push({ label: 'Super', value: nw.super_, color: 'var(--purple)' });
+    segs.push({ label: 'Home equity', value: equity, color: 'var(--green)' });
+    if (nw.equities > 0) segs.push({ label: 'Investments', value: nw.equities, color: 'var(--amber)' });
   } else if (profile === 'full') {
-    var seed = { property: 920000, equities: 64500, 'super': 138200, liabilities: -8400, 'investment-property': 610000 };
-    segs = [{ label: 'Cash', value: Math.max(cash, 0), color: 'var(--pink)' }];
+    segs = [{ label: 'Cash', value: Math.max(nw.bank, 0), color: 'var(--pink)' }];
     var assetSel = (kfAssets && kfAssets.length) ? kfAssets : [];
     var realMap = { property: nw.property, equities: nw.equities, 'super': nw.super_, liabilities: -Math.abs(nw.liabilities || 0), 'investment-property': 0 };
     var labelMap = { property: 'Property', equities: 'Investments', 'super': 'Super', liabilities: 'Liabilities', 'investment-property': 'Inv. property' };
     var aTotal = 0;
     if (assetSel.length) {
       assetSel.forEach(function(k, i) {
-        var v = realMap[k] || seed[k] || 0;
+        var v = (typeof realMap[k] === 'number') ? realMap[k] : 0;
         aTotal += v;
         if (v > 0) segs.push({ label: labelMap[k] || k, value: v, color: kdCycle[(i + 1) % kdCycle.length] });
       });
     } else {
-      // fall back to Super + Investments
-      segs.push({ label: 'Super', value: seed['super'], color: 'var(--green)' });
-      segs.push({ label: 'Investments', value: seed.equities, color: 'var(--amber)' });
-      aTotal = seed['super'] + seed.equities;
+      // No asset categories picked at onboarding — show whatever real Super/Investments data exists
+      if (nw.super_ > 0) segs.push({ label: 'Super', value: nw.super_, color: 'var(--green)' });
+      if (nw.equities > 0) segs.push({ label: 'Investments', value: nw.equities, color: 'var(--amber)' });
+      aTotal = nw.super_ + nw.equities;
     }
-    nwTitle = 'Net worth'; nwBig = fmtWhole(cash + aTotal);
-    nwDelta = (lmSum.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(lmSum.surplus)) + ' this quarter';
+    nwTitle = 'Net worth'; nwBig = fmtWhole(nw.bank + aTotal);
+    nwDelta = (periodCF.surplus >= 0 ? '↑ ' : '↓ ') + fmtWhole(Math.abs(periodCF.surplus)) + ' ' + range.deltaSuffix;
   } else {
     nwTitle = 'Total balance'; nwBig = fmtWhole(cash);
     var d = cash - prevCash;
@@ -1171,17 +1373,20 @@ function kdRenderDashboard() {
   var tileNW = '<div class="kdt">'
     + '<div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-pie"></i> ' + nwTitle + '</div><button class="kdt-act" onclick="go(\'assets\')">Details</button></div>'
     + '<div class="kd-nw-big">' + nwBig + '</div>'
-    + '<div class="kd-nw-delta" style="color:' + (lmSum.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + nwDelta + '</div>'
+    + '<div class="kd-nw-delta" style="color:' + (periodCF.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + nwDelta + '</div>'
     + '<div class="kd-sep"></div>'
-    + '<div class="kd-cflbl">Last month cashflow</div>'
-    + '<div class="kd-cf3"><div class="kd-cfi"><label>Income</label><span style="color:var(--green)">+' + fmtWhole(lmSum.income) + '</span></div>'
-    + '<div class="kd-cfi"><label>Spent</label><span style="color:var(--muted)">−' + fmtWhole(lmSum.expenses) + '</span></div>'
-    + '<div class="kd-cfi"><label>Saved</label><span style="color:var(--pink)">' + (lmSum.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(lmSum.surplus)) + '</span></div></div>'
+    + '<div class="kd-cflbl">' + kdEsc(range.label) + ' cashflow</div>'
+    + '<div class="kd-cf3"><div class="kd-cfi"><label>Income</label><span style="color:var(--green)">+' + fmtWhole(periodCF.income) + '</span></div>'
+    + '<div class="kd-cfi"><label>Spent</label><span style="color:var(--muted)">−' + fmtWhole(periodCF.expenses) + '</span></div>'
+    + '<div class="kd-cfi"><label>Saved</label><span style="color:var(--pink)">' + (periodCF.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(periodCF.surplus)) + '</span></div></div>'
     + '<div class="kd-donut-wrap">' + kdDonut(segs) + '<div class="kd-leg">' + legend + '</div></div>'
     + '</div>';
 
-  // ── TILE 2 — Bank accounts ──
-  var acctRows = accts.length ? accts.map(function(a) {
+  // ── TILE 2 — Bank accounts (respects show/hide preferences) ──
+  var hiddenAccts = kdHiddenAccounts();
+  var visibleAccts = accts.filter(function(a){ return hiddenAccts.indexOf(a.id) === -1; });
+  var visCash = visibleAccts.reduce(function(s, a) { return s + (lm ? bal(a.id, lm) : 0); }, 0);
+  var acctRows = visibleAccts.length ? visibleAccts.map(function(a) {
     var nm = (typeof ctLabel === 'function') ? ctLabel(a) : (typeof getAccountName === 'function' ? getAccountName(a.id) : a.id);
     var meta = kdAcctMeta(nm);
     var b = lm ? bal(a.id, lm) : 0;
@@ -1195,14 +1400,19 @@ function kdRenderDashboard() {
       + '<div class="kd-acc2-spark">' + kdSparkReal(sparkVals, up) + '</div>'
       + '<div class="kd-acc2-r"><div class="kd-acc2-delta ' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + (delta < 0 ? '−' : '+') + fmtWhole(Math.abs(delta)).replace('−','') + '</div>'
       + '<div class="kd-acc2-bal">' + fmtWhole(b) + ' · ' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</div></div></div>';
-  }).join('') : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'cash\')">add balances →</span></div>';
-  var tileAcc = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div><button class="kdt-act" onclick="go(\'cash\')">Manage</button></div>'
+  }).join('') : (accts.length
+    ? '<div class="kd-empty">All accounts hidden — <span style="color:var(--pink);cursor:pointer" onclick="openAcctVisModal()">show accounts →</span></div>'
+    : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'cash\')">add balances →</span></div>');
+  var tileAcc = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div>'
+    + '<div style="display:flex;align-items:center;gap:10px">'
+    + '<button class="kdt-act" onclick="openAcctVisModal()" aria-label="Show or hide accounts" title="Show/hide accounts"><i class="ti ti-eye"></i></button>'
+    + '<button class="kdt-act" onclick="go(\'cash\')">Manage</button></div></div>'
     + acctRows
-    + '<div class="kd-acc-total"><span class="kd-acc-total-l">Total cash</span><span class="kd-acc-total-v">' + fmtWhole(cash) + '</span></div></div>';
+    + '<div class="kd-acc-total"><span class="kd-acc-total-l">Total cash' + (hiddenAccts.length ? ' (visible)' : '') + '</span><span class="kd-acc-total-v">' + fmtWhole(visCash) + '</span></div></div>';
 
-  // ── TILE 3 — Budget (last month) ──
-  var bud = dbBudgetActuals(lmPrefix);
-  var tileBudget = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-target"></i> Budget · last month</div><button class="kdt-act" onclick="go(\'bva\')">Edit</button></div>'
+  // ── TILE 3 — Budget (period-aware) ──
+  var bud = kdBudgetActualsRange(range.months);
+  var tileBudget = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-target"></i> Budget · ' + kdEsc(range.label) + '</div><button class="kdt-act" onclick="go(\'bva\')">Edit</button></div>'
     + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Budgeted</div><div class="kd-bs-v" style="color:var(--text)">' + fmtWhole(bud.budgeted) + '</div></div>'
     + '<div class="kd-bs"><div class="kd-bs-l">Spent</div><div class="kd-bs-v" style="color:var(--muted)">' + fmtWhole(bud.spent) + '</div></div>'
     + '<div class="kd-bs"><div class="kd-bs-l">Left</div><div class="kd-bs-v" style="color:' + (bud.left < 0 ? 'var(--amber)' : 'var(--green)') + '">' + fmtWhole(bud.left) + '</div></div></div>'
@@ -1217,7 +1427,7 @@ function kdRenderDashboard() {
       var tgt = (typeof _goalTarget === 'function') ? _goalTarget(g) : (Number(g.targetAmount) || Number(g.target) || 0);
       var pct = tgt ? Math.min(100, Math.round(cur / tgt * 100)) : 0;
       var color = kdCycle[i % kdCycle.length];
-      return '<div class="kd-goal-card">' + kdRing(pct, color)
+      return '<div class="kd-goal-card">' + kdRing(pct, color, 96)
         + '<div class="kd-goal-name">' + kdEsc(g.name || 'Goal') + '</div>'
         + '<div class="kd-goal-amt">' + kdShort(cur) + ' / ' + kdShort(tgt) + '</div></div>';
     }).join('') + '</div>';
@@ -1226,64 +1436,61 @@ function kdRenderDashboard() {
   }
   var tileGoals = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-pig-money"></i> Savings goals</div><button class="kdt-act" onclick="go(\'goals\')">+ Add</button></div>' + goalsInner + '</div>';
 
-  // ── TILE 5 — Bills (last month / upcoming) ──
-  var bills = (typeof BILLS !== 'undefined' && BILLS) ? BILLS : [];
-  var todayDay = now.getDate();
-  var monShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // ── TILE 5 — Bills (confirmed, no payment tracking) ──
+  var bills = (typeof BILLS !== 'undefined' && BILLS) ? BILLS.filter(function(b){ return b.status === 'confirmed'; }) : [];
+  var todayStr = today();
+  var monthPfx = todayStr.slice(0, 7);
   function billDateLabel(b) {
-    var due = Number(b.due) || 1;
-    var diff = due - todayDay;
-    var dt = new Date(now.getFullYear(), now.getMonth() + (diff < 0 ? 1 : 0), due);
-    var lbl = 'Due ' + monShort[dt.getMonth()] + ' ' + dt.getDate();
+    var diff = _dbDaysDiff(b.nextDueDate);
+    var dt = new Date(b.nextDueDate + 'T00:00:00');
+    var lbl = 'Due ' + dt.toLocaleString('en-AU', { month:'short', day:'numeric' });
     if (diff === 0) return lbl + ' · today';
-    if (diff < 0) return lbl + ' · ' + Math.abs(diff) + 'd';
+    if (diff < 0) return lbl + ' · ' + Math.abs(diff) + 'd overdue';
     return lbl + ' · ' + diff + ' days';
   }
-  var overdue = bills.filter(function(b){ return !b.paid && (Number(b.due)||1) < todayDay; });
-  var dueSoon = bills.filter(function(b){ return !b.paid && (Number(b.due)||1) >= todayDay; });
-  var paid = bills.filter(function(b){ return b.paid; });
+  var overdue = bills.filter(function(b){ return b.nextDueDate < todayStr; });
+  var dueSoon = bills.filter(function(b){ return b.nextDueDate >= todayStr && _dbDaysDiff(b.nextDueDate) <= 7; });
+  var dueThisMonth = bills.filter(function(b){ return (b.nextDueDate||'').slice(0,7) === monthPfx; });
   function billSum(arr){ return arr.reduce(function(s,b){ return s + (Number(b.amount)||0); }, 0); }
-  var upcoming = bills.filter(function(b){ return !b.paid; }).sort(function(a,b){ return (Number(a.due)||1) - (Number(b.due)||1); }).slice(0, 3);
-  var billRows = bills.length ? (upcoming.map(function(b) {
-    return '<div class="kd-bill"><div class="kd-bill-ic" style="background:color-mix(in srgb,var(--pink) 12%, transparent)"><i class="ti ' + (b.icon && b.icon.indexOf('ti-') === 0 ? b.icon : 'ti-calendar-event') + '" style="color:var(--pink)"></i></div>'
-      + '<div><div class="kd-bill-name">' + kdEsc(b.name || 'Bill') + '</div><div class="kd-bill-due" style="color:#f48cb2">' + billDateLabel(b) + '</div></div>'
-      + '<div class="kd-bill-r"><div class="kd-bill-amt">' + fmtWhole(b.amount) + '</div><div class="kd-bill-pay" onclick="go(\'bills\')">Pay now</div></div></div>';
-  }).join('') + paid.slice(0, 1).map(function(b) {
-    return '<div class="kd-bill" style="opacity:.45"><div class="kd-bill-ic" style="background:rgba(255,255,255,0.04)"><i class="ti ti-check" style="color:#6278A0"></i></div>'
-      + '<div><div class="kd-bill-name" style="text-decoration:line-through;color:#6278A0">' + kdEsc(b.name || 'Bill') + '</div><div class="kd-bill-due" style="color:#6278A0">Paid</div></div>'
-      + '<div class="kd-bill-r"><div class="kd-bill-amt" style="color:#6278A0">' + fmtWhole(b.amount) + '</div></div></div>';
-  }).join('')) : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'bills\')">add one →</span></div>';
+  var upcoming = bills.slice().sort(function(a,b){ return (a.nextDueDate||'') < (b.nextDueDate||'') ? -1 : 1; }).slice(0, 3);
+  var billRows = bills.length ? upcoming.map(function(b) {
+    return '<div class="kd-bill" onclick="go(\'bills\')" style="cursor:pointer"><div class="kd-bill-ic" style="background:color-mix(in srgb,var(--pink) 12%, transparent)"><i class="ti ti-calendar-event" style="color:var(--pink)"></i></div>'
+      + '<div><div class="kd-bill-name">' + kdEsc(b.displayName || 'Bill') + '</div><div class="kd-bill-due" style="color:#f48cb2">' + billDateLabel(b) + '</div></div>'
+      + '<div class="kd-bill-r"><div class="kd-bill-amt">' + fmtWhole(b.amount) + '</div></div></div>';
+  }).join('') : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'bills\')">add one →</span></div>';
   var dueSoonPill = dueSoon.length ? '<span class="kd-pillbadge">' + dueSoon.length + ' due soon</span>' : '';
-  var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">+ Add</button></div></div>'
+  var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">View</button></div></div>'
     + '<div class="kd-bchips"><div class="kd-bchip"><div class="kd-bchip-l">Overdue</div><div class="kd-bchip-v" style="color:' + (overdue.length ? 'var(--amber)' : '#3D4D70') + '">' + fmtWhole(billSum(overdue)) + '</div></div>'
     + '<div class="kd-bchip"><div class="kd-bchip-l">Due soon</div><div class="kd-bchip-v" style="color:#f48cb2">' + fmtWhole(billSum(dueSoon)) + '</div></div>'
-    + '<div class="kd-bchip"><div class="kd-bchip-l">Paid</div><div class="kd-bchip-v" style="color:var(--green)">' + fmtWhole(billSum(paid)) + '</div></div></div>'
+    + '<div class="kd-bchip"><div class="kd-bchip-l">This month</div><div class="kd-bchip-v" style="color:var(--green)">' + fmtWhole(billSum(dueThisMonth)) + '</div></div></div>'
     + billRows + '</div>';
 
   // ── TILE 6 — profile specific ──
   var tile6;
   var fullHasProperty = (kfAssets && kfAssets.indexOf('property') > -1);
   if (profile === 'household' || (profile === 'full' && fullHasProperty)) {
-    var fcNote = 'Projections look stable.';
+    var fcNote = 'Add income &amp; expenses to see a forecast.';
+    var fcMonths = [];
+    var curFc = null;
     try {
       if (typeof fc2GetMonths === 'function') {
-        var fm = fc2GetMonths() || [];
-        var fcs = fm.filter(function(m){ return m.isForecast; });
-        if (fcs.length) {
-          var worst = fcs[0];
-          for (var wi = 1; wi < fcs.length; wi++) { if (fcs[wi].net < worst.net) worst = fcs[wi]; }
+        fcMonths = fc2GetMonths() || [];
+        if (fcMonths.length) {
+          curFc = fcMonths[0];
+          var worst = fcMonths[0];
+          for (var wi = 1; wi < fcMonths.length; wi++) { if (fcMonths[wi].net < worst.net) worst = fcMonths[wi]; }
           fcNote = 'Lowest projected net <b style="color:var(--amber)">' + fmtWhole(worst.net) + '</b> in ' + kdEsc(worst.short || worst.label || 'the months ahead') + '.';
         }
       }
     } catch(e) {}
+    var fcIncome = curFc ? curFc.income : 0, fcExpenses = curFc ? curFc.expenses : 0, fcNet = curFc ? curFc.net : 0;
     tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-line"></i> Cashflow forecast</div><button class="kdt-act" onclick="go(\'forecast\')">Details</button></div>'
-      + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Money in</div><div class="kd-bs-v" style="color:var(--green)">+' + fmtWhole(lmSum.income) + '</div></div>'
-      + '<div class="kd-bs"><div class="kd-bs-l">Money out</div><div class="kd-bs-v" style="color:var(--muted)">−' + fmtWhole(lmSum.expenses) + '</div></div>'
-      + '<div class="kd-bs"><div class="kd-bs-l">Net</div><div class="kd-bs-v" style="color:' + (lmSum.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + (lmSum.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(lmSum.surplus)) + '</div></div></div>'
-      + '<div class="kd-chart-area">' + kdForecastChart() + '</div>'
+      + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Money in</div><div class="kd-bs-v" style="color:var(--green)">+' + fmtWhole(fcIncome) + '</div></div>'
+      + '<div class="kd-bs"><div class="kd-bs-l">Money out</div><div class="kd-bs-v" style="color:var(--muted)">−' + fmtWhole(fcExpenses) + '</div></div>'
+      + '<div class="kd-bs"><div class="kd-bs-l">Net</div><div class="kd-bs-v" style="color:' + (fcNet < 0 ? 'var(--amber)' : 'var(--green)') + '">' + (fcNet < 0 ? '−' : '+') + fmtWhole(Math.abs(fcNet)) + '</div></div></div>'
+      + '<div class="kd-chart-area">' + kdForecastChartReal(fcMonths) + '</div>'
       + '<div class="kd-fc-note"><span class="kd-fc-dot"></span><span>' + fcNote + '</span></div></div>';
   } else if (profile === 'full') {
-    var seed2 = { property: 920000, equities: 64500, 'super': 138200, liabilities: -8400, 'investment-property': 610000 };
     var realMap2 = { property: nw.property, equities: nw.equities, 'super': nw.super_, liabilities: -Math.abs(nw.liabilities || 0), 'investment-property': 0 };
     var assetIcon = { property: 'ti-home', equities: 'ti-chart-line', 'super': 'ti-building-bank', liabilities: 'ti-credit-card', 'investment-property': 'ti-building-estate' };
     var assetLbl = { property: 'Property', equities: 'Investments', 'super': 'Superannuation', liabilities: 'Liabilities', 'investment-property': 'Investment property' };
@@ -1291,7 +1498,7 @@ function kdRenderDashboard() {
     var sel = (kfAssets && kfAssets.length) ? kfAssets : [];
     var atot = 0;
     var rows6 = sel.length ? sel.map(function(k) {
-      var v = realMap2[k] || seed2[k] || 0; atot += v;
+      var v = (typeof realMap2[k] === 'number') ? realMap2[k] : 0; atot += v;
       var neg = v < 0;
       return '<div class="kd-acc"><div class="kd-acc-ic" style="background:color-mix(in srgb,' + (assetAcc[k]||'var(--pink)') + ' 13%, transparent)"><i class="ti ' + (assetIcon[k]||'ti-coin') + '" style="color:' + (assetAcc[k]||'var(--pink)') + '"></i></div>'
         + '<div><div class="kd-acc-name">' + (assetLbl[k]||k) + '</div></div>'
@@ -1321,11 +1528,15 @@ function kdRenderDashboard() {
     + '<div class="kd-top">'
     + '<div class="kd-greeting">' + greet + ', ' + kdEsc(name) + '</div>'
     + '<div class="kd-topdate">' + dateStr + '</div>'
-    + '<div class="kd-pills"><button class="kd-pill active" onclick="kdPill(this)">Last Month</button><button class="kd-pill" onclick="kdPill(this)">Year to Date</button><button class="kd-pill" onclick="kdPill(this)">Last Year</button></div>'
+    + '<div class="kd-pills">'
+    + '<button class="kd-pill' + (kdPeriod==='lastMonth'?' active':'') + '" onclick="kdSetPeriod(\'lastMonth\')">Last Month</button>'
+    + '<button class="kd-pill' + (kdPeriod==='ytd'?' active':'') + '" onclick="kdSetPeriod(\'ytd\')">Year to Date</button>'
+    + '<button class="kd-pill' + (kdPeriod==='lastYear'?' active':'') + '" onclick="kdSetPeriod(\'lastYear\')">Last Year</button>'
+    + '</div>'
     + '<div class="kd-top-r">'
     + '<button class="kd-ibtn" aria-label="Search" onclick="go(\'transactions\')"><i class="ti ti-search"></i></button>'
-    + '<button class="kd-ibtn" aria-label="Notifications" onclick="go(\'bills\')"><i class="ti ti-bell"></i><span class="kd-ndot"></span></button>'
-    + '<button class="kd-addbtn" onclick="go(\'transactions\')"><i class="ti ti-plus" style="font-size:12px"></i> Add transaction</button>'
+    + '<button class="kd-ibtn" aria-label="Notifications" onclick="openNotifModal()"><i class="ti ti-bell"></i><span class="kd-ndot"></span></button>'
+    + '<button class="kd-addbtn" onclick="openCsvModal()"><i class="ti ti-plus" style="font-size:12px"></i> Add transaction</button>'
     + '</div></div>'
     + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
     + '</div>';

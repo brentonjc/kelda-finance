@@ -1,7 +1,7 @@
 // Kelda Finance — Service Worker
 // Network-first strategy: always fetches fresh code, falls back to cache if offline.
 
-const CACHE = 'kelda-finance-v29';
+const CACHE = 'kelda-finance-v30';
 
 const SHELL = [
   './',
@@ -41,15 +41,19 @@ const SHELL = [
   './assets/icons/apple-touch-icon.png',
 ];
 
-// Install: cache app shell
+// Install: cache app shell. Do NOT skipWaiting here — the new worker waits so
+// the page can show an "update available" prompt and activate it on demand.
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE).then(function(cache) {
       return cache.addAll(SHELL);
-    }).then(function() {
-      return self.skipWaiting();
     })
   );
+});
+
+// Page asks the waiting worker to take over (via the update prompt's Reload button).
+self.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Activate: clean up ALL old caches immediately

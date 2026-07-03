@@ -135,6 +135,17 @@ function csvReset(){
   csvGoStep(1);
 }
 
+// ── Modal wrapper — opened from the Transactions tab and the Dashboard "Add transaction" button ──
+function openCsvModal(){
+  csvReset();
+  var m = document.getElementById('csv-modal');
+  if (m) m.classList.add('open');
+}
+function closeCsvModal(){
+  var m = document.getElementById('csv-modal');
+  if (m) m.classList.remove('open');
+}
+
 // ── DRAG & DROP ──────────────────────────────────────────────
 function csvDragOver(e){e.preventDefault();document.getElementById('csv-drop').classList.add('drag-over');}
 function csvDragLeave(e){document.getElementById('csv-drop').classList.remove('drag-over');}
@@ -302,6 +313,7 @@ function csvConfirmImport(){
   save(K.tx,TX);
   csvReset();
   renderTx();renderDashboard();
+  closeCsvModal();
   toast(`✅ Imported ${count} transaction${count!==1?'s':''}!`);
 }
 
@@ -363,6 +375,8 @@ function exportFullBackup() {
     budgets:      BUDGETS,
     goals:        GOALS,
     bills:        BILLS,
+    billAliases:  BILL_ALIASES,
+    billsDismissed: BILLS_DISMISSED,
     mortgage:     MORTGAGE,
     cashTracker:  CT,
     cashConfig:   CTCFG,
@@ -397,6 +411,8 @@ function restoreBackup(event) {
       if (d.budgets)      { BUDGETS  = d.budgets;      save(K.budgets,  BUDGETS); }
       if (d.goals)        { GOALS    = d.goals;         save(K.goals,    GOALS); }
       if (d.bills)        { BILLS    = d.bills;         save(K.bills,    BILLS); }
+      if (d.billAliases)    { BILL_ALIASES    = d.billAliases;    save(K.billAliases,    BILL_ALIASES); }
+      if (d.billsDismissed) { BILLS_DISMISSED = d.billsDismissed; save(K.billsDismissed, BILLS_DISMISSED); }
       if (d.mortgage)     { MORTGAGE = d.mortgage;      save(K.mortgage, MORTGAGE); }
       if (d.cashTracker)  { CT       = d.cashTracker;   save(K.ct,       CT); }
       if (d.cashConfig)   { CTCFG    = d.cashConfig;    save(K.ctcfg,    CTCFG); }
@@ -561,11 +577,11 @@ const EXPORT_SECTIONS = [
     count: () => BILLS.length + ' bills',
     exportJSON: () => { downloadFile(JSON.stringify({bills: BILLS}, null, 2), exportFilename('bills', 'json'), 'application/json'); },
     exportCSV:  () => {
-      const rows = BILLS.map(b => '"'+b.name+'",'+b.amount+','+b.due+','+(b.paid?'Paid':'Unpaid'));
-      downloadFile(['Name,Amount,Due Day,Status', ...rows].join('\n'), exportFilename('bills', 'csv'), 'text/csv');
+      const rows = BILLS.map(b => '"'+(b.displayName||'')+'",'+b.amount+','+(b.frequency||'')+','+(b.nextDueDate||'')+','+(b.billType||'')+','+(b.status||''));
+      downloadFile(['Name,Amount,Frequency,Next Due,Type,Status', ...rows].join('\n'), exportFilename('bills', 'csv'), 'text/csv');
       toast('✅ Bills exported');
     },
-    clear: () => { if(confirm('Delete all bills?')) { BILLS=[]; save(K.bills,BILLS); renderBills(); toast('🗑️ Bills cleared'); renderExportPage(); } }
+    clear: () => { if(confirm('Delete all bills?')) { BILLS=[]; BILL_ALIASES={}; BILLS_DISMISSED=[]; save(K.bills,BILLS); save(K.billAliases,BILL_ALIASES); save(K.billsDismissed,BILLS_DISMISSED); renderBills(); toast('🗑️ Bills cleared'); renderExportPage(); } }
   },
   {
     key: 'mortgage', label: 'Mortgage', icon: '🏡',
