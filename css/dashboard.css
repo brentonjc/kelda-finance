@@ -3,9 +3,10 @@
    Rendered into #page-dashboard by renderDashboard().
    ══════════════════════════════════════════════════════════════ */
 
-/* Dashboard fills the available content height so the 3×2 tiles size to fit (item 1). */
-.kd-dash { font-family: var(--font-body); color: #e8e8f0; display: flex; flex-direction: column; height: 100%; min-height: 0; }
-#page-dashboard.active { display: flex; flex-direction: column; height: 100%; }
+/* Dashboard fills available height when content is small, but grows (page scrolls,
+   no clipping) when a tile's content is large. */
+.kd-dash { font-family: var(--font-body); color: #e8e8f0; display: flex; flex-direction: column; min-height: 100%; }
+#page-dashboard.active { display: flex; flex-direction: column; min-height: 100%; }
 
 /* ── Header (greeting / date / period pills / actions) ── */
 .kd-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -24,7 +25,7 @@
 
 /* ── Tile grid — flexbox: 3 per row, wrapping to 2 rows, filling the space ── */
 .kd-bodywrap { display: flex; flex-wrap: wrap; gap: 12px; align-content: stretch; flex: 1 1 auto; min-height: 0; }
-.kdt { background: var(--card); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; flex: 1 1 calc(33.333% - 8px); min-width: 0; min-height: 232px; overflow: hidden; transition: border-color .15s; }
+.kdt { background: var(--card); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; flex: 1 1 calc(33.333% - 8px); min-width: 0; min-height: 232px; overflow: visible; transition: border-color .15s; }
 .kdt:hover { border-color: rgba(240,83,138,0.22); }
 .kdt-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
 .kdt-ttl { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
@@ -135,8 +136,8 @@
 }
 @media (max-width: 760px) {
   /* Mobile: let the dashboard scroll naturally, single-column tiles */
-  #page-dashboard.active { height: auto; display: block; }
-  .kd-dash { height: auto; display: block; }
+  #page-dashboard.active { min-height: 0; display: block; }
+  .kd-dash { min-height: 0; display: block; }
   .kd-bodywrap { display: flex; flex-direction: column; }
   .kdt { flex: 1 1 auto; min-height: 0; overflow: visible; }
   .kd-top { gap: 8px; }
