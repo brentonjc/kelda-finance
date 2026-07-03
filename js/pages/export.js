@@ -311,6 +311,9 @@ function csvConfirmImport(){
     count++;
   });
   save(K.tx,TX);
+  // Record the CSV-import timestamp (after auto-categorisation, which runs at
+  // parse time) for the data-health insight cards.
+  try { save(K.lastCsvImport, today()); } catch(e) {}
   csvReset();
   renderTx();renderDashboard();
   closeCsvModal();
@@ -385,6 +388,8 @@ function exportFullBackup() {
     pins:         PINS,
   };
   downloadFile(JSON.stringify(payload, null, 2), exportFilename('backup', 'json'), 'application/json');
+  // Record the full-backup timestamp for the data-health insight cards.
+  try { save(K.lastFullBackup, today()); } catch(e) {}
   toast('✅ Full backup downloaded!');
 }
 

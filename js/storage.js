@@ -19,7 +19,12 @@ const K={
   // Monthly closing balance grids (Cash Tracker-style per component)
   superMonthly: 'cff_super_monthly',    // { accountId: { 'YYYY-MM': balance } }
   liabMonthly:  'cff_liab_monthly',     // { liabilityId: { 'YYYY-MM': balance } }
-  eqMonthly:    'cff_eq_monthly'        // { 'YYYY-MM': { closing } }
+  eqMonthly:    'cff_eq_monthly',       // { 'YYYY-MM': { closing } }
+  // Data-health timestamps — power the post-unlock welcome insight cards.
+  // Missing = never done → treated as "danger" (expected for a fresh household).
+  lastFullBackup: 'kf_last_full_backup', // ISO 'YYYY-MM-DD', set on successful full JSON export
+  lastCsvImport:  'kf_last_csv_import',   // ISO 'YYYY-MM-DD', set on successful CSV import
+  lastIn:         'kf_last_in'            // { profileId: epoch-ms } — "Last in" meta on profile picker
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}

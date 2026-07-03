@@ -1,8 +1,9 @@
 // ══════════════════════════════════════════════════════════════
-// LOGIN / PIN
+// AUTH CORE — crypto, verification, session, unlock/lock
+//   UI (profile picker, PIN keypad, welcome/data-health) lives in login.js.
+//   This file is DOM-agnostic except for unlock()/lockApp() app-shell wiring.
 // ══════════════════════════════════════════════════════════════
-let curPin='',pendingPin='',activeProfile='brenton',isSetup=false,loggedIn=false;
-let pinFailCount=0,pinLockedUntil=0;
+let activeProfile='brenton',loggedIn=false;
 let _sessionTimer=null;
 const PIN_MAX_ATTEMPTS=5, PIN_LOCKOUT_SECS=30, SESSION_TIMEOUT_MS=15*60*1000;
 
@@ -34,190 +35,59 @@ async function migratePlaintextPins() {
   if (changed) try { save(K.pins, PINS); } catch(e) {}
 }
 
+// Does this profile still need to set a PIN? (joint never needs one)
+function profileNeedsSetup(profile) {
+  return profile !== 'joint' && !PINS[profile];
+}
+
+// Store a freshly chosen PIN (setup flow). Returns a Promise.
+function setPin(profile, pin) {
+  return hashPin(pin).then(function(hashed) {
+    PINS[profile] = hashed;
+    try { save(K.pins, PINS); } catch(e) {}
+    try { localStorage.setItem('kelda_pin_salt', 'v2'); } catch(e) {}
+    return true;
+  });
+}
+
+// Verify an entered PIN against the stored hash. Reuses the new (kelda:) salt
+// and transparently migrates a legacy (charnley:) hash on first correct match.
+// Returns Promise<{ ok:boolean, migrated:boolean }>.
+function verifyPin(profile, attempt) {
+  const saltMigrated = localStorage.getItem('kelda_pin_salt') === 'v2';
+  return hashPin(attempt).then(function(hashed) {
+    if (hashed === PINS[profile]) return { ok:true, migrated:false };
+    if (!saltMigrated) {
+      return hashPinLegacy(attempt).then(function(legacyHashed) {
+        if (legacyHashed === PINS[profile]) {
+          // Match on old salt — rehash with the new salt and migrate.
+          return hashPin(attempt).then(function(newHashed) {
+            PINS[profile] = newHashed;
+            try { save(K.pins, PINS); } catch(e) {}
+            try { localStorage.setItem('kelda_pin_salt', 'v2'); } catch(e) {}
+            return { ok:true, migrated:true };
+          });
+        }
+        return { ok:false, migrated:false };
+      });
+    }
+    return { ok:false, migrated:false };
+  });
+}
+
 // Session timeout — auto-lock after 15 minutes of inactivity
 function resetSessionTimer() {
   if (!loggedIn) return;
   clearTimeout(_sessionTimer);
   _sessionTimer = setTimeout(function() {
-    if (loggedIn) { lockApp(); showPinErr('Session expired — please re-enter your PIN'); }
+    if (loggedIn) { lockApp(); if (typeof loginNote === 'function') loginNote('Session expired — please re-enter your PIN'); }
   }, SESSION_TIMEOUT_MS);
-}
-
-function selProfile(p){
-  activeProfile=p;curPin='';pendingPin='';
-  document.getElementById('pb-brenton').classList.toggle('sel',p==='brenton');
-  document.getElementById('pb-shelley').classList.toggle('sel',p==='shelley');
-  const jb=document.getElementById('pb-joint');
-  if(jb)jb.classList.toggle('sel',p==='joint');
-  pinFailCount = 0;
-
-  // Joint profile: no PIN required — enters directly
-  if(p==='joint'){
-    document.getElementById('pin-hint').textContent='Tap below to enter combined view';
-    document.getElementById('setup-banner').style.display='none';
-    document.getElementById('pin-err').textContent='';
-    // Show a single "Enter" button instead of keypad
-    document.getElementById('pin-dots').style.display='none';
-    document.querySelector('.pin-pad').style.display='none';
-    let enterBtn=document.getElementById('joint-enter-btn');
-    if(!enterBtn){
-      enterBtn=document.createElement('button');
-      enterBtn.id='joint-enter-btn';
-      enterBtn.className='btn btn-primary';
-      enterBtn.style.cssText='width:100%;margin-top:8px';
-      enterBtn.textContent='Enter Joint View';
-      enterBtn.onclick=function(){unlock();};
-      document.querySelector('.login-card').appendChild(enterBtn);
-    }
-    enterBtn.style.display='';
-    return;
-  }
-
-  // Restore keypad for Brenton/Shelley
-  document.getElementById('pin-dots').style.display='';
-  document.querySelector('.pin-pad').style.display='';
-  const eb=document.getElementById('joint-enter-btn');
-  if(eb)eb.style.display='none';
-
-  isSetup=!PINS[p];
-  document.getElementById('pin-hint').textContent=isSetup?'Set a new 4-digit PIN':'Enter your PIN';
-  document.getElementById('setup-banner').style.display=isSetup?'block':'none';
-  document.getElementById('pin-err').textContent='';
-  updateDots();
-}
-
-function pk(d){
-  if(pinLockedUntil > Date.now()) {
-    const s = Math.ceil((pinLockedUntil - Date.now()) / 1000);
-    showPinErr('Locked — wait ' + s + 's'); return;
-  }
-  if(curPin.length>=4)return;
-  curPin+=d;updateDots();
-  if(curPin.length===4)setTimeout(handlePin,120);
-}
-function pd(){curPin=curPin.slice(0,-1);updateDots();document.getElementById('pin-err').textContent='';}
-function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('on',i<curPin.length);}
-
-function forgotPin(){
-  const name = typeof getUserName === 'function' ? getUserName(activeProfile) : activeProfile;
-  if(!confirm('Reset PIN for '+name+'?\n\nYour financial data will NOT be deleted — only the PIN is removed. You\'ll set a new one now.')){return;}
-  delete PINS[activeProfile];
-  try { save(K.pins, PINS); } catch(e) {}
-  location.reload();
-}
-
-
-function showPinScreen() {
-  var ws = document.getElementById('welcome-screen');
-  var ps = document.getElementById('pin-screen');
-  if (ws) ws.style.display = 'none';
-  if (ps) ps.style.display = 'flex';
-}
-function hidePinScreen() {
-  var ws = document.getElementById('welcome-screen');
-  var ps = document.getElementById('pin-screen');
-  if (ws) ws.style.display = 'flex';
-  if (ps) ps.style.display = 'none';
-}
-
-function showPinErr(msg) {
-  const errEl = document.getElementById('pin-err');
-  if (errEl) errEl.textContent = msg;
-}
-
-function shakePinCard() {
-  const card = document.querySelector('.login-card');
-  if (!card) return;
-  card.style.animation = 'none';
-  void card.offsetHeight;
-  card.style.animation = 'shake .35s ease';
-}
-
-function handlePin() {
-  // Check lockout first
-  const now = Date.now();
-  if (pinLockedUntil > now) {
-    const secsLeft = Math.ceil((pinLockedUntil - now) / 1000);
-    showPinErr('Too many attempts — wait ' + secsLeft + 's');
-    curPin = ''; updateDots(); return;
-  }
-
-  if (isSetup) {
-    if (!pendingPin) {
-      pendingPin = curPin; curPin = ''; updateDots();
-      document.getElementById('pin-hint').textContent = 'Confirm your PIN';
-      return;
-    }
-    if (curPin === pendingPin) {
-      // Hash before storing
-      hashPin(curPin).then(function(hashed) {
-        PINS[activeProfile] = hashed;
-        try { save(K.pins, PINS); } catch(e) {}
-        curPin = ''; pendingPin = '';
-        unlock();
-      });
-    } else {
-      showPinErr("PINs don't match — try again");
-      curPin = ''; pendingPin = ''; updateDots();
-      document.getElementById('pin-hint').textContent = 'Set a new 4-digit PIN';
-      shakePinCard();
-    }
-    return;
-  }
-
-  // Verify — hash input and compare to stored hash.
-  // If kelda_pin_salt flag is absent, also try legacy charnley: salt
-  // and transparently migrate on first successful match.
-  const attempt = curPin;
-  curPin = ''; updateDots();
-  const saltMigrated = localStorage.getItem('kelda_pin_salt') === 'v2';
-  hashPin(attempt).then(function(hashed) {
-    if (hashed === PINS[activeProfile]) {
-      pinFailCount = 0;
-      unlock();
-    } else if (!saltMigrated) {
-      // Try legacy salt
-      return hashPinLegacy(attempt).then(function(legacyHashed) {
-        if (legacyHashed === PINS[activeProfile]) {
-          // Match on old salt — rehash with new salt and migrate
-          pinFailCount = 0;
-          return hashPin(attempt).then(function(newHashed) {
-            PINS[activeProfile] = newHashed;
-            try { save(K.pins, PINS); } catch(e) {}
-            try { localStorage.setItem('kelda_pin_salt', 'v2'); } catch(e) {}
-            unlock();
-            setTimeout(function() { toast('🔒 Security updated'); }, 600);
-          });
-        } else {
-          _pinFail();
-        }
-      });
-    } else {
-      _pinFail();
-    }
-  });
-
-  function _pinFail() {
-    pinFailCount++;
-    const remaining = PIN_MAX_ATTEMPTS - pinFailCount;
-    if (pinFailCount >= PIN_MAX_ATTEMPTS) {
-      pinLockedUntil = Date.now() + PIN_LOCKOUT_SECS * 1000;
-      pinFailCount = 0;
-      showPinErr('Too many attempts — locked for ' + PIN_LOCKOUT_SECS + 's');
-      const iv = setInterval(function() {
-        const sLeft = Math.ceil((pinLockedUntil - Date.now()) / 1000);
-        if (sLeft <= 0) { clearInterval(iv); showPinErr(''); }
-        else { showPinErr('Too many attempts — wait ' + sLeft + 's'); }
-      }, 1000);
-    } else {
-      showPinErr('Incorrect PIN — ' + remaining + ' attempt' + (remaining !== 1 ? 's' : '') + ' remaining');
-    }
-    shakePinCard();
-  }
 }
 
 function unlock(){
   loggedIn=true;
+  // Record last-in time for this profile (drives the picker's "Last in …" meta)
+  try { var _li = load(K.lastIn) || {}; _li[activeProfile] = Date.now(); save(K.lastIn, _li); } catch(e) {}
   // Reload data from localStorage (may have been scrubbed on lock)
   TX          = load(K.tx)           || [];
   BILLS       = load(K.bills)        || [];
@@ -259,6 +129,7 @@ function unlock(){
   if(_tu)_tu.textContent=activeProfile==='joint'?'Joint':(typeof getUserName==='function'?getUserName(activeProfile):activeProfile);
   const mu=document.getElementById('mob-user');if(mu)mu.textContent=getUserIcon(activeProfile)+' '+getUserName(activeProfile);
   try{if(typeof renderNavUser==='function')renderNavUser();}catch(e){console.warn('renderNavUser:',e);}
+  try{if(typeof updateNotifDot==='function')updateNotifDot();}catch(e){console.warn('updateNotifDot:',e);}
   var _txDate=document.getElementById('tx-date');if(_txDate)_txDate.value=today();
   try{if(typeof renderSnapshot==='function')renderSnapshot();}catch(e){console.warn('renderSnapshot:',e);}
   try{renderDashboard();}catch(e){console.warn('renderDashboard:',e);}
@@ -306,7 +177,6 @@ function unlock(){
 
 function lockApp(){
   loggedIn = false;
-  curPin = ''; pendingPin = '';
   clearTimeout(_sessionTimer); _sessionTimer = null;
 
   // Scrub financial data from memory — forces reload from localStorage on next unlock
@@ -323,21 +193,12 @@ function lockApp(){
   });
 
   document.getElementById('login-screen').classList.remove('gone');
-  hidePinScreen();
   var _tabBar=document.getElementById('bottom-tab-bar');
   var _fab=document.getElementById('fab');
   if(_tabBar)_tabBar.style.display='none';
   if(_fab)_fab.style.display='none';
-  document.getElementById('mob-menu-overlay').style.display='none';
-  document.getElementById('mob-menu').style.display='none';
-  updateDots();
-  showPinErr('');
-  pinFailCount = 0;
-  selProfile(activeProfile);
+  var _mo=document.getElementById('mob-menu-overlay'); if(_mo)_mo.style.display='none';
+  var _mm=document.getElementById('mob-menu'); if(_mm)_mm.style.display='none';
+  // Hand control back to the login controller (rebuilds picker/PIN from scratch)
+  if (typeof loginInit === 'function') loginInit();
 }
-
-document.addEventListener('keydown',e=>{
-  if(document.getElementById('login-screen').classList.contains('gone'))return;
-  if(e.key>='0'&&e.key<='9')pk(e.key);
-  if(e.key==='Backspace')pd();
-});

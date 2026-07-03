@@ -7,6 +7,54 @@ const fmtWhole=n=>{const neg=Number(n||0)<0;const s='$'+Math.abs(Math.round(Numb
 const today=()=>new Date().toISOString().split('T')[0];
 const thisMonth=()=>new Date().toISOString().slice(0,7);
 
+// Short relative-time label for epoch-ms timestamps — powers "Last in {…}" on the profile picker.
+function relTime(ts){
+  if(!ts) return 'never';
+  var m=Math.floor((Date.now()-ts)/60000);
+  if(m<1) return 'just now';
+  if(m<60) return m+'m ago';
+  var h=Math.floor(m/60);
+  if(h<24) return h+'h ago';
+  var d=Math.floor(h/24);
+  if(d===1) return 'yesterday';
+  if(d<7) return d+'d ago';
+  var w=Math.floor(d/7);
+  if(w<5) return w+'w ago';
+  var mo=Math.floor(d/30);
+  if(mo<12) return mo+'mo ago';
+  return Math.floor(d/365)+'y ago';
+}
+
+// ── DATA HEALTH ───────────────────────────────────────────────
+// Single source of truth for backup/import staleness. Consumed by the
+// post-unlock welcome screen AND (as a fast-follow) the dashboard's
+// notification bell — keep the threshold logic here, don't duplicate it.
+// Backup cadence is looser (disaster-recovery net); CSV import is tighter
+// (stale imports = stale insights/budgets). Missing key = never done = danger.
+function getDataHealth(){
+  var TH={ backup:{warn:14,danger:30}, csv:{warn:7,danger:14} };
+  function daysSince(iso){
+    if(!iso) return null;
+    var then=new Date(iso+'T00:00:00');
+    if(isNaN(then.getTime())) return null;
+    return Math.floor((Date.now()-then.getTime())/86400000);
+  }
+  function sev(days,t){
+    if(days===null) return 'danger';       // never done
+    if(days>=t.danger) return 'danger';
+    if(days>=t.warn) return 'warn';
+    return 'ok';
+  }
+  var bIso=null,cIso=null;
+  try{ bIso=load(K.lastFullBackup); }catch(e){}
+  try{ cIso=load(K.lastCsvImport); }catch(e){}
+  var bDays=daysSince(bIso), cDays=daysSince(cIso);
+  return {
+    backup:    { days:bDays, iso:bIso, severity:sev(bDays,TH.backup) },
+    csvImport: { days:cDays, iso:cIso, severity:sev(cDays,TH.csv) }
+  };
+}
+
 
 // Safe Chart.js wrapper — handles CDN load failure gracefully
 function safeChart(canvas, config) {

@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="css/components.css"/>
 <link rel="stylesheet" href="css/layout.css"/>
 <link rel="stylesheet" href="css/dashboard.css"/>
+<link rel="stylesheet" href="css/login.css"/>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" onerror="window._chartJsError=true"></script>
@@ -872,121 +873,117 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="nav-overlay" onclick="closeNav()" style="display:none"></div>
 
 <div id="login-screen" aria-label="Sign in">
+  <div class="kl-shell">
 
-  <!-- ── WELCOME SCREEN (shown before profile is selected) ── -->
-  <div id="welcome-screen">
-    <!-- Background gradient orbs -->
-    <div class="lw-orb lw-orb1"></div>
-    <div class="lw-orb lw-orb2"></div>
-
-    <!-- Header -->
-    <div class="lw-header">
-      <div class="lw-badge">FAMILY FINANCE</div>
-      <h1 class="lw-title">Kelda Finance</h1>
-      <p class="lw-sub">Track every dollar, together.</p>
+    <!-- ── Left brand panel (desktop ≥760px) ── -->
+    <div class="kl-brand">
+      <div class="kl-brand-logo"><span class="kl-dot"></span> <span data-app-name>Kelda</span></div>
+      <div class="kl-brand-copy">
+        <h1>Your money,<br>one clear view.</h1>
+        <p>Net worth, budgets, bills and goals for the Charnley household — all in one private, local-first app.</p>
+      </div>
+      <div class="kl-float-stats">
+        <div class="kl-fstat"><div class="sl">Net Worth</div><div class="sv up">$412,500 ↑</div></div>
+        <div class="kl-fstat offset"><div class="sl">Savings Streak</div><div class="sv">6 months</div></div>
+      </div>
+      <div class="kl-brand-foot">🔒 Stored only on this device — no cloud, no accounts.</div>
     </div>
 
-    <!-- Inline PFM SVG chart graphic -->
-    <div class="lw-chart-wrap">
-      <svg viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg" class="lw-chart-svg">
-        <!-- Card bg -->
-        <rect x="0" y="0" width="340" height="180" rx="20" fill="rgba(17,24,48,0.8)"/>
-        <!-- Grid lines -->
-        <line x1="20" y1="40"  x2="320" y2="40"  stroke="rgba(98,120,160,.15)" stroke-width="1"/>
-        <line x1="20" y1="80"  x2="320" y2="80"  stroke="rgba(98,120,160,.15)" stroke-width="1"/>
-        <line x1="20" y1="120" x2="320" y2="120" stroke="rgba(98,120,160,.15)" stroke-width="1"/>
-        <!-- Income area (green) -->
-        <defs>
-          <linearGradient id="gInc" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#00C896" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#00C896" stop-opacity="0"/>
-          </linearGradient>
-          <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#F0538A" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#F0538A" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="M30,110 C70,100 100,55 140,50 C180,45 210,70 250,60 C280,52 300,48 310,45 L310,150 L30,150 Z" fill="url(#gInc)"/>
-        <path d="M30,110 C70,100 100,55 140,50 C180,45 210,70 250,60 C280,52 300,48 310,45" fill="none" stroke="#00C896" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-        <!-- Expense area (pink) -->
-        <path d="M30,130 C60,125 90,115 130,95 C160,80 200,100 240,90 C270,83 295,88 310,85 L310,150 L30,150 Z" fill="url(#gExp)"/>
-        <path d="M30,130 C60,125 90,115 130,95 C160,80 200,100 240,90 C270,83 295,88 310,85" fill="none" stroke="#F0538A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-        <!-- Data points income -->
-        <circle cx="140" cy="50" r="4" fill="#00C896"/>
-        <circle cx="250" cy="60" r="4" fill="#00C896"/>
-        <!-- Data points expense -->
-        <circle cx="130" cy="95" r="4" fill="#F0538A"/>
-        <circle cx="240" cy="90" r="4" fill="#F0538A"/>
-        <!-- Tooltip -->
-        <rect x="210" y="18" width="100" height="34" rx="8" fill="rgba(24,33,62,0.95)" stroke="rgba(98,120,160,.3)" stroke-width="1"/>
-        <text x="220" y="31" fill="#00C896" font-size="8" font-family="monospace" font-weight="600">NET WORTH</text>
-        <text x="220" y="44" fill="#E8EDF5" font-size="10" font-family="monospace" font-weight="500">$312,450</text>
-        <!-- Legend -->
-        <circle cx="28" cy="165" r="4" fill="#00C896"/>
-        <text x="36" y="168" fill="rgba(232,237,245,.6)" font-size="8" font-family="sans-serif">Income</text>
-        <circle cx="90" cy="165" r="4" fill="#F0538A"/>
-        <text x="98" y="168" fill="rgba(232,237,245,.6)" font-size="8" font-family="sans-serif">Expenses</text>
-        <!-- Month labels -->
-        <text x="28"  y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Jan</text>
-        <text x="80"  y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Mar</text>
-        <text x="136" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">May</text>
-        <text x="190" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Jul</text>
-        <text x="245" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Sep</text>
-        <text x="296" y="178" fill="rgba(98,120,160,.7)" font-size="7" font-family="sans-serif">Nov</text>
-      </svg>
-    </div>
+    <!-- ── Right auth panel ── -->
+    <div class="kl-auth">
+      <div class="kl-box">
 
-    <!-- Feature chips -->
-    <div class="lw-chips">
-      <div class="lw-chip">📊 Net Worth</div>
-      <div class="lw-chip">💳 Transactions</div>
-      <div class="lw-chip">🏡 Mortgage</div>
-      <div class="lw-chip">🧾 Tax</div>
-    </div>
-
-    <!-- Sign in button -->
-    <button class="lw-signin-btn" onclick="showPinScreen()">Sign In</button>
-    <!-- Quick Start Guide button (goes through PIN setup, then shows guide) -->
-    <button class="lw-signin-btn" style="background:var(--card3);color:var(--primary);margin-top:8px" onclick="showPinScreen()">📚 Quick Start Guide</button>
-    <p class="lw-disclaimer">Secured with PIN · All data stays on your device</p>
-    <button onclick="if(confirm('Reset your PIN?\n\nYour financial data will NOT be deleted — only the PIN is removed.')){localStorage.removeItem('cff_pins');location.reload();}" style="background:none;border:none;color:#6278A0;font-size:.72rem;cursor:pointer;padding:8px;text-decoration:underline;margin-top:-8px;">Forgot PIN?</button>
-  </div>
-
-  <!-- ── PIN SCREEN ── -->
-  <div id="pin-screen" style="display:none">
-    <div class="login-card">
-      <button class="lw-back-btn" onclick="hidePinScreen()">← Back</button>
-      <div class="login-logo" data-app-name>Kelda Finance</div>
-      <div class="login-sub" data-app-sub>Family Finance Tracker · AUD</div>
-      <div class="setup-banner" id="setup-banner" style="display:none">👋 First visit — set your 4-digit PIN below.</div>
-      <div class="prof-row">
-        <div class="prof-btn sel" id="pb-brenton" onclick="selProfile('brenton')">
-          <div class="pi">👤</div><div class="pn">Profile 1</div><div class="pr">Profile 1</div>
+        <!-- Screen 1: profile picker -->
+        <div id="kl-screen-profiles" style="display:none">
+          <div class="kl-head">
+            <div class="kl-eyebrow">Welcome back</div>
+            <div class="kl-title">Who's using Kelda?</div>
+            <div class="kl-sub">Select a profile to continue</div>
+          </div>
+          <div class="kl-profiles" id="kl-profile-list"><!-- rendered by login.js --></div>
         </div>
-        <div class="prof-btn" id="pb-shelley" onclick="selProfile('shelley')">
-          <div class="pi">👤</div><div class="pn">Profile 2</div><div class="pr">Profile 2</div>
+
+        <!-- Screen 2: PIN entry -->
+        <div id="kl-screen-pin" style="display:none">
+          <button class="kl-back" id="kl-back" type="button" style="display:none">
+            <span class="kl-back-arrow" aria-hidden="true">←</span>
+            <span>Not you?</span>
+          </button>
+
+          <div class="kl-who">
+            <span class="kl-avatar" id="kl-pin-avatar" aria-hidden="true"></span>
+            <div>
+              <div class="kl-who-name" id="kl-pin-name"></div>
+              <div class="kl-who-label" id="kl-pin-label">Enter your PIN</div>
+            </div>
+          </div>
+
+          <div class="kl-setup-banner" id="kl-setup-banner">👋 First time in — choose a 4-digit PIN, then confirm it.</div>
+
+          <div class="kl-dots" id="kl-dots" role="img" aria-label="0 of 4 digits entered"></div>
+
+          <div class="kl-error" id="kl-error" role="alert" aria-live="assertive"></div>
+          <div class="kl-lockout" id="kl-lockout" role="alert" aria-live="assertive"></div>
+
+          <div class="kl-keypad" id="kl-keypad" role="group" aria-label="PIN keypad">
+            <button class="kl-key" data-k="1" type="button">1</button>
+            <button class="kl-key" data-k="2" type="button">2<span class="kl-letters" aria-hidden="true">ABC</span></button>
+            <button class="kl-key" data-k="3" type="button">3<span class="kl-letters" aria-hidden="true">DEF</span></button>
+            <button class="kl-key" data-k="4" type="button">4<span class="kl-letters" aria-hidden="true">GHI</span></button>
+            <button class="kl-key" data-k="5" type="button">5<span class="kl-letters" aria-hidden="true">JKL</span></button>
+            <button class="kl-key" data-k="6" type="button">6<span class="kl-letters" aria-hidden="true">MNO</span></button>
+            <button class="kl-key" data-k="7" type="button">7<span class="kl-letters" aria-hidden="true">PQRS</span></button>
+            <button class="kl-key" data-k="8" type="button">8<span class="kl-letters" aria-hidden="true">TUV</span></button>
+            <button class="kl-key" data-k="9" type="button">9<span class="kl-letters" aria-hidden="true">WXYZ</span></button>
+            <button class="kl-key ghost kl-key-disabled-perm" id="kl-biom" type="button" aria-label="Face ID (coming soon)" title="Face ID — coming soon" disabled>⚿</button>
+            <button class="kl-key" data-k="0" type="button">0</button>
+            <button class="kl-key ghost" id="kl-del" type="button" aria-label="Delete last digit">⌫</button>
+          </div>
+
+          <div class="kl-foot">
+            <button class="kl-link" id="kl-forgot" type="button" aria-expanded="false" aria-controls="kl-forgot-panel">Forgot PIN?</button>
+            <div class="kl-biom-hint">🔒 PIN secured on this device</div>
+          </div>
+
+          <div class="kl-forgot-panel" id="kl-forgot-panel">
+            <strong id="kl-forgot-head">No cloud account means no email reset.</strong>
+            <span id="kl-forgot-body"></span>
+          </div>
+
+          <div class="kl-switch" id="kl-switch"><!-- rendered by login.js when 2+ profiles --></div>
         </div>
+
+        <!-- Screen 3: post-unlock welcome / data health -->
+        <div id="kl-screen-welcome" style="display:none">
+          <div class="kl-welcome-title" id="kl-welcome-title">Welcome back 👋</div>
+          <div class="kl-welcome-sub">A quick health check before you dive in</div>
+
+          <div class="kl-insight" id="kl-backup-card">
+            <div class="kl-insight-left">
+              <div class="kl-insight-icon" id="kl-backup-icon" aria-hidden="true">💾</div>
+              <div>
+                <div class="kl-insight-label">Full backup</div>
+                <div class="kl-insight-meta" id="kl-backup-meta">—</div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="kl-backup-action" type="button">Export now</button>
+          </div>
+
+          <div class="kl-insight" id="kl-csv-card">
+            <div class="kl-insight-left">
+              <div class="kl-insight-icon" id="kl-csv-icon" aria-hidden="true">📥</div>
+              <div>
+                <div class="kl-insight-label">CSV import</div>
+                <div class="kl-insight-meta" id="kl-csv-meta">—</div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="kl-csv-action" type="button">Import now</button>
+          </div>
+
+          <button class="btn btn-primary kl-continue" id="kl-continue" type="button">Continue to Dashboard →</button>
+        </div>
+
       </div>
-      <div class="pin-dots" id="pin-dots">
-        <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
-        <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
-      </div>
-      <div class="pin-err" id="pin-err"></div>
-      <div class="pin-pad">
-        <button class="pin-key" onclick="pk('1')">1</button>
-        <button class="pin-key" onclick="pk('2')">2</button>
-        <button class="pin-key" onclick="pk('3')">3</button>
-        <button class="pin-key" onclick="pk('4')">4</button>
-        <button class="pin-key" onclick="pk('5')">5</button>
-        <button class="pin-key" onclick="pk('6')">6</button>
-        <button class="pin-key" onclick="pk('7')">7</button>
-        <button class="pin-key" onclick="pk('8')">8</button>
-        <button class="pin-key" onclick="pk('9')">9</button>
-        <button class="pin-key pk-del" onclick="pd()">⌫</button>
-        <button class="pin-key pk-0" onclick="pk('0')">0</button>
-      </div>
-      <div class="pin-hint" id="pin-hint">Enter your 4-digit PIN</div>
-      <button onclick="forgotPin()" style="background:none;border:none;color:#6278A0;font-family:'DM Sans',sans-serif;font-size:.76rem;cursor:pointer;padding:10px;margin-top:4px;text-decoration:underline;min-height:44px;">Forgot PIN?</button>
     </div>
   </div>
 </div>
@@ -3135,6 +3132,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script src="js/pages/settings.js"></script>
 <script src="js/pages/quickstart.js"></script>
 <script src="js/wizard.js"></script>
+<script src="js/login.js"></script>
 <!-- Onboarding JS -->
 <script>
 // ══════════════════════════════════════════════════════════════
