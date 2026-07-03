@@ -155,7 +155,7 @@ function liabAmortise(balance, ratePa, monthlyPayment, termMonths) {
   var firstInterest = bal * r;
   if (monthlyPayment > 0 && monthlyPayment <= firstInterest) {
     result.negAmort = true;
-    result.warning = '⚠️ Minimum payment does not cover interest — balance is growing';
+    result.warning = ICON('alert-triangle') + ' Minimum payment does not cover interest — balance is growing';
     return result;
   }
 
@@ -165,7 +165,7 @@ function liabAmortise(balance, ratePa, monthlyPayment, termMonths) {
     var principal = Math.min(monthlyPayment - interest, bal);
     if (principal < 0) {
       result.negAmort = true;
-      result.warning = '⚠️ Minimum payment does not cover interest — balance is growing';
+      result.warning = ICON('alert-triangle') + ' Minimum payment does not cover interest — balance is growing';
       break;
     }
     bal = Math.max(0, bal - principal);
@@ -174,7 +174,7 @@ function liabAmortise(balance, ratePa, monthlyPayment, termMonths) {
     result.rows.push({ month: i, label: d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' }), payment: pmt, principal: principal, interest: interest, balance: bal });
     result.totalInterest += interest;
     if (i === termMonths && bal > 0.01) {
-      result.warning = '⚠️ Minimum payment will not pay off this loan in the stated term';
+      result.warning = ICON('alert-triangle') + ' Minimum payment will not pay off this loan in the stated term';
     }
   }
 
@@ -200,15 +200,15 @@ function liabRateColor(rate) {
 
 function liabTypeInfo(type) {
   var map = {
-    mortgage:        { emoji: '🏠', label: 'Mortgage',        color: 'var(--n300)',    group: 'mortgage' },
-    car_loan:        { emoji: '🚗', label: 'Car Loan',        color: 'var(--warn)',    group: 'secured' },
-    investment_loan: { emoji: '📊', label: 'Investment Loan', color: 'var(--success)', group: 'secured' },
-    credit_card:     { emoji: '💳', label: 'Credit Card',     color: 'var(--danger)',  group: 'unsecured' },
-    personal_loan:   { emoji: '💰', label: 'Personal Loan',   color: 'var(--warn)',    group: 'unsecured' },
-    bnpl:            { emoji: '📱', label: 'BNPL',            color: 'var(--danger)',  group: 'bnpl' },
-    hecs:            { emoji: '🎓', label: 'HECS/HELP',       color: 'var(--purple)',  group: 'hecs' },
-    tax_debt:        { emoji: '⚠️', label: 'Tax Debt',        color: 'var(--danger)',  group: 'unsecured' },
-    other:           { emoji: '📋', label: 'Other',           color: 'var(--n300)',    group: 'unsecured' }
+    mortgage:        { emoji: 'home', label: 'Mortgage',        color: 'var(--n300)',    group: 'mortgage' },
+    car_loan:        { emoji: 'car', label: 'Car Loan',        color: 'var(--warn)',    group: 'secured' },
+    investment_loan: { emoji: 'chart-bar', label: 'Investment Loan', color: 'var(--success)', group: 'secured' },
+    credit_card:     { emoji: 'credit-card', label: 'Credit Card',     color: 'var(--danger)',  group: 'unsecured' },
+    personal_loan:   { emoji: 'coin', label: 'Personal Loan',   color: 'var(--warn)',    group: 'unsecured' },
+    bnpl:            { emoji: 'device-mobile', label: 'BNPL',            color: 'var(--danger)',  group: 'bnpl' },
+    hecs:            { emoji: 'school', label: 'HECS/HELP',       color: 'var(--purple)',  group: 'hecs' },
+    tax_debt:        { emoji: 'alert-triangle', label: 'Tax Debt',        color: 'var(--danger)',  group: 'unsecured' },
+    other:           { emoji: 'clipboard-list', label: 'Other',           color: 'var(--n300)',    group: 'unsecured' }
   };
   return map[type] || map.other;
 }
@@ -220,7 +220,7 @@ function liabAvalancheHint() {
     if (!highest || Number(l.rate) > Number(highest.rate)) highest = l;
   });
   if (!highest || !Number(highest.rate)) return '';
-  return '💡 Paying off ' + esc(highest.lender) + ' (' + highest.rate + '% p.a.) first saves the most interest (avalanche strategy)';
+  return ICON('bulb') + ' Paying off ' + esc(highest.lender) + ' (' + highest.rate + '% p.a.) first saves the most interest (avalanche strategy)';
 }
 
 function liabSorted() {
@@ -271,11 +271,11 @@ function liabRenderSummary() {
   }
 
   var groupDefs = [
-    { key: 'mortgage',  label: '🏠 Mortgage' },
-    { key: 'secured',   label: '🔒 Secured' },
-    { key: 'unsecured', label: '💳 Unsecured' },
-    { key: 'bnpl',      label: '📱 BNPL' },
-    { key: 'hecs',      label: '🎓 HECS' }
+    { key: 'mortgage',  label: ICON('home') + ' Mortgage' },
+    { key: 'secured',   label: ICON('lock') + ' Secured' },
+    { key: 'unsecured', label: ICON('credit-card') + ' Unsecured' },
+    { key: 'bnpl',      label: ICON('device-mobile') + ' BNPL' },
+    { key: 'hecs',      label: ICON('school') + ' HECS' }
   ];
   var groupHtml = '';
   groupDefs.forEach(function(g) {
@@ -295,7 +295,7 @@ function liabRenderSummary() {
   if (highest && Number(highest.rate) > 0) {
     var rColor = liabRateColor(Number(highest.rate));
     highestRateHtml = '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;margin-top:10px;flex-wrap:wrap">'
-      + '<span style="font-size:1rem">⚠️</span>'
+      + '<span style="font-size:1rem">' + ICON('alert-triangle') + '</span>'
       + '<span style="font-size:.78rem;color:var(--muted)">Highest rate:</span>'
       + '<strong style="font-family:var(--font-mono);color:' + rColor + '">' + highest.rate + '% p.a.</strong>'
       + '<span style="font-size:.78rem;color:var(--text)">' + esc(highest.lender) + '</span>'
@@ -337,7 +337,7 @@ function liabRenderMortgages() {
   if (!el) return;
   var mortgages = liabAllMortgages();
   if (!mortgages.length) {
-    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">🏡</div><p>No mortgage data. Add details in the <a href="#" onclick="go(\'mortgage\');return false;">Mortgage tab</a>.</p></div>';
+    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">' + ICON('home-2') + '</div><p>No mortgage data. Add details in the <a href="#" onclick="go(\'mortgage\');return false;">Mortgage tab</a>.</p></div>';
     return;
   }
   var html = '';
@@ -353,7 +353,7 @@ function liabRenderMortgages() {
     }
     html += '<div class="card" style="margin-bottom:12px;border-left:3px solid var(--n300)">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">'
-      + '<span style="background:rgba(98,120,160,.15);color:var(--n300);padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700">🏠 Mortgage</span>'
+      + '<span style="background:rgba(98,120,160,.15);color:var(--n300);padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700">' + ICON('home') + ' Mortgage</span>'
       + '<span style="font-size:.7rem;color:var(--muted);margin-left:auto">Read-only &middot; <a href="#" onclick="go(\'mortgage\');return false;" style="color:var(--primary)">Edit in Mortgage tab →</a></span>'
       + '</div>'
       + '<div style="font-size:1rem;font-weight:600;margin-bottom:12px">' + esc(m.lender) + '</div>'
@@ -376,7 +376,7 @@ function liabRenderList() {
   if (!el) return;
   var list = liabSorted();
   if (!list.length) {
-    el.innerHTML = '<div class="empty" style="padding:32px 0;text-align:center"><div class="ei">⚖️</div><p style="color:var(--muted)">No other liabilities added.</p></div>';
+    el.innerHTML = '<div class="empty" style="padding:32px 0;text-align:center"><div class="ei">' + ICON('scale') + '</div><p style="color:var(--muted)">No other liabilities added.</p></div>';
     return;
   }
   var html = '';
@@ -419,7 +419,7 @@ function liabRenderList() {
         var daysUntil = Math.round((expDate - new Date()) / (1000 * 60 * 60 * 24));
         if (daysUntil >= 0 && daysUntil <= 90) {
           fixedHtml = '<div style="margin-top:8px;padding:7px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:.74rem;color:var(--warn)">'
-            + '⚠️ Fixed rate expires ' + expDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + ' (' + daysUntil + ' days)'
+            + ICON('alert-triangle') + ' Fixed rate expires ' + expDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + ' (' + daysUntil + ' days)'
             + '</div>';
         } else if (daysUntil > 90) {
           fixedHtml = '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">Fixed until ' + expDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + '</div>';
@@ -438,7 +438,7 @@ function liabRenderList() {
     var hecsHtml = '';
     if (isHecs) {
       hecsHtml = '<div style="margin-top:8px;padding:8px 12px;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:8px;font-size:.74rem;color:var(--muted)">'
-        + '🎓 HECS repayments are made via ATO payroll deduction above the income threshold. No standard amortisation schedule applies.'
+        + ICON('school') + ' HECS repayments are made via ATO payroll deduction above the income threshold. No standard amortisation schedule applies.'
         + '</div>';
     }
 
@@ -504,11 +504,11 @@ function liabRenderList() {
     // Mortgage link detection
     var linkedProp = _liabLinkedMortgageProp(l.id);
     var mortgageLinkBadge = linkedProp
-      ? '<span style="background:rgba(0,200,150,.12);color:var(--success);padding:2px 8px;border-radius:12px;font-size:.68rem;display:inline-flex;align-items:center;gap:4px">🔗 Mortgage Linked</span>'
+      ? '<span style="background:rgba(0,200,150,.12);color:var(--success);padding:2px 8px;border-radius:12px;font-size:.68rem;display:inline-flex;align-items:center;gap:4px">' + ICON('link') + ' Mortgage Linked</span>'
       : '';
     var mortgageSyncNote = linkedProp
       ? '<div style="margin-top:8px;padding:8px 12px;background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)">'
-        + '🔗 Balance auto-syncs from the <a href="#" onclick="go(\'mortgage\');return false;" style="color:var(--success)">Mortgage tab</a>'
+        + ICON('link') + ' Balance auto-syncs from the <a href="#" onclick="go(\'mortgage\');return false;" style="color:var(--success)">Mortgage tab</a>'
         + ' · <strong>' + esc(linkedProp.name || 'Primary Property') + '</strong>'
         + '</div>'
       : '';
@@ -521,8 +521,8 @@ function liabRenderList() {
       + mortgageLinkBadge
       + '</div>'
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
-      + '<button onclick="liabOpenModal(' + realIdx + ')" style="background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">✏️</button>'
-      + '<button onclick="liabConfirmDelete(\'' + l.id + '\')" style="background:none;border:none;color:var(--danger);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">🗑</button>'
+      + '<button onclick="liabOpenModal(' + realIdx + ')" style="background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">' + ICON('pencil') + '</button>'
+      + '<button onclick="liabConfirmDelete(\'' + l.id + '\')" style="background:none;border:none;color:var(--danger);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">' + ICON('trash') + '</button>'
       + '</div>'
       + '</div>'
       + '<div style="font-size:1rem;font-weight:600;margin-bottom:10px">' + esc(l.lender) + '</div>'
@@ -693,7 +693,7 @@ function liabSave() {
         })();
         BILLS.push({
           id: 'bill_liab_' + Date.now(), merchantKey: billMerchantKey, displayName: lender,
-          icon: '🏦', category: 'home', subcategory: 'Loan Repayment', billType: 'bill',
+          icon: 'building-bank', category: 'home', subcategory: 'Loan Repayment', billType: 'bill',
           frequency: 'monthly', amountType: 'fixed', amount: payment, amountTrend: 'stable',
           pendingAmountUpdate: null, nextDueDate: liabNextDue, lastSeenDate: '',
           confidence: null, source: 'manual', status: 'confirmed', isAnnual: false
@@ -753,7 +753,7 @@ function _liabMonthlyMonthOpts(sel) {
 function _liabMonthlyAllItems() {
   var items = [];
   liabAllMortgages().forEach(function(m) {
-    items.push({ id: m.id, label: m.lender, currentBalance: m.balance, icon: '🏠', note: 'Balance mirrors Mortgage tab — edit there' });
+    items.push({ id: m.id, label: m.lender, currentBalance: m.balance, icon: 'home', note: 'Balance mirrors Mortgage tab — edit there' });
   });
   LIABILITIES.forEach(function(l) {
     var info = liabTypeInfo(l.type);
@@ -823,7 +823,7 @@ function renderLiabMonthlyGrid() {
   }
 
   var curMo = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
-  var html = '<div class="section-label" style="margin-bottom:12px">📅 Monthly Liability Balances</div>'
+  var html = '<div class="section-label" style="margin-bottom:12px">' + ICON('calendar') + ' Monthly Liability Balances</div>'
     + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record each liability\'s closing balance by month — tracks debt reduction over time and links to Net Worth history.</div>';
 
   items.forEach(function(item) {
@@ -847,7 +847,7 @@ function renderLiabMonthlyGrid() {
           + ' onchange="liabMonthUpdate(\'' + item.id + '\',\'' + m + '\',this.value)"'
           + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
           + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
-          + '<button onclick="liabMonthDel(\'' + item.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">🗑</button>'
+          + '<button onclick="liabMonthDel(\'' + item.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">' + ICON('trash') + '</button>'
           + '</div>';
       });
     }

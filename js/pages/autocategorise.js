@@ -1385,7 +1385,7 @@ var AutoCat = (function() {
     var confColor = result.confidence === CONF_HIGH ? 'var(--success)' : 'var(--warn)';
     pill.innerHTML = '<span style="color:var(--muted);font-size:.72rem">Suggested: </span>'
       + '<button class="btn btn-ghost btn-sm acat-apply-btn" style="color:' + confColor + ';font-size:.78rem;padding:3px 10px;border-color:' + confColor + '"></button>'
-      + '<button class="btn btn-ghost btn-sm acat-dismiss-btn" style="font-size:.72rem;padding:2px 8px;color:var(--muted)">✕</button>';
+      + '<button class="btn btn-ghost btn-sm acat-dismiss-btn" style="font-size:.72rem;padding:2px 8px;color:var(--muted)">' + ICON('x') + '</button>';
     var applyBtn = pill.querySelector('.acat-apply-btn');
     applyBtn.textContent = label;
     applyBtn.dataset.catId = result.catId;

@@ -888,13 +888,13 @@ function _trBuildChartCard() {
   if (outliers.length > 0) {
     outliers.slice(0, 3).forEach(function(o) {
       outlierHtml += '<div style="margin-bottom:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;border:1px solid rgba(245,158,11,.15)">'
-        + '<div style="font-size:.72rem;color:var(--warn);font-weight:600">⚠ ' + esc(o.label) + ': ' + fmt(o.gap) + ' gap</div>'
+        + '<div style="font-size:.72rem;color:var(--warn);font-weight:600">' + ICON('alert-triangle') + ' ' + esc(o.label) + ': ' + fmt(o.gap) + ' gap</div>'
         + '<div style="font-size:.65rem;color:#7A8FBC;margin-top:2px">' + o.count + ' unmatched transaction' + (o.count !== 1 ? 's' : '') + '</div>'
         + '</div>';
     });
   } else {
     outlierHtml = '<div style="padding:8px 10px;background:rgba(0,200,150,.06);border-radius:8px;border:1px solid rgba(0,200,150,.15)">'
-      + '<div style="font-size:.72rem;color:var(--success);font-weight:600">✓ All months balanced</div>'
+      + '<div style="font-size:.72rem;color:var(--success);font-weight:600">' + ICON('check') + ' All months balanced</div>'
       + '</div>';
   }
 
@@ -1196,7 +1196,7 @@ function _trBuildConfirmedTab() {
 
   if (!TRANSFERS.length) {
     return filterHtml + '<div style="text-align:center;padding:32px;color:#7A8FBC">'
-      + '<div style="font-size:2rem;margin-bottom:8px">🔄</div>'
+      + '<div style="font-size:2rem;margin-bottom:8px">' + ICON('refresh') + '</div>'
       + '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px">No confirmed transfers yet</div>'
       + '<div style="font-size:.76rem">Import transactions or link pairs manually to see transfer pairs here.</div>'
       + '</div>';
@@ -1274,7 +1274,7 @@ function _trBuildPendingTab() {
 
   if (!TRANSFERS_PENDING.length) {
     return '<div style="text-align:center;padding:40px;color:#7A8FBC">'
-      + '<div style="font-size:2rem;margin-bottom:8px">✓</div>'
+      + '<div style="font-size:2rem;margin-bottom:8px">' + ICON('check') + '</div>'
       + '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px">All caught up</div>'
       + '<div style="font-size:.76rem">No suggested pairs waiting for review.</div>'
       + '</div>';
@@ -1362,7 +1362,7 @@ function _trBulkClear() { _trBulkSel = []; renderTransfers(); }
 function _trBuildUnmatchedTab(unmatchedTx) {
   if (!unmatchedTx.length) {
     return '<div style="text-align:center;padding:40px;color:#7A8FBC">'
-      + '<div style="font-size:2rem;margin-bottom:8px">✓</div>'
+      + '<div style="font-size:2rem;margin-bottom:8px">' + ICON('check') + '</div>'
       + '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px">All transfers reconciled</div>'
       + '<div style="font-size:.76rem">No unmatched transfer transactions detected.</div>'
       + '</div>';
@@ -1494,7 +1494,7 @@ function dbRenderTransferStat() {
   if (!conf.length) { el.innerHTML = ''; return; }
   var total = thisMonthPairs.reduce(function(s, t) { return s + (t.amount || 0); }, 0);
   el.innerHTML = '<div class="dash-transfer-stat">'
-    + '🔄 <strong>' + thisMonthPairs.length + ' internal transfer' + (thisMonthPairs.length !== 1 ? 's' : '') + '</strong>'
+    + ICON('refresh') + ' <strong>' + thisMonthPairs.length + ' internal transfer' + (thisMonthPairs.length !== 1 ? 's' : '') + '</strong>'
     + ' excluded this period'
     + (total > 0 ? ' — <strong>' + fmt(total) + '</strong> total' : '')
     + ' &nbsp;<a href="#" onclick="go(\'transfers\');return false;" style="color:#74b9ff;font-size:.76rem">View transfers →</a>'

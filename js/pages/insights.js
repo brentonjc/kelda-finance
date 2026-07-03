@@ -243,7 +243,7 @@ function _insDrawSankey(el) {
   const savings = Math.max(0, totalIncome - totalExpense);
 
   if (!totalIncome) {
-    el.innerHTML = '<div class="empty" style="min-height:180px"><div class="ei">💸</div><p>No income data for this period.</p></div>';
+    el.innerHTML = '<div class="empty" style="min-height:180px"><div class="ei">' + ICON('cash-off') + '</div><p>No income data for this period.</p></div>';
     return;
   }
 
@@ -302,9 +302,9 @@ function _insDrawSankey(el) {
                 : id === 'other_group' ? insToken('--muted')
                 : (cat && cat.color)   ? cat.color
                 : SANKEY_PALETTE[paletteIdx++ % SANKEY_PALETTE.length];
-    const label = id === 'savings'     ? '💚 Savings'
-                : id === 'other_group' ? '📋 Other'
-                : (cat ? cat.icon + ' ' + cat.name : id);
+    const label = id === 'savings'     ? 'Savings'
+                : id === 'other_group' ? 'Other'
+                : (cat ? cat.name : id);
     const node = { id, amt, h, y: curY, color, label, totalAmt: amt };
     curY += h + gap;
     return node;
@@ -432,7 +432,7 @@ function insRenderCashFlowChart() {
   });
 
   const lbl = canvas.closest('.card')?.querySelector('.section-label');
-  if (lbl) lbl.textContent = '📈 Cash Flow — ' + labelTitle;
+  if (lbl) lbl.textContent = 'Cash Flow — ' + labelTitle;
 }
 
 // ── Period Comparison Chart ─────────────────────────────────────
@@ -458,7 +458,7 @@ function insRenderCompareChart() {
     : new Date(insYear, insMonth - 2, 1).toLocaleString('en-AU', { month: 'long', year: 'numeric' });
 
   const hdr = canvas.closest('.card')?.querySelector('.section-label');
-  if (hdr) hdr.textContent = '📊 ' + prevLabel + '  vs  ' + curLabel;
+  if (hdr) hdr.textContent = prevLabel + '  vs  ' + curLabel;
 
   insCompareChart = safeChart(canvas, {
     type: 'bar',
@@ -534,7 +534,7 @@ function insRenderCatChart() {
 
   if (!expTx.length) {
     if (wrap)        wrap.style.height = '';
-    if (breakdownEl) breakdownEl.innerHTML = '<div class="empty"><div class="ei">📊</div><p>No expenses this period.</p></div>';
+    if (breakdownEl) breakdownEl.innerHTML = '<div class="empty"><div class="ei">' + ICON('chart-bar') + '</div><p>No expenses this period.</p></div>';
     return;
   }
 
@@ -547,7 +547,7 @@ function insRenderCatChart() {
   const sorted = Object.entries(catTotals)
     .map(([id, amt]) => {
       const cat = LCATS.find(c => c.id === id);
-      return { id, name: cat ? cat.name : (id === 'other' ? 'Other' : id), icon: cat ? cat.icon : '📋', color: cat ? cat.color : insToken('--muted'), amt };
+      return { id, name: cat ? cat.name : (id === 'other' ? 'Other' : id), icon: cat ? cat.icon : 'clipboard-list', color: cat ? cat.color : insToken('--muted'), amt };
     })
     .sort((a, b) => b.amt - a.amt);
 
@@ -561,7 +561,7 @@ function insRenderCatChart() {
     insCatChart = safeChart(canvas, {
       type: 'bar',
       data: {
-        labels: top.map(r => r.icon + ' ' + r.name),
+        labels: top.map(r => r.name),
         datasets: [{ label: 'Spent', data: top.map(r => r.amt),
           backgroundColor: top.map(r => r.color + 'cc'),
           borderColor:     top.map(r => r.color),
@@ -589,7 +589,7 @@ function insRenderCatChart() {
           const barW = Math.round(r.amt / barMax * 100);
           return '<div class="ins-tx-link" data-type="expense" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-            + '<span style="width:22px;text-align:center">' + (r.icon || '📋') + '</span>'
+            + '<span style="width:22px;text-align:center">' + iconTag(r.icon || 'clipboard-list') + '</span>'
             + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
             + '<span style="font-size:.78rem;color:var(--muted)">' + pct + '%</span>'
             + '<span style="font-weight:700;font-size:.86rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
@@ -636,7 +636,7 @@ function insRenderSubcatChart() {
 
   if (!expTx.length) {
     if (wrap)       wrap.style.height = '';
-    if (breakdown)  breakdown.innerHTML = '<div class="empty"><div class="ei">🔎</div><p>No subcategorised expenses this period.'
+    if (breakdown)  breakdown.innerHTML = '<div class="empty"><div class="ei">' + ICON('search') + '</div><p>No subcategorised expenses this period.'
       + (filterCatId ? '' : ' Assign subcategories in the Transactions tab.') + '</p></div>';
     return;
   }
@@ -780,7 +780,7 @@ function insRenderIncCatChart() {
 
   if (!incTx.length) {
     if (wrap)        wrap.style.height = '';
-    if (breakdownEl) breakdownEl.innerHTML = '<div class="empty"><div class="ei">💰</div><p>No income this period.</p></div>';
+    if (breakdownEl) breakdownEl.innerHTML = '<div class="empty"><div class="ei">' + ICON('coin') + '</div><p>No income this period.</p></div>';
     return;
   }
 
@@ -795,7 +795,7 @@ function insRenderIncCatChart() {
     .map(([id, amt]) => {
       const cat = LCATS.find(c => c.id === id);
       const color = (cat && cat.color) ? cat.color : INC_COLOR;
-      return { id, name: cat ? cat.name : (id === 'other' ? 'Other' : id), icon: cat ? cat.icon : '💰', color, amt };
+      return { id, name: cat ? cat.name : (id === 'other' ? 'Other' : id), icon: cat ? cat.icon : 'coin', color, amt };
     })
     .sort((a, b) => b.amt - a.amt);
 
@@ -809,7 +809,7 @@ function insRenderIncCatChart() {
     insIncCatChart = safeChart(canvas, {
       type: 'bar',
       data: {
-        labels: top.map(r => r.icon + ' ' + r.name),
+        labels: top.map(r => r.name),
         datasets: [{ label: 'Received', data: top.map(r => r.amt),
           backgroundColor: top.map(r => r.color + 'cc'),
           borderColor:     top.map(r => r.color),
@@ -837,7 +837,7 @@ function insRenderIncCatChart() {
           const barW = Math.round(r.amt / barMax * 100);
           return '<div class="ins-tx-link" data-type="income" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-            + '<span style="width:22px;text-align:center">' + (r.icon || '💰') + '</span>'
+            + '<span style="width:22px;text-align:center">' + iconTag(r.icon || 'coin') + '</span>'
             + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
             + '<span style="font-size:.78rem;color:var(--muted)">' + pct + '%</span>'
             + '<span style="font-weight:700;font-size:.86rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
@@ -883,7 +883,7 @@ function insRenderIncSubcatChart() {
 
   if (!incTx.length) {
     if (wrap)       wrap.style.height = '';
-    if (breakdown)  breakdown.innerHTML = '<div class="empty"><div class="ei">🔎</div><p>No subcategorised income this period.'
+    if (breakdown)  breakdown.innerHTML = '<div class="empty"><div class="ei">' + ICON('search') + '</div><p>No subcategorised income this period.'
       + (filterCatId ? '' : ' Assign subcategories in the Transactions tab.') + '</p></div>';
     return;
   }

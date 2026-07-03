@@ -76,7 +76,7 @@ function renderSettings() {
 
   // Privacy notice
   html += '<div class="sett-privacy-notice">'
-    + '<div class="sett-privacy-icon">🔒</div>'
+    + '<div class="sett-privacy-icon">' + ICON('lock') + '</div>'
     + '<div>'
     + '<div class="sett-privacy-title">Privacy protected</div>'
     + '<div class="sett-privacy-body">Only account nicknames are stored — never BSBs, account numbers or bank names. All data stays on your device and is never transmitted.</div>'
@@ -180,7 +180,7 @@ function _settProfileCard(profileId, defaultIcon, defaultName) {
 
   // PIN status row
   html += '<div style="display:flex;align-items:center;gap:10px;margin-top:12px">';
-  html += '<span style="font-size:.76rem;color:' + pinColor + ';font-weight:600">🔒 ' + pinStatus + '</span>';
+  html += '<span style="font-size:.76rem;color:' + pinColor + ';font-weight:600">' + ICON('lock') + ' ' + pinStatus + '</span>';
   html += '<button class="btn btn-ghost btn-sm" onclick="settingsResetPIN(\'' + profileId + '\', \'' + _settEsc(currentName) + '\')">' + pinBtnLabel + '</button>';
   html += '</div>';
 
@@ -471,7 +471,7 @@ function settingsResetCategories() {
     LCATS = JSON.parse(JSON.stringify(_BUILT_IN_CATS));
     // Add Uncategorised if missing
     if (!LCATS.find(function(c) { return c.id === 'uncategorised'; })) {
-      LCATS.push({ id:'uncategorised', name:'Uncategorised', icon:'❓', color:'#8a8095', type:'both', subcats:[] });
+      LCATS.push({ id:'uncategorised', name:'Uncategorised', icon:'help', color:'#8a8095', type:'both', subcats:[] });
     }
     save(K.categories, LCATS);
     // Bump version so future load picks up new defaults

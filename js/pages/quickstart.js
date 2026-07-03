@@ -174,7 +174,7 @@ function renderQuickStart() {
     {
       id: 'step-1-add-tx',
       num: 1,
-      emoji: '💳',
+      emoji: 'credit-card',
       title: 'Add Transactions',
       body: 'Import CSV from your bank or add transactions manually. Our app supports Australia\'s top 10 banks.',
       cta: 'Add Transaction',
@@ -183,7 +183,7 @@ function renderQuickStart() {
     {
       id: 'step-2-categorise',
       num: 2,
-      emoji: '🏷️',
+      emoji: 'tag',
       title: 'Categorise Transactions',
       body: 'Assign each transaction to a category. This helps you track spending by type.',
       cta: 'View Transactions',
@@ -192,7 +192,7 @@ function renderQuickStart() {
     {
       id: 'step-3-rules',
       num: 3,
-      emoji: '⚙️',
+      emoji: 'settings',
       title: 'Setup Auto-Categorisation Rules',
       body: 'Create rules to automatically categorise transactions based on merchant name. Save time on future transactions.',
       cta: 'Create Rule',
@@ -201,7 +201,7 @@ function renderQuickStart() {
     {
       id: 'step-4-liabilities',
       num: 4,
-      emoji: '📋',
+      emoji: 'clipboard-list',
       title: 'Add Liabilities',
       body: 'Record your mortgage, loans, and credit cards. This helps you see your net worth clearly.',
       cta: 'Add Liability',
@@ -210,7 +210,7 @@ function renderQuickStart() {
     {
       id: 'step-5-goals',
       num: 5,
-      emoji: '🎯',
+      emoji: 'target',
       title: 'Create Savings Goals',
       body: 'Set financial targets like emergency fund, holiday, or home renovation. Track your progress visually.',
       cta: 'Create Goal',
@@ -219,7 +219,7 @@ function renderQuickStart() {
     {
       id: 'step-6-bills',
       num: 6,
-      emoji: '📅',
+      emoji: 'calendar',
       title: 'Schedule Bills',
       body: 'Add recurring bills (rent, utilities, insurance). Get reminders before they\'re due.',
       cta: 'Add Bill',
@@ -228,7 +228,7 @@ function renderQuickStart() {
     {
       id: 'step-7-budget',
       num: 7,
-      emoji: '💰',
+      emoji: 'coin',
       title: 'Configure Budget',
       body: 'Set monthly spending limits by category. Track your actual spend against budget in real-time.',
       cta: 'Set Budget',
@@ -252,7 +252,7 @@ function renderQuickStart() {
   if (progress.allDone) {
     html += '<div class="card mb" style="border-left:4px solid var(--success);background:rgba(0,200,150,0.08)">';
     html += '<div style="display:flex;align-items:center;gap:12px">';
-    html += '<div style="font-size:2rem">✅</div>';
+    html += '<div style="font-size:2rem">' + ICON('circle-check-filled') + '</div>';
     html += '<div>';
     html += '<div style="font-weight:700;color:var(--success)">You\'ve Completed the Quick Start!</div>';
     html += '<div style="font-size:.85rem;color:var(--muted);margin-top:4px">You\'re all set to manage your finances. Explore other features anytime.</div>';
@@ -267,11 +267,11 @@ function renderQuickStart() {
     var isDone = tasks[step.id];
     html += '<div class="card mb" style="opacity:' + (isDone ? '0.6' : '1') + ';transition:opacity 0.3s">';
     html += '<div style="display:flex;gap:12px;margin-bottom:10px;align-items:flex-start">';
-    html += '<div style="font-size:1.8rem">' + step.emoji + '</div>';
+    html += '<div style="font-size:1.8rem">' + ICON(step.emoji) + '</div>';
     html += '<div style="flex:1">';
     html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
     html += '<div style="font-weight:700;font-size:.9rem;color:var(--muted)">STEP ' + step.num + '</div>';
-    if (isDone) html += '<span style="font-size:.7rem;background:var(--success);color:#000;padding:2px 6px;border-radius:3px;font-weight:700">✓</span>';
+    if (isDone) html += '<span style="font-size:.7rem;background:var(--success);color:#000;padding:2px 6px;border-radius:3px;font-weight:700">' + ICON('check') + '</span>';
     html += '</div>';
     html += '<div style="font-weight:600;font-size:1rem">' + step.title + '</div>';
     html += '<div style="font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.5">' + step.body + '</div>';

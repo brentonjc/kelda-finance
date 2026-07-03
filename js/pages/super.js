@@ -115,7 +115,7 @@ function renderSuperAcctList(pfx) {
       + '<div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:var(--primary)">' + fmt(a.balance||0) + '</div>'
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
       + '<button class="btn btn-ghost btn-sm" onclick="superEditAcct(\'' + pfx + '\',\'' + a.id + '\')">Edit</button>'
-      + '<button class="del-btn" onclick="superDeleteAcct(\'' + pfx + '\',\'' + a.id + '\')">🗑</button>'
+      + '<button class="del-btn" onclick="superDeleteAcct(\'' + pfx + '\',\'' + a.id + '\')">' + ICON('trash') + '</button>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -297,7 +297,7 @@ function renderSuperMonthlyGrid() {
   }
 
   var curMo = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
-  var html = '<div class="section-label" style="margin-bottom:12px">📅 Monthly Super Balances</div>'
+  var html = '<div class="section-label" style="margin-bottom:12px">' + ICON('calendar') + ' Monthly Super Balances</div>'
     + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record each account\'s closing balance by month — tracks changes in super over time and links to Net Worth history.</div>';
 
   allAccts.forEach(function(item) {
@@ -321,7 +321,7 @@ function renderSuperMonthlyGrid() {
           + ' onchange="superMonthUpdate(\'' + a.id + '\',\'' + m + '\',this.value)"'
           + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
           + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
-          + '<button onclick="superMonthDel(\'' + a.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">🗑</button>'
+          + '<button onclick="superMonthDel(\'' + a.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">' + ICON('trash') + '</button>'
           + '</div>';
       });
     }

@@ -356,7 +356,7 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- ═══ LEFT RAIL ═══ -->
     <aside class="ob-left" id="ob-left">
       <div class="ob-wordmark">
-        <div class="ob-wordmark-icon">💧</div>
+        <div class="ob-wordmark-icon"><i class="ti ti-droplet"></i></div>
         <span class="ob-wordmark-text">Kelda Finance</span>
       </div>
       <p class="ob-tagline" id="ob-tagline">Your finances, clear and in one place.</p>
@@ -451,7 +451,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- 1 — Welcome -->
       <div class="ob-panel active" id="panel-welcome">
         <div class="ob-welcome-inner">
-          <div class="ob-welcome-icon">💧</div>
+          <div class="ob-welcome-icon"><i class="ti ti-droplet"></i></div>
           <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
           <p class="ob-sub" style="margin-top:10px">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
           <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
@@ -491,7 +491,7 @@ window.addEventListener('unhandledrejection',function(e){
                style="--card-accent:#00C896;--card-glow:rgba(0,200,150,0.12);--card-icon-bg:rgba(0,200,150,0.12)"
                onclick="obSelectProfile('starter')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('starter')}">
             <div class="ob-profile-card-top">
-              <div class="ob-profile-icon">🌱</div>
+              <div class="ob-profile-icon"><i class="ti ti-seedling"></i></div>
               <div class="ob-profile-text">
                 <div class="ob-profile-headline">Track my spending</div>
                 <div class="ob-profile-subline">Budgets, bills, and savings goals — nothing extra.</div>
@@ -508,7 +508,7 @@ window.addEventListener('unhandledrejection',function(e){
                style="--card-accent:#F0538A;--card-glow:rgba(240,83,138,0.12);--card-icon-bg:rgba(240,83,138,0.12)"
                onclick="obSelectProfile('household')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('household')}">
             <div class="ob-profile-card-top">
-              <div class="ob-profile-icon">🏠</div>
+              <div class="ob-profile-icon"><i class="ti ti-home"></i></div>
               <div class="ob-profile-text">
                 <div class="ob-profile-headline">Budget smarter</div>
                 <div class="ob-profile-subline">Household planning, mortgage, and forecasting.</div>
@@ -525,7 +525,7 @@ window.addEventListener('unhandledrejection',function(e){
                style="--card-accent:#F59E0B;--card-glow:rgba(245,158,11,0.12);--card-icon-bg:rgba(245,158,11,0.12)"
                onclick="obSelectProfile('full')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('full')}">
             <div class="ob-profile-card-top">
-              <div class="ob-profile-icon">📊</div>
+              <div class="ob-profile-icon"><i class="ti ti-chart-bar"></i></div>
               <div class="ob-profile-text">
                 <div class="ob-profile-headline">Full financial picture</div>
                 <div class="ob-profile-subline">Investments, super, property, tax — the complete view.</div>
@@ -635,11 +635,11 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <p class="ob-helper" style="margin-bottom:14px">Select all that apply — we'll set these up inside the app, no details needed now.</p>
         <div class="ob-asset-grid" style="grid-template-columns:repeat(5,1fr)">
-          <div class="ob-asset-tile" onclick="obToggleAsset(this,'property')"><span class="ob-asset-emoji">🏠</span><span class="ob-asset-label">Property</span></div>
-          <div class="ob-asset-tile" onclick="obToggleAsset(this,'equities')"><span class="ob-asset-emoji">📈</span><span class="ob-asset-label">Investments</span></div>
-          <div class="ob-asset-tile" onclick="obToggleAsset(this,'super')"><span class="ob-asset-emoji">🏦</span><span class="ob-asset-label">Superannuation</span></div>
-          <div class="ob-asset-tile" onclick="obToggleAsset(this,'liabilities')"><span class="ob-asset-emoji">💳</span><span class="ob-asset-label">Liabilities</span></div>
-          <div class="ob-asset-tile" onclick="obToggleAsset(this,'investment-property')"><span class="ob-asset-emoji">🏢</span><span class="ob-asset-label">Investment property</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'property')"><span class="ob-asset-emoji"><i class="ti ti-home"></i></span><span class="ob-asset-label">Property</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'equities')"><span class="ob-asset-emoji"><i class="ti ti-trending-up"></i></span><span class="ob-asset-label">Investments</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'super')"><span class="ob-asset-emoji"><i class="ti ti-building-bank"></i></span><span class="ob-asset-label">Superannuation</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'liabilities')"><span class="ob-asset-emoji"><i class="ti ti-credit-card"></i></span><span class="ob-asset-label">Liabilities</span></div>
+          <div class="ob-asset-tile" onclick="obToggleAsset(this,'investment-property')"><span class="ob-asset-emoji"><i class="ti ti-building"></i></span><span class="ob-asset-label">Investment property</span></div>
         </div>
         <button class="ob-link" style="text-align:left" onclick="obGoTo('panel-security')">I'll set this up later</button>
         <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('full')">Continue →</button>
@@ -704,19 +704,19 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="fab-menu" style="display:none;position:fixed;z-index:400;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);">
   <div class="fab-arc">
     <button class="fab-arc-item" onclick="fabAction('transaction')" style="--i:0">
-      <span class="fab-arc-icon">💳</span><span class="fab-arc-lbl">Transaction</span>
+      <span class="fab-arc-icon"><i class="ti ti-credit-card"></i></span><span class="fab-arc-lbl">Transaction</span>
     </button>
     <button class="fab-arc-item" onclick="fabAction('import')" style="--i:1">
-      <span class="fab-arc-icon">📤</span><span class="fab-arc-lbl">Import CSV</span>
+      <span class="fab-arc-icon"><i class="ti ti-upload"></i></span><span class="fab-arc-lbl">Import CSV</span>
     </button>
     <button class="fab-arc-item" onclick="fabAction('bill')" style="--i:2">
-      <span class="fab-arc-icon">📅</span><span class="fab-arc-lbl">Add Bill</span>
+      <span class="fab-arc-icon"><i class="ti ti-calendar"></i></span><span class="fab-arc-lbl">Add Bill</span>
     </button>
     <button class="fab-arc-item" onclick="fabAction('cash')" style="--i:3">
-      <span class="fab-arc-icon">🏦</span><span class="fab-arc-lbl">Cash Entry</span>
+      <span class="fab-arc-icon"><i class="ti ti-building-bank"></i></span><span class="fab-arc-lbl">Cash Entry</span>
     </button>
     <button class="fab-arc-item" onclick="fabAction('transfer')" style="--i:4">
-      <span class="fab-arc-icon">🔄</span><span class="fab-arc-lbl">Transfer</span>
+      <span class="fab-arc-icon"><i class="ti ti-refresh"></i></span><span class="fab-arc-lbl">Transfer</span>
     </button>
   </div>
 </div>
@@ -725,16 +725,16 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- iOS Bottom Tab Bar (mobile only) -->
 <nav id="bottom-tab-bar" style="display:none">
   <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
-    <span class="tab-icon">🏠</span><span class="tab-lbl">Dashboard</span>
+    <span class="tab-icon"><i class="ti ti-home"></i></span><span class="tab-lbl">Dashboard</span>
   </button>
   <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
-    <span class="tab-icon">📅</span><span class="tab-lbl">Bills</span>
+    <span class="tab-icon"><i class="ti ti-calendar"></i></span><span class="tab-lbl">Bills</span>
   </button>
   <button class="tab-btn" id="tb-transactions"        onclick="goMob('transactions')">
-    <span class="tab-icon">💳</span><span class="tab-lbl">Transactions</span>
+    <span class="tab-icon"><i class="ti ti-credit-card"></i></span><span class="tab-lbl">Transactions</span>
   </button>
   <button class="tab-btn" id="tb-cash"                onclick="goMob('cash')">
-    <span class="tab-icon">🏦</span><span class="tab-lbl">Cash</span>
+    <span class="tab-icon"><i class="ti ti-building-bank"></i></span><span class="tab-lbl">Cash</span>
   </button>
   <button class="tab-btn" id="tb-settings"            onclick="openMobMenu()">
     <span class="tab-icon">⋯</span><span class="tab-lbl">More</span>
@@ -746,46 +746,46 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="mob-menu" style="display:none">
   <div id="mob-menu-handle"></div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">💳 Spend</div>
+    <div class="mob-menu-label"><i class="ti ti-credit-card"></i> Spend</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('transfers')"><span>🔄</span>Transfers</button>
+      <button class="mob-menu-item" onclick="goMob('transfers')"><span><i class="ti ti-refresh"></i></span>Transfers</button>
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">💰 Save</div>
+    <div class="mob-menu-label"><i class="ti ti-coin"></i> Save</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('goals')"><span>🎯</span>Goals</button>
-      <button class="mob-menu-item" onclick="goMob('assets')"><span>💰</span>Net Worth</button>
+      <button class="mob-menu-item" onclick="goMob('goals')"><span><i class="ti ti-target"></i></span>Goals</button>
+      <button class="mob-menu-item" onclick="goMob('assets')"><span><i class="ti ti-coin"></i></span>Net Worth</button>
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">🏦 Borrow</div>
+    <div class="mob-menu-label"><i class="ti ti-building-bank"></i> Borrow</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('mortgage')"><span>🏡</span>Mortgage</button>
-      <button class="mob-menu-item" onclick="goMob('liabilities')"><span>⚖️</span>Liabilities</button>
+      <button class="mob-menu-item" onclick="goMob('mortgage')"><span><i class="ti ti-home-2"></i></span>Mortgage</button>
+      <button class="mob-menu-item" onclick="goMob('liabilities')"><span><i class="ti ti-scale"></i></span>Liabilities</button>
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">📋 Plan</div>
+    <div class="mob-menu-label"><i class="ti ti-clipboard-list"></i> Plan</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('super')"><span>💼</span>Super</button>
-      <button class="mob-menu-item" onclick="goMob('insurance')"><span>🛡️</span>Insurance</button>
-      <button class="mob-menu-item" onclick="goMob('equities')"><span>📈</span>Equities</button>
-      <button class="mob-menu-item" onclick="goMob('bva')"><span>📊</span>Budget</button>
-      <button class="mob-menu-item" onclick="goMob('forecast')"><span>🔮</span>Forecast</button>
+      <button class="mob-menu-item" onclick="goMob('super')"><span><i class="ti ti-briefcase"></i></span>Super</button>
+      <button class="mob-menu-item" onclick="goMob('insurance')"><span><i class="ti ti-shield-check"></i></span>Insurance</button>
+      <button class="mob-menu-item" onclick="goMob('equities')"><span><i class="ti ti-trending-up"></i></span>Equities</button>
+      <button class="mob-menu-item" onclick="goMob('bva')"><span><i class="ti ti-chart-bar"></i></span>Budget</button>
+      <button class="mob-menu-item" onclick="goMob('forecast')"><span><i class="ti ti-sparkles"></i></span>Forecast</button>
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">🛠️ Tools</div>
+    <div class="mob-menu-label"><i class="ti ti-tools"></i> Tools</div>
     <div class="mob-menu-grid">
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">⚙️ Controls</div>
+    <div class="mob-menu-label"><i class="ti ti-settings"></i> Controls</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('categories')"><span>🏷️</span>Categories</button>
-      <button class="mob-menu-item" onclick="goMob('export')"><span>⬇️</span>Export</button>
-      <button class="mob-menu-item" onclick="goMob('settings')"><span>⚙️</span>Settings</button>
+      <button class="mob-menu-item" onclick="goMob('categories')"><span><i class="ti ti-tag"></i></span>Categories</button>
+      <button class="mob-menu-item" onclick="goMob('export')"><span><i class="ti ti-download"></i></span>Export</button>
+      <button class="mob-menu-item" onclick="goMob('settings')"><span><i class="ti ti-settings"></i></span>Settings</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -802,7 +802,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label">Profiles &amp; Accounts</div>
     <button class="mob-menu-item" onclick="openUserSettings()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
-      <span>👤</span>Edit Names &amp; Accounts
+      <span><i class="ti ti-user"></i></span>Edit Names &amp; Accounts
     </button>
     <div id="user-settings-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:16px;margin-top:4px">
 
@@ -832,13 +832,13 @@ window.addEventListener('unhandledrejection',function(e){
 
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Account Names</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">🏦 Offset / Main Account</label>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-building-bank"></i> Offset / Main Account</label>
           <input type="text" id="usc-acct-offset" placeholder="Offset Account" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">🏠 Joint Transaction Account</label>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-home"></i> Joint Transaction Account</label>
           <input type="text" id="usc-acct-home" placeholder="Home Transaction" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">💰 Savings Account 1 (Profile 1)</label>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-coin"></i> Savings Account 1 (Profile 1)</label>
           <input type="text" id="usc-acct-sav1" placeholder="Savings Account 1" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">💎 Savings Account 2 (Profile 2)</label>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-diamond"></i> Savings Account 2 (Profile 2)</label>
           <input type="text" id="usc-acct-sav2" placeholder="Savings Account 2" style="font-size:16px"/></div>
       </div>
 
@@ -853,7 +853,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label">App Settings</div>
     <button class="mob-menu-item" onclick="openRenameApp()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
-      <span>✏️</span>Rename App
+      <span><i class="ti ti-pencil"></i></span>Rename App
     </button>
     <div id="rename-app-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:14px;margin-top:4px">
       <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">App Name</label>
@@ -866,7 +866,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
   </div>
-  <button class="mob-menu-lock" onclick="lockApp();closeMobMenu()">🔒 Lock App</button>
+  <button class="mob-menu-lock" onclick="lockApp();closeMobMenu()"><i class="ti ti-lock"></i> Lock App</button>
 </div>
 
 <!-- Nav overlay (desktop mobile drawer) -->
@@ -886,7 +886,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="kl-fstat"><div class="sl">Net Worth</div><div class="sv up">$412,500 ↑</div></div>
         <div class="kl-fstat offset"><div class="sl">Savings Streak</div><div class="sv">6 months</div></div>
       </div>
-      <div class="kl-brand-foot">🔒 Stored only on this device — no cloud, no accounts.</div>
+      <div class="kl-brand-foot"><i class="ti ti-lock"></i> Stored only on this device — no cloud, no accounts.</div>
     </div>
 
     <!-- ── Right auth panel ── -->
@@ -918,7 +918,7 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
 
-          <div class="kl-setup-banner" id="kl-setup-banner">👋 First time in — choose a 4-digit PIN, then confirm it.</div>
+          <div class="kl-setup-banner" id="kl-setup-banner"><i class="ti ti-hand-stop"></i> First time in — choose a 4-digit PIN, then confirm it.</div>
 
           <div class="kl-dots" id="kl-dots" role="img" aria-label="0 of 4 digits entered"></div>
 
@@ -935,14 +935,14 @@ window.addEventListener('unhandledrejection',function(e){
             <button class="kl-key" data-k="7" type="button">7<span class="kl-letters" aria-hidden="true">PQRS</span></button>
             <button class="kl-key" data-k="8" type="button">8<span class="kl-letters" aria-hidden="true">TUV</span></button>
             <button class="kl-key" data-k="9" type="button">9<span class="kl-letters" aria-hidden="true">WXYZ</span></button>
-            <button class="kl-key ghost kl-key-disabled-perm" id="kl-biom" type="button" aria-label="Face ID (coming soon)" title="Face ID — coming soon" disabled>⚿</button>
+            <button class="kl-key ghost kl-key-disabled-perm" id="kl-biom" type="button" aria-label="Face ID (coming soon)" title="Face ID — coming soon" disabled><i class="ti ti-key"></i></button>
             <button class="kl-key" data-k="0" type="button">0</button>
             <button class="kl-key ghost" id="kl-del" type="button" aria-label="Delete last digit">⌫</button>
           </div>
 
           <div class="kl-foot">
             <button class="kl-link" id="kl-forgot" type="button" aria-expanded="false" aria-controls="kl-forgot-panel">Forgot PIN?</button>
-            <div class="kl-biom-hint">🔒 PIN secured on this device</div>
+            <div class="kl-biom-hint"><i class="ti ti-lock"></i> PIN secured on this device</div>
           </div>
 
           <div class="kl-forgot-panel" id="kl-forgot-panel">
@@ -960,7 +960,7 @@ window.addEventListener('unhandledrejection',function(e){
 
           <div class="kl-insight" id="kl-backup-card">
             <div class="kl-insight-left">
-              <div class="kl-insight-icon" id="kl-backup-icon" aria-hidden="true">💾</div>
+              <div class="kl-insight-icon" id="kl-backup-icon" aria-hidden="true"><i class="ti ti-device-floppy"></i></div>
               <div>
                 <div class="kl-insight-label">Full backup</div>
                 <div class="kl-insight-meta" id="kl-backup-meta">—</div>
@@ -971,7 +971,7 @@ window.addEventListener('unhandledrejection',function(e){
 
           <div class="kl-insight" id="kl-csv-card">
             <div class="kl-insight-left">
-              <div class="kl-insight-icon" id="kl-csv-icon" aria-hidden="true">📥</div>
+              <div class="kl-insight-icon" id="kl-csv-icon" aria-hidden="true"><i class="ti ti-download"></i></div>
               <div>
                 <div class="kl-insight-label">CSV import</div>
                 <div class="kl-insight-meta" id="kl-csv-meta">—</div>
@@ -994,66 +994,66 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- SIDEBAR -->
 <nav id="nav" aria-label="Main navigation">
   <div class="nav-logo">
-    <div class="nav-logo-bug">💧</div>
+    <div class="nav-logo-bug"><i class="ti ti-droplet"></i></div>
     <h1 data-app-name>Kelda Finance</h1>
   </div>
   <div class="nav-body">
 
     <div class="nav-glabel">Core Features</div>
-    <a class="nav-item active" id="n-dashboard" onclick="go('dashboard')" aria-current="page"><span class="ni">🏠</span><span class="nav-lbl">My Dashboard</span></a>
-    <a class="nav-item" id="n-quickstart" onclick="go('quickstart')"><span class="ni">🚀</span><span class="nav-lbl">Quick Start</span></a>
-    <a class="nav-item" id="n-transactions" onclick="go('transactions')"><span class="ni">💳</span><span class="nav-lbl">Transactions</span></a>
-    <a class="nav-item" id="n-cash" onclick="go('cash')"><span class="ni">🏦</span><span class="nav-lbl">Bank Accounts</span></a>
-    <a class="nav-item" id="n-bva" onclick="go('bva')"><span class="ni">📊</span><span class="nav-lbl">Budget</span></a>
-    <a class="nav-item" id="n-goals" onclick="go('goals')"><span class="ni">🎯</span><span class="nav-lbl">Goals</span></a>
-    <a class="nav-item" id="n-bills" onclick="go('bills')"><span class="ni">📅</span><span class="nav-lbl">Bills</span></a>
-    <a class="nav-item" id="n-insights" onclick="go('insights')"><span class="ni">✨</span><span class="nav-lbl">Graphs</span></a>
+    <a class="nav-item active" id="n-dashboard" onclick="go('dashboard')" aria-current="page"><span class="ni"><i class="ti ti-home"></i></span><span class="nav-lbl">My Dashboard</span></a>
+    <a class="nav-item" id="n-quickstart" onclick="go('quickstart')"><span class="ni"><i class="ti ti-rocket"></i></span><span class="nav-lbl">Quick Start</span></a>
+    <a class="nav-item" id="n-transactions" onclick="go('transactions')"><span class="ni"><i class="ti ti-credit-card"></i></span><span class="nav-lbl">Transactions</span></a>
+    <a class="nav-item" id="n-cash" onclick="go('cash')"><span class="ni"><i class="ti ti-building-bank"></i></span><span class="nav-lbl">Bank Accounts</span></a>
+    <a class="nav-item" id="n-bva" onclick="go('bva')"><span class="ni"><i class="ti ti-chart-bar"></i></span><span class="nav-lbl">Budget</span></a>
+    <a class="nav-item" id="n-goals" onclick="go('goals')"><span class="ni"><i class="ti ti-target"></i></span><span class="nav-lbl">Goals</span></a>
+    <a class="nav-item" id="n-bills" onclick="go('bills')"><span class="ni"><i class="ti ti-calendar"></i></span><span class="nav-lbl">Bills</span></a>
+    <a class="nav-item" id="n-insights" onclick="go('insights')"><span class="ni"><i class="ti ti-sparkles"></i></span><span class="nav-lbl">Graphs</span></a>
 
     <div class="nav-div"></div>
 
     <!-- Financial Planning Tools — category icon + hover flyout -->
     <div class="nav-group" data-fly="planning">
       <div class="nav-item nav-cat" id="nav-cat-planning" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-planning">
-        <span class="ni">📊</span><span class="nav-lbl">Financial Planning</span><span class="nav-cat-arr">›</span>
+        <span class="ni"><i class="ti ti-chart-bar"></i></span><span class="nav-lbl">Financial Planning</span><span class="nav-cat-arr">›</span>
       </div>
       <div class="nav-flyout" id="fly-planning" role="menu" aria-label="Financial Planning Tools">
         <div class="nav-flyout-hd">Financial Planning Tools</div>
-        <a class="nav-fly-item" id="n-assets" onclick="go('assets')" role="menuitem"><span class="ni">💰</span><span>Net Worth</span></a>
-        <a class="nav-fly-item" id="n-mortgage" onclick="go('mortgage')" role="menuitem"><span class="ni">🏡</span><span>Home Mortgage</span></a>
-        <a class="nav-fly-item" id="n-liabilities" onclick="go('liabilities')" role="menuitem"><span class="ni">⚖️</span><span>Liabilities</span></a>
-        <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni">💼</span><span>Superannuation</span></a>
-        <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni">📈</span><span>Investments</span></a>
-        <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni">🛡️</span><span>Life Insurance</span></a>
-        <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni">🏘️</span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
-        <a class="nav-fly-item" id="n-forecast" onclick="go('forecast')" role="menuitem"><span class="ni">🔮</span><span>Cashflow Forecasts</span></a>
+        <a class="nav-fly-item" id="n-assets" onclick="go('assets')" role="menuitem"><span class="ni"><i class="ti ti-coin"></i></span><span>Net Worth</span></a>
+        <a class="nav-fly-item" id="n-mortgage" onclick="go('mortgage')" role="menuitem"><span class="ni"><i class="ti ti-home-2"></i></span><span>Home Mortgage</span></a>
+        <a class="nav-fly-item" id="n-liabilities" onclick="go('liabilities')" role="menuitem"><span class="ni"><i class="ti ti-scale"></i></span><span>Liabilities</span></a>
+        <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni"><i class="ti ti-briefcase"></i></span><span>Superannuation</span></a>
+        <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni"><i class="ti ti-trending-up"></i></span><span>Investments</span></a>
+        <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni"><i class="ti ti-shield-check"></i></span><span>Life Insurance</span></a>
+        <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
+        <a class="nav-fly-item" id="n-forecast" onclick="go('forecast')" role="menuitem"><span class="ni"><i class="ti ti-sparkles"></i></span><span>Cashflow Forecasts</span></a>
       </div>
     </div>
 
     <!-- App Controls — category icon + hover flyout -->
     <div class="nav-group" data-fly="controls">
       <div class="nav-item nav-cat" id="nav-cat-controls" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-controls">
-        <span class="ni">🛠️</span><span class="nav-lbl">App Controls</span><span class="nav-cat-arr">›</span>
+        <span class="ni"><i class="ti ti-tools"></i></span><span class="nav-lbl">App Controls</span><span class="nav-cat-arr">›</span>
       </div>
       <div class="nav-flyout" id="fly-controls" role="menu" aria-label="App Controls">
         <div class="nav-flyout-hd">App Controls</div>
-        <a class="nav-fly-item" id="n-upload" onclick="go('upload')" role="menuitem"><span class="ni">📤</span><span>Upload Transactions</span></a>
-        <a class="nav-fly-item" id="n-transfers" onclick="go('transfers')" role="menuitem"><span class="ni">🔄</span><span>Transfers</span></a>
-        <a class="nav-fly-item" id="n-categories" onclick="go('categories')" role="menuitem"><span class="ni">🏷️</span><span>Categories</span></a>
-        <a class="nav-fly-item" id="n-smartrules" onclick="go('smartrules')" role="menuitem"><span class="ni">⚡</span><span>Smart Rules</span></a>
-        <a class="nav-fly-item" id="n-export" onclick="go('export')" role="menuitem"><span class="ni">⬇️</span><span>Export Data</span></a>
-        <a class="nav-fly-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')" role="menuitem"><span class="ni">✅</span><span>Quick Start</span></a>
+        <a class="nav-fly-item" id="n-upload" onclick="go('upload')" role="menuitem"><span class="ni"><i class="ti ti-upload"></i></span><span>Upload Transactions</span></a>
+        <a class="nav-fly-item" id="n-transfers" onclick="go('transfers')" role="menuitem"><span class="ni"><i class="ti ti-refresh"></i></span><span>Transfers</span></a>
+        <a class="nav-fly-item" id="n-categories" onclick="go('categories')" role="menuitem"><span class="ni"><i class="ti ti-tag"></i></span><span>Categories</span></a>
+        <a class="nav-fly-item" id="n-smartrules" onclick="go('smartrules')" role="menuitem"><span class="ni"><i class="ti ti-bolt"></i></span><span>Smart Rules</span></a>
+        <a class="nav-fly-item" id="n-export" onclick="go('export')" role="menuitem"><span class="ni"><i class="ti ti-download"></i></span><span>Export Data</span></a>
+        <a class="nav-fly-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')" role="menuitem"><span class="ni"><i class="ti ti-circle-check-filled"></i></span><span>Quick Start</span></a>
       </div>
     </div>
   </div>
   <div class="nav-foot">
-    <button class="nav-settings-btn" id="n-settings" onclick="go('settings')" title="Settings" aria-label="Settings"><span class="ni">⚙️</span><span class="nav-lbl">Settings</span></button>
+    <button class="nav-settings-btn" id="n-settings" onclick="go('settings')" title="Settings" aria-label="Settings"><span class="ni"><i class="ti ti-settings"></i></span><span class="nav-lbl">Settings</span></button>
   </div>
 </nav>
 
 <!-- ═══ CREATE RULE MODAL (global — accessible from any page) ═══ -->
 <div class="modal-overlay" id="create-rule-modal" onclick="if(event.target===this)document.getElementById('create-rule-modal').style.display='none'">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;width:100%">
-    <h3 style="margin-bottom:4px">⚡ Create New Rule</h3>
+    <h3 style="margin-bottom:4px"><i class="ti ti-bolt"></i> Create New Rule</h3>
     <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Auto-assign a category whenever a transaction matches this merchant.</p>
     <div style="display:grid;gap:14px">
       <div>
@@ -1102,7 +1102,7 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- Insurance Edit Modal -->
 <div class="modal-overlay" id="edit-modal-insurance" onclick="if(event.target===this)insHideEditModal()" style="display:none">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <h3 style="margin-bottom:4px">✏️ Edit Policy</h3>
+    <h3 style="margin-bottom:4px"><i class="ti ti-pencil"></i> Edit Policy</h3>
     <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Update policy details and coverage information.</p>
     <div style="display:grid;gap:12px">
       <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
@@ -1335,7 +1335,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Cash Flow Trend -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0">📈 Cash Flow — Last 12 Months</div>
+          <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Cash Flow — Last 12 Months</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div class="db-chart-fill"><canvas id="ins-cashflow-chart"></canvas></div>
@@ -1344,7 +1344,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Period Comparison -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0">📊 Income vs Expenses — Period Comparison</div>
+          <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Income vs Expenses — Period Comparison</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div class="db-chart-fill" style="min-height:200px"><canvas id="ins-compare-chart"></canvas></div>
@@ -1354,7 +1354,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Net Worth Over Time -->
       <div class="card">
         <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0">📈 Net Worth Over Time</div>
+          <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Net Worth Over Time</div>
           <a href="#" onclick="go('assets');return false;" class="tile-link">View net worth →</a>
         </div>
         <div id="ins-nw-deltas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
@@ -1364,7 +1364,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Income Flow Sankey -->
       <div class="card" id="ins-sankey-row" style="position:relative;overflow:hidden">
         <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0">💸 Income Flow</div>
+          <div class="section-label" style="margin:0"><i class="ti ti-cash-off"></i> Income Flow</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-sankey-container"></div>
@@ -1375,7 +1375,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px">
-            <div class="section-label" style="margin:0">📊 Spending by Category</div>
+            <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Spending by Category</div>
             <div id="ins-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
@@ -1388,7 +1388,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <div class="section-label" style="margin:0">🔎 Spending by Subcategory</div>
+            <div class="section-label" style="margin:0"><i class="ti ti-search"></i> Spending by Subcategory</div>
             <select id="ins-subcat-filter-cat" onchange="insRenderSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
               <option value="">All Categories</option>
             </select>
@@ -1404,7 +1404,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px">
-            <div class="section-label" style="margin:0">💰 Income by Category</div>
+            <div class="section-label" style="margin:0"><i class="ti ti-coin"></i> Income by Category</div>
             <div id="ins-inc-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
           </div>
           <a href="#" onclick="insGoToTxFiltered('income','','',insPeriodStr());return false;" class="tile-link">View transactions →</a>
@@ -1417,7 +1417,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="card">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <div class="section-label" style="margin:0">🔎 Income by Subcategory</div>
+            <div class="section-label" style="margin:0"><i class="ti ti-search"></i> Income by Subcategory</div>
             <select id="ins-inc-subcat-filter-cat" onchange="insRenderIncSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
               <option value="">All Categories</option>
             </select>
@@ -1444,8 +1444,8 @@ window.addEventListener('unhandledrejection',function(e){
           <div><label class="lbl">Date</label><input type="date" id="tx-date"/></div>
           <div><label class="lbl">Type</label>
             <select id="tx-type" onchange="togglePerson();populateCatSelect()">
-              <option value="income">💚 Income</option>
-              <option value="expense">🔴 Expense</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
             </select>
           </div>
         </div>
@@ -1466,7 +1466,7 @@ window.addEventListener('unhandledrejection',function(e){
             <select id="tx-person">
               <option value="brenton" data-profile-name="brenton">Brenton</option>
               <option value="shelley" data-profile-name="shelley">Shelley</option>
-              <option value="joint">🤝 Joint</option>
+              <option value="joint">Joint</option>
             </select>
           </div>
           <div><label class="lbl">Account</label>
@@ -1501,8 +1501,8 @@ window.addEventListener('unhandledrejection',function(e){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <div class="section-label" style="margin:0">Transaction History</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="txClearFilters()" id="tx-clear-filters" style="display:none">✕ Clear filters</button>
-          <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions">🤖 Rescan Categories</button>
+          <button class="btn btn-ghost btn-sm" onclick="txClearFilters()" id="tx-clear-filters" style="display:none"><i class="ti ti-x"></i> Clear filters</button>
+          <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions"><i class="ti ti-robot"></i> Rescan Categories</button>
           <span id="tx-rescan-result" style="font-size:.76rem;display:none"></span>
         </div>
       </div>
@@ -1535,7 +1535,7 @@ window.addEventListener('unhandledrejection',function(e){
         <span class="tx-bulk-count" id="tx-bulk-count">0 selected</span>
         <select id="tx-bulk-cat" style="padding:7px 10px;font-size:.82rem;width:auto;"></select>
         <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
-        <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()">✕ Cancel</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()"><i class="ti ti-x"></i> Cancel</button>
       </div>
       <!-- Rule suggestion banner -->
       <div class="rule-banner" id="tx-rule-banner" style="display:none"></div>
@@ -1545,7 +1545,7 @@ window.addEventListener('unhandledrejection',function(e){
           <th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Account</th><th>Amount</th><th></th>
         </tr></thead>
         <tbody id="tx-tbody"></tbody></table>
-        <div class="empty" id="tx-empty" style="display:none"><div class="ei">💸</div><p>No transactions yet.</p></div>
+        <div class="empty" id="tx-empty" style="display:none"><div class="ei"><i class="ti ti-cash-off"></i></div><p>No transactions yet.</p></div>
       </div>
     </div>
   </div>
@@ -1559,7 +1559,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div class="bl-header-actions">
         <button class="review-btn notif-pulse" id="bl-review-btn" style="display:none" onclick="blOpenReviewModal()">
-          <span>⚠️ Review Bills</span>
+          <span><i class="ti ti-alert-triangle"></i> Review Bills</span>
           <div class="notif-dot" id="bl-review-dot">0</div>
         </button>
         <button class="btn btn-primary btn-sm" style="border-radius:var(--radius-pill)" onclick="blOpenAddModal()">＋ Add Bill</button>
@@ -1635,7 +1635,7 @@ window.addEventListener('unhandledrejection',function(e){
           </thead>
           <tbody id="bl-table-body"></tbody>
         </table>
-        <div class="empty" id="bl-table-empty" style="display:none"><div class="ei">🧾</div><p>No recurring bills detected yet — add transactions or add a bill manually.</p></div>
+        <div class="empty" id="bl-table-empty" style="display:none"><div class="ei"><i class="ti ti-receipt"></i></div><p>No recurring bills detected yet — add transactions or add a bill manually.</p></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--border)" id="bl-pagination"></div>
     </div>
@@ -1702,17 +1702,17 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div id="ct-offset-sync-banner" style="display:none;background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
           <button class="btn btn-ghost btn-sm" onclick="pullOffsetFromCT()" style="float:right;padding:4px 10px;font-size:.72rem;margin-left:8px">↻ Sync</button>
-          <span style="color:var(--primary);font-weight:700">🔗 Cash Tracker offset:</span>
+          <span style="color:var(--primary);font-weight:700"><i class="ti ti-link"></i> Cash Tracker offset:</span>
           <span id="ct-offset-sync-text" style="color:var(--muted);margin-left:5px"></span>
         </div>
         <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
-          🔗 <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
+          <i class="ti ti-link"></i> <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
         </div>
         <div class="form-grid">
           <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Month this valuation applies to (defaults to current)</div></div>
         </div>
         <hr class="div"/>
-        <div class="section-label">🔗 Link to Liability</div>
+        <div class="section-label"><i class="ti ti-link"></i> Link to Liability</div>
         <div style="margin-bottom:14px">
           <label class="lbl">Linked Liability Record</label>
           <select id="m-linked-liability" onchange="mortgageLiabilityLinkBanner()" style="margin-bottom:8px">
@@ -1722,7 +1722,7 @@ window.addEventListener('unhandledrejection',function(e){
           <div id="m-liab-link-banner" style="display:none;padding:8px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)"></div>
           <div style="font-size:.68rem;color:var(--muted);margin-top:6px">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
         </div>
-        <button class="btn btn-primary" onclick="saveMortgage()">💾 Save Details</button>
+        <button class="btn btn-primary" onclick="saveMortgage()"><i class="ti ti-device-floppy"></i> Save Details</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
@@ -1742,7 +1742,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card" id="offset-sim-card" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px">
         <div>
-          <div class="section-label">🎚️ Offset Simulator</div>
+          <div class="section-label"><i class="ti ti-adjustments"></i> Offset Simulator</div>
           <div style="font-size:.78rem;color:var(--muted)">Drag to see how different offset balances affect your loan</div>
         </div>
         <div style="background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center">
@@ -1766,7 +1766,7 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="occ-after" id="occ-trm-a">—</div><div class="occ-save" id="occ-trm-s"></div></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:.82rem;font-weight:600">💰 Total Interest Saved</span>
+        <span style="font-size:.82rem;font-weight:600"><i class="ti ti-coin"></i> Total Interest Saved</span>
         <span id="occ-total-save" style="font-family:var(--font-mono);font-size:1.1rem;color:var(--primary);font-weight:700">—</span>
       </div>
       <div class="prog-track" style="height:12px">
@@ -1778,7 +1778,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card" id="mortgage-paydown-card" style="margin-top:18px;display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div>
-          <div class="section-label" style="margin-bottom:2px">📉 Mortgage Paydown Schedule</div>
+          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-trending-down"></i> Mortgage Paydown Schedule</div>
           <div style="font-size:.76rem;color:var(--muted)">Balance reduction over time — with and without your offset account</div>
         </div>
         <div style="display:flex;gap:8px">
@@ -1791,7 +1791,7 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- RATE SENSITIVITY CALCULATOR -->
     <div class="card" id="rate-sensitivity-card" style="margin-top:18px;display:none">
       <div style="margin-bottom:16px">
-        <div class="section-label" style="margin-bottom:3px">📈 Interest Rate Sensitivity Calculator</div>
+        <div class="section-label" style="margin-bottom:3px"><i class="ti ti-trending-up"></i> Interest Rate Sensitivity Calculator</div>
         <div id="rate-linked-info" style="margin-top:6px;font-size:.78rem;line-height:1.5;color:var(--muted)">Repayments calculated on outstanding loan balance (offset shown separately as an interest-saving note).</div>
       </div>
 
@@ -1845,7 +1845,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Mortgage section -->
     <div style="margin-top:20px">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">🏠 Mortgage</div>
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px"><i class="ti ti-home"></i> Mortgage</div>
       <div id="liab-mortgages"></div>
     </div>
 
@@ -1875,7 +1875,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb ct-explainer" id="ct-explainer">
       <div class="ct-exp-hd" onclick="ctToggleExplainer()">
         <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.2rem">📖</span>
+          <span style="font-size:1.2rem"><i class="ti ti-book"></i></span>
           <div>
             <div style="font-weight:700;font-size:.9rem;color:var(--text)">How to use Cash Tracker</div>
             <div style="font-size:.74rem;color:var(--muted)">Manual monthly balance snapshots — tap to expand</div>
@@ -1886,28 +1886,28 @@ window.addEventListener('unhandledrejection',function(e){
       <div id="ct-exp-body" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
         <div class="ct-exp-grid">
           <div class="ct-exp-item">
-            <div class="ct-exp-icon">📅</div>
+            <div class="ct-exp-icon"><i class="ti ti-calendar"></i></div>
             <div>
               <div class="ct-exp-title">When to update</div>
               <div class="ct-exp-text">Record your balance whenever you check your accounts — you don't need to wait until month-end. Each entry is stored against a <strong>month</strong> (e.g. May 2025) but the <strong>date updated</strong> field lets you record exactly when you logged it.</div>
             </div>
           </div>
           <div class="ct-exp-item">
-            <div class="ct-exp-icon">💡</div>
+            <div class="ct-exp-icon"><i class="ti ti-bulb"></i></div>
             <div>
               <div class="ct-exp-title">What balance to enter</div>
               <div class="ct-exp-text">Enter the <strong>closing balance</strong> — whatever the account shows when you log in. An entry mid-month is better than no entry. You can edit it later if you check again at month-end.</div>
             </div>
           </div>
           <div class="ct-exp-item">
-            <div class="ct-exp-icon">📊</div>
+            <div class="ct-exp-icon"><i class="ti ti-chart-bar"></i></div>
             <div>
               <div class="ct-exp-title">Why it matters</div>
               <div class="ct-exp-text">Monthly snapshots power your <strong>Net Worth trend</strong>, Health Score calculations, and year-on-year comparisons on the Dashboard. Each account's history is shown as a trend line on the chart below.</div>
             </div>
           </div>
           <div class="ct-exp-item">
-            <div class="ct-exp-icon">🔧</div>
+            <div class="ct-exp-icon"><i class="ti ti-tool"></i></div>
             <div>
               <div class="ct-exp-title">Managing accounts</div>
               <div class="ct-exp-text">Add, rename or remove accounts in <strong>Settings → Accounts</strong>. New accounts automatically appear here. To rename labels quickly, use the fields in the Account Labels section below.</div>
@@ -1928,7 +1928,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="ct-add-acct-form" class="card mb" style="display:none">
       <div class="section-label" style="margin-bottom:14px">New Account</div>
       <div class="form-grid" style="grid-template-columns:56px 1fr;margin-bottom:10px">
-        <div><label class="lbl">Icon</label><input type="text" id="ct-new-icon" value="🏦" style="text-align:center;font-size:1.4rem;padding:8px 4px"/></div>
+        <div><label class="lbl">Icon</label><div id="ct-new-icon-wrap"></div></div>
         <div><label class="lbl">Nickname</label><input type="text" id="ct-new-name" placeholder="e.g. Everyday Account" style="font-size:16px"/></div>
       </div>
       <div class="form-grid" style="margin-bottom:10px">
@@ -1985,11 +1985,11 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="ct-accts-container"></div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-        <div class="section-label" style="margin:0">📈 Combined Balances Over Time</div>
-        <button class="btn btn-ghost btn-sm" onclick="ctExportCSV()">⬇️ Export CSV</button>
+        <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Combined Balances Over Time</div>
+        <button class="btn btn-ghost btn-sm" onclick="ctExportCSV()"><i class="ti ti-download"></i> Export CSV</button>
       </div>
       <div class="goal-bar">
-        <label>🎯 Goal:</label>
+        <label><i class="ti ti-target"></i> Goal:</label>
         <select id="ct-goal-freq" onchange="saveCTGoal()" style="width:110px">
           <option value="monthly">Monthly</option><option value="annual">Annual</option>
         </select>
@@ -2021,7 +2021,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Coverage Gap Analysis + Coverage Bars (single card) -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">💔 Coverage Gap Analysis</div>
+      <div class="section-label" style="margin-bottom:14px"><i class="ti ti-heart-broken"></i> Coverage Gap Analysis</div>
       <div style="height:300px;position:relative;margin-bottom:16px">
         <canvas id="ins-coverage-chart"></canvas>
       </div>
@@ -2032,15 +2032,15 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb">
       <details style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px">
         <summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;align-items:center;gap:6px">
-          📅 Upcoming Renewals <span style="opacity:.5">▾</span>
+          <i class="ti ti-calendar"></i> Upcoming Renewals <span style="opacity:.5">▾</span>
         </summary>
         <div id="ins-renewals" style="margin-top:10px"></div>
       </details>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="section-label" style="margin:0">All Policies</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()">📊 CSV</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()">📄 Report</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()"><i class="ti ti-chart-bar"></i> CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()"><i class="ti ti-file-text"></i> Report</button>
           <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto">
             <option value="">All Types</option><option>Life</option><option>TPD</option><option>Income Protection</option>
           </select>
@@ -2053,7 +2053,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb" id="li-needs-card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         <div>
-          <div class="section-label" style="margin-bottom:2px">💛 Life, TPD &amp; Income Protection — Needs Analysis</div>
+          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-heart"></i> Life, TPD &amp; Income Protection — Needs Analysis</div>
           <div style="font-size:.76rem;color:var(--muted)">Enter your existing TPD and IP cover in each card to see your coverage gaps. Life, TPD and IP calculated independently. IP: 75% of income, 90-day wait, to age 65.</div>
         </div>
         <div style="display:flex;gap:0;background:var(--card2);border:1px solid var(--border);border-radius:9px;overflow:hidden">
@@ -2068,7 +2068,7 @@ window.addEventListener('unhandledrejection',function(e){
         <!-- BRENTON -->
         <div class="li-card">
           <div class="li-card-hd" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
-            <span style="font-size:1.3rem">💼</span>
+            <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
             <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Brenton</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
@@ -2090,7 +2090,7 @@ window.addEventListener('unhandledrejection',function(e){
         <!-- SHELLEY -->
         <div class="li-card">
           <div class="li-card-hd" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
-            <span style="font-size:1.3rem">💼</span>
+            <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
             <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Shelley</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
@@ -2110,7 +2110,7 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
         </div>
       </div>
-      <div style="font-size:.7rem;color:var(--muted)">⚠️ Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
+      <div style="font-size:.7rem;color:var(--muted)"><i class="ti ti-alert-triangle"></i> Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
     </div>
 
   </div>
@@ -2124,7 +2124,7 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Super Accounts Aggregation -->
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        <div class="section-label" style="margin:0">💼 Super Accounts Summary</div>
+        <div class="section-label" style="margin:0"><i class="ti ti-briefcase"></i> Super Accounts Summary</div>
       </div>
       <div id="super-agg-table"></div>
     </div>
@@ -2133,7 +2133,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Brenton -->
       <div class="card">
         <div class="super-header" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
-          <span style="font-size:1.6rem">💼</span>
+          <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
           <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Brenton</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
         </div>
 
@@ -2195,7 +2195,7 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- Shelley -->
       <div class="card">
         <div class="super-header" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
-          <span style="font-size:1.6rem">💼</span>
+          <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
           <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Shelley</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
         </div>
 
@@ -2259,7 +2259,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Div 293 Section -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:3px">⚡ Division 293 Tax — Full Breakdown</div>
+      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-bolt"></i> Division 293 Tax — Full Breakdown</div>
       <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">For high earners (income + concessional contributions &gt; $250,000), Div 293 charges an additional 15% tax on contributions — raising the effective rate from 15% to 30%. This section shows the full impact including after-tax benefit and net super growth impact.</div>
       <div class="d293-wrap" id="d293-cards"></div>
     </div>
@@ -2270,7 +2270,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div id="super-combined" style="margin-top:16px"></div>
     </div>
     <div style="margin-top:12px;padding:10px 14px;background:#2a1a25;border-radius:9px;font-size:.72rem;color:var(--muted)">
-      ⚠️ Projections are illustrative estimates only and do not constitute financial advice.
+      <i class="ti ti-alert-triangle"></i> Projections are illustrative estimates only and do not constitute financial advice.
     </div>
 
     <!-- Monthly super balance history grid -->
@@ -2291,10 +2291,10 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- Left: asset & liability breakdowns -->
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="card"><div class="section-label">🏦 Bank Balances</div><div id="assets-bank"></div></div>
-        <div class="card"><div class="section-label">💼 Superannuation</div><div id="assets-super"></div></div>
-        <div class="card"><div class="section-label">🏡 Property Equity</div><div id="assets-property"></div></div>
-        <div class="card"><div class="section-label">⚖️ Liabilities</div><div id="assets-liabilities-summary"></div></div>
+        <div class="card"><div class="section-label"><i class="ti ti-building-bank"></i> Bank Balances</div><div id="assets-bank"></div></div>
+        <div class="card"><div class="section-label"><i class="ti ti-briefcase"></i> Superannuation</div><div id="assets-super"></div></div>
+        <div class="card"><div class="section-label"><i class="ti ti-home-2"></i> Property Equity</div><div id="assets-property"></div></div>
+        <div class="card"><div class="section-label"><i class="ti ti-scale"></i> Liabilities</div><div id="assets-liabilities-summary"></div></div>
       </div>
 
       <!-- Right: three donuts + net position panel -->
@@ -2323,7 +2323,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb" style="padding:14px 18px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
-          <div class="section-label" style="margin-bottom:2px">📈 Equity Holdings</div>
+          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-trending-up"></i> Equity Holdings</div>
           <div style="font-size:.74rem;color:var(--muted)">RSU grants and share portfolio</div>
         </div>
         <a href="#" onclick="go('equities');return false;" class="btn btn-ghost btn-sm">View Holdings →</a>
@@ -2334,7 +2334,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         <div>
-          <div class="section-label" style="margin-bottom:2px">📅 Monthly Net Worth History</div>
+          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-calendar"></i> Monthly Net Worth History</div>
           <div style="font-size:.74rem;color:var(--muted)">Snapshot recorded automatically each time you save a balance, liability, or asset. Components shown when available.</div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="renderNetWorthHistory()">↻ Refresh</button>
@@ -2392,7 +2392,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
         <div class="section-label" style="margin:0">Holdings</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">💱 Update Prices</button>
+          <button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()"><i class="ti ti-currency-dollar"></i> Update Prices</button>
           <button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>
         </div>
       </div>
@@ -2418,10 +2418,10 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="csv-mount">
       <div class="card" id="csv-wizard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <div class="section-label" style="margin:0">📂 Import from CSV</div>
+          <div class="section-label" style="margin:0"><i class="ti ti-folder"></i> Import from CSV</div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()">⬇️ Download Template</button>
-            <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none">✕ Start over</button>
+            <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()"><i class="ti ti-download"></i> Download Template</button>
+            <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none"><i class="ti ti-x"></i> Start over</button>
           </div>
         </div>
 
@@ -2439,13 +2439,13 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="csv-drop" id="csv-drop"
             onclick="document.getElementById('csv-file-input').click()"
             ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
-            <div class="cd-icon">📄</div>
+            <div class="cd-icon"><i class="ti ti-file-text"></i></div>
             <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
             <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
           </div>
           <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
           <div class="imp-hint">
-            <strong>💡 What format does my CSV need?</strong>
+            <strong><i class="ti ti-bulb"></i> What format does my CSV need?</strong>
             Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
             You'll map your columns in the next step. Download the template above for a ready-to-fill example.
           </div>
@@ -2463,7 +2463,7 @@ window.addEventListener('unhandledrejection',function(e){
             </table>
           </div>
           <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
-            💡 <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
+            <i class="ti ti-bulb"></i> <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
             Negative amounts are treated as expenses automatically.
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -2476,7 +2476,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="csv-panel" id="csv-p3">
           <div class="imp-stats" id="csv-imp-stats"></div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-            <div style="font-size:.76rem;color:var(--muted)">🟡 Yellow = possible duplicate &nbsp;·&nbsp; 🔴 Red = skipped (missing data)</div>
+            <div style="font-size:.76rem;color:var(--muted)"><i class="ti ti-circle-filled" style="color:#eab308"></i> Yellow = possible duplicate &nbsp;·&nbsp; <i class="ti ti-circle-filled" style="color:#ef4444"></i> Red = skipped (missing data)</div>
             <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
               <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
               Skip duplicates
@@ -2490,7 +2490,7 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
             <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
-            <button class="btn btn-primary" onclick="csvConfirmImport()">✅ Import Transactions</button>
+            <button class="btn btn-primary" onclick="csvConfirmImport()"><i class="ti ti-circle-check-filled"></i> Import Transactions</button>
           </div>
         </div>
       </div>
@@ -2505,22 +2505,22 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Quick export buttons -->
     <div class="g3 mb">
       <div class="card" style="text-align:center;cursor:pointer" onclick="exportFullBackup()">
-        <div style="font-size:2.2rem;margin-bottom:10px">💾</div>
+        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-device-floppy"></i></div>
         <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Full Backup</div>
         <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All data as JSON — restore on any device</div>
-        <button class="btn btn-primary" style="width:100%">⬇️ Download Backup</button>
+        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download Backup</button>
       </div>
       <div class="card" style="text-align:center;cursor:pointer" onclick="exportTransactionsCSV()">
-        <div style="font-size:2.2rem;margin-bottom:10px">💳</div>
+        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-credit-card"></i></div>
         <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Transactions CSV</div>
         <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All transactions — open in Excel or Sheets</div>
-        <button class="btn btn-primary" style="width:100%">⬇️ Download CSV</button>
+        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download CSV</button>
       </div>
       <div class="card" style="text-align:center;cursor:pointer" onclick="exportSummaryCSV()">
-        <div style="font-size:2.2rem;margin-bottom:10px">📊</div>
+        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-chart-bar"></i></div>
         <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Monthly Summary CSV</div>
         <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Income & expenses by month — for budgeting</div>
-        <button class="btn btn-primary" style="width:100%">⬇️ Download CSV</button>
+        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download CSV</button>
       </div>
     </div>
 
@@ -2532,7 +2532,7 @@ window.addEventListener('unhandledrejection',function(e){
       </p>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <label class="btn btn-ghost" style="cursor:pointer;min-height:44px">
-          📂 Choose Backup File
+          <i class="ti ti-folder"></i> Choose Backup File
           <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="restoreBackup(event)"/>
         </label>
         <div id="restore-status" style="font-size:.82rem;color:var(--muted)"></div>
@@ -2549,10 +2549,10 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- Data summary -->
       <div class="card">
-        <div class="section-label">📋 Data Summary</div>
+        <div class="section-label"><i class="ti ti-clipboard-list"></i> Data Summary</div>
         <div id="export-data-summary"></div>
         <hr class="div"/>
-        <div class="section-label">🗑️ Clear Data</div>
+        <div class="section-label"><i class="ti ti-trash"></i> Clear Data</div>
         <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
           Permanently delete data from a specific section. Always export a backup first.
         </p>
@@ -2591,7 +2591,7 @@ window.addEventListener('unhandledrejection',function(e){
             <input type="checkbox" id="bva-show-all" onchange="renderBVA()" style="accent-color:var(--primary);width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
             Show all categories
           </label>
-          <button class="btn btn-ghost btn-sm" onclick="go('categories')">⚙️ Manage Categories</button>
+          <button class="btn btn-ghost btn-sm" onclick="go('categories')"><i class="ti ti-settings"></i> Manage Categories</button>
         </div>
       </div>
       <div class="tbl-wrap">
@@ -2608,7 +2608,7 @@ window.addEventListener('unhandledrejection',function(e){
           </thead>
           <tbody id="bva-tbody"></tbody>
         </table>
-        <div class="empty" id="bva-empty" style="display:none"><div class="ei">📊</div><p>No expense transactions this month yet.</p></div>
+        <div class="empty" id="bva-empty" style="display:none"><div class="ei"><i class="ti ti-chart-bar"></i></div><p>No expense transactions this month yet.</p></div>
       </div>
     </div>
 
@@ -2653,13 +2653,13 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Import / Export / Reset -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:10px">📥 Import / Export</div>
+      <div class="section-label" style="margin-bottom:10px"><i class="ti ti-download"></i> Import / Export</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-          📂 Import JSON
+          <i class="ti ti-folder"></i> Import JSON
           <input type="file" accept=".json" style="display:none" onchange="importCategories(event)"/>
         </label>
-        <button class="btn btn-ghost btn-sm" onclick="exportCategories()">⬇️ Export JSON</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCategories()"><i class="ti ti-download"></i> Export JSON</button>
         <button class="btn btn-ghost btn-sm" onclick="resetDefaultCategories()">↩ Reset to Defaults</button>
       </div>
       <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Export saves all categories + subcategories. Import replaces the full list. Reset restores the built-in family categories.</div>
@@ -2680,7 +2680,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Smart Rules shortcut -->
     <div class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="go('smartrules')">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(240,83,138,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">⚡</div>
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(240,83,138,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0"><i class="ti ti-bolt"></i></div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:.9rem;margin-bottom:2px">Smart Rules</div>
         <div style="font-size:.75rem;color:var(--muted)">Create and manage auto-categorisation rules for your merchants.</div>
@@ -2693,7 +2693,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb" id="bank-comparison-card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="toggleBankComparison()">
         <div>
-          <div class="section-label" style="margin:0">🏦 Australian Bank Category Comparison</div>
+          <div class="section-label" style="margin:0"><i class="ti ti-building-bank"></i> Australian Bank Category Comparison</div>
           <p style="font-size:.76rem;color:var(--muted);margin:4px 0 0">See how Kelda categories map to CBA, Westpac, NAB, ANZ, Macquarie, Up Bank, Amex &amp; HEM.</p>
         </div>
         <span id="bank-cmp-chevron" style="font-size:1.1rem;color:var(--muted);transition:transform .2s">▼</span>
@@ -2706,15 +2706,15 @@ window.addEventListener('unhandledrejection',function(e){
           <div id="bank-cmp-table"></div>
         </div>
         <p style="font-size:.68rem;color:var(--muted);margin-top:12px">
-          ✦ Kelda categories are a superset — some granular distinctions (e.g. Pets, Tax) don't appear in every bank's taxonomy.<br>
-          ✦ HEM = Australian Bureau of Statistics Household Expenditure Measure (12 primary categories).
+          <i class="ti ti-sparkles"></i> Kelda categories are a superset — some granular distinctions (e.g. Pets, Tax) don't appear in every bank's taxonomy.<br>
+          <i class="ti ti-sparkles"></i> HEM = Australian Bureau of Statistics Household Expenditure Measure (12 primary categories).
         </p>
       </div>
     </div>
 
     <!-- Bulk reprocess -->
     <div class="card">
-      <div class="section-label" style="margin-bottom:3px">🤖 Bulk Auto-Categorise</div>
+      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
       <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a rule.</p>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <button class="btn btn-primary btn-sm" id="acat-reprocess-btn" onclick="acatReprocess()">▶ Run Now</button>
@@ -2722,10 +2722,10 @@ window.addEventListener('unhandledrejection',function(e){
         <span id="acat-result" style="font-size:.8rem"></span>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px">🔧 Fix Invalid Category IDs</div>
+        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px"><i class="ti ti-tool"></i> Fix Invalid Category IDs</div>
         <p style="font-size:.74rem;color:var(--muted);margin-bottom:10px">Repairs transactions with legacy or unrecognised categories (e.g. "groceries", "dining", "Other") and maps them to the correct standard categories or Other.</p>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="runFixOrphaned()">🔧 Fix Now</button>
+          <button class="btn btn-ghost btn-sm" onclick="runFixOrphaned()"><i class="ti ti-tool"></i> Fix Now</button>
           <span id="fix-orphan-result" style="font-size:.8rem"></span>
         </div>
       </div>
@@ -2743,14 +2743,14 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb" style="background:linear-gradient(135deg,rgba(240,83,138,.08) 0%,rgba(129,140,248,.08) 100%);border-color:rgba(240,83,138,.2)">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
         <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">⚡</div>
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px"><i class="ti ti-bolt"></i></div>
           <div>
             <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Confirmed Rules</div>
             <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Rules you create manually or confirm from suggestions. Highest priority — always applied first.</div>
           </div>
         </div>
         <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">🤖</div>
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px"><i class="ti ti-robot"></i></div>
           <div>
             <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Auto-Learned</div>
             <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Patterns the app learns when you categorise transactions. Promoted to Confirmed with one click.</div>
@@ -2764,7 +2764,7 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
         </div>
         <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">🔢</div>
+          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px"><i class="ti ti-123"></i></div>
           <div>
             <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Priority order</div>
             <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Transfers → Confirmed Rules → High-confidence Learned → Keywords → Low-confidence Learned → Amount signal.</div>
@@ -2781,7 +2781,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Bulk reprocess (also accessible here) -->
     <div class="card" style="margin-top:16px">
-      <div class="section-label" style="margin-bottom:3px">🤖 Bulk Auto-Categorise</div>
+      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
       <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a confirmed rule.</p>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" id="acat-reprocess-btn2" onclick="acatReprocess2()">▶ Run Now</button>
@@ -2805,8 +2805,8 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="fc2-sync-time" style="font-size:.72rem;color:var(--muted);margin-top:2px"></div>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-ghost btn-sm active" id="fc2-bars-btn" onclick="fc2SetChartMode('bars')">📊 Bar Chart</button>
-        <button class="btn btn-ghost btn-sm" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled style="opacity:.4">📈 Cumulative</button>
+        <button class="btn btn-ghost btn-sm active" id="fc2-bars-btn" onclick="fc2SetChartMode('bars')"><i class="ti ti-chart-bar"></i> Bar Chart</button>
+        <button class="btn btn-ghost btn-sm" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled style="opacity:.4"><i class="ti ti-trending-up"></i> Cumulative</button>
         <button class="btn btn-primary btn-sm" onclick="fc2SyncBalance()">⟳ Sync Balance</button>
       </div>
     </div>
@@ -2825,7 +2825,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Insights -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">💡 Insights</div>
+      <div class="section-label" style="margin-bottom:14px"><i class="ti ti-bulb"></i> Insights</div>
       <div id="fc2-insights"></div>
     </div>
 
@@ -2898,7 +2898,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="fc2SaveAdj()">💾 Save</button>
+        <button class="btn btn-primary" onclick="fc2SaveAdj()"><i class="ti ti-device-floppy"></i> Save</button>
         <button class="btn btn-ghost" onclick="fc2CloseAdjForm()">Cancel</button>
       </div>
     </div>
@@ -2932,7 +2932,7 @@ window.addEventListener('unhandledrejection',function(e){
 <div class="modal-overlay" id="csv-modal" onclick="if(event.target===this)closeCsvModal()">
   <div class="modal-box" id="csv-modal-box" onclick="event.stopPropagation()" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="display:flex;justify-content:flex-end;margin-bottom:2px">
-      <button class="modal-close" onclick="closeCsvModal()" aria-label="Close">✕</button>
+      <button class="modal-close" onclick="closeCsvModal()" aria-label="Close"><i class="ti ti-x"></i></button>
     </div>
   </div>
 </div>
@@ -2943,7 +2943,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="search-modal-bar">
       <i class="ti ti-search search-modal-ic"></i>
       <input id="search-modal-input" type="text" placeholder="Search transactions by merchant, category or amount…" autocomplete="off" oninput="runGlobalSearch()" onkeydown="if(event.key==='Escape')closeSearchModal()"/>
-      <button class="modal-close" onclick="closeSearchModal()" aria-label="Close search">✕</button>
+      <button class="modal-close" onclick="closeSearchModal()" aria-label="Close search"><i class="ti ti-x"></i></button>
     </div>
     <div id="search-modal-results" class="search-modal-results"></div>
   </div>
@@ -2953,8 +2953,8 @@ window.addEventListener('unhandledrejection',function(e){
 <div class="modal-overlay" id="notif-modal" onclick="if(event.target===this)closeNotifModal()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div class="section-label" style="margin:0">🔔 Recommended for you</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeNotifModal()">✕ Close</button>
+      <div class="section-label" style="margin:0"><i class="ti ti-bell"></i> Recommended for you</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeNotifModal()"><i class="ti ti-x"></i> Close</button>
     </div>
     <div id="notif-modal-body"></div>
   </div>
@@ -2964,8 +2964,8 @@ window.addEventListener('unhandledrejection',function(e){
 <div class="modal-overlay" id="acct-vis-modal" onclick="if(event.target===this)closeAcctVisModal()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div class="section-label" style="margin:0">👁️ Show / hide accounts</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeAcctVisModal()">✕ Close</button>
+      <div class="section-label" style="margin:0"><i class="ti ti-eye"></i> Show / hide accounts</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAcctVisModal()"><i class="ti ti-x"></i> Close</button>
     </div>
     <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">Hide accounts with no active balance so they don't clutter your dashboard. This only affects what's shown here — nothing is deleted.</div>
     <div id="acct-vis-modal-body"></div>
@@ -2986,14 +2986,14 @@ window.addEventListener('unhandledrejection',function(e){
     <div style="margin-bottom:14px">
       <label class="lbl">Liability Type</label>
       <select id="liab-m-type" onchange="liabModalTypeChange()">
-        <option value="personal_loan">💰 Personal Loan</option>
-        <option value="credit_card">💳 Credit Card</option>
-        <option value="bnpl">📱 Buy Now Pay Later (BNPL)</option>
-        <option value="hecs">🎓 HECS / HELP Debt</option>
-        <option value="car_loan">🚗 Car Loan</option>
-        <option value="investment_loan">📊 Investment Loan</option>
-        <option value="tax_debt">⚠️ Tax Debt</option>
-        <option value="other">📋 Other</option>
+        <option value="personal_loan">Personal Loan</option>
+        <option value="credit_card">Credit Card</option>
+        <option value="bnpl">Buy Now Pay Later (BNPL)</option>
+        <option value="hecs">HECS / HELP Debt</option>
+        <option value="car_loan">Car Loan</option>
+        <option value="investment_loan">Investment Loan</option>
+        <option value="tax_debt">Tax Debt</option>
+        <option value="other">Other</option>
       </select>
     </div>
 
@@ -3059,7 +3059,7 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
 
     <div id="liab-m-sched-note" style="display:none;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:10px 14px;font-size:.76rem;color:var(--muted);margin-bottom:14px">
-      🎓 HECS repayments are managed via ATO payroll deduction. Enter your estimated annual repayment. No amortisation schedule is generated.
+      <i class="ti ti-school"></i> HECS repayments are managed via ATO payroll deduction. Enter your estimated annual repayment. No amortisation schedule is generated.
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:var(--card2);border-radius:10px">
@@ -3069,7 +3069,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="liabCloseModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="liabSave()">💾 Save Liability</button>
+      <button class="btn btn-primary" onclick="liabSave()"><i class="ti ti-device-floppy"></i> Save Liability</button>
     </div>
   </div>
 </div>
@@ -3082,7 +3082,7 @@ window.addEventListener('unhandledrejection',function(e){
       <input type="number" id="modal-goal-amt" placeholder="0.00" min="0" step="0.01"/></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="updateGoal()">💾 Update</button>
+      <button class="btn btn-primary" onclick="updateGoal()"><i class="ti ti-device-floppy"></i> Update</button>
     </div>
   </div>
 </div>
@@ -3091,7 +3091,7 @@ window.addEventListener('unhandledrejection',function(e){
 <div class="modal-overlay" id="bill-modal" onclick="if(event.target===this)blCloseAddModal()">
   <div class="modal-box">
     <div class="modal-header"><div class="modal-title">＋ Add Bill</div>
-      <button class="modal-close" onclick="blCloseAddModal()">✕</button></div>
+      <button class="modal-close" onclick="blCloseAddModal()"><i class="ti ti-x"></i></button></div>
     <div class="modal-sub">Manually track a future-dated or one-off bill. Detection engine will absorb it later if a matching transaction appears.</div>
     <form id="bill-add-form" onsubmit="event.preventDefault();blSaveManualBill()">
       <div class="form-grid"><div><label class="lbl">Bill Name</label><input type="text" id="bill-name-input" placeholder="e.g. Car Insurance"/></div></div>
@@ -3122,7 +3122,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="blCloseAddModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">➕ Add Bill</button>
+        <button type="submit" class="btn btn-primary"><i class="ti ti-plus"></i> Add Bill</button>
       </div>
     </form>
   </div>
@@ -3131,8 +3131,8 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- ═══ REVIEW BILLS MODAL ═══ -->
 <div class="modal-overlay" id="bill-review-modal" onclick="if(event.target===this)blCloseReviewModal()">
   <div class="modal-box">
-    <div class="modal-header"><div class="modal-title">⚠️ Review Detected Bills</div>
-      <button class="modal-close" onclick="blCloseReviewModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title"><i class="ti ti-alert-triangle"></i> Review Detected Bills</div>
+      <button class="modal-close" onclick="blCloseReviewModal()"><i class="ti ti-x"></i></button></div>
     <div class="modal-sub" id="bl-review-sub"></div>
     <div id="bl-review-list"></div>
     <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
@@ -3256,7 +3256,7 @@ function obUpdateSteps(panelId) {
     if (label) label.classList.remove('active','complete');
     if (line) line.classList.remove('complete');
     if (i < step) {
-      circle.classList.add('complete'); circle.innerHTML = '<span aria-hidden="true">✓</span>';
+      circle.classList.add('complete'); circle.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i>';
       if (label) label.classList.add('complete');
       if (line) line.classList.add('complete');
     } else if (i === step) {
@@ -3434,20 +3434,20 @@ function obBuildRecap() {
   var names = obGetAccountNames();
   var u2 = obGetUser2();
   var items = [];
-  items.push({ ic: '◆', label: obProfileNames[ob.profile] || 'Your profile', sub: 'Your dashboard is tailored to this' });
-  items.push({ ic: '✓', label: names.length + (names.length === 1 ? ' account' : ' accounts') + ' added', sub: names.join(' · ') });
+  items.push({ ic: '<i class="ti ti-user-check"></i>', label: obProfileNames[ob.profile] || 'Your profile', sub: 'Your dashboard is tailored to this' });
+  items.push({ ic: '<i class="ti ti-check"></i>', label: names.length + (names.length === 1 ? ' account' : ' accounts') + ' added', sub: names.join(' · ') });
   if (ob.profile === 'household') {
     var m = obGetMortgage();
-    if (m) items.push({ ic: '✓', label: 'Mortgage tracked', sub: m.lender + (m.balance ? ' · ' + fmtWhole(m.balance) : '') });
+    if (m) items.push({ ic: '<i class="ti ti-check"></i>', label: 'Mortgage tracked', sub: m.lender + (m.balance ? ' · ' + fmtWhole(m.balance) : '') });
   } else if (ob.profile === 'full' && ob.selectedAssets.length) {
     var labels = ob.selectedAssets.map(function(k) { return obAssetLabels[k] || k; });
-    items.push({ ic: '✓', label: ob.selectedAssets.length + ' asset types tracked', sub: labels.join(' · ') });
+    items.push({ ic: '<i class="ti ti-check"></i>', label: ob.selectedAssets.length + ' asset types tracked', sub: labels.join(' · ') });
   }
-  items.push({ ic: '✓', label: 'Secured with a PIN', sub: 'Stored only on this device' });
-  if (u2) items.push({ ic: '✓', label: 'Shared with ' + u2, sub: 'They set their own PIN at first login' });
+  items.push({ ic: '<i class="ti ti-check"></i>', label: 'Secured with a PIN', sub: 'Stored only on this device' });
+  if (u2) items.push({ ic: '<i class="ti ti-check"></i>', label: 'Shared with ' + u2, sub: 'They set their own PIN at first login' });
 
   var html = ''
-    + '<div class="ob-recap-badge">🎉</div>'
+    + '<div class="ob-recap-badge"><i class="ti ti-confetti"></i></div>'
     + '<div class="ob-recap-title">You\'re all set, ' + obEsc(ob.name || 'there') + '</div>'
     + '<div class="ob-recap-sub">Here\'s what we\'ve built for you. Opening your dashboard…</div>'
     + '<div class="ob-recap-list">';
@@ -3709,13 +3709,13 @@ function showSwUpdatePrompt(reg){
 <div class="sw-update-bar" id="sw-update-bar" role="status" aria-live="polite">
   <span class="sw-update-text">A new version of Kelda Finance is ready.</span>
   <button class="sw-update-btn" id="sw-update-btn">Reload</button>
-  <button class="sw-update-dismiss" id="sw-update-dismiss" aria-label="Dismiss">✕</button>
+  <button class="sw-update-dismiss" id="sw-update-dismiss" aria-label="Dismiss"><i class="ti ti-x"></i></button>
 </div>
 
 <!-- Celebration overlay (singleton, shared by all triggers) -->
 <div class="celebration-overlay" id="celebration-overlay">
   <div class="celebration-toast" id="celebration-toast">
-    <div class="toast-icon" id="toast-icon">🎉</div>
+    <div class="toast-icon" id="toast-icon"><i class="ti ti-confetti"></i></div>
     <div>
       <div class="toast-title" id="toast-title"></div>
       <div class="toast-sub" id="toast-sub"></div>

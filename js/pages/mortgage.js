@@ -181,14 +181,14 @@ function mortgageLiabilityLinkBanner() {
     banner.style.display = 'none';
   } else if (val === '__create__') {
     banner.style.display = 'block';
-    banner.innerHTML = '<span style="color:var(--success)">✅</span> A new Mortgage liability will be created and linked when you save.';
+    banner.innerHTML = '<span style="color:var(--success)">' + ICON('circle-check-filled') + '</span> A new Mortgage liability will be created and linked when you save.';
   } else {
     var liabs2 = [];
     try { liabs2 = JSON.parse(localStorage.getItem('cff_liabilities') || '[]') || []; } catch(e) {}
     var liab = liabs2.find(function(l){ return l.id === val; });
     if (liab) {
       banner.style.display = 'block';
-      banner.innerHTML = '<span style="color:var(--success)">🔗</span> Saving will sync the remaining balance to <strong>' + esc(liab.lender) + '</strong> in Liabilities.';
+      banner.innerHTML = '<span style="color:var(--success)">' + ICON('link') + '</span> Saving will sync the remaining balance to <strong>' + esc(liab.lender) + '</strong> in Liabilities.';
     } else {
       banner.style.display = 'none';
     }
@@ -439,7 +439,7 @@ function renderMortgage(){
   // ── Acquired / capital growth rows ──────────────────────────
   const holdDur = _mortgageHoldDuration(m.acquiredDate);
   const acqRows = m.acquiredDate ? `
-    <div class="dr"><span class="dr-k">📅 Acquired</span><span class="dr-v">${new Date(m.acquiredDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</span></div>
+    <div class="dr"><span class="dr-k">' + ICON('calendar') + ' Acquired</span><span class="dr-v">${new Date(m.acquiredDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</span></div>
     <div class="dr"><span class="dr-k">Hold Period</span><span class="dr-v">${holdDur||'—'}</span></div>` : '';
   const capGainRows = (m.purchasePrice > 0 && m.homeValue > 0) ? (() => {
     const gain = m.homeValue - m.purchasePrice;
@@ -749,7 +749,7 @@ function updateRateImpact(simRate){
         callout.style.border = '1px solid var(--danger-border)';
         callout.style.color = 'var(--text)';
         callout.innerHTML = `
-          <div style="font-weight:700;color:var(--danger);margin-bottom:8px">⚠️ Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
+          <div style="font-weight:700;color:var(--danger);margin-bottom:8px">' + ICON('alert-triangle') + ' Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
           To absorb a rate rise to <strong>${simRate.toFixed(2)}%</strong>, you'd need to find an extra
           <strong style="color:var(--danger)">${fmt(deltaMonthly)} per month</strong>
           (${fmt(extraPerWeek)}/week · ${fmt(deltaAnnual)}/year).<br/><br/>
@@ -764,7 +764,7 @@ function updateRateImpact(simRate){
         callout.style.border = '1px solid var(--success-border)';
         callout.style.color = 'var(--text)';
         callout.innerHTML = `
-          <div style="font-weight:700;color:var(--success);margin-bottom:8px">✅ Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>
+          <div style="font-weight:700;color:var(--success);margin-bottom:8px">' + ICON('circle-check-filled') + ' Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>
           At <strong>${simRate.toFixed(2)}%</strong> you'd save
           <strong style="color:var(--success)">${fmt(Math.abs(deltaMonthly))} per month</strong>
           (${fmt(savedPerWeek)}/week · ${fmt(Math.abs(deltaAnnual))}/year).<br/><br/>

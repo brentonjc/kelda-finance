@@ -4,10 +4,10 @@
 // CT_ACCTS — built dynamically from ACCOUNTS (data.js) so new accounts appear automatically.
 // Falls back to the original 4 if ACCOUNTS is unavailable.
 var _CT_ACCTS_DEFAULTS = [
-  {id:'offset',icon:'🏦',color:'#e8457a',light:'#2a1030',owner:'shared',def:'Offset Account'},
-  {id:'home',  icon:'🏠',color:'#7c5cbf',light:'#1e1535',owner:'shared',def:'Home Transaction'},
-  {id:'sav1',  icon:'💰',color:'#f07aaa',light:'#261225',owner:'brenton',def:'Brenton Savings'},
-  {id:'sav2',  icon:'💎',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Shelley Savings'}
+  {id:'offset',icon:'building-bank',color:'#e8457a',light:'#2a1030',owner:'shared',def:'Offset Account'},
+  {id:'home',  icon:'home',color:'#7c5cbf',light:'#1e1535',owner:'shared',def:'Home Transaction'},
+  {id:'sav1',  icon:'coin',color:'#f07aaa',light:'#261225',owner:'brenton',def:'Brenton Savings'},
+  {id:'sav2',  icon:'diamond',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Shelley Savings'}
 ];
 function _buildCTAccts() {
   if (typeof ACCOUNTS !== 'undefined' && ACCOUNTS && ACCOUNTS.length) {
@@ -122,6 +122,10 @@ function ctAddMonth(id) {
 function ctShowAddAccountForm() {
   var form = document.getElementById('ct-add-acct-form');
   if (form) { form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  var iconWrap = document.getElementById('ct-new-icon-wrap');
+  if (iconWrap && typeof _settIconPickerHtml === 'function') {
+    iconWrap.innerHTML = _settIconPickerHtml('ct-new-icon', 'ct-new-icon-preview', 'building-bank');
+  }
 }
 function ctHideAddAccountForm() {
   var form = document.getElementById('ct-add-acct-form');
@@ -131,7 +135,7 @@ function ctAddAccount() {
   if (ACCOUNTS.length >= 8) { toast('Maximum 8 accounts reached'); return; }
   var name = (document.getElementById('ct-new-name') || {}).value.trim();
   if (!name) { toast('Please enter an account name'); return; }
-  var icon = ((document.getElementById('ct-new-icon') || {}).value || '').trim() || '🏦';
+  var icon = ((document.getElementById('ct-new-icon') || {}).value || '').trim() || 'building-bank';
   var bank = (document.getElementById('ct-new-bank') || {}).value || '';
   var type = (document.getElementById('ct-new-acct-type') || {}).value || '';
   var newId = 'acct_' + Date.now().toString(36);
@@ -217,7 +221,7 @@ function ctRenderAcct(a) {
 
   var rows = '';
   if (!months.length) {
-    rows = '<div class="empty" style="padding:16px 0"><div class="ei">📅</div><p>No entries yet — add your first balance below.</p></div>';
+    rows = '<div class="empty" style="padding:16px 0"><div class="ei">' + ICON('calendar') + '</div><p>No entries yet — add your first balance below.</p></div>';
   } else {
     for (var i = 0; i < months.length; i++) {
       var m    = months[i];
@@ -243,7 +247,7 @@ function ctRenderAcct(a) {
         + ' onchange="ctSaveEntry(\'' + a.id + '\',\'' + m + '\',this.value)"'
         + ' inputmode="decimal"/>'
         + '<div class="mo-ch ' + cls + '">' + dt + '</div>'
-        + '<button class="del-btn" onclick="ctDelEntry(\'' + a.id + '\',\'' + m + '\')">🗑</button>'
+        + '<button class="del-btn" onclick="ctDelEntry(\'' + a.id + '\',\'' + m + '\')">' + ICON('trash') + '</button>'
         + '</div>';
     }
   }
@@ -258,7 +262,7 @@ function ctRenderAcct(a) {
 
   // Delete button — only for non-core custom accounts
   var deleteBtn = (!acctObj.isCore && acctObj.id)
-    ? '<button onclick="ctDeleteAccount(\'' + a.id + '\')" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:rgba(255,255,255,.5);font-size:.8rem;line-height:1;flex-shrink:0" title="Delete account">🗑</button>'
+    ? '<button onclick="ctDeleteAccount(\'' + a.id + '\')" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:rgba(255,255,255,.5);font-size:.8rem;line-height:1;flex-shrink:0" title="Delete account">' + ICON('trash') + '</button>'
     : '';
 
   el.innerHTML = '<div class="acct-hd" style="background:' + a.light + '">'
@@ -355,7 +359,7 @@ function ctGoalStatus(){
   const combined=CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[lm]||0),0);
   const annualTarget=goalFreq==='annual'?goalAmt:goalAmt*12;
   const gap=annualTarget-combined;
-  if(gap<=0){el.innerHTML='<span style="color:var(--success);font-weight:700">✅ Goal reached! '+fmt(combined)+'</span>';return;}
+  if(gap<=0){el.innerHTML='<span style="color:var(--success);font-weight:700">'+ICON('circle-check-filled')+' Goal reached! '+fmt(combined)+'</span>';return;}
   const prevM=months.length>1?months[months.length-2]:null;
   const prevCombined=prevM?CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[prevM]||0),0):0;
   const mGrowth=prevM?(combined-prevCombined):0;

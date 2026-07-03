@@ -413,7 +413,7 @@ function renderStreaks(sav, bud) {
   if (!el) return;
 
   function savBadge(c) {
-    if (c >= 6) return ['green','On fire 🔥'];
+    if (c >= 6) return ['green', ICON('flame') + ' On fire'];
     if (c >= 3) return ['green','Building'];
     if (c >= 1) return ['amber','Started'];
     return ['muted','Start today'];
@@ -432,7 +432,7 @@ function renderStreaks(sav, bud) {
   var budYtd = bud.yearDots || bud.months.map(function(v){return v;});
 
   el.innerHTML = '<div class="streak-card savings-streak" ' + savClick + '>'
-    + '<div class="streak-icon">🔥</div>'
+    + '<div class="streak-icon">' + ICON('flame') + '</div>'
     + '<div class="streak-content">'
     + '<div class="streak-title">Savings Streak</div>'
     + '<div class="streak-count" id="sav-streak-count">0</div>'
@@ -442,7 +442,7 @@ function renderStreaks(sav, bud) {
     + '<div class="streak-badge ' + sb[0] + '">' + sb[1] + '</div>'
     + '</div>'
     + '<div class="streak-card budget-streak">'
-    + '<div class="streak-icon">🎯</div>'
+    + '<div class="streak-icon">' + ICON('target') + '</div>'
     + '<div class="streak-content">'
     + '<div class="streak-title">Budget Streak</div>'
     + '<div class="streak-count" id="bud-streak-count">0</div>'
@@ -501,7 +501,7 @@ function generateActionCards() {
       link: "go('goals')", linkTxt: 'View Goal →'
     });
   } else {
-    cards.push({ num:1, icon:'🎯', label:'SAVINGS GOAL', title:'No active goals',
+    cards.push({ num:1, icon:'target', label:'SAVINGS GOAL', title:'No active goals',
       body:'Set a target to track your savings progress.',
       status:'muted', statusTxt:'Set up', link:"go('goals')", linkTxt:'Add Goal →' });
   }
@@ -526,7 +526,7 @@ function generateActionCards() {
   if (topAlert) {
     var over = topAlert.pct >= 100;
     cards.push({
-      num:2, icon:'📊', label:'BUDGET CHECK — ' + now.toLocaleString('en-AU',{month:'long'}).toUpperCase(),
+      num:2, icon:'chart-bar', label:'BUDGET CHECK — ' + now.toLocaleString('en-AU',{month:'long'}).toUpperCase(),
       title: topAlert.name + (over ? ' over budget' : ' approaching limit'),
       body: Math.round(topAlert.pct) + '% of ' + fmt(topAlert.limit) + ' used'
         + (over ? ' · ' + fmt(topAlert.spent - topAlert.limit) + ' over' : ' this month'),
@@ -534,11 +534,11 @@ function generateActionCards() {
       link:"go('bva')", linkTxt:'Budget Report →'
     });
   } else if (budgKeys.length) {
-    cards.push({ num:2, icon:'✅', label:'BUDGET CHECK — ' + now.toLocaleString('en-AU',{month:'long'}).toUpperCase(),
+    cards.push({ num:2, icon:'circle-check-filled', label:'BUDGET CHECK — ' + now.toLocaleString('en-AU',{month:'long'}).toUpperCase(),
       title:'All budgets on track', body:budgKeys.length + ' categories within limit this month.',
       status:'green', statusTxt:'On track', link:"go('bva')", linkTxt:'View Budgets →' });
   } else {
-    cards.push({ num:2, icon:'📊', label:'BUDGET CHECK',
+    cards.push({ num:2, icon:'chart-bar', label:'BUDGET CHECK',
       title:'No budgets configured', body:'Set monthly limits to track your category spending.',
       status:'muted', statusTxt:'Set up', link:"go('bva')", linkTxt:'Set Budgets →' });
   }
@@ -560,19 +560,19 @@ function generateActionCards() {
     var mos  = Math.ceil(Math.max(0, tgt3 - cur3) / avgSav);
     var projD = new Date(now.getFullYear(), now.getMonth() + mos, 1);
     var projS = projD.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
-    cards.push({ num:3, icon:'📅', label:'GOAL PROJECTION',
+    cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title: g3.name + ' — ~' + mos + ' month' + (mos!==1?'s':'') + ' away',
       body: 'At avg savings of ' + fmt(Math.round(avgSav)) + '/mo, you\'ll reach this around ' + projS + '.',
       status: mos <= 6 ? 'green' : mos <= 18 ? 'amber' : 'pink',
       statusTxt: mos + 'mo',
       link:"go('goals')", linkTxt:'View Goals →' });
   } else if (activeGoals.length) {
-    cards.push({ num:3, icon:'📅', label:'GOAL PROJECTION',
+    cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title:'Increase savings to project',
       body:'Your avg savings over the last 3 months is ' + fmt(Math.round(avgSav)) + '. Positive savings unlocks goal projections.',
       status:'pink', statusTxt:'Off track', link:"go('transactions')", linkTxt:'Review Spending →' });
   } else {
-    cards.push({ num:3, icon:'📅', label:'GOAL PROJECTION',
+    cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title:'Add a goal to see your projection',
       body:'Once you have a savings goal we\'ll show exactly how long it will take at your current rate.',
       status:'muted', statusTxt:'Coming soon', link:"go('goals')", linkTxt:'Add Goal →' });
@@ -643,7 +643,7 @@ function generateNudges() {
     if (bestPace) {
       var daysLeft  = new Date(yr, mo, 0).getDate() - day;
       var pctStr    = Math.round(bestPace.pct * 100);
-      nudges.push({ icon: '⚠️', text: '<strong>' + bestPace.name + '</strong> is at <strong>' + pctStr + '%</strong> of its ' + fmt(bestPace.limit) + ' budget and there are <strong>' + daysLeft + ' days</strong> left this month. Watch your spending here.' });
+      nudges.push({ icon: 'alert-triangle', text: '<strong>' + bestPace.name + '</strong> is at <strong>' + pctStr + '%</strong> of its ' + fmt(bestPace.limit) + ' budget and there are <strong>' + daysLeft + ' days</strong> left this month. Watch your spending here.' });
     }
   }
 
@@ -666,7 +666,7 @@ function generateNudges() {
       }
     }
     if (overCat) {
-      nudges.push({ icon: '🚨', text: '<strong>' + overCat.name + '</strong> has gone over budget by <strong>' + fmt(overCat.over) + '</strong> this month. Consider reviewing recent transactions.' });
+      nudges.push({ icon: 'alert-triangle', text: '<strong>' + overCat.name + '</strong> has gone over budget by <strong>' + fmt(overCat.over) + '</strong> this month. Consider reviewing recent transactions.' });
     }
   }
 
@@ -685,7 +685,7 @@ function generateNudges() {
       }
     }
     if (bestGoal) {
-      nudges.push({ icon: '🎯', text: '<strong>' + bestGoal.name + '</strong> is at <strong>' + Math.round(bestGoal.pct*100) + '%</strong>. You need just <strong>' + fmt(bestGoal.need) + '</strong> more to reach your ' + fmt(bestGoal.target) + ' target.' });
+      nudges.push({ icon: 'target', text: '<strong>' + bestGoal.name + '</strong> is at <strong>' + Math.round(bestGoal.pct*100) + '%</strong>. You need just <strong>' + fmt(bestGoal.need) + '</strong> more to reach your ' + fmt(bestGoal.target) + ' target.' });
     }
   }
 
@@ -702,19 +702,19 @@ function generateNudges() {
     }
     if (soonBill) {
       var dStr = soonBill.daysUntil === 0 ? 'today' : ('in ' + soonBill.daysUntil + ' day' + (soonBill.daysUntil === 1 ? '' : 's'));
-      nudges.push({ icon: '📅', text: '<strong>' + soonBill.name + '</strong> is due ' + dStr + ' (' + fmt(soonBill.amount) + ').' });
+      nudges.push({ icon: 'calendar', text: '<strong>' + soonBill.name + '</strong> is due ' + dStr + ' (' + fmt(soonBill.amount) + ').' });
     }
   }
 
   // Rule 5: Good savings rate
   if (nudges.length < 3 && savRate >= 0.20 && inc > 0) {
-    nudges.push({ icon: '🌟', text: 'Great work — you\'re saving <strong>' + Math.round(savRate*100) + '%</strong> of your income this month. That\'s above the 20% target. Keep it up!' });
+    nudges.push({ icon: 'star', text: 'Great work — you\'re saving <strong>' + Math.round(savRate*100) + '%</strong> of your income this month. That\'s above the 20% target. Keep it up!' });
   }
 
   // Rule 6: Low savings rate
   if (nudges.length < 3 && savRate > 0 && savRate < 0.10 && inc > 0) {
     var moreNeeded = Math.round(inc * 0.20 - (inc - exp));
-    nudges.push({ icon: '💡', text: 'You\'re saving <strong>' + Math.round(savRate*100) + '%</strong> of income this month. Reaching 20% (<strong>' + fmt(moreNeeded) + ' more</strong> per month) would significantly accelerate your financial goals.' });
+    nudges.push({ icon: 'bulb', text: 'You\'re saving <strong>' + Math.round(savRate*100) + '%</strong> of income this month. Reaching 20% (<strong>' + fmt(moreNeeded) + ' more</strong> per month) would significantly accelerate your financial goals.' });
   }
 
   // Rule 7: Mortgage milestone
@@ -725,7 +725,7 @@ function generateNudges() {
       var lvr2 = mBal2 / mVal2 * 100;
       if (lvr2 >= 78 && lvr2 <= 82) {
         var milestone = lvr2 < 80 ? 'you\'ve just crossed below 80%' : 'you\'re nearly there';
-        nudges.push({ icon: '🏠', text: 'Your mortgage LVR is <strong>' + lvr2.toFixed(1) + '%</strong>. Crossing below 80% is a major milestone — ' + milestone + '.' });
+        nudges.push({ icon: 'home', text: 'Your mortgage LVR is <strong>' + lvr2.toFixed(1) + '%</strong>. Crossing below 80% is a major milestone — ' + milestone + '.' });
       }
     }
   }
@@ -742,11 +742,11 @@ function generateNudges() {
       var priorSaved   = priorInc - priorExp;
       var priorSavePct = Math.round((priorSaved / priorInc) * 100);
       if (priorSaved > 0 && priorSavePct >= 20) {
-        nudges.push({ icon: '📈', text: '<strong>' + priorMonLabel + ':</strong> You saved <strong>' + fmt(priorSaved) + '</strong> (' + priorSavePct + '% of income). Great momentum — keep it going this month!' });
+        nudges.push({ icon: 'trending-up', text: '<strong>' + priorMonLabel + ':</strong> You saved <strong>' + fmt(priorSaved) + '</strong> (' + priorSavePct + '% of income). Great momentum — keep it going this month!' });
       } else if (priorSaved < 0) {
-        nudges.push({ icon: '⚡', text: '<strong>' + priorMonLabel + ':</strong> spending exceeded income by <strong>' + fmt(Math.abs(priorSaved)) + '</strong>. This month is a chance to reset — focus on cutting back.' });
+        nudges.push({ icon: 'bolt', text: '<strong>' + priorMonLabel + ':</strong> spending exceeded income by <strong>' + fmt(Math.abs(priorSaved)) + '</strong>. This month is a chance to reset — focus on cutting back.' });
       } else if (priorSavePct < 10) {
-        nudges.push({ icon: '📊', text: '<strong>' + priorMonLabel + ':</strong> savings rate was <strong>' + priorSavePct + '%</strong>. Aiming for 20% this month (' + fmt(Math.round(priorInc * 0.20)) + ') would make a real difference.' });
+        nudges.push({ icon: 'chart-bar', text: '<strong>' + priorMonLabel + ':</strong> savings rate was <strong>' + priorSavePct + '%</strong>. Aiming for 20% this month (' + fmt(Math.round(priorInc * 0.20)) + ') would make a real difference.' });
       }
     }
   }
@@ -776,9 +776,9 @@ function generateNudges() {
     }
     if (budgKeys3.length > 0) {
       if (overCount === 0) {
-        nudges.push({ icon: '🏆', text: '<strong>' + priorMonLabel2 + ':</strong> all budgets stayed on track. Clean sweep — great discipline going into this month!' });
+        nudges.push({ icon: 'trophy', text: '<strong>' + priorMonLabel2 + ':</strong> all budgets stayed on track. Clean sweep — great discipline going into this month!' });
       } else if (topOver) {
-        nudges.push({ icon: '⚠️', text: '<strong>' + priorMonLabel2 + ':</strong> <strong>' + overCount + ' categor' + (overCount===1?'y':'ies') + '</strong> went over budget. <strong>' + topOver.name + '</strong> was the biggest overspend (' + fmt(topOver.amt) + ' over). Watch it this month.' });
+        nudges.push({ icon: 'alert-triangle', text: '<strong>' + priorMonLabel2 + ':</strong> <strong>' + overCount + ' categor' + (overCount===1?'y':'ies') + '</strong> went over budget. <strong>' + topOver.name + '</strong> was the biggest overspend (' + fmt(topOver.amt) + ' over). Watch it this month.' });
       }
     }
   }
@@ -795,16 +795,16 @@ function generateNudges() {
     if (goalCount > 0) {
       var avgGoalPct = Math.round(totalPct / goalCount);
       if (avgGoalPct < 40 && savRate < 0.10 && inc > 0) {
-        nudges.push({ icon: '🎯', text: 'Your goals are <strong>' + avgGoalPct + '% funded</strong> on average and savings rate is low this month. Even redirecting <strong>' + fmt(Math.round(inc * 0.05)) + '</strong> more to savings would accelerate your goals.' });
+        nudges.push({ icon: 'target', text: 'Your goals are <strong>' + avgGoalPct + '% funded</strong> on average and savings rate is low this month. Even redirecting <strong>' + fmt(Math.round(inc * 0.05)) + '</strong> more to savings would accelerate your goals.' });
       } else if (avgGoalPct >= 60) {
-        nudges.push({ icon: '🌟', text: 'Your goals are <strong>' + avgGoalPct + '% funded</strong> on average — you\'re well on track. Keep the momentum going!' });
+        nudges.push({ icon: 'star', text: 'Your goals are <strong>' + avgGoalPct + '% funded</strong> on average — you\'re well on track. Keep the momentum going!' });
       }
     }
   }
 
   // Rule 11: Fallback
   if (!nudges.length) {
-    nudges.push({ icon: '✅', text: 'Everything looks on track this month. Keep up the good habits!' });
+    nudges.push({ icon: 'circle-check-filled', text: 'Everything looks on track this month. Keep up the good habits!' });
   }
 
   return nudges;
@@ -863,7 +863,7 @@ function nudgeGoto(idx) {
       dotsHtml += '<div class="ndot' + (di === idx ? ' active' : '') + '" onclick="nudgeGoto(' + di + ')"></div>';
     }
     el.innerHTML = '<div class="nudge-card">'
-      + '<div class="nudge-icon">' + n.icon + '</div>'
+      + '<div class="nudge-icon">' + iconTag(n.icon) + '</div>'
       + '<div class="nudge-content">'
       + '<div class="nudge-tag">Smart Insight</div>'
       + '<div class="nudge-text">' + n.text + '</div>'
@@ -1710,10 +1710,10 @@ function dbRenderAcctTiles() {
   // Build from ACCOUNTS (supports custom accounts)
   var _acctColors = ['#F0538A','#818CF8','#00C896','#F59E0B','#38BDF8','#FB923C','#A78BFA','#34D399'];
   var accts = (typeof ACCOUNTS !== 'undefined' && ACCOUNTS && ACCOUNTS.length ? ACCOUNTS : [
-    { id:'offset', name:'Offset Account',    icon:'🏦' },
-    { id:'home',   name:'Joint Transaction', icon:'🏠' },
-    { id:'sav1',   name:'Savings 1',         icon:'💰' },
-    { id:'sav2',   name:'Savings 2',         icon:'💎' }
+    { id:'offset', name:'Offset Account',    icon:'building-bank' },
+    { id:'home',   name:'Joint Transaction', icon:'home' },
+    { id:'sav1',   name:'Savings 1',         icon:'coin' },
+    { id:'sav2',   name:'Savings 2',         icon:'diamond' }
   ]).map(function(a, i) {
     return { id: a.id, label: a.name || a.id, icon: a.icon || 'building-bank', color: a.color || _acctColors[i % _acctColors.length] };
   });
@@ -1806,7 +1806,7 @@ function _dbRenderGlanceBudget() {
 
   var budgetMonLabel = new Date().toLocaleString('en-AU', { month: 'long', year: 'numeric' });
   el.innerHTML = '<div class="db-glance-hd">'
-    + '<div class="db-glance-title">📊 Budget</div>'
+    + '<div class="db-glance-title">' + ICON('chart-bar') + ' Budget</div>'
     + (rows.length ? '<span class="db-glance-badge ' + badgeCls + '">' + overallPct + '%  ' + badgeTxt + '</span>' : '')
     + '</div>'
     + '<div style="font-size:.68rem;color:var(--muted);margin:-6px 0 10px;font-weight:600">' + budgetMonLabel + '</div>'
@@ -1845,7 +1845,7 @@ function _dbRenderGlanceGoals() {
   if (!el) return;
 
   if (!GOALS || !GOALS.length) {
-    el.innerHTML = '<div class="db-glance-hd"><div class="db-glance-title">🎯 Savings Goals</div></div>'
+    el.innerHTML = '<div class="db-glance-hd"><div class="db-glance-title">' + ICON('target') + ' Savings Goals</div></div>'
       + '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No goals yet. <a href="#" onclick="go(\'goals\');return false;" style="color:var(--primary)">Add a goal →</a></div>';
     return;
   }
@@ -1874,7 +1874,7 @@ function _dbRenderGlanceGoals() {
   }).join('');
 
   el.innerHTML = '<div class="db-glance-hd">'
-    + '<div class="db-glance-title">🎯 Savings Goals</div>'
+    + '<div class="db-glance-title">' + ICON('target') + ' Savings Goals</div>'
     + '<span class="db-glance-badge ' + badgeCls + '">' + badgeTxt + '</span>'
     + '</div>'
     + rowsHtml

@@ -225,13 +225,13 @@ function _wzHtml2() {
     '<div class="wz-pin-hint pin-hint" id="wz-phint1">' + _wzP1HintText() + '</div>' +
     '<div class="wz-pin-err pin-err" id="wz-perr1"></div>' +
     '<div class="pin-pad wz-keypad">' + _wzKeypad(1) + '</div>' +
-    '<p class="wz-trust">🔒 Your PIN never leaves this device.</p>' +
+    '<p class="wz-trust"><i class="ti ti-lock"></i> Your PIN never leaves this device.</p>' +
     '<button class="wz-next-btn" id="wz-next2" onclick="wzStep2Next()"' + nextDis + '>Next →</button>'
   );
 }
 
 function _wzP1HintText() {
-  if (_wz.p1Done) return '✓ PIN set';
+  if (_wz.p1Done) return '<i class="ti ti-check"></i> PIN set';
   if (_wz.p1Step === 1) return 'Confirm your PIN';
   return 'Enter a 4-digit PIN';
 }
@@ -274,11 +274,11 @@ function _wzHtml3() {
 function _wzP2ChoiceHtml() {
   return (
     '<button class="wz-choice-btn" onclick="wzShowP2Form()">' +
-      '<span class="wz-choice-icon">👫</span>' +
+      '<span class="wz-choice-icon"><i class="ti ti-users"></i></span>' +
       '<span>Yes, add a second profile</span>' +
     '</button>' +
     '<button class="wz-choice-btn wz-choice-ghost" onclick="wzSkipP2()">' +
-      '<span class="wz-choice-icon">👤</span>' +
+      '<span class="wz-choice-icon"><i class="ti ti-user"></i></span>' +
       '<span>Just me — skip this step</span>' +
     '</button>'
   );
@@ -297,10 +297,10 @@ function wzShowP2Form() {
     ' autocomplete="given-name" autocorrect="off" maxlength="24" oninput="wzCheckP2Next()"/>' +
     '<label class="wz-label" style="margin-top:22px">PIN for this profile</label>' +
     '<div class="wz-pin-dots pin-dots" id="wz-dots2">' + _wzDotHtml('p2') + '</div>' +
-    '<div class="wz-pin-hint pin-hint" id="wz-phint2">' + (_wz.p2Done ? '✓ PIN set' : 'Enter a 4-digit PIN') + '</div>' +
+    '<div class="wz-pin-hint pin-hint" id="wz-phint2">' + (_wz.p2Done ? '<i class="ti ti-check"></i> PIN set' : 'Enter a 4-digit PIN') + '</div>' +
     '<div class="wz-pin-err pin-err" id="wz-perr2"></div>' +
     '<div class="pin-pad wz-keypad">' + _wzKeypad(2) + '</div>' +
-    '<p class="wz-trust">🔒 Their PIN never leaves this device.</p>' +
+    '<p class="wz-trust"><i class="ti ti-lock"></i> Their PIN never leaves this device.</p>' +
     '<button class="wz-next-btn" id="wz-next3" onclick="wzStep3Next()"' + nextDis + '>Next →</button>' +
     '<button class="wz-back-link" onclick="wzResetP2Choice()">← Go back to choice</button>'
   );
@@ -358,17 +358,17 @@ function _wzHtml4() {
     _wzProg(4) +
     '<h2 class="wz-heading">Name your accounts</h2>' +
     '<p class="wz-sub">You can change these any time in Settings.</p>' +
-    '<label class="wz-label">🏦 Main / Offset Account</label>' +
+    '<label class="wz-label"><i class="ti ti-building-bank"></i> Main / Offset Account</label>' +
     '<input id="wz-acct-offset" type="text" class="wz-input" placeholder="Offset Account"' +
     ' value="' + _wzEsc(_wz.acctOffset) + '" autocorrect="off"/>' +
-    '<label class="wz-label" style="margin-top:14px">🏠 Joint / Everyday Account</label>' +
+    '<label class="wz-label" style="margin-top:14px"><i class="ti ti-home"></i> Joint / Everyday Account</label>' +
     '<input id="wz-acct-home" type="text" class="wz-input" placeholder="Everyday Account"' +
     ' value="' + _wzEsc(_wz.acctHome) + '" autocorrect="off"/>' +
-    '<label class="wz-label" style="margin-top:14px">💰 ' + p1n + '\'s Savings</label>' +
+    '<label class="wz-label" style="margin-top:14px"><i class="ti ti-coin"></i> ' + p1n + '\'s Savings</label>' +
     '<input id="wz-acct-sav1" type="text" class="wz-input" placeholder="Savings"' +
     ' value="' + _wzEsc(_wz.acctSav1) + '" autocorrect="off"/>' +
     (_wz.p2On
-      ? '<label class="wz-label" style="margin-top:14px">💎 ' + p2n + '\'s Savings</label>' +
+      ? '<label class="wz-label" style="margin-top:14px"><i class="ti ti-diamond"></i> ' + p2n + '\'s Savings</label>' +
         '<input id="wz-acct-sav2" type="text" class="wz-input" placeholder="Savings"' +
         ' value="' + _wzEsc(_wz.acctSav2) + '" autocorrect="off"/>'
       : '') +
@@ -431,11 +431,11 @@ async function wzCommit() {
 function _wzHtml5() {
   var appName = _wzEsc(_wz.appName || 'Family Finance');
   var p1n     = _wzEsc(_wz.p1Name  || 'Profile 1');
-  var chip2   = _wz.p2On ? '✓ 2 profiles' : '✓ 1 profile';
-  var chipA   = (_wz.acctOffset || _wz.acctHome) ? '✓ Accounts named' : '✓ Default accounts';
+  var chip2   = _wz.p2On ? '<i class="ti ti-check"></i> 2 profiles' : '<i class="ti ti-check"></i> 1 profile';
+  var chipA   = (_wz.acctOffset || _wz.acctHome) ? '<i class="ti ti-check"></i> Accounts named' : '<i class="ti ti-check"></i> Default accounts';
   return (
     '<div class="wz-done-wrap">' +
-      '<div class="wz-done-icon" id="wz-check-icon">✓</div>' +
+      '<div class="wz-done-icon" id="wz-check-icon"><i class="ti ti-check"></i></div>' +
       '<h2 class="wz-heading" style="margin-top:20px">' + appName + ' is ready,<br>' + p1n + '.</h2>' +
       '<div class="wz-chips">' +
         '<div class="wz-chip">' + chip2 + '</div>' +

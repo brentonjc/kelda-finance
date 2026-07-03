@@ -492,7 +492,7 @@ function fc2RenderInsights(months) {
   if (keys.length < 2) {
     el.innerHTML =
       '<div class="fc2-insight-card" style="background:var(--card2)">'
-      + '<div class="fc2-insight-icon">📊</div>'
+      + '<div class="fc2-insight-icon">' + ICON('chart-bar') + '</div>'
       + '<div><div class="fc2-insight-title">Not enough data yet</div>'
       + '<div class="fc2-insight-body">Add more transactions to unlock forecast insights.</div></div>'
       + '</div>';
@@ -506,7 +506,7 @@ function fc2RenderInsights(months) {
 
   // 1. Average monthly net — always shown
   cards.push({
-    icon: avgNet >= 0 ? '✅' : '⚠️',
+    icon: avgNet >= 0 ? 'circle-check-filled' : 'alert-triangle',
     bg: avgNet >= 0 ? 'rgba(0,200,150,0.12)' : 'rgba(245,158,11,0.15)',
     title: 'Average monthly net',
     body: 'Based on ' + keys.length + ' month' + (keys.length !== 1 ? 's' : '') + ' of history, your average net is '
@@ -521,7 +521,7 @@ function fc2RenderInsights(months) {
   if (tightMonths.length) {
     var names = tightMonths.slice(0, 3).map(function(m){ return m.label; }).join(', ');
     cards.push({
-      icon: '🔴',
+      icon: 'circle-filled',
       bg: 'rgba(240,83,138,0.12)',
       title: 'Tight month' + (tightMonths.length > 1 ? 's' : '') + ' ahead',
       body: '<strong>' + names + '</strong> project'
@@ -561,10 +561,10 @@ function fc2RenderInsights(months) {
     var spike = spikes[0];
     var catName = (function(){
       var c = (typeof LCATS !== 'undefined' ? LCATS : []).find(function(c){ return c.id === spike.cat; });
-      return c ? c.icon + ' ' + c.name : spike.cat;
+      return c ? iconTag(c.icon) + ' ' + c.name : spike.cat;
     })();
     cards.push({
-      icon: '⚠️',
+      icon: 'alert-triangle',
       bg: 'rgba(245,158,11,0.15)',
       title: 'Watch out: ' + catName + ' spike coming',
       body: 'Last year in ' + fc2FmtMonth(spike.ym) + ', ' + catName + ' was <strong>' + fmt(spike.amt) + '</strong> — over 2x its usual average. '
@@ -592,7 +592,7 @@ function fc2RenderInsights(months) {
       return new Date(2000, parseInt(mm)-1, 1).toLocaleDateString('en-AU',{month:'long'});
     }).join(', ');
     cards.push({
-      icon: '📈',
+      icon: 'trending-up',
       bg: 'rgba(0,200,150,0.12)',
       title: 'Seasonal income lift',
       body: 'Income in <strong>' + mmNames + '</strong> is consistently 15%+ above your monthly average — positive signal for those forecast months.'
@@ -601,7 +601,7 @@ function fc2RenderInsights(months) {
 
   el.innerHTML = cards.slice(0,4).map(function(c) {
     return '<div class="fc2-insight-card" style="background:' + c.bg + '">'
-      + '<div class="fc2-insight-icon">' + c.icon + '</div>'
+      + '<div class="fc2-insight-icon">' + iconTag(c.icon) + '</div>'
       + '<div><div class="fc2-insight-title">' + c.title + '</div>'
       + '<div class="fc2-insight-body">' + c.body + '</div></div>'
       + '</div>';
@@ -714,7 +714,7 @@ function fc2RenderAdjs() {
 
   var adjs = fc2Load(FC_ADJ_KEY) || [];
   if (!adjs.length) {
-    if (wrap) wrap.innerHTML = '<div class="empty" style="padding:20px 0"><div class="ei">➕</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>';
+    if (wrap) wrap.innerHTML = '<div class="empty" style="padding:20px 0"><div class="ei">' + ICON('plus') + '</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>';
     return;
   }
 
@@ -755,8 +755,8 @@ function fc2RenderAdjs() {
       + '<td style="font-family:var(--font-mono);color:' + amtColor + '">' + (Number(a.amount)>=0?'+':'') + fmt(a.amount) + '</td>'
       + '<td style="font-size:.78rem;color:var(--muted)">' + (a.source || 'Manual') + '</td>'
       + '<td style="white-space:nowrap">' + editedTag
-      + '<button class="icon-btn" onclick="fc2OpenAdjForm(' + i + ')" title="Edit">✏️</button>'
-      + '<button class="del-btn" onclick="fc2DeleteAdj(' + i + ')" title="Delete">🗑</button>'
+      + '<button class="icon-btn" onclick="fc2OpenAdjForm(' + i + ')" title="Edit">' + ICON('pencil') + '</button>'
+      + '<button class="del-btn" onclick="fc2DeleteAdj(' + i + ')" title="Delete">' + ICON('trash') + '</button>'
       + '</td>'
       + '</tr>';
   }).join('');

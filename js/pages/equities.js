@@ -13,12 +13,12 @@ var eqVestDonutChart  = null;
 
 // ── Asset type config ──────────────────────────────────────────
 var EQ_TYPES = [
-    { key:'stock',  label:'Shares',  icon:'🏦', color:'#F0538A' },
-    { key:'etf',    label:'ETF',     icon:'📊', color:'#818CF8' },
-    { key:'bond',   label:'Bond',    icon:'🔒', color:'#F59E0B' },
+    { key:'stock',  label:'Shares',  icon:'building-bank', color:'#F0538A' },
+    { key:'etf',    label:'ETF',     icon:'chart-bar', color:'#818CF8' },
+    { key:'bond',   label:'Bond',    icon:'lock', color:'#F59E0B' },
     { key:'crypto', label:'Crypto',  icon:'₿',  color:'#F97316' },
-    { key:'rsu',    label:'RSU',     icon:'🎯', color:'#00C896' },
-    { key:'option', label:'Options', icon:'⚙️', color:'#60A5FA' },
+    { key:'rsu',    label:'RSU',     icon:'target', color:'#00C896' },
+    { key:'option', label:'Options', icon:'settings', color:'#60A5FA' },
 ];
 var EQ_EXCHANGES = ['ASX', 'NYSE', 'NASDAQ', 'Other', 'Private', 'Crypto'];
 
@@ -287,7 +287,7 @@ function renderEqVestByYear() {
         + '</tr>'
         + '<tr style="border-bottom:1px solid var(--border)">'
         +   '<td></td>'
-        +   '<td colspan="2" style="padding:2px 8px 6px;text-align:center;font-size:.68rem;color:var(--success);font-weight:600">✓ Vested</td>'
+        +   '<td colspan="2" style="padding:2px 8px 6px;text-align:center;font-size:.68rem;color:var(--success);font-weight:600">' + ICON('check') + ' Vested</td>'
         +   '<td colspan="2" style="padding:2px 0 6px 8px;text-align:center;font-size:.68rem;color:var(--warn);font-weight:600">⏳ Unvested</td>'
         + '</tr></thead>'
         + '<tbody>' + rows + '</tbody>'
@@ -313,7 +313,7 @@ function renderEqHero() {
         + '<div><div style="font-size:.7rem;color:var(--muted)">Unrealised P&amp;L</div><div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:' + gc + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + gainPct + '%)</div></div>'
         + '</div></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
-        + '<button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">💱 Update Prices</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">'+ICON('currency-dollar')+' Update Prices</button>'
         + '<button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>'
         + '</div></div>';
 }
@@ -438,7 +438,7 @@ function renderEquitiesList() {
     if (!el) return;
 
     if (!EQUITIES.length) {
-        el.innerHTML = '<div class="empty"><div class="ei">📈</div><p>No holdings yet. Click <strong>+ Add Holding</strong> to get started.</p></div>';
+        el.innerHTML = '<div class="empty"><div class="ei">'+ICON('trending-up')+'</div><p>No holdings yet. Click <strong>+ Add Holding</strong> to get started.</p></div>';
         return;
     }
 
@@ -479,8 +479,8 @@ function renderEqHoldingRow(h) {
             + '</div>';
         if (h.type==='option' && h.expiryDate) {
             var dExp = Math.ceil((new Date(h.expiryDate+'T00:00:00')-new Date())/86400000);
-            if (dExp<=0) vestBar += '<div style="font-size:.7rem;color:var(--danger);font-weight:700;margin-top:3px">🔴 Expired</div>';
-            else if (dExp<=90) vestBar += '<div style="font-size:.7rem;color:var(--warn);font-weight:700;margin-top:3px">⚠️ Expires in '+dExp+' days</div>';
+            if (dExp<=0) vestBar += '<div style="font-size:.7rem;color:var(--danger);font-weight:700;margin-top:3px">'+ICON('circle-filled')+' Expired</div>';
+            else if (dExp<=90) vestBar += '<div style="font-size:.7rem;color:var(--warn);font-weight:700;margin-top:3px">'+ICON('alert-triangle')+' Expires in '+dExp+' days</div>';
         }
     }
 
@@ -512,8 +512,8 @@ function renderEqHoldingRow(h) {
                 : (isVesting?'<div style="font-size:.7rem;color:var(--muted)">Set price to see gain</div>':'')))
         + '</div>'
         + '<div class="eq-row-actions">'
-        + '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEqModal('+h.id+')" style="padding:8px 10px" title="Edit">✏️</button>'
-        + '<button class="del-btn" onclick="event.stopPropagation();deleteEquity('+h.id+')" style="padding:8px 10px" title="Delete">🗑</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEqModal('+h.id+')" style="padding:8px 10px" title="Edit">'+ICON('pencil')+'</button>'
+        + '<button class="del-btn" onclick="event.stopPropagation();deleteEquity('+h.id+')" style="padding:8px 10px" title="Delete">'+ICON('trash')+'</button>'
         + '</div>'
         + '</div>'
         + '<div class="eq-row-detail" id="eq-detail-'+h.id+'" style="display:none">'+renderEqHoldingDetail(h)+'</div>'
@@ -581,11 +581,11 @@ function renderEqHoldingDetail(h) {
                     +'<td style="font-family:var(--font-mono)">'+s.units+'</td>'
                     +'<td style="font-family:var(--font-mono)">'+s.cumulative+'</td>'
                     +'<td style="font-family:var(--font-mono)">'+fmt(s.units*px2)+'</td>'
-                    +'<td>'+(s.isPast?'<span style="color:var(--success)">✓ Vested</span>':'<span style="color:var(--muted)">Upcoming</span>')+'</td>'
+                    +'<td>'+(s.isPast?'<span style="color:var(--success)">'+ICON('check')+' Vested</span>':'<span style="color:var(--muted)">Upcoming</span>')+'</td>'
                     +'</tr>';
             });
             html += '<div style="margin-top:14px">'
-                +'<div class="eq-schedule-toggle" onclick="eqToggleSchedule('+h.id+')">📅 Vesting Schedule <span id="eq-sched-arrow-'+h.id+'">▶</span></div>'
+                +'<div class="eq-schedule-toggle" onclick="eqToggleSchedule('+h.id+')">'+ICON('calendar')+' Vesting Schedule <span id="eq-sched-arrow-'+h.id+'">▶</span></div>'
                 +'<div id="eq-schedule-'+h.id+'" style="display:none;margin-top:8px;overflow-x:auto">'
                 +'<table class="eq-sched-table"><thead><tr><th>Vest Date</th><th>Units</th><th>Cumulative</th><th>Est. Value</th><th>Status</th></tr></thead>'
                 +'<tbody>'+schedRows+'</tbody></table></div></div>';
@@ -605,7 +605,7 @@ function renderEqHoldingDetail(h) {
                 +'<span>'+(parseFloat(sale.qty)||0)+' units @ '+fmt(sale.price)+'</span>'
                 +'<span style="color:var(--success)">Proceeds: '+fmt(proceeds)+'</span>'
                 +'<span class="'+(cg>=0?'eq-gain-pos':'eq-gain-neg')+'">'+(cg>=0?'+':'')+fmt(Math.abs(cg))+' CG</span>'
-                +'<button class="del-btn" style="margin-left:auto" onclick="deleteSaleEq('+h.id+','+sale.id+')">🗑</button>'
+                +'<button class="del-btn" style="margin-left:auto" onclick="deleteSaleEq('+h.id+','+sale.id+')">'+ICON('trash')+'</button>'
                 +'</div>';
         });
         html += '</div>';
@@ -614,7 +614,7 @@ function renderEqHoldingDetail(h) {
     // Sell button
     if (t !== 'bond') {
         html += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">'
-            +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">💵 Record Sale</button>'
+            +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">'+ICON('cash')+' Record Sale</button>'
             +'</div>';
     }
 
@@ -681,7 +681,7 @@ function openEqModal(id) {
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
         +'<div class="section-label" style="margin:0">'+title+'</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" style="padding:6px 10px">✕</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" style="padding:6px 10px">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-m-id" value="'+(id||'')+'"/>'
         +'<div class="form-grid" style="margin-bottom:14px">'
@@ -690,7 +690,7 @@ function openEqModal(id) {
         +'</div>'
         +'<div id="eq-m-fields"></div>'
         +'<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">'
-        +'<button class="btn btn-primary" onclick="saveEqModal()">💾 Save</button>'
+        +'<button class="btn btn-primary" onclick="saveEqModal()">'+ICON('device-floppy')+' Save</button>'
         +'<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
         +'</div></div>';
 
@@ -886,8 +886,8 @@ function openEqSale(id) {
     var label = h.ticker||h.company||'Holding';
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0;color:var(--success)">💵 Record Sale — '+label+'</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="closeEqSale()">✕</button>'
+        +'<div class="section-label" style="margin:0;color:var(--success)">'+ICON('cash')+' Record Sale — '+label+'</div>'
+        +'<button class="btn btn-ghost btn-sm" onclick="closeEqSale()">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-sale-id" value="'+id+'"/>'
         +'<div class="form-grid">'
@@ -978,13 +978,13 @@ function openBatchPriceModal() {
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0">💱 Update Current Prices</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()">✕</button>'
+        +'<div class="section-label" style="margin:0">'+ICON('currency-dollar')+' Update Current Prices</div>'
+        +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()">'+ICON('x')+'</button>'
         +'</div>'
-        +'<div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter the latest market price (AUD) for each holding, or click 🔍 to fetch live. For US-listed stocks enter the AUD equivalent.</div>'
+        +'<div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter the latest market price (AUD) for each holding, or click '+ICON('search')+' to fetch live. For US-listed stocks enter the AUD equivalent.</div>'
         +(priceable.length?rows:'<div class="empty" style="padding:20px 0"><p>No priceable holdings yet.</p></div>')
         +'<div style="display:flex;gap:10px;margin-top:20px">'
-        +'<button class="btn btn-primary" onclick="saveBatchPrices()">💾 Save All</button>'
+        +'<button class="btn btn-primary" onclick="saveBatchPrices()">'+ICON('device-floppy')+' Save All</button>'
         +'<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
         +'</div></div>';
     overlay.style.display = 'flex';
@@ -1095,14 +1095,14 @@ function renderEqMonthlyGrid() {
         + ' onchange="eqMonthUpdate(\'' + m + '\',this.value)"'
         + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
         + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
-        + '<button onclick="eqMonthDel(\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">🗑</button>'
+        + '<button onclick="eqMonthDel(\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">'+ICON('trash')+'</button>'
         + '</div>';
     });
   }
 
   el.innerHTML = '<div class="card mb">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">'
-    + '<div class="section-label" style="margin:0">📅 Monthly Portfolio Snapshots</div>'
+    + '<div class="section-label" style="margin:0">'+ICON('calendar')+' Monthly Portfolio Snapshots</div>'
     + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:var(--primary);font-weight:700">' + fmt(curVal) + '</span></div>'
     + '</div>'
     + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record your total portfolio closing value each month to track growth and link to Net Worth history. Holdings-level data auto-populates the current value above.</div>'

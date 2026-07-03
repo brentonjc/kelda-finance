@@ -72,8 +72,8 @@ function renderAssets() {
   var supTotal = supB + supS;
 
   document.getElementById('assets-super').innerHTML =
-    '<div class="dr"><span class="dr-k">💼 ' + getUserName('brenton') + '</span><span class="dr-v">' + fmt(supB) + '</span></div>'
-    + '<div class="dr"><span class="dr-k">💼 ' + getUserName('shelley') + '</span><span class="dr-v">' + fmt(supS) + '</span></div>'
+    '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('brenton') + '</span><span class="dr-v">' + fmt(supB) + '</span></div>'
+    + '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('shelley') + '</span><span class="dr-v">' + fmt(supS) + '</span></div>'
     + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
     + '<span class="dr-k" style="font-weight:700">Total Super</span>'
     + '<span class="dr-v" style="color:var(--primary)">' + fmt(supTotal) + '</span></div>';
@@ -116,7 +116,7 @@ function renderAssets() {
         + (gain >= 0 ? '+' : '') + fmt(gain) + ' (' + (gain >= 0 ? '+' : '') + gainPct + '%)</span></div>';
     }
     return '<div style="margin-bottom:10px">'
-      + (mortProps.length > 1 ? '<div class="dr-k" style="font-weight:700;margin-bottom:4px">🏡 ' + (p.name || 'Property') + '</div>' : '')
+      + (mortProps.length > 1 ? '<div class="dr-k" style="font-weight:700;margin-bottom:4px">' + ICON('home-2') + ' ' + (p.name || 'Property') + '</div>' : '')
       + '<div class="dr"><span class="dr-k">Home Value</span><span class="dr-v">' + fmt(pHv) + '</span></div>'
       + '<div class="dr"><span class="dr-k">Mortgage</span><span class="dr-v" style="color:var(--danger)">-' + fmt(pMb) + '</span></div>'
       + (pOff ? '<div class="dr"><span class="dr-k">Offset</span><span class="dr-v" style="color:var(--success)">' + fmt(pOff) + '</span></div>' : '')
@@ -566,11 +566,11 @@ function renderNetWorthHistory() {
 
   var thead = '<thead><tr>'
     + '<th style="' + thStyleL + '">Month</th>'
-    + (hasBank  ? '<th style="' + thStyle + '">🏦 Bank</th>'        : '')
-    + (hasSuper ? '<th style="' + thStyle + '">💼 Super</th>'       : '')
-    + (hasProp  ? '<th style="' + thStyle + '">🏡 Property</th>'    : '')
-    + (hasEq    ? '<th style="' + thStyle + '">📈 Equities</th>'    : '')
-    + (hasLiab  ? '<th style="' + thStyle + '">⚖️ Liabilities</th>' : '')
+    + (hasBank  ? '<th style="' + thStyle + '">' + ICON('building-bank') + ' Bank</th>'        : '')
+    + (hasSuper ? '<th style="' + thStyle + '">' + ICON('briefcase') + ' Super</th>'       : '')
+    + (hasProp  ? '<th style="' + thStyle + '">' + ICON('home-2') + ' Property</th>'    : '')
+    + (hasEq    ? '<th style="' + thStyle + '">' + ICON('trending-up') + ' Equities</th>'    : '')
+    + (hasLiab  ? '<th style="' + thStyle + '">' + ICON('scale') + ' Liabilities</th>' : '')
     + '<th style="' + thStyle + ';color:var(--primary)">Net Worth</th>'
     + '<th style="' + thStyle + '">Change</th>'
     + '</tr></thead>';

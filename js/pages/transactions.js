@@ -180,7 +180,7 @@ function renderTx(){
     const subcatBadge=t.subcat?'<span style="font-size:.7rem;color:var(--muted)">'+t.subcat+'</span>':'<span style="color:var(--border)">—</span>';
     tr.innerHTML='<td><input type="checkbox" class="tx-check tx-row-check" data-id="'+t.id+'" onchange="onTxCheck()" title="Select"/></td>'
       +'<td>'+dateStr+'</td>'
-      +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">🔄</span>':'')+'</td>'
+      +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">'+ICON('refresh')+'</span>':'')+'</td>'
       +'<td style="font-weight:600;font-size:.84rem">'+(t.name||'—')+'</td>'
       +'<td><select class="tx-cat-sel" data-id="'+t.id+'" onchange="inlineAssignCat(this)">'+catOpts+'</select></td>'
       +'<td>'
@@ -194,13 +194,13 @@ function renderTx(){
       +('<select class="tx-cat-sel" data-id="'+t.id+'" data-field="account" onchange="inlineAssignAccount(this)">'
         +'<option value="">—</option>'
         +['offset','home','brenton','shelley','joint'].map(function(a){
-            var labels={'offset':'🏦 Offset','home':'🏠 Home','brenton':'💰 '+getUserName('brenton'),'shelley':'💎 '+getUserName('shelley'),'joint':'🤝 Joint'};
+            var labels={'offset':'Offset','home':'Home','brenton':getUserName('brenton'),'shelley':getUserName('shelley'),'joint':'Joint'};
             return '<option value="'+a+'"'+(( t.account||t.person||'')=== a?' selected':'')+'>'+labels[a]+'</option>';
           }).join('')
         +'</select>')
       +'</td>'
       +'<td style="font-weight:600;color:'+rowColor+'">'+amtSign+fmt(t.amount)+'</td>'
-      +'<td><button class="del-btn" onclick="delTx('+t.id+')">🗑</button></td>';
+      +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
     tbody.appendChild(tr);
   });
 
@@ -232,7 +232,7 @@ function setBudget(){
 
 function renderBudget(){
   const el=document.getElementById('bud-bars');
-  if(!Object.keys(BUDGETS).length){el.innerHTML='<div class="empty"><div class="ei">🎯</div><p>Set your first budget limit</p></div>';return;}
+  if(!Object.keys(BUDGETS).length){el.innerHTML='<div class="empty"><div class="ei">'+ICON('target')+'</div><p>Set your first budget limit</p></div>';return;}
   el.innerHTML=Object.entries(BUDGETS).map(([cat,lim])=>{
     const spent=getCatSpend(cat);
     const pct=Math.min((spent/lim)*100,100);

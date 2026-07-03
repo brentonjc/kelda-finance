@@ -1,16 +1,16 @@
 // INSURANCE
 // ══════════════════════════════════════════════════════════════
 const INS_META={
-  'Home & Contents':{icon:'🏠',color:'#7c5cbf',bg:'var(--card3)'},
-  'Car / Vehicle':  {icon:'🚗',color:'#e8457a',bg:'var(--primary-bg)'},
-  'Health':         {icon:'❤️',color:'#f04060',bg:'var(--danger-bg)'},
-  'Life':           {icon:'💛',color:'#f0a040',bg:'var(--warn-bg)'},
-  'Income Protection':{icon:'🛡️',color:'#a29bfe',bg:'var(--card3)'},
-  'TPD':             {icon:'♿',color:'#f0a040',bg:'var(--warn-bg)'},
-  'Travel':         {icon:'✈️',color:'#74b9ff',bg:'var(--card2)'},
-  'Pet':            {icon:'🐾',color:'#f07aaa',bg:'var(--primary-bg)'},
-  'Business':       {icon:'💼',color:'#8a8095',bg:'var(--card2)'},
-  'Other':          {icon:'📋',color:'#8a8095',bg:'var(--card2)'},
+  'Home & Contents':{icon:'home',color:'#7c5cbf',bg:'var(--card3)'},
+  'Car / Vehicle':  {icon:'car',color:'#e8457a',bg:'var(--primary-bg)'},
+  'Health':         {icon:'heart',color:'#f04060',bg:'var(--danger-bg)'},
+  'Life':           {icon:'heart',color:'#f0a040',bg:'var(--warn-bg)'},
+  'Income Protection':{icon:'shield-check',color:'#a29bfe',bg:'var(--card3)'},
+  'TPD':             {icon:'wheelchair',color:'#f0a040',bg:'var(--warn-bg)'},
+  'Travel':         {icon:'plane',color:'#74b9ff',bg:'var(--card2)'},
+  'Pet':            {icon:'paw',color:'#f07aaa',bg:'var(--primary-bg)'},
+  'Business':       {icon:'briefcase',color:'#8a8095',bg:'var(--card2)'},
+  'Other':          {icon:'clipboard-list',color:'#8a8095',bg:'var(--card2)'},
 };
 function insToAnnual(amt,freq){return(amt||0)*({monthly:12,annual:1,quarterly:4,fortnightly:26}[freq]||1);}
 function daysTilRenewal(ds){if(!ds)return null;return Math.ceil((new Date(ds)-new Date())/(864e5));}
@@ -425,9 +425,9 @@ function exportInsurancePDF(){
     // Coverage gap bars
     html += '<h3>Coverage Gap Summary</h3>';
     const gapBars=[
-      ['💛 Life Cover', n.allExistLife, n.recLife, 'Most conservative method used'],
-      ['♿ TPD Cover', n.existTPD, Math.round(n.tpdNeed), 'Independent of Life — PV of income to 65 + modifications'],
-      ['🛡️ Income Protection', n.existIP*12, Math.round(n.ipAnnual), '75% of income to age 65 — ' + fmtd(Math.round(n.ipMonthly)) + '/mo'],
+      ['Life Cover', n.allExistLife, n.recLife, 'Most conservative method used'],
+      ['TPD Cover', n.existTPD, Math.round(n.tpdNeed), 'Independent of Life — PV of income to 65 + modifications'],
+      ['Income Protection', n.existIP*12, Math.round(n.ipAnnual), '75% of income to age 65 — ' + fmtd(Math.round(n.ipMonthly)) + '/mo'],
     ];
     gapBars.forEach(([label,have,need,note])=>{
       const p2=pct(have,need);
@@ -480,7 +480,7 @@ function exportInsurancePDF(){
   });
   html += '</tbody></table>';
 
-  html += `<div class="disclaimer">⚠️ This report is for informational purposes and discussion with your licensed financial adviser only. Life insurance needs calculations (DIME, 10× Income, Needs Present Value) are estimates based on inputs provided and standard actuarial assumptions (5% discount rate, 75% income replacement, 90-day IP waiting period). They do not constitute personal financial advice. Consult a licensed financial adviser or insurance specialist before making any coverage decisions. All figures in AUD.</div>`;
+  html += `<div class="disclaimer">This report is for informational purposes and discussion with your licensed financial adviser only. Life insurance needs calculations (DIME, 10× Income, Needs Present Value) are estimates based on inputs provided and standard actuarial assumptions (5% discount rate, 75% income replacement, 90-day IP waiting period). They do not constitute personal financial advice. Consult a licensed financial adviser or insurance specialist before making any coverage decisions. All figures in AUD.</div>`;
   html += '</body></html>';
 
   const blob=new Blob([html],{type:'text/html'});
@@ -505,8 +505,8 @@ function renderInsurance(){
   document.getElementById('ins-renewals').innerHTML=upcoming.length
     ?upcoming.map(p=>{const d=daysTilRenewal(p.renewal);const style=d<0?'color:var(--danger)':d<=30?'color:var(--warn)':'color:var(--success)';const lbl=d<0?Math.abs(d)+'d overdue':d===0?'Today!':d+'d';
       const m=INS_META[p.type]||INS_META['Other'];
-      return`<div class="dr"><div class="dr-k">${m.icon} ${p.name}</div><div style="display:flex;gap:12px;align-items:center"><div class="dr-v" style="${style}">${lbl}</div><div style="font-size:.76rem;color:var(--muted)">${fmt(insToAnnual(p.prem,p.freq))}/yr</div></div></div>`;}).join('')
-    :'<div class="empty" style="padding:16px 0"><div class="ei">📅</div><p>No upcoming renewals</p></div>';
+      return`<div class="dr"><div class="dr-k">${iconTag(m.icon)} ${p.name}</div><div style="display:flex;gap:12px;align-items:center"><div class="dr-v" style="${style}">${lbl}</div><div style="font-size:.76rem;color:var(--muted)">${fmt(insToAnnual(p.prem,p.freq))}/yr</div></div></div>`;}).join('')
+    :'<div class="empty" style="padding:16px 0"><div class="ei">'+ICON('calendar')+'</div><p>No upcoming renewals</p></div>';
 
   // Coverage
   renderInsCoverage();
@@ -515,7 +515,7 @@ function renderInsurance(){
   // Policy list
   const el=document.getElementById('ins-list');
   const filtered=filter?INS.filter(p=>p.type===filter):INS;
-  if(!filtered.length){el.innerHTML='<div class="empty"><div class="ei">🛡️</div><p>'+(filter?'No '+filter+' policies':' No policies yet')+'</p></div>';return;}
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="ei">'+ICON('shield-check')+'</div><p>'+(filter?'No '+filter+' policies':' No policies yet')+'</p></div>';return;}
   el.innerHTML=filtered.map(p=>{
     const m=INS_META[p.type]||INS_META['Other'];
     const d=daysTilRenewal(p.renewal);
@@ -524,20 +524,20 @@ function renderInsurance(){
     const rdate=p.renewal?new Date(p.renewal+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
     const cov=p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both';
     const fl={monthly:'mo',annual:'yr',quarterly:'qtr',fortnightly:'fn'}[p.freq]||p.freq;
-    const locBadge=p.location&&p.location!=='outside'?`<span class="ins-tag" style="background:var(--card3);color:var(--muted)">🏦 ${p.location==='inside'?'Inside Super':'Outside Super'}</span>`:'';
-    const docBadge=p.doclink?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)"><a href="${esc(p.doclink)}" target="_blank" style="color:inherit;text-decoration:none">📄 Document</a></span>`:'';
+    const locBadge=p.location&&p.location!=='outside'?`<span class="ins-tag" style="background:var(--card3);color:var(--muted)">${ICON('building-bank')} ${p.location==='inside'?'Inside Super':'Outside Super'}</span>`:'';
+    const docBadge=p.doclink?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)"><a href="${esc(p.doclink)}" target="_blank" style="color:inherit;text-decoration:none">${ICON('file-text')} Document</a></span>`:'';
     return`<div class="ins-card">
-      <div class="ins-icon" style="background:${m.bg};color:${m.color}">${m.icon}</div>
+      <div class="ins-icon" style="background:${m.bg};color:${m.color}">${iconTag(m.icon)}</div>
       <div class="ins-body">
         <div class="ins-name">${p.name}</div>
         <div class="ins-prov">${p.prov||p.type}</div>
         <div class="ins-tags">
           <span class="ins-tag" style="background:${m.bg};color:${m.color}">${p.type}</span>
           <span class="badge ${rbc}">${rlbl} · ${rdate}</span>
-          <span class="ins-tag" style="background:var(--card2);color:var(--muted)">👤 ${cov}</span>
+          <span class="ins-tag" style="background:var(--card2);color:var(--muted)">${ICON('user')} ${cov}</span>
           ${locBadge}
           ${docBadge}
-          ${p.notes?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)">📝 ${p.notes}</span>`:''}
+          ${p.notes?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)">${ICON('notes')} ${p.notes}</span>`:''}
           ${p.type==='Income Protection'&&p.ipBenefit?`<span class="ins-tag" style="background:var(--card3);color:var(--purple)">${fmt(p.ipBenefit)}/mo · ${p.ipWait||90}d wait · to ${p.ipPeriod==='age65'?'age 65':p.ipPeriod}</span>`:''}
           ${p.type==='TPD'&&p.tpdDef?`<span class="ins-tag" style="background:var(--warn-bg);color:var(--warn)">${p.tpdDef==='own'?'Own Occupation':'Any Occupation'} TPD</span>`:''}
         </div>
@@ -545,7 +545,7 @@ function renderInsurance(){
       <div>
         <div class="ins-amt" style="color:${m.color}">${fmt(p.prem)}<small>/${fl}</small></div>
         <div style="font-size:.68rem;color:var(--muted);text-align:right;margin-top:2px">${fmt(insToAnnual(p.prem,p.freq))}/yr</div>
-        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:7px"><button class="btn btn-ghost btn-sm" onclick="insShowEditModal(${p.id})">Edit</button><button class="del-btn" onclick="delIns(${p.id})">🗑</button></div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:7px"><button class="btn btn-ghost btn-sm" onclick="insShowEditModal(${p.id})">Edit</button><button class="del-btn" onclick="delIns(${p.id})">${ICON('trash')}</button></div>
       </div></div>`;
   }).join('');
 }
@@ -576,7 +576,7 @@ function renderInsCoverage() {
   const hasPols  = INS.some(p => ['Life','TPD','Income Protection'].includes(p.type));
 
   if (!hasNeeds && !hasPols) {
-    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">🛡️</div><p>Enter income in the Needs Analysis above and add policies to see gap analysis</p></div>';
+    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">' + ICON('shield-check') + '</div><p>Enter income in the Needs Analysis above and add policies to see gap analysis</p></div>';
     return;
   }
 
@@ -602,8 +602,8 @@ function renderInsCoverage() {
       const gap    = Math.max(0, need - cover);
       const suffix = isMonthly ? '/mo' : '';
       const status = gap <= 0
-        ? `<span style="color:var(--success);font-weight:700">✅ Fully covered</span>`
-        : `<span style="color:var(--warn);font-weight:700">⚠️ Gap: ${fmt(gap)}${suffix}</span>`;
+        ? `<span style="color:var(--success);font-weight:700">${ICON('circle-check-filled')} Fully covered</span>`
+        : `<span style="color:var(--warn);font-weight:700">${ICON('alert-triangle')} Gap: ${fmt(gap)}${suffix}</span>`;
       return `<div class="prog-wrap">
         <div class="prog-hd"><span class="prog-lbl">${label}</span>
           <span class="prog-val">${fmt(cover)}${suffix} of ${fmt(need)}${suffix} needed</span></div>
@@ -612,9 +612,9 @@ function renderInsCoverage() {
           <span style="font-size:.7rem;color:var(--muted)">${pct.toFixed(0)}% covered</span>${status}</div></div>`;
     }
 
-    html += bar('💛 Life', lifeCover, lifeNeed, false);
-    html += bar('♿ TPD',  tpdCover,  tpdNeed,  false);
-    html += bar('🛡️ Income Protection', ipCover, ipNeed, true);
+    html += bar(ICON('heart') + ' Life', lifeCover, lifeNeed, false);
+    html += bar(ICON('wheelchair') + ' TPD',  tpdCover,  tpdNeed,  false);
+    html += bar(ICON('shield-check') + ' Income Protection', ipCover, ipNeed, true);
     html += '</div>';
   });
 
@@ -658,7 +658,7 @@ function renderInsCoverageChart() {
       const msg = document.createElement('div');
       msg.className = 'ins-chart-empty empty';
       msg.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px';
-      msg.innerHTML = '<div class="ei">📊</div><p>Enter income in the Needs Analysis above to see the gap chart</p>';
+      msg.innerHTML = '<div class="ei">' + ICON('chart-bar') + '</div><p>Enter income in the Needs Analysis above to see the gap chart</p>';
       parent.appendChild(msg);
     }
     return;
@@ -905,9 +905,9 @@ function calcLifeNeeds() {
       + (showIncome ? methodBox('10× Income Method',   incGross,               incLife,   lifeGap, '') : '')
       + (showNeeds  ? methodBox('Needs Analysis (PV)', Math.round(needsGross), Math.round(needsLife), lifeGap, '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">PV of ' + years + ' yrs income at 5% discount rate</div>') : '')
       + '<div style="margin-top:14px">'
-      + coverBar(allExistLife, recLife, '💛 Life Cover (recommended)')
-      + coverBar(existTPD, tpdNeed, '♿ TPD Cover (independent, to age 65)')
-      + coverBar(existIP * 12, ipAnnual, '🛡️ Income Protection (annual) — current: '
+      + coverBar(allExistLife, recLife, ICON('heart') + ' Life Cover (recommended)')
+      + coverBar(existTPD, tpdNeed, ICON('wheelchair') + ' TPD Cover (independent, to age 65)')
+      + coverBar(existIP * 12, ipAnnual, ICON('shield-check') + ' Income Protection (annual) — current: '
           + fmt(existIP) + '/mo · needed: ' + fmt(ipMonthly) + '/mo to age 65')
       + '</div>'
       + '<details style="margin-top:10px"><summary style="font-size:.74rem;color:var(--muted);cursor:pointer">TPD &amp; IP calculation detail</summary>'

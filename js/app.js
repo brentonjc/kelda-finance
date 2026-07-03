@@ -623,100 +623,100 @@ function saveAppName() {
 // ── HOW-TO GUIDE ─────────────────────────────────────────────
 var _HOW_TO = {
   transactions: { title:'Recording Transactions', items:[
-    {icon:'➕', h:'Adding a transaction', b:'Fill in the date, type (income or expense), name, amount and category then tap Add. The name field auto-suggests a category based on the merchant name.'},
-    {icon:'📂', h:'Categories & subcategories', b:'Assign every transaction a category so the Budget vs Actuals and Insights pages can analyse your spending accurately.'},
-    {icon:'🔍', h:'Filtering & searching', b:'Use the month filter and search box to narrow down transactions. Bulk-select rows to reassign categories in one go.'},
-    {icon:'📤', h:'Importing from CSV', b:'Use the Export tab to import a bank CSV. Columns are mapped to the app fields and auto-categorisation rules are applied.'}
+    {icon:'plus', h:'Adding a transaction', b:'Fill in the date, type (income or expense), name, amount and category then tap Add. The name field auto-suggests a category based on the merchant name.'},
+    {icon:'folder', h:'Categories & subcategories', b:'Assign every transaction a category so the Budget vs Actuals and Insights pages can analyse your spending accurately.'},
+    {icon:'search', h:'Filtering & searching', b:'Use the month filter and search box to narrow down transactions. Bulk-select rows to reassign categories in one go.'},
+    {icon:'upload', h:'Importing from CSV', b:'Use the Export tab to import a bank CSV. Columns are mapped to the app fields and auto-categorisation rules are applied.'}
   ]},
   bills: { title:'Managing Bills', items:[
-    {icon:'➕', h:'Adding a bill', b:'Enter the name, amount, next due date and frequency. The due day-of-month is extracted from the date you pick and used for recurring tracking.'},
-    {icon:'✔️', h:'Marking paid', b:'Tap "Paid" on a bill once you\'ve paid it. This clears it from upcoming alerts on the Dashboard. Reset at month start with "Undo".'},
-    {icon:'💡', h:'Auto-detect', b:'The app scans your transactions for recurring insurance, utility, phone and childcare payments and suggests them as bills to add.'},
-    {icon:'📅', h:'Frequency', b:'Set the correct frequency (monthly, fortnightly, yearly etc.) so the summary totals correctly reflect your actual commitments.'}
+    {icon:'plus', h:'Adding a bill', b:'Enter the name, amount, next due date and frequency. The due day-of-month is extracted from the date you pick and used for recurring tracking.'},
+    {icon:'check', h:'Marking paid', b:'Tap "Paid" on a bill once you\'ve paid it. This clears it from upcoming alerts on the Dashboard. Reset at month start with "Undo".'},
+    {icon:'bulb', h:'Auto-detect', b:'The app scans your transactions for recurring insurance, utility, phone and childcare payments and suggests them as bills to add.'},
+    {icon:'calendar', h:'Frequency', b:'Set the correct frequency (monthly, fortnightly, yearly etc.) so the summary totals correctly reflect your actual commitments.'}
   ]},
   goals: { title:'Savings Goals', items:[
-    {icon:'🎯', h:'Creating a goal', b:'Enter a name, target amount and optional target date. Tap an emoji icon from the preset row or type your own.'},
-    {icon:'🔗', h:'Linking to Cash Tracker', b:'Link a goal to one of your savings accounts — the goal progress will automatically reflect the live balance from your Cash Tracker.'},
-    {icon:'✏️', h:'Editing a goal', b:'Tap "✏️ Edit" on any goal card to update the name, icon, target amount, current amount, date or linked account.'},
-    {icon:'📊', h:'Projection', b:'The goal card shows an estimated completion date based on the gap between current and target, or the target date if you set one.'}
+    {icon:'target', h:'Creating a goal', b:'Enter a name, target amount and optional target date. Tap an emoji icon from the preset row or type your own.'},
+    {icon:'link', h:'Linking to Cash Tracker', b:'Link a goal to one of your savings accounts — the goal progress will automatically reflect the live balance from your Cash Tracker.'},
+    {icon:'pencil', h:'Editing a goal', b:'Tap "Edit" on any goal card to update the name, icon, target amount, current amount, date or linked account.'},
+    {icon:'chart-bar', h:'Projection', b:'The goal card shows an estimated completion date based on the gap between current and target, or the target date if you set one.'}
   ]},
   bva: { title:'Budget vs Actuals', items:[
-    {icon:'💰', h:'Setting budgets', b:'Enter a monthly limit for each spending category. Budgets persist month to month — you only need to set them once.'},
-    {icon:'📊', h:'Reading the report', b:'Green = under budget. Amber = 70–99% used. Red = exceeded. The "Used" column shows actual spending from your transactions.'},
-    {icon:'📅', h:'Month navigation', b:'Use the arrows to review past months. The budget limits are fixed; actual spending is pulled from your transaction history.'},
-    {icon:'⚠️', h:'Budget alerts', b:'Alerts appear on the Dashboard for any category at 70%+ of its limit. Smart Insights on the dashboard also reference the top overrun.'}
+    {icon:'coin', h:'Setting budgets', b:'Enter a monthly limit for each spending category. Budgets persist month to month — you only need to set them once.'},
+    {icon:'chart-bar', h:'Reading the report', b:'Green = under budget. Amber = 70–99% used. Red = exceeded. The "Used" column shows actual spending from your transactions.'},
+    {icon:'calendar', h:'Month navigation', b:'Use the arrows to review past months. The budget limits are fixed; actual spending is pulled from your transaction history.'},
+    {icon:'alert-triangle', h:'Budget alerts', b:'Alerts appear on the Dashboard for any category at 70%+ of its limit. Smart Insights on the dashboard also reference the top overrun.'}
   ]},
   forecast: { title:'Cash Flow Forecast', items:[
-    {icon:'🔄', h:'How it works', b:'The forecast auto-detects recurring income and expense patterns from your last 90 days of transactions and projects them forward.'},
-    {icon:'⟳', h:'Syncing', b:'The balance sync runs automatically when you open this tab, pulling the latest combined balance from your Cash Tracker as the starting point.'},
-    {icon:'✏️', h:'Adjusting entries', b:'Tap the adjustment icon on any forecast row to add a one-off override — useful for planned expenses or income that differ from the pattern.'},
-    {icon:'📈', h:'Cumulative view', b:'Toggle between monthly and cumulative chart views to see the overall trajectory of your cash position over time.'}
+    {icon:'refresh', h:'How it works', b:'The forecast auto-detects recurring income and expense patterns from your last 90 days of transactions and projects them forward.'},
+    {icon:'refresh', h:'Syncing', b:'The balance sync runs automatically when you open this tab, pulling the latest combined balance from your Cash Tracker as the starting point.'},
+    {icon:'pencil', h:'Adjusting entries', b:'Tap the adjustment icon on any forecast row to add a one-off override — useful for planned expenses or income that differ from the pattern.'},
+    {icon:'trending-up', h:'Cumulative view', b:'Toggle between monthly and cumulative chart views to see the overall trajectory of your cash position over time.'}
   ]},
   assets: { title:'Net Assets', items:[
-    {icon:'🏦', h:'What is shown', b:'Net Assets = Gross Assets (bank + super + property + equities) minus Total Liabilities (mortgage + other debts). This is your true financial position.'},
-    {icon:'🏡', h:'Property value', b:'The full home value is included in gross assets. The mortgage balance sits in liabilities — so net property equity flows through correctly.'},
-    {icon:'📊', h:'Donuts', b:'The Assets Breakdown donut shows allocation by class. The Liabilities donut shows debt breakdown. Tap any segment to navigate to that page.'},
-    {icon:'📈', h:'Debt ratio', b:'Liabilities ÷ Gross Assets. Below 30% is strong. Above 60% is high. Use this alongside the Health Score for a full picture.'}
+    {icon:'building-bank', h:'What is shown', b:'Net Assets = Gross Assets (bank + super + property + equities) minus Total Liabilities (mortgage + other debts). This is your true financial position.'},
+    {icon:'home-2', h:'Property value', b:'The full home value is included in gross assets. The mortgage balance sits in liabilities — so net property equity flows through correctly.'},
+    {icon:'chart-bar', h:'Donuts', b:'The Assets Breakdown donut shows allocation by class. The Liabilities donut shows debt breakdown. Tap any segment to navigate to that page.'},
+    {icon:'trending-up', h:'Debt ratio', b:'Liabilities ÷ Gross Assets. Below 30% is strong. Above 60% is high. Use this alongside the Health Score for a full picture.'}
   ]},
   super: { title:'Superannuation Projections', items:[
-    {icon:'💼', h:'Entering your details', b:'Enter your current balance, age, retirement age and salary. The SGC rate defaults to 11.5% (current legal minimum). Add extra contributions if you salary sacrifice.'},
-    {icon:'📈', h:'Growth scenarios', b:'Choose a scenario (Conservative / Balanced / Growth / High Growth) based on ASFA standard return assumptions. The return rate and fees fields auto-fill — you can override them.'},
-    {icon:'💡', h:'Inflation adjustment', b:'The projection shows both nominal (raw) and real (inflation-adjusted) values. The real figure reflects actual purchasing power at retirement.'},
-    {icon:'⚠️', h:'Estimates only', b:'These projections are illustrative only and not financial advice. Speak with a licensed financial adviser for personalised super planning.'}
+    {icon:'briefcase', h:'Entering your details', b:'Enter your current balance, age, retirement age and salary. The SGC rate defaults to 11.5% (current legal minimum). Add extra contributions if you salary sacrifice.'},
+    {icon:'trending-up', h:'Growth scenarios', b:'Choose a scenario (Conservative / Balanced / Growth / High Growth) based on ASFA standard return assumptions. The return rate and fees fields auto-fill — you can override them.'},
+    {icon:'bulb', h:'Inflation adjustment', b:'The projection shows both nominal (raw) and real (inflation-adjusted) values. The real figure reflects actual purchasing power at retirement.'},
+    {icon:'alert-triangle', h:'Estimates only', b:'These projections are illustrative only and not financial advice. Speak with a licensed financial adviser for personalised super planning.'}
   ]},
   insights: { title:'Insights & Analytics', items:[
-    {icon:'📅', h:'Period navigation', b:'Switch between Monthly and Yearly views using the toggle. Navigate with the arrows or tap "Today" to return to the current period.'},
-    {icon:'📈', h:'Net worth chart', b:'Shows your recorded net worth over time from the Cash Tracker history. Each point is a monthly snapshot — update your Cash Tracker regularly for accurate trend data.'},
-    {icon:'💸', h:'Income flow (Sankey)', b:'The Sankey diagram shows how your income splits across spending categories. Hover or tap any flow to see the exact amount and percentage.'},
-    {icon:'🔎', h:'Category drilldown', b:'The category and subcategory charts let you drill into exactly where money is going. Use the subcategory chart to find high-spend areas.'}
+    {icon:'calendar', h:'Period navigation', b:'Switch between Monthly and Yearly views using the toggle. Navigate with the arrows or tap "Today" to return to the current period.'},
+    {icon:'trending-up', h:'Net worth chart', b:'Shows your recorded net worth over time from the Cash Tracker history. Each point is a monthly snapshot — update your Cash Tracker regularly for accurate trend data.'},
+    {icon:'cash-off', h:'Income flow (Sankey)', b:'The Sankey diagram shows how your income splits across spending categories. Hover or tap any flow to see the exact amount and percentage.'},
+    {icon:'search', h:'Category drilldown', b:'The category and subcategory charts let you drill into exactly where money is going. Use the subcategory chart to find high-spend areas.'}
   ]},
   transfers: { title:'Transfers & Reconciliation', items:[
-    {icon:'🔄', h:'What are transfers', b:'Transfers are movements between your own accounts (e.g. offset → savings). They are excluded from income/expense analysis to avoid double-counting.'},
-    {icon:'✅', h:'Auto-detected pairs', b:'The app auto-matches same-amount income/expense pairs on the same or adjacent days. Confirm to tag them as transfers, or Dismiss to keep them in analysis.'},
-    {icon:'🔗', h:'Manual linking', b:'If auto-detection missed a pair, use the manual link panel. Search for the two transactions, select both checkboxes, then tap "Link Selected".'},
-    {icon:'↩️', h:'Unlinking', b:'Confirmed transfers can be unlinked at any time. Both transactions return to the "Other" category and reappear in your analysis.'}
+    {icon:'refresh', h:'What are transfers', b:'Transfers are movements between your own accounts (e.g. offset → savings). They are excluded from income/expense analysis to avoid double-counting.'},
+    {icon:'circle-check-filled', h:'Auto-detected pairs', b:'The app auto-matches same-amount income/expense pairs on the same or adjacent days. Confirm to tag them as transfers, or Dismiss to keep them in analysis.'},
+    {icon:'link', h:'Manual linking', b:'If auto-detection missed a pair, use the manual link panel. Search for the two transactions, select both checkboxes, then tap "Link Selected".'},
+    {icon:'arrow-back-up', h:'Unlinking', b:'Confirmed transfers can be unlinked at any time. Both transactions return to the "Other" category and reappear in your analysis.'}
   ]},
   quickstart: { title:'Quick Start Guide', items:[
-    {icon:'📚', h:'About this guide', b:'The Quick Start Guide walks you through the 7 essential steps to set up and master Kelda Finance in your own way.'},
-    {icon:'✔️', h:'Track your progress', b:'Check off each step as you complete it. The app auto-completes steps as you take actions (add a transaction, create a rule, etc.).'},
-    {icon:'🎯', h:'Follow your path', b:'Each step has a dedicated "Go" button that takes you directly to that feature. Work through them in order or jump to what you need.'},
-    {icon:'🎉', h:'Celebrate completion', b:'When you finish all 7 steps, you\'ll see a celebration animation and a badge on your Dashboard. You\'re ready to manage your finances!'}
+    {icon:'books', h:'About this guide', b:'The Quick Start Guide walks you through the 7 essential steps to set up and master Kelda Finance in your own way.'},
+    {icon:'check', h:'Track your progress', b:'Check off each step as you complete it. The app auto-completes steps as you take actions (add a transaction, create a rule, etc.).'},
+    {icon:'target', h:'Follow your path', b:'Each step has a dedicated "Go" button that takes you directly to that feature. Work through them in order or jump to what you need.'},
+    {icon:'confetti', h:'Celebrate completion', b:'When you finish all 7 steps, you\'ll see a celebration animation and a badge on your Dashboard. You\'re ready to manage your finances!'}
   ]},
   categories: { title:'Categories & Rules', items:[
-    {icon:'📂', h:'Default categories', b:'The app comes with 16 expense categories and 83 subcategories spanning household, transport, health, entertainment and more. Customise as needed.'},
-    {icon:'✏️', h:'Custom categories', b:'Create custom categories to match your spending. Edit name, icon, and colour. Delete unused categories anytime (archived transactions keep their assignment).'},
-    {icon:'⚡', h:'Smart Rules', b:'Auto-categorisation rules live in their own Smart Rules tab. Head there to create Exact or Contains rules — e.g. "contains Woolies" → Groceries.'},
-    {icon:'🔄', h:'Bulk recategorise', b:'Select multiple transactions in the list and reassign them to a new category in bulk. Useful for catching past transactions your rules didn\'t catch.'}
+    {icon:'folder', h:'Default categories', b:'The app comes with 16 expense categories and 83 subcategories spanning household, transport, health, entertainment and more. Customise as needed.'},
+    {icon:'pencil', h:'Custom categories', b:'Create custom categories to match your spending. Edit name, icon, and colour. Delete unused categories anytime (archived transactions keep their assignment).'},
+    {icon:'bolt', h:'Smart Rules', b:'Auto-categorisation rules live in their own Smart Rules tab. Head there to create Exact or Contains rules — e.g. "contains Woolies" → Groceries.'},
+    {icon:'refresh', h:'Bulk recategorise', b:'Select multiple transactions in the list and reassign them to a new category in bulk. Useful for catching past transactions your rules didn\'t catch.'}
   ]},
   smartrules: { title:'Smart Rules', items:[
-    {icon:'⚡', h:'Confirmed Rules', b:'Rules you create or confirm manually. These have the highest priority and are always applied first. Use Exact match for specific merchants, Contains for chains like "Coles" that add location suffixes.'},
-    {icon:'🤖', h:'Auto-Learned patterns', b:'Every time you manually categorise a transaction, the app learns that merchant → category mapping. Once a merchant is seen 3+ times it gains high confidence. Promote any learned pattern to a confirmed rule with one click.'},
+    {icon:'bolt', h:'Confirmed Rules', b:'Rules you create or confirm manually. These have the highest priority and are always applied first. Use Exact match for specific merchants, Contains for chains like "Coles" that add location suffixes.'},
+    {icon:'robot', h:'Auto-Learned patterns', b:'Every time you manually categorise a transaction, the app learns that merchant → category mapping. Once a merchant is seen 3+ times it gains high confidence. Promote any learned pattern to a confirmed rule with one click.'},
     {icon:'= vs ◡', h:'Exact vs Contains matching', b:'Exact match: the cleaned merchant name must match precisely (case-insensitive). Contains match: the transaction name only needs to include your keyword — ideal for "Starbucks" matching "Starbucks Sydney CBD".'},
-    {icon:'🔢', h:'Rule priority order', b:'Transfers are detected first, then your Confirmed Rules, then high-confidence Learned patterns, then the built-in keyword database, then low-confidence learned patterns, and finally an amount signal as a last resort.'}
+    {icon:'123', h:'Rule priority order', b:'Transfers are detected first, then your Confirmed Rules, then high-confidence Learned patterns, then the built-in keyword database, then low-confidence learned patterns, and finally an amount signal as a last resort.'}
   ]},
   equities: { title:'Equities & Holdings', items:[
-    {icon:'📈', h:'Add a holding', b:'Enter the ticker (ASX code), quantity, cost base ($/share) and purchase date. The app calculates current value using current price data.'},
-    {icon:'💹', h:'Track performance', b:'See the gain/loss and percentage return for each holding. The total equities value flows into your Net Assets summary on the Dashboard and Insights.'},
-    {icon:'✏️', h:'Edit & delete', b:'Update holdings when you buy/sell more shares. Delete entries when you exit a position. Historical entries can be archived instead of deleted.'},
-    {icon:'🎯', h:'Portfolio view', b:'The Equities page shows all holdings and total portfolio value. Filter by category (ASX, ETFs, International) for a clearer breakdown.'}
+    {icon:'trending-up', h:'Add a holding', b:'Enter the ticker (ASX code), quantity, cost base ($/share) and purchase date. The app calculates current value using current price data.'},
+    {icon:'chart-candle', h:'Track performance', b:'See the gain/loss and percentage return for each holding. The total equities value flows into your Net Assets summary on the Dashboard and Insights.'},
+    {icon:'pencil', h:'Edit & delete', b:'Update holdings when you buy/sell more shares. Delete entries when you exit a position. Historical entries can be archived instead of deleted.'},
+    {icon:'target', h:'Portfolio view', b:'The Equities page shows all holdings and total portfolio value. Filter by category (ASX, ETFs, International) for a clearer breakdown.'}
   ]},
   mortgage: { title:'Mortgage & Home', items:[
-    {icon:'🏠', h:'Home details', b:'Enter your home value, purchase date, and property location. This establishes your gross asset value for net worth calculations.'},
-    {icon:'💳', h:'Mortgage balance', b:'Enter the current outstanding mortgage balance. This is treated as a liability in your Net Assets calculation. Update quarterly as you pay it down.'},
-    {icon:'⚙️', h:'Offset account', b:'Link your mortgage offset account to the Cash Tracker. The offset balance reduces your effective mortgage balance, improving equity and reducing interest accrual.'},
-    {icon:'📊', h:'Equity tracker', b:'The Mortgage page shows your home equity (home value - balance). As you pay down the loan, equity grows. A key component of your long-term wealth.'}
+    {icon:'home', h:'Home details', b:'Enter your home value, purchase date, and property location. This establishes your gross asset value for net worth calculations.'},
+    {icon:'credit-card', h:'Mortgage balance', b:'Enter the current outstanding mortgage balance. This is treated as a liability in your Net Assets calculation. Update quarterly as you pay it down.'},
+    {icon:'settings', h:'Offset account', b:'Link your mortgage offset account to the Cash Tracker. The offset balance reduces your effective mortgage balance, improving equity and reducing interest accrual.'},
+    {icon:'chart-bar', h:'Equity tracker', b:'The Mortgage page shows your home equity (home value - balance). As you pay down the loan, equity grows. A key component of your long-term wealth.'}
   ]},
   liabilities: { title:'Liabilities & Debts', items:[
-    {icon:'💳', h:'Add a liability', b:'Record loans, credit cards, and personal debts. Enter name, current balance, interest rate (if applicable), and liability type (mortgage, car, credit card, personal).'},
-    {icon:'📊', h:'Debt breakdown', b:'See the total liabilities and breakdown by type. This is subtracted from your gross assets to calculate net wealth. Lower is better.'},
-    {icon:'✏️', h:'Update balance', b:'Track payments by updating the balance as you pay down debt. The app shows progress and remaining balance for each liability.'},
-    {icon:'⚠️', h:'Debt ratio', b:'Your total liabilities as a percentage of gross assets. Shown on the Assets page. Below 30% is strong; above 60% is concerning.'}
+    {icon:'credit-card', h:'Add a liability', b:'Record loans, credit cards, and personal debts. Enter name, current balance, interest rate (if applicable), and liability type (mortgage, car, credit card, personal).'},
+    {icon:'chart-bar', h:'Debt breakdown', b:'See the total liabilities and breakdown by type. This is subtracted from your gross assets to calculate net wealth. Lower is better.'},
+    {icon:'pencil', h:'Update balance', b:'Track payments by updating the balance as you pay down debt. The app shows progress and remaining balance for each liability.'},
+    {icon:'alert-triangle', h:'Debt ratio', b:'Your total liabilities as a percentage of gross assets. Shown on the Assets page. Below 30% is strong; above 60% is concerning.'}
   ]},
   insurance: { title:'Insurance Policies', items:[
-    {icon:'📋', h:'Policy details', b:'Record all insurance policies: life, income protection, home, contents, car, etc. Enter the policy name, type, insurer, and monthly premium.'},
-    {icon:'📅', h:'Renewal tracking', b:'Set the renewal date for each policy. The app shows upcoming renewals so you can shop around and lock in the best rates.'},
-    {icon:'💰', h:'Premium management', b:'See total annual and monthly insurance costs. Compare costs across policies to identify savings opportunities or consolidation options.'},
-    {icon:'✏️', h:'Edit & archive', b:'Update policy details as you switch insurers or adjust coverage. Archive policies that lapse instead of deleting them.'}
+    {icon:'clipboard-list', h:'Policy details', b:'Record all insurance policies: life, income protection, home, contents, car, etc. Enter the policy name, type, insurer, and monthly premium.'},
+    {icon:'calendar', h:'Renewal tracking', b:'Set the renewal date for each policy. The app shows upcoming renewals so you can shop around and lock in the best rates.'},
+    {icon:'coin', h:'Premium management', b:'See total annual and monthly insurance costs. Compare costs across policies to identify savings opportunities or consolidation options.'},
+    {icon:'pencil', h:'Edit & archive', b:'Update policy details as you switch insurers or adjust coverage. Archive policies that lapse instead of deleting them.'}
   ]},
 };
 
@@ -725,14 +725,14 @@ function renderHowTo(pageId) {
   if (!cfg) return '';
   var itemsHtml = cfg.items.map(function(it) {
     return '<div class="how-to-item">'
-      + '<div class="how-to-icon">' + it.icon + '</div>'
+      + '<div class="how-to-icon">' + ICON(it.icon) + '</div>'
       + '<div><div class="how-to-title">' + it.h + '</div>'
       + '<div class="how-to-text">' + it.b + '</div></div>'
       + '</div>';
   }).join('');
   return '<div class="card how-to-card mb">'
     + '<div class="how-to-hd" onclick="this.parentNode.querySelector(\'.how-to-body\').style.display=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'grid\':\'none\';this.querySelector(\'.how-to-chev\').style.transform=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'\':\' rotate(180deg)\'">'
-    + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.1rem">📖</span>'
+    + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.1rem">' + ICON('books') + '</span>'
     + '<div><div style="font-weight:700;font-size:.88rem;color:var(--text)">How to use — ' + cfg.title + '</div>'
     + '<div style="font-size:.72rem;color:var(--muted)">Tap to expand guide</div></div></div>'
     + '<span class="how-to-chev" style="font-size:.9rem;color:var(--muted);transition:transform .2s">▼</span>'
