@@ -880,11 +880,21 @@ function migrateLegacyTheme(){
   } catch(e) {}
 }
 
+// The landing/login screen (and the pre-auth onboarding wizard) is dark-only by
+// design — it's branded artwork that doesn't hold up in light mode. The user's
+// light/dark preference only takes effect once they're inside the app. This
+// applies the right mode for the current context WITHOUT touching their saved
+// cff_mode, so their preference is preserved for when they unlock.
+function applyThemeForContext(){
+  var inApp = (typeof loggedIn !== 'undefined' && loggedIn);
+  applyThemeAttrs(getPalette(), inApp ? getMode() : 'dark');
+}
+
 function loadTheme() {
   var hasNew = false;
   try { hasNew = !!localStorage.getItem('cff_palette') || !!localStorage.getItem('cff_mode'); } catch(e) {}
   if(!hasNew) migrateLegacyTheme();
-  applyThemeAttrs(getPalette(), getMode());
+  applyThemeForContext();
 }
 
 // ══════════════════════════════════════════════════════════════

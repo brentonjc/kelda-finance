@@ -115,6 +115,9 @@ function unlock(){
   EQ_MONTHLY    = load(K.eqMonthly)    || {};
   // Hide login screen first — before anything that could throw
   document.getElementById('login-screen').classList.add('gone');
+  // Now inside the app: apply the user's saved light/dark preference (the
+  // landing screen forces dark; see applyThemeForContext in app.js).
+  if (typeof applyThemeForContext === 'function') applyThemeForContext();
   var _tabBar=document.getElementById('bottom-tab-bar');
   var _fab=document.getElementById('fab');
   if(_tabBar)_tabBar.style.removeProperty('display');
@@ -194,6 +197,8 @@ function lockApp(){
   });
 
   document.getElementById('login-screen').classList.remove('gone');
+  // Back on the landing screen — force dark regardless of saved preference.
+  if (typeof applyThemeForContext === 'function') applyThemeForContext();
   var _tabBar=document.getElementById('bottom-tab-bar');
   var _fab=document.getElementById('fab');
   if(_tabBar)_tabBar.style.display='none';

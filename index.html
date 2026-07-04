@@ -5,24 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Kelda Finance</title>
 
-<!-- FOUC guard: apply the saved palette/mode (or migrate the legacy cff_theme
-     key) before any CSS paints, so light-mode users never flash the dark default.
-     Mirrors the migration logic in app.js/loadTheme for the pre-JS path. -->
+<!-- FOUC guard: apply the saved palette before any CSS paints. Mode is forced
+     to dark here because the login/landing screen always paints first on load
+     and is dark-only by design; the user's saved light/dark preference is
+     applied by applyThemeForContext() once they unlock into the app. -->
 <script>
 (function(){
   try{
     var P=['kelda','fintech','emerald','slate','harvest'];
-    var pal=localStorage.getItem('cff_palette'), mode=localStorage.getItem('cff_mode');
-    if(!pal && !mode){
-      var legacy=localStorage.getItem('cff_theme');
-      if(legacy==='light'){ mode='light'; }
-      else if(legacy==='system'){ mode=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'; }
+    var pal=localStorage.getItem('cff_palette');
+    if(P.indexOf(pal)<0){
+      // No new-format palette yet — derive from any legacy cff_theme value.
+      pal='kelda';
     }
-    if(P.indexOf(pal)<0) pal='kelda';
-    if(mode!=='light'&&mode!=='dark') mode='dark';
     var r=document.documentElement;
     r.setAttribute('data-palette',pal);
-    r.setAttribute('data-mode',mode);
+    r.setAttribute('data-mode','dark');
   }catch(e){}
 })();
 </script>
