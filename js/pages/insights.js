@@ -619,7 +619,7 @@ function insRenderSubcatChart() {
       + LCATS.filter(c => c.type === 'expense' || c.type === 'both')
              .filter(c => c.id !== 'transfers' && c.id !== 'other')
              .map(c => '<option value="' + c.id + '"' + (c.id === cur ? ' selected' : '') + '>'
-                       + c.icon + ' ' + c.name + '</option>')
+                       + c.name + '</option>')
              .join('');
   }
 
@@ -867,7 +867,7 @@ function insRenderIncSubcatChart() {
       + LCATS.filter(c => c.type === 'income' || c.type === 'both')
              .filter(c => c.id !== 'transfers')
              .map(c => '<option value="' + c.id + '"' + (c.id === cur ? ' selected' : '') + '>'
-                       + c.icon + ' ' + c.name + '</option>')
+                       + c.name + '</option>')
              .join('');
   }
 

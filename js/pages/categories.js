@@ -937,6 +937,7 @@ function inlineAssignCat(selectEl) {
       var newSubcats = getSubcats(catId);
       subcatSel.innerHTML = '<option value="">—</option>'
         + newSubcats.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
+      subcatSel.dataset.hydrated = '1'; // full list now present; skip lazy re-hydrate
     }
   }
 
