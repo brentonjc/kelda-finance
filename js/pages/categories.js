@@ -1433,7 +1433,7 @@ function renderBankComparison() {
 
   if (!bankCols.length) { tableEl.innerHTML = ''; return; }
 
-  var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  var isDark = document.documentElement.getAttribute('data-mode') !== 'light';
 
   // Table header
   var headerCells = '<th style="text-align:left;padding:8px 12px 8px 0;font-size:.72rem;color:var(--muted);font-weight:700;white-space:nowrap">Kelda Category</th>';

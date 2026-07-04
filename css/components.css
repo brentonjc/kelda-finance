@@ -48,11 +48,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   cursor:pointer;transition:all .18s;touch-action:manipulation;
   min-height:44px;white-space:nowrap;letter-spacing:.01em;
 }
-.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary{background:var(--primary);color:var(--primary-text);}
 .btn-primary:hover{background:var(--pink-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(232,69,122,.4);}
 .btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted);}
 .btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
-.btn-danger{background:#2a1020;border:1.5px solid #4a1a28;color:var(--danger);}
+.btn-danger{background:var(--danger-bg);border:1.5px solid color-mix(in srgb, var(--danger) 40%, transparent);color:var(--danger);}
 .btn-danger:hover{background:var(--danger);color:#fff;}
 .btn-sm{padding:8px 13px;font-size:.78rem;border-radius:7px;min-height:36px;}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--border);font-size:.95rem;padding:6px;border-radius:6px;transition:color .18s;min-height:36px;min-width:36px;}
@@ -60,11 +60,13 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
 /* ══ BADGES ══ */
 .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.7rem;font-weight:700;}
-.b-income{background:#1a3020;color:#52d68a;}
-.b-expense{background:#2a1020;color:#f07aaa;}
-.b-paid{background:#1a3020;color:#52d68a;}
-.b-due{background:#2a2010;color:#f0a040;}
-.b-overdue{background:#2a1020;color:#f04060;}
+/* Badge tints follow the active palette/mode via semantic tokens rather than
+   hardcoded hex, so they read correctly in both light and dark. */
+.b-income{background:var(--success-bg);color:var(--success);}
+.b-expense{background:var(--danger-bg);color:var(--danger);}
+.b-paid{background:var(--success-bg);color:var(--success);}
+.b-due{background:var(--warn-bg);color:var(--warn);}
+.b-overdue{background:var(--danger-bg);color:var(--danger);}
 
 /* ══ PROGRESS BARS ══ */
 .prog-wrap{margin-bottom:14px;}
@@ -518,14 +520,11 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .sankey-svg{width:100%;overflow:visible;}
 .sankey-label{font-family:Inter,sans-serif;fill:var(--text);pointer-events:none;}
 
-/* ══ THEME SWITCHER ══ */
-.theme-switcher{display:flex;gap:6px;align-items:center;padding:12px 16px;border-top:1px solid var(--border);margin-top:auto;}
-.theme-btn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .2s;flex-shrink:0;outline:none;padding:0;}
-.theme-btn:hover,.theme-btn.active{transform:scale(1.2);border-color:var(--text);}
-.theme-btn.t-dark{background:linear-gradient(135deg,#16141a 50%,#e8457a 50%);}
-.theme-btn.t-light{background:linear-gradient(135deg,#f4f2f8 50%,#8b5cf6 50%);}
-.theme-btn.t-mint{background:linear-gradient(135deg,#f0faf7 50%,#0d9488 50%);}
-.theme-btn.t-ocean{background:linear-gradient(135deg,#0a1628 50%,#38bdf8 50%);}
+/* ══ APPEARANCE: LIGHT/DARK MODE TOGGLE ══ */
+.mode-toggle{display:inline-flex;gap:4px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-pill);padding:4px;}
+.mode-toggle-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 14px;border:none;background:transparent;color:var(--muted);font-family:var(--font-body);font-size:.82rem;font-weight:600;border-radius:var(--radius-pill);cursor:pointer;transition:all .18s;}
+.mode-toggle-btn:hover{color:var(--text);}
+.mode-toggle-btn.active{background:var(--primary);color:var(--primary-text);}
 
 /* ══ SETTINGS PAGE ══ */
 .settings-row{display:flex;flex-direction:column;gap:4px;}

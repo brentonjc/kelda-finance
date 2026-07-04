@@ -784,32 +784,93 @@ function fabAction(action) {
   }
 }
 
-// ── THEME MANAGEMENT ──────────────────────────────────────────
-function setTheme(name) {
-  // 'system' means follow prefers-color-scheme (no data-theme attr)
-  if(name==='system'){
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', name);
-  }
-  try { localStorage.setItem('cff_theme', name); } catch(e) {}
-  document.querySelectorAll('.theme-btn').forEach(function(b) {
-    b.classList.toggle('active', b.classList.contains('t-' + name));
+// ── THEME MANAGEMENT (palette × mode) ─────────────────────────
+// Colour is two independent axes: a palette (5 options) and a mode (dark|light),
+// each persisted under its own key. See css/tokens.css for the token blocks.
+var PALETTES = ['kelda','fintech','emerald','slate','harvest'];
+
+function applyThemeAttrs(palette, mode){
+  var root = document.documentElement;
+  root.setAttribute('data-palette', palette);
+  root.setAttribute('data-mode', mode);
+  // Keep the address-bar / PWA chrome colour in sync with the page background.
+  try {
+    var bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){ m.setAttribute('content', bg); });
+  } catch(e) {}
+  syncThemeControls(palette, mode);
+  // Charts read CSS vars at construction time only — re-render the visible page
+  // so every chart picks up the new colours without a full reload.
+  rerenderActivePage();
+}
+
+function setPalette(palette){
+  if(PALETTES.indexOf(palette) < 0) palette = 'kelda';
+  try { localStorage.setItem('cff_palette', palette); } catch(e) {}
+  applyThemeAttrs(palette, getMode());
+}
+
+function setMode(mode){
+  mode = (mode === 'light') ? 'light' : 'dark';
+  try { localStorage.setItem('cff_mode', mode); } catch(e) {}
+  applyThemeAttrs(getPalette(), mode);
+}
+
+function getPalette(){
+  var p; try { p = localStorage.getItem('cff_palette'); } catch(e) {}
+  return (PALETTES.indexOf(p) >= 0) ? p : 'kelda';
+}
+function getMode(){
+  var m; try { m = localStorage.getItem('cff_mode'); } catch(e) {}
+  return (m === 'light' || m === 'dark') ? m : 'dark';
+}
+
+// Reflect the current palette/mode across every theme control (Settings +
+// mobile menu can both be in the DOM, so sync by class not id).
+function syncThemeControls(palette, mode){
+  document.querySelectorAll('.palette-select').forEach(function(sel){ sel.value = palette; });
+  document.querySelectorAll('.mode-toggle-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.mode === mode);
   });
 }
 
-function loadTheme() {
-  var saved;
-  try { saved = localStorage.getItem('cff_theme'); } catch(e) {}
-  // Default to dark — the designed-for theme
-  if(!saved) saved = 'dark';
-  setTheme(saved);
-  // Listen for system theme changes and update if in system mode
-  if(window.matchMedia){
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
-      try { if((localStorage.getItem('cff_theme')||'system')==='system') setTheme('system'); } catch(e){}
-    });
+// Chart.js reads CSS vars at construction time, so charts keep stale colours
+// after a palette/mode switch. Re-run the render fn for the visible page, but
+// only for pages that actually draw charts — other pages update via CSS alone,
+// and re-rendering them would needlessly rebuild the DOM and jump the scroll.
+var CHART_PAGES = ['dashboard','insights','mortgage','insurance','forecast',
+                   'assets','cash','equities','bills','transfers'];
+function rerenderActivePage(){
+  var active = document.querySelector('.page.active');
+  if(!active || !active.id) return;
+  var id = active.id.replace(/^page-/, '');
+  if(CHART_PAGES.indexOf(id) >= 0 && typeof go === 'function') { try { go(id); } catch(e) {} }
+}
+
+// One-time migration from the old single-key theme system (cff_theme).
+//   dark  → kelda/dark      light → kelda/light
+//   system→ kelda/(OS mode) mint|ocean|unknown → kelda/dark
+function migrateLegacyTheme(){
+  var legacy; try { legacy = localStorage.getItem('cff_theme'); } catch(e) {}
+  if(!legacy) return;
+  var palette = 'kelda', mode = 'dark';
+  if(legacy === 'light') mode = 'light';
+  else if(legacy === 'system'){
+    mode = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
   }
+  // dark / mint / ocean / anything else → kelda/dark (defaults above)
+  try {
+    localStorage.setItem('cff_palette', palette);
+    localStorage.setItem('cff_mode', mode);
+    localStorage.removeItem('cff_theme');
+  } catch(e) {}
+}
+
+function loadTheme() {
+  var hasNew = false;
+  try { hasNew = !!localStorage.getItem('cff_palette') || !!localStorage.getItem('cff_mode'); } catch(e) {}
+  if(!hasNew) migrateLegacyTheme();
+  applyThemeAttrs(getPalette(), getMode());
 }
 
 // ══════════════════════════════════════════════════════════════

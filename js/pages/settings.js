@@ -96,13 +96,25 @@ function renderSettings() {
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
   html += '<div class="section-label" style="margin-bottom:14px">Appearance</div>';
-  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Choose a colour theme for the app.</p>';
-  html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
-  html += '<button class="theme-btn t-dark"  onclick="setTheme(\'dark\')"  title="Dark"></button>';
-  html += '<button class="theme-btn t-light" onclick="setTheme(\'light\')" title="Light"></button>';
-  html += '<button class="theme-btn t-mint"  onclick="setTheme(\'mint\')"  title="Mint"></button>';
-  html += '<button class="theme-btn t-ocean" onclick="setTheme(\'ocean\')" title="Ocean"></button>';
-  html += '<span style="font-size:.78rem;color:var(--muted)">Select theme</span>';
+  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Choose a colour palette and switch between light and dark. Changes apply instantly.</p>';
+  html += '<div class="field-row" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">';
+  html += '  <label style="flex:1;min-width:180px">';
+  html += '    <span style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px">Palette</span>';
+  html += '    <select class="input palette-select" onchange="setPalette(this.value)" aria-label="Colour palette">';
+  html += '      <option value="kelda">Kelda</option>';
+  html += '      <option value="fintech">Fintech</option>';
+  html += '      <option value="emerald">Emerald</option>';
+  html += '      <option value="slate">Slate</option>';
+  html += '      <option value="harvest">Harvest</option>';
+  html += '    </select>';
+  html += '  </label>';
+  html += '  <div>';
+  html += '    <span style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px">Mode</span>';
+  html += '    <div class="mode-toggle" role="group" aria-label="Light or dark mode">';
+  html += '      <button class="mode-toggle-btn" data-mode="light" onclick="setMode(\'light\')"><i class="ti ti-sun"></i> Light</button>';
+  html += '      <button class="mode-toggle-btn" data-mode="dark" onclick="setMode(\'dark\')"><i class="ti ti-moon"></i> Dark</button>';
+  html += '    </div>';
+  html += '  </div>';
   html += '</div>';
   html += '</div>';
 
@@ -146,6 +158,8 @@ function renderSettings() {
   html += '</div>';
 
   el.innerHTML = html;
+  // Reflect the active palette/mode in the freshly-rendered controls.
+  if(typeof syncThemeControls === 'function') syncThemeControls(getPalette(), getMode());
 }
 
 // ── Profile card helper ───────────────────────────────────────

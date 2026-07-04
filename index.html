@@ -1,14 +1,36 @@
 <!DOCTYPE html>
-<html lang="en-AU" data-theme="dark">
+<html lang="en-AU" data-palette="kelda" data-mode="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Kelda Finance</title>
 
+<!-- FOUC guard: apply the saved palette/mode (or migrate the legacy cff_theme
+     key) before any CSS paints, so light-mode users never flash the dark default.
+     Mirrors the migration logic in app.js/loadTheme for the pre-JS path. -->
+<script>
+(function(){
+  try{
+    var P=['kelda','fintech','emerald','slate','harvest'];
+    var pal=localStorage.getItem('cff_palette'), mode=localStorage.getItem('cff_mode');
+    if(!pal && !mode){
+      var legacy=localStorage.getItem('cff_theme');
+      if(legacy==='light'){ mode='light'; }
+      else if(legacy==='system'){ mode=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'; }
+    }
+    if(P.indexOf(pal)<0) pal='kelda';
+    if(mode!=='light'&&mode!=='dark') mode='dark';
+    var r=document.documentElement;
+    r.setAttribute('data-palette',pal);
+    r.setAttribute('data-mode',mode);
+  }catch(e){}
+})();
+</script>
+
 <!-- PWA / iOS home screen -->
 <link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#080C18" media="(prefers-color-scheme: dark)"/>
-<meta name="theme-color" content="#F8F9FC" media="(prefers-color-scheme: light)"/>
+<!-- theme-color is kept in sync with --bg by applyThemeAttrs() at runtime -->
+<meta name="theme-color" content="#080C18"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Kelda Finance"/>
@@ -789,13 +811,19 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
   </div>
   <div class="mob-menu-section">
-    <div class="mob-menu-label">Themes</div>
-    <div class="mob-menu-themes">
-      <button class="theme-btn t-dark"  onclick="setTheme('dark')"  title="Dark"></button>
-      <button class="theme-btn t-light" onclick="setTheme('light')" title="Light"></button>
-      <button class="theme-btn t-mint"  onclick="setTheme('mint')"  title="Mint"></button>
-      <button class="theme-btn t-ocean" onclick="setTheme('ocean')" title="Ocean"></button>
-      <span style="font-size:.78rem;color:var(--muted);margin-left:8px">Theme</span>
+    <div class="mob-menu-label">Appearance</div>
+    <div class="mob-menu-themes" style="flex-wrap:wrap;gap:10px">
+      <select class="input palette-select" style="flex:1;min-width:140px" onchange="setPalette(this.value)" aria-label="Colour palette">
+        <option value="kelda">Kelda</option>
+        <option value="fintech">Fintech</option>
+        <option value="emerald">Emerald</option>
+        <option value="slate">Slate</option>
+        <option value="harvest">Harvest</option>
+      </select>
+      <div class="mode-toggle" role="group" aria-label="Light or dark mode">
+        <button class="mode-toggle-btn" data-mode="light" onclick="setMode('light')" title="Light"><i class="ti ti-sun"></i></button>
+        <button class="mode-toggle-btn" data-mode="dark" onclick="setMode('dark')" title="Dark"><i class="ti ti-moon"></i></button>
+      </div>
     </div>
   </div>
   <!-- User & Account Settings -->
