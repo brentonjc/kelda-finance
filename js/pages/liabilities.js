@@ -577,6 +577,7 @@ function liabOpenModal(idx) {
     'liab-m-lender':        l ? l.lender : '',
     'liab-m-balance':       l ? l.balance : '',
     'liab-m-original':      l ? (l.originalBalance || '') : '',
+    'liab-m-opened':        l ? (l.openedDate || '') : '',
     'liab-m-rate':          l ? l.rate : '',
     'liab-m-rate-type':     l ? (l.rateType || 'variable') : 'variable',
     'liab-m-fixed-expiry':  l ? (l.fixedExpiry || '') : '',
@@ -640,6 +641,7 @@ function liabSave() {
   var lender = get('liab-m-lender').trim();
   var balance = parseFloat(get('liab-m-balance')) || 0;
   var originalBalance = parseFloat(get('liab-m-original')) || null;
+  var openedDate = get('liab-m-opened') || null;
   var rate = parseFloat(get('liab-m-rate')) || 0;
   var rateType = get('liab-m-rate-type');
   var fixedExpiry = get('liab-m-fixed-expiry') || null;
@@ -660,6 +662,7 @@ function liabSave() {
     lender: lender,
     balance: balance,
     originalBalance: originalBalance,
+    openedDate: openedDate,
     rate: rate,
     rateType: rateType,
     fixedExpiry: fixedExpiry,

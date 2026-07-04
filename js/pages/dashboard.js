@@ -105,6 +105,26 @@ function recordNetWorthSnapshot() {
   } catch(e) { console.warn('recordNetWorthSnapshot error', e); }
 }
 
+// ── One-time heal of contaminated back-filled history ─────────
+// Earlier builds back-filled every Cash Tracker month with the CURRENT total
+// liabilities (and property/equities), so debts/assets appeared in months
+// before they existed. Those auto-generated rows are tagged `_backfilled`.
+// Drop them once; the now start-date-aware _nwBackfillFromCT regenerates them
+// correctly on the very next recordNetWorthSnapshot() call. Manually recorded
+// snapshots are left untouched.
+function _nwMigrateBackfilled() {
+  try {
+    if (localStorage.getItem('cff_nw_backfill_migrated_v1')) return;
+    var hist = [];
+    try { hist = JSON.parse(localStorage.getItem('cff_networth_history') || '[]') || []; } catch(e) { hist = []; }
+    var cleaned = hist.filter(function(e) { return !e._backfilled; });
+    if (cleaned.length !== hist.length) {
+      localStorage.setItem('cff_networth_history', JSON.stringify(cleaned));
+    }
+    localStorage.setItem('cff_nw_backfill_migrated_v1', '1');
+  } catch(e) { console.warn('_nwMigrateBackfilled error', e); }
+}
+
 // ── Back-fill NW history using Cash Tracker months as backbone ─
 // Uses component monthly histories where recorded; falls back to
 // current values so every CT month immediately shows a net worth.
@@ -123,11 +143,40 @@ function _nwBackfillFromCT(existingHist) {
     var fallbackEq    = currentNW.equities;
     var fallbackLiab  = currentNW.liabilities;
 
+    // ── Earliest legitimate month for each date-bound component ───
+    // Property, equities and liabilities must NOT be back-filled into months
+    // before they existed, or the history shows debt/assets that predate the
+    // mortgage/holding. Bank and super are always present so need no guard.
+    var propAcqMo = null;
+    if (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length) {
+      MORTGAGE.properties.forEach(function(p) {
+        if (p.acquiredDate) { var d = p.acquiredDate.slice(0,7); if (!propAcqMo || d < propAcqMo) propAcqMo = d; }
+      });
+    }
+    if (!propAcqMo && MORTGAGE && MORTGAGE.acquiredDate) propAcqMo = MORTGAGE.acquiredDate.slice(0,7);
+
+    var eqStartMo = null;
+    if (typeof EQUITIES !== 'undefined' && EQUITIES.length) {
+      EQUITIES.forEach(function(h) {
+        var d = (h.purchaseDate || h.grantDate || '').slice(0,7);
+        if (d && (!eqStartMo || d < eqStartMo)) eqStartMo = d;
+      });
+    }
+
     // Load component histories
     var superHist = {}; try { superHist    = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
     var mortHist  = {}; try { mortHist     = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
     var eqHist    = {}; try { eqHist       = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
     var liabHist  = {}; try { liabHist     = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
+
+    var liabStartMo = propAcqMo;
+    if (typeof LIABILITIES !== 'undefined') {
+      LIABILITIES.forEach(function(l) {
+        var d = (l.openedDate || l.startDate || '').slice(0,7);
+        if (d && (!liabStartMo || d < liabStartMo)) liabStartMo = d;
+      });
+    }
+    Object.keys(liabHist).forEach(function(d) { if (!liabStartMo || d < liabStartMo) liabStartMo = d; });
 
     // Build month→existing entry map
     var moMap = {};
@@ -144,15 +193,17 @@ function _nwBackfillFromCT(existingHist) {
       var sh     = superHist[mo];
       var super_ = sh ? ((sh.brenton||0) + (sh.shelley||0)) : fallbackSuper;
 
-      // Property
+      // Property — nothing before acquisition month
       var mh       = mortHist[mo];
-      var property = mh ? (mh.homeValue||0) : fallbackProp;
+      var property = (propAcqMo && mo < propAcqMo) ? 0 : (mh ? (mh.homeValue||0) : fallbackProp);
 
-      // Equities
-      var equities = (typeof eqHist[mo] !== 'undefined') ? eqHist[mo] : fallbackEq;
+      // Equities — nothing before earliest holding
+      var equities = (eqStartMo && mo < eqStartMo) ? 0
+        : ((typeof eqHist[mo] !== 'undefined') ? eqHist[mo] : fallbackEq);
 
-      // Liabilities (includes mortgage balance)
-      var liabilities = (typeof liabHist[mo] !== 'undefined') ? liabHist[mo] : fallbackLiab;
+      // Liabilities (includes mortgage balance) — nothing before debt existed
+      var liabilities = (liabStartMo && mo < liabStartMo) ? 0
+        : ((typeof liabHist[mo] !== 'undefined') ? liabHist[mo] : fallbackLiab);
 
       var netWorth = bank + super_ + property + equities - liabilities;
 
@@ -957,6 +1008,7 @@ function renderDashboard() {
   // ── Data-recording side effects (kept from the previous dashboard) ──
   try { migrateTxCategories(); } catch(e) {}
   try { populateNetWorthHistory(); } catch(e) { console.warn('populate nw history', e); }
+  try { _nwMigrateBackfilled(); } catch(e) { console.warn('nw backfill migrate', e); }
   try { recordNetWorthSnapshot(); } catch(e) { console.warn('nw snapshot', e); }
   try { if (typeof blEnsureBillsReady === 'function') blEnsureBillsReady(); } catch(e) { console.warn('bills ready', e); }
 
