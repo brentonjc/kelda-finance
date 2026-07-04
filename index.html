@@ -1025,6 +1025,13 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
   <div class="nav-body">
 
+    <!-- Pinned shortcuts (user-managed) — populated by renderPinned() -->
+    <div id="nav-pinned-wrap" style="display:none">
+      <div class="nav-glabel">Pinned</div>
+      <div id="nav-pinned"></div>
+      <div class="nav-div"></div>
+    </div>
+
     <div class="nav-glabel">Core Features</div>
     <a class="nav-item active" id="n-dashboard" onclick="go('dashboard')" aria-current="page"><span class="ni"><i class="ti ti-home"></i></span><span class="nav-lbl">My Dashboard</span></a>
     <a class="nav-item" id="n-quickstart" onclick="go('quickstart')"><span class="ni"><i class="ti ti-rocket"></i></span><span class="nav-lbl">Quick Start</span></a>
@@ -1033,25 +1040,46 @@ window.addEventListener('unhandledrejection',function(e){
     <a class="nav-item" id="n-bva" onclick="go('bva')"><span class="ni"><i class="ti ti-chart-bar"></i></span><span class="nav-lbl">Budget</span></a>
     <a class="nav-item" id="n-goals" onclick="go('goals')"><span class="ni"><i class="ti ti-target"></i></span><span class="nav-lbl">Goals</span></a>
     <a class="nav-item" id="n-bills" onclick="go('bills')"><span class="ni"><i class="ti ti-calendar"></i></span><span class="nav-lbl">Bills</span></a>
-    <a class="nav-item" id="n-insights" onclick="go('insights')"><span class="ni"><i class="ti ti-sparkles"></i></span><span class="nav-lbl">Graphs</span></a>
+    <!-- Graphs — flyout with report sub-pages (stays in Core Features) -->
+    <div class="nav-group" data-fly="graphs">
+      <div class="nav-item nav-cat" id="nav-cat-graphs" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-graphs">
+        <span class="ni"><i class="ti ti-sparkles"></i></span><span class="nav-lbl">Graphs</span><span class="nav-cat-arr">›</span>
+      </div>
+      <div class="nav-flyout" id="fly-graphs" role="menu" aria-label="Graphs">
+        <div class="nav-flyout-hd">Graphs</div>
+        <a class="nav-fly-item" id="n-insights" onclick="go('insights')" role="menuitem"><span class="ni"><i class="ti ti-chart-histogram"></i></span><span>Graphs</span></a>
+        <a class="nav-fly-item" id="n-ins-income" onclick="goInsights('income')" role="menuitem"><span class="ni"><i class="ti ti-cash"></i></span><span>Income</span></a>
+        <a class="nav-fly-item" id="n-ins-expenses" onclick="goInsights('expenses')" role="menuitem"><span class="ni"><i class="ti ti-cash-off"></i></span><span>Expenses</span></a>
+        <a class="nav-fly-item" id="n-assets" onclick="go('assets')" role="menuitem"><span class="ni"><i class="ti ti-coin"></i></span><span>Net Worth</span></a>
+        <a class="nav-fly-item" id="n-forecast" onclick="go('forecast')" role="menuitem"><span class="ni"><i class="ti ti-chart-line"></i></span><span>Forecasts</span></a>
+      </div>
+    </div>
 
     <div class="nav-div"></div>
 
-    <!-- Financial Planning Tools — category icon + hover flyout -->
-    <div class="nav-group" data-fly="planning">
-      <div class="nav-item nav-cat" id="nav-cat-planning" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-planning">
-        <span class="ni"><i class="ti ti-chart-bar"></i></span><span class="nav-lbl">Financial Planning</span><span class="nav-cat-arr">›</span>
+    <!-- Liabilities — category icon + hover flyout -->
+    <div class="nav-group" data-fly="liabilities">
+      <div class="nav-item nav-cat" id="nav-cat-liabilities" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-liabilities">
+        <span class="ni"><i class="ti ti-scale"></i></span><span class="nav-lbl">Liabilities</span><span class="nav-cat-arr">›</span>
       </div>
-      <div class="nav-flyout" id="fly-planning" role="menu" aria-label="Financial Planning Tools">
-        <div class="nav-flyout-hd">Financial Planning Tools</div>
-        <a class="nav-fly-item" id="n-assets" onclick="go('assets')" role="menuitem"><span class="ni"><i class="ti ti-coin"></i></span><span>Net Worth</span></a>
-        <a class="nav-fly-item" id="n-mortgage" onclick="go('mortgage')" role="menuitem"><span class="ni"><i class="ti ti-home-2"></i></span><span>Home Mortgage</span></a>
-        <a class="nav-fly-item" id="n-liabilities" onclick="go('liabilities')" role="menuitem"><span class="ni"><i class="ti ti-scale"></i></span><span>Liabilities</span></a>
-        <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni"><i class="ti ti-briefcase"></i></span><span>Superannuation</span></a>
+      <div class="nav-flyout" id="fly-liabilities" role="menu" aria-label="Liabilities">
+        <div class="nav-flyout-hd">Liabilities</div>
+        <a class="nav-fly-item" id="n-mortgage" onclick="go('mortgage')" role="menuitem"><span class="ni"><i class="ti ti-home-2"></i></span><span>Mortgages</span></a>
+        <a class="nav-fly-item" id="n-liabilities" onclick="go('liabilities')" role="menuitem"><span class="ni"><i class="ti ti-scale"></i></span><span>Other Liabilities</span></a>
+      </div>
+    </div>
+
+    <!-- Other Assets — category icon + hover flyout -->
+    <div class="nav-group" data-fly="otherassets">
+      <div class="nav-item nav-cat" id="nav-cat-otherassets" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-otherassets">
+        <span class="ni"><i class="ti ti-building-bank"></i></span><span class="nav-lbl">Other Assets</span><span class="nav-cat-arr">›</span>
+      </div>
+      <div class="nav-flyout" id="fly-otherassets" role="menu" aria-label="Other Assets">
+        <div class="nav-flyout-hd">Other Assets</div>
+        <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni"><i class="ti ti-briefcase"></i></span><span>Super</span></a>
         <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni"><i class="ti ti-trending-up"></i></span><span>Investments</span></a>
         <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni"><i class="ti ti-shield-check"></i></span><span>Life Insurance</span></a>
         <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
-        <a class="nav-fly-item" id="n-forecast" onclick="go('forecast')" role="menuitem"><span class="ni"><i class="ti ti-sparkles"></i></span><span>Cashflow Forecasts</span></a>
       </div>
     </div>
 
@@ -1399,7 +1427,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- Spending by Category -->
-      <div class="card">
+      <div class="card" id="ins-expense-section" style="scroll-margin-top:16px">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px">
             <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Spending by Category</div>
@@ -1428,7 +1456,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- Income by Category -->
-      <div class="card">
+      <div class="card" id="ins-income-section" style="scroll-margin-top:16px">
         <div class="tile-hd" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px">
             <div class="section-label" style="margin:0"><i class="ti ti-coin"></i> Income by Category</div>
@@ -1555,7 +1583,7 @@ window.addEventListener('unhandledrejection',function(e){
           <option value="joint">Joint</option>
         </select>
         <input type="text" id="tx-filter-search" placeholder="Search merchant / description..."
-          oninput="renderTx()" style="padding:6px 10px;font-size:.78rem;flex:1;min-width:160px;max-width:240px"/>
+          oninput="txSearchInput()" style="padding:6px 10px;font-size:.78rem;flex:1;min-width:160px;max-width:240px"/>
       </div>
       <!-- Bulk action bar (shown when items selected) -->
       <div class="tx-bulk-bar" id="tx-bulk-bar" style="display:none">

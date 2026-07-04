@@ -120,7 +120,7 @@ function go(id){
   try{
     if(id==='dashboard')renderDashboard();
     else if(id==='insights'){if(typeof renderInsights==='function')renderInsights();}
-    else if(id==='transactions'){renderTx();populateTxCatSelect();}
+    else if(id==='transactions'){renderTx();}
     else if(id==='bills')renderBills();
     else if(id==='goals'){if(typeof renderGoalsPage==='function')renderGoalsPage();}
     else if(id==='mortgage')renderMortgage();
@@ -160,6 +160,10 @@ function navSyncActive(id){
   document.querySelectorAll('#nav .nav-group').forEach(function(g){
     var cat=g.querySelector('.nav-cat');
     if(cat) cat.classList.toggle('cat-active', !!g.querySelector('.nav-fly-item.active'));
+  });
+  // Mirror active state onto pinned shortcuts
+  document.querySelectorAll('#nav-pinned .nav-item[data-page]').forEach(function(a){
+    a.classList.toggle('active', a.getAttribute('data-page')===id);
   });
   updateNotifDot();
   renderTopbarGreeting();
@@ -264,6 +268,102 @@ function initNavFlyouts() {
       });
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════
+// GRAPHS DEEP-LINKS — Income / Expenses scroll to a section of the
+// Graphs (insights) page.
+// ══════════════════════════════════════════════════════════════
+function goInsights(section){
+  go('insights');
+  var targetId = section==='income' ? 'ins-income-section'
+               : section==='expenses' ? 'ins-expense-section' : null;
+  if (!targetId) return;
+  setTimeout(function(){
+    var el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 120);
+}
+
+// ══════════════════════════════════════════════════════════════
+// PINNED NAV SHORTCUTS — pin any page to a "Pinned" row atop the rail.
+// Stored as an ordered array of page keys in localStorage.
+// ══════════════════════════════════════════════════════════════
+var PIN_KEY = 'kf_pinned_pages';
+function getPins(){
+  try { var a = JSON.parse(localStorage.getItem(PIN_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch(e){ return []; }
+}
+function setPins(arr){
+  try { localStorage.setItem(PIN_KEY, JSON.stringify(arr)); } catch(e){}
+}
+function isPinned(page){ return getPins().indexOf(page) !== -1; }
+function togglePin(ev, page){
+  if (ev){ ev.stopPropagation(); ev.preventDefault(); }
+  var pins = getPins();
+  var i = pins.indexOf(page);
+  if (i === -1) pins.push(page); else pins.splice(i,1);
+  setPins(pins);
+  renderPinned();
+  // Refresh the source items' pin-button state
+  document.querySelectorAll('#nav .nav-pin[data-page]').forEach(function(b){
+    b.classList.toggle('pinned', isPinned(b.getAttribute('data-page')));
+    b.title = isPinned(b.getAttribute('data-page')) ? 'Unpin from Core Features' : 'Pin to Core Features';
+  });
+}
+// Map a nav element id (n-<page>) to its page key; only real pages are pinnable.
+function _navPageKey(el){
+  var id = el.id || '';
+  if (id.indexOf('n-') !== 0) return null;
+  var key = id.slice(2);
+  return (PAGES.indexOf(key) !== -1) ? key : null;
+}
+function renderPinned(){
+  var host = document.getElementById('nav-pinned');
+  var wrap = document.getElementById('nav-pinned-wrap');
+  if (!host || !wrap) return;
+  var pins = getPins();
+  host.innerHTML = '';
+  pins.forEach(function(page){
+    var src = document.getElementById('n-'+page);
+    if (!src) return;
+    var iconEl = src.querySelector('.ni');
+    var icon = iconEl ? iconEl.innerHTML : '';
+    var lblEl = src.querySelector('.nav-lbl') || src.querySelector('span:not(.ni)');
+    var label = lblEl ? lblEl.textContent : page;
+    var a = document.createElement('a');
+    a.className = 'nav-item';
+    a.setAttribute('data-page', page);
+    a.setAttribute('onclick', "go('"+page+"')");
+    a.innerHTML = '<span class="ni">'+icon+'</span><span class="nav-lbl">'+_esc(label)+'</span>'
+      + '<button class="nav-pin pinned" data-page="'+page+'" title="Unpin from Core Features" '
+      + 'aria-label="Unpin" onclick="togglePin(event,\''+page+'\')"><i class="ti ti-pin-filled"></i></button>';
+    host.appendChild(a);
+  });
+  wrap.style.display = pins.length ? '' : 'none';
+  navSyncActive(_currentPage());
+}
+function _currentPage(){
+  var el = document.querySelector('#nav .nav-item.active[id], #nav .nav-fly-item.active[id]');
+  return el ? (el.id||'').slice(2) : 'dashboard';
+}
+// Inject a pin toggle into every pinnable nav item / flyout item.
+function initNavPins(){
+  document.querySelectorAll('#nav .nav-item[id^="n-"], #nav .nav-fly-item[id^="n-"]').forEach(function(el){
+    if (el.classList.contains('nav-cat')) return;
+    if (el.querySelector('.nav-pin')) return;      // already injected
+    var page = _navPageKey(el);
+    if (!page) return;                              // only real pages are pinnable
+    var btn = document.createElement('button');
+    btn.className = 'nav-pin' + (isPinned(page) ? ' pinned' : '');
+    btn.setAttribute('data-page', page);
+    btn.setAttribute('aria-label', 'Pin');
+    btn.title = isPinned(page) ? 'Unpin from Core Features' : 'Pin to Core Features';
+    btn.setAttribute('onclick', "togglePin(event,'"+page+"')");
+    btn.innerHTML = '<i class="ti ti-pin"></i>';
+    el.appendChild(btn);
+  });
+  renderPinned();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -919,6 +1019,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     a.addEventListener('click',()=>{if(window.innerWidth<=680)closeNav();});
   });
   if (typeof initNavFlyouts === 'function') initNavFlyouts();
+  if (typeof initNavPins === 'function') initNavPins();
 });
 
 // ══════════════════════════════════════════════════════════════

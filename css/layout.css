@@ -122,6 +122,23 @@
 .nav-fly-item.nav-item-soon:hover{background:none;color:var(--nav-text);}
 .nav-fly-item .nav-soon{margin-left:auto;opacity:1;background:var(--card3);color:var(--nav-text);font-size:.55rem;font-weight:700;padding:1px 6px;border-radius:99px;}
 
+/* ── Pin toggle (pin a page to the Pinned row) ── */
+.nav-pin{
+  margin-left:auto;flex-shrink:0;width:22px;height:22px;border-radius:6px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;cursor:pointer;color:var(--nav-text);font-size:.82rem;
+  opacity:0;transition:opacity .12s,color .12s,background .12s;
+}
+.nav-pin:hover{background:rgba(255,255,255,.1);color:var(--pink-light);}
+.nav-pin.pinned{opacity:1;color:var(--primary);}
+/* Reveal the add-pin control on item hover (rail expanded or flyout open) */
+#nav:hover .nav-item:hover .nav-pin,
+.nav-fly-item:hover .nav-pin{opacity:1;}
+/* Collapsed rail shows icons only — never a pin */
+#nav:not(:hover) .nav-pin{opacity:0!important;}
+#nav-pinned .nav-item .nav-lbl{opacity:0;transition:opacity .12s .05s;}
+#nav:hover #nav-pinned .nav-item .nav-lbl{opacity:1;}
+
 /* Sidebar overlay (mobile) */
 #nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:290;backdrop-filter:blur(2px);}
 #nav-overlay.show{display:block;}
