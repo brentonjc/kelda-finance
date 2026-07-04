@@ -816,6 +816,11 @@ function setMode(mode){
   applyThemeAttrs(getPalette(), mode);
 }
 
+// Flip between light and dark — used by the always-available top-nav button.
+function toggleMode(){
+  setMode(getMode() === 'dark' ? 'light' : 'dark');
+}
+
 function getPalette(){
   var p; try { p = localStorage.getItem('cff_palette'); } catch(e) {}
   return (PALETTES.indexOf(p) >= 0) ? p : 'kelda';
@@ -831,6 +836,15 @@ function syncThemeControls(palette, mode){
   document.querySelectorAll('.palette-select').forEach(function(sel){ sel.value = palette; });
   document.querySelectorAll('.mode-toggle-btn').forEach(function(b){
     b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  // Top-nav quick toggle: show the icon for the mode you'll switch TO.
+  document.querySelectorAll('.tb-mode-toggle').forEach(function(btn){
+    var toLight = (mode === 'dark');
+    var icon = btn.querySelector('i');
+    if(icon) icon.className = 'ti ti-' + (toLight ? 'sun' : 'moon');
+    var lbl = toLight ? 'Switch to light mode' : 'Switch to dark mode';
+    btn.setAttribute('aria-label', lbl);
+    btn.setAttribute('title', lbl);
   });
 }
 
