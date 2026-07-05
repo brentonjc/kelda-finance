@@ -672,3 +672,283 @@ function settingsRunWizard() {
   else if (typeof wzRestart === "function") wzRestart();
   else { toast('⚠️ Setup not available — reload the app'); }
 }
+
+// ══════════════════════════════════════════════════════════════
+// CUSTOMISE VIEWS / ROLES  (App Controls › Customise Views)
+//   Deviations from the source spec, for the current codebase:
+//   - Depth changes are delegated to the existing "Dashboard Layout"
+//     page (kf_profile) rather than a duplicate upgrade flow here.
+//   - Pre-lens installs get a default config (both users 'full') so
+//     nothing changes visually until a lens is chosen.
+// ══════════════════════════════════════════════════════════════
+
+// Ensure a lens config exists (older installs predate the lens system).
+function _cvEnsureConfig() {
+  var c = (typeof loadLensConfig === 'function') ? loadLensConfig() : null;
+  if (c && c.users) return c;
+  var mgr = 'brenton';
+  try { var m = localStorage.getItem(K.managerProfile); if (m) mgr = m; } catch (e) {}
+  c = {
+    manager: mgr, partnerSetupDone: true, transferPending: false, transferTo: '',
+    users: {
+      brenton: { role: mgr === 'brenton' ? 'manager' : 'partner', depth: 'full', lens: 'full', q1: '', q2: '', q3: '' },
+      shelley: { role: mgr === 'shelley' ? 'manager' : 'partner', depth: 'full', lens: 'full', q1: '', q2: '', q3: '' }
+    }
+  };
+  if (typeof saveLensConfig === 'function') saveLensConfig(c);
+  return c;
+}
+
+function _cvHasPartner() {
+  try { return !!(USER_CONFIG && USER_CONFIG.p2enabled); } catch (e) { return true; }
+}
+function _cvName(key) {
+  return (typeof getUserName === 'function' ? getUserName(key) : key) || (key === 'shelley' ? 'Partner' : 'Manager');
+}
+function _cvInitial(key) { return _cvName(key).charAt(0).toUpperCase() || '?'; }
+
+var _CV_Q1 = { A: 'Getting on top of spending', B: 'Own or paying off a home', C: 'Property / investments / super' };
+var _CV_Q2 = { A: 'Progress on goals', B: 'Where money goes', C: 'The full picture' };
+var _CV_Q3 = { A: 'Daily — all the detail', B: 'Weekly/monthly — a snapshot', C: 'Only when something needs me' };
+
+function renderCustomiseViews() {
+  var host = document.getElementById('customise-views-content');
+  if (!host) return;
+  var c = _cvEnsureConfig();
+  var me = (typeof getCurrentProfileKey === 'function') ? getCurrentProfileKey() : 'brenton';
+  var managerKey = c.manager;
+  var partnerKey = managerKey === 'brenton' ? 'shelley' : 'brenton';
+  var iAmManager = (me === managerKey);
+  var keys = _cvHasPartner() ? [managerKey, partnerKey] : [managerKey];
+
+  var html = '';
+
+  // If a transfer is pending TO the current (partner) user, prompt to accept.
+  if (c.transferPending && c.transferTo === me && me !== managerKey) {
+    html += '<div class="cv-card cv-notice cv-notice--amber">'
+      + '<div>' + esc(_cvName(managerKey)) + ' wants to transfer the household manager role to you.</div>'
+      + '<button class="btn btn-primary btn-sm" onclick="cvTransferAccept()">Accept and confirm</button>'
+      + '</div>';
+  }
+
+  // ── Section 1 — Household roles ──
+  html += '<div class="cv-card"><div class="cv-card-ttl">Household roles</div>';
+  keys.forEach(function (k) {
+    var role = (k === managerKey) ? 'manager' : 'partner';
+    var badge = role === 'manager'
+      ? '<span class="cv-badge cv-badge--mgr">Household manager</span>'
+      : '<span class="cv-badge cv-badge--partner">Partner</span>';
+    html += '<div class="cv-user-row">'
+      + '<div class="cv-avatar ' + (role === 'manager' ? 'cv-avatar--mgr' : 'cv-avatar--partner') + '">' + esc(_cvInitial(k)) + '</div>'
+      + '<div class="cv-user-name">' + esc(_cvName(k)) + '</div>' + badge + '</div>';
+  });
+
+  if (iAmManager && _cvHasPartner()) {
+    html += '<div class="cv-divider"></div>';
+    html += '<div class="cv-sub-ttl">Transfer household manager role</div>';
+    html += '<div class="cv-hint">The manager has full access to all features and data. Transferring is permanent until transferred back. Both PINs are required to confirm.</div>';
+    if (c.transferPending) {
+      html += '<div class="cv-notice cv-notice--amber" style="margin-top:10px">⏳ Transfer to ' + esc(_cvName(c.transferTo)) + ' is pending. Ask them to log in and confirm here.</div>'
+        + '<button class="btn btn-ghost btn-sm" onclick="cvTransferCancel()" style="margin-top:8px">Cancel transfer</button>';
+    } else {
+      html += '<button class="btn btn-ghost btn-sm" onclick="cvTransferStart()" style="margin-top:8px">Transfer to ' + esc(_cvName(partnerKey)) + ' →</button>';
+    }
+  }
+  html += '</div>';
+
+  // ── Section 2 — View settings per user ──
+  keys.forEach(function (k) {
+    var u = c.users[k] || {};
+    var role = (k === managerKey) ? 'manager' : 'partner';
+    var lens = u.lens || 'full';
+    html += '<div class="cv-card"><div class="cv-card-ttl">' + esc(_cvName(k)) + "'s view "
+      + (role === 'manager' ? '<span class="cv-badge cv-badge--mgr">Manager</span>' : '<span class="cv-badge cv-badge--partner">Partner</span>') + '</div>';
+
+    html += '<div class="cv-row"><div class="cv-row-lbl">CURRENT VIEW</div>'
+      + '<div class="cv-row-val">' + (typeof lensIcon === 'function' ? lensIcon(lens) : '') + ' ' + esc(typeof lensDisplayName === 'function' ? lensDisplayName(lens) : lens) + '</div>'
+      + '<button class="btn btn-ghost btn-sm" onclick="cvToggleLensPicker(\'' + k + '\')">Change</button></div>';
+    html += '<div class="cv-lens-picker" id="cv-lens-picker-' + k + '" style="display:none">' + _cvLensButtons(k, lens) + '</div>';
+
+    if (u.q2) {
+      html += '<div class="cv-row cv-row--stack"><div class="cv-row-lbl">SETUP ANSWERS</div><div class="cv-pills">'
+        + (u.q1 ? '<span class="cv-pill">' + esc(_CV_Q1[u.q1] || u.q1) + '</span>' : '')
+        + '<span class="cv-pill">' + esc(_CV_Q2[u.q2] || u.q2) + '</span>'
+        + '<span class="cv-pill">' + esc(_CV_Q3[u.q3] || u.q3) + '</span></div></div>';
+    } else if (role === 'partner') {
+      html += '<div class="cv-row"><div class="cv-row-lbl">SETUP ANSWERS</div><div class="cv-row-val cv-muted">Set up when ' + esc(_cvName(k)) + ' first logs in</div></div>';
+    }
+
+    html += '<button class="btn btn-ghost btn-sm" onclick="cvRerun(\'' + k + '\')" style="margin-top:6px">Re-run personalisation questions</button>';
+
+    if (role === 'manager') {
+      html += '<div class="cv-row cv-row--stack" style="margin-top:10px"><div class="cv-row-lbl">ACCESS LEVEL</div>'
+        + '<div class="cv-row-val" style="color:var(--success)">Full access — all modules always visible</div>'
+        + '<div class="cv-muted">The manager always sees all of Kelda regardless of view setting.</div></div>';
+    }
+    html += '</div>';
+  });
+
+  // ── Section 3 — Depth profile (delegates to Dashboard Layout) ──
+  var depth = 'full';
+  try { depth = localStorage.getItem('kf_profile') || 'full'; } catch (e) {}
+  var depthMap = {
+    starter: '🌱 Getting started — Spending, budgets, bills, goals',
+    household: '🏠 Household — Adds mortgage and forecasting',
+    full: '📊 Full — Adds investments, super, property, tax'
+  };
+  html += '<div class="cv-card"><div class="cv-card-ttl">Household modules</div>'
+    + '<div class="cv-hint">Controls which sections of Kelda are available. Set during onboarding based on your household situation.</div>'
+    + '<div class="cv-depth-card">' + esc(depthMap[depth] || depthMap.full) + '</div>';
+  if (iAmManager) {
+    html += '<button class="btn btn-ghost btn-sm" onclick="go(\'dashboard-layout\')" style="margin-top:8px">Change household modules →</button>'
+      + '<div class="cv-muted" style="margin-top:8px">To simplify your view, change your View Setting above rather than removing modules.</div>';
+  } else {
+    html += '<div class="cv-muted" style="margin-top:8px">Only the household manager can change household modules.</div>';
+  }
+  html += '</div>';
+
+  host.innerHTML = html;
+}
+
+function _cvLensButtons(key, active) {
+  var lenses = [['calm', '🧘', 'Calm'], ['clear', '📋', 'Clear'], ['full', '📊', 'Full'], ['goals', '🎯', 'Goals']];
+  var out = '';
+  for (var i = 0; i < lenses.length; i++) {
+    var l = lenses[i];
+    out += '<button class="kf-lens-btn' + (l[0] === active ? ' kf-lens-btn--active' : '') + '" data-lens="' + l[0] + '" onclick="cvSetUserLens(\'' + key + '\',\'' + l[0] + '\')">'
+      + '<span aria-hidden="true">' + l[1] + '</span><span class="kf-lens-btn__label">' + l[2] + '</span></button>';
+  }
+  return '<div class="kf-lens-switcher" style="margin:6px 0 0">' + out + '</div>';
+}
+function cvToggleLensPicker(key) {
+  var el = document.getElementById('cv-lens-picker-' + key);
+  if (el) el.style.display = (el.style.display === 'none') ? '' : 'none';
+}
+function cvSetUserLens(key, lens) {
+  var c = _cvEnsureConfig();
+  if (!c.users[key]) c.users[key] = {};
+  c.users[key].lens = lens;
+  saveLensConfig(c);
+  var me = (typeof getCurrentProfileKey === 'function') ? getCurrentProfileKey() : 'brenton';
+  if (key === me && typeof applyLens === 'function') applyLens(me);
+  try { toast('View updated'); } catch (e) {}
+  renderCustomiseViews();
+}
+
+// ── Re-run personalisation questions ──
+function cvRerun(key) {
+  var c = _cvEnsureConfig();
+  var u = c.users[key] || {};
+  var isMgr = (key === c.manager);
+  var body = '';
+  if (isMgr) body += _cvQuestionBlock('q1', 'Which best describes your household?', _CV_Q1, u.q1);
+  body += _cvQuestionBlock('q2', 'What would make Kelda most useful?', _CV_Q2, u.q2);
+  body += _cvQuestionBlock('q3', 'How do you want to engage?', _CV_Q3, u.q3);
+  body += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">'
+    + '<button class="btn btn-ghost btn-sm" onclick="cvCloseModal()">Cancel</button>'
+    + '<button class="btn btn-primary btn-sm" onclick="cvRerunSubmit(\'' + key + '\',' + (isMgr ? 'true' : 'false') + ')">Update view</button></div>';
+  _cvModal("Re-run personalisation", body);
+}
+function _cvQuestionBlock(q, heading, map, current) {
+  var out = '<div class="cv-q-block"><div class="cv-q-head">' + esc(heading) + '</div>';
+  ['A', 'B', 'C'].forEach(function (opt) {
+    var checked = current === opt ? ' checked' : '';
+    out += '<label class="cv-q-opt"><input type="radio" name="cv-' + q + '" value="' + opt + '"' + checked + '> ' + esc(map[opt]) + '</label>';
+  });
+  return out + '</div>';
+}
+function _cvPicked(q) {
+  var el = document.querySelector('input[name="cv-' + q + '"]:checked');
+  return el ? el.value : '';
+}
+function cvRerunSubmit(key, isMgr) {
+  var c = _cvEnsureConfig();
+  if (!c.users[key]) c.users[key] = {};
+  var q2 = _cvPicked('q2'), q3 = _cvPicked('q3');
+  if (!q2 || !q3) { try { toast('⚠️ Pick an answer for each question'); } catch (e) {} return; }
+  c.users[key].q2 = q2; c.users[key].q3 = q3;
+  if (isMgr) { var q1 = _cvPicked('q1'); if (q1) { c.users[key].q1 = q1; c.users[key].depth = computeLens ? computeDepth(q1) : c.users[key].depth; } }
+  c.users[key].lens = computeLens(q2, q3);
+  saveLensConfig(c);
+  cvCloseModal();
+  var me = (typeof getCurrentProfileKey === 'function') ? getCurrentProfileKey() : 'brenton';
+  if (key === me && typeof applyLens === 'function') applyLens(me);
+  try { toast('View updated'); } catch (e) {}
+  renderCustomiseViews();
+}
+
+// ── Role transfer (PIN-gated) ──
+function cvTransferStart() {
+  var c = _cvEnsureConfig();
+  var partnerKey = c.manager === 'brenton' ? 'shelley' : 'brenton';
+  var body = '<div class="cv-hint">This gives ' + esc(_cvName(partnerKey)) + ' full access to all household data and features. You\'ll become a partner with your current view settings.</div>'
+    + '<label class="lbl" style="margin-top:12px">Enter your PIN to continue</label>'
+    + '<input type="password" id="cv-pin" inputmode="numeric" maxlength="4" autocomplete="off" style="width:100%;box-sizing:border-box;letter-spacing:.3em;text-align:center">'
+    + '<div id="cv-pin-err" style="color:var(--danger);font-size:.76rem;min-height:16px;margin-top:6px"></div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btn-ghost btn-sm" onclick="cvCloseModal()">Cancel</button>'
+    + '<button class="btn btn-primary btn-sm" onclick="cvTransferConfirm()">Confirm with PIN</button></div>';
+  _cvModal('Transfer manager role to ' + _cvName(partnerKey) + '?', body);
+}
+function cvTransferConfirm() {
+  var c = _cvEnsureConfig();
+  var mgr = c.manager;
+  var partnerKey = mgr === 'brenton' ? 'shelley' : 'brenton';
+  var pin = (document.getElementById('cv-pin') || {}).value || '';
+  verifyPin(mgr, pin).then(function (res) {
+    if (!res || !res.ok) { var e = document.getElementById('cv-pin-err'); if (e) e.textContent = 'Incorrect PIN'; return; }
+    c.transferPending = true; c.transferTo = partnerKey; saveLensConfig(c);
+    cvCloseModal(); try { toast('Transfer pending — ' + _cvName(partnerKey) + ' must confirm'); } catch (e2) {}
+    renderCustomiseViews();
+  });
+}
+function cvTransferCancel() {
+  var c = _cvEnsureConfig();
+  c.transferPending = false; c.transferTo = ''; saveLensConfig(c);
+  renderCustomiseViews();
+}
+function cvTransferAccept() {
+  var c = _cvEnsureConfig();
+  var me = (typeof getCurrentProfileKey === 'function') ? getCurrentProfileKey() : 'brenton';
+  var body = '<div class="cv-hint">Enter your PIN to become the household manager.</div>'
+    + '<input type="password" id="cv-pin" inputmode="numeric" maxlength="4" autocomplete="off" style="width:100%;box-sizing:border-box;letter-spacing:.3em;text-align:center">'
+    + '<div id="cv-pin-err" style="color:var(--danger);font-size:.76rem;min-height:16px;margin-top:6px"></div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btn-ghost btn-sm" onclick="cvCloseModal()">Cancel</button>'
+    + '<button class="btn btn-primary btn-sm" onclick="cvTransferAcceptConfirm()">Confirm</button></div>';
+  _cvModal('Become household manager?', body);
+}
+function cvTransferAcceptConfirm() {
+  var c = _cvEnsureConfig();
+  var me = (typeof getCurrentProfileKey === 'function') ? getCurrentProfileKey() : 'brenton';
+  var pin = (document.getElementById('cv-pin') || {}).value || '';
+  verifyPin(me, pin).then(function (res) {
+    if (!res || !res.ok) { var e = document.getElementById('cv-pin-err'); if (e) e.textContent = 'Incorrect PIN'; return; }
+    var oldMgr = c.manager;
+    c.manager = me;
+    if (c.users[me]) c.users[me].role = 'manager';
+    if (c.users[oldMgr]) c.users[oldMgr].role = 'partner';
+    c.transferPending = false; c.transferTo = '';
+    saveLensConfig(c);
+    cvCloseModal();
+    if (typeof applyLens === 'function') applyLens(me);
+    try { toast("Role transferred. You're now the household manager."); } catch (e2) {}
+    renderCustomiseViews();
+  });
+}
+
+// ── Tiny modal helper (self-contained overlay) ──
+function _cvModal(title, innerHtml) {
+  cvCloseModal();
+  var ov = document.createElement('div');
+  ov.className = 'modal-overlay open';
+  ov.id = 'cv-modal';
+  ov.onclick = function (e) { if (e.target === ov) cvCloseModal(); };
+  ov.innerHTML = '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:100%">'
+    + '<h3 style="margin-bottom:12px">' + esc(title) + '</h3>' + innerHtml + '</div>';
+  document.body.appendChild(ov);
+  var pin = document.getElementById('cv-pin'); if (pin) setTimeout(function () { pin.focus(); }, 50);
+}
+function cvCloseModal() {
+  var m = document.getElementById('cv-modal'); if (m) m.remove();
+}

@@ -156,6 +156,15 @@ function unlock(){
       setTimeout(function(){ try { if (typeof go === 'function') go('quickstart'); } catch(e){} }, 350);
     }
   } catch(e) {}
+  // Apply this profile's lens (nav visibility, dashboard sections, calm hero,
+  // switcher/pill state). Fails open to 'full' when no lens config exists yet.
+  try {
+    if (typeof applyLens === 'function') applyLens(activeProfile);
+    if (typeof shouldShowPartnerFirstLogin === 'function' && shouldShowPartnerFirstLogin(activeProfile)
+        && typeof showPartnerFirstLogin === 'function') {
+      showPartnerFirstLogin(activeProfile);
+    }
+  } catch(e) { console.warn('applyLens:', e); }
   // Deferred init: DOM-dependent work after render cycle completes
   setTimeout(() => {
     renderD293Section();

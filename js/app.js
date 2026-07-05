@@ -102,7 +102,7 @@ function toast(msg,dur=2400,type){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','settings','dashboard-layout','quickstart'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','settings','dashboard-layout','customise-views','quickstart'];
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -139,6 +139,7 @@ function go(id){
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
     else if(id==='dashboard-layout'){if(typeof renderDashboardLayout==='function')renderDashboardLayout();}
+    else if(id==='customise-views'){if(typeof renderCustomiseViews==='function')renderCustomiseViews();}
     else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
