@@ -1095,6 +1095,7 @@ window.addEventListener('unhandledrejection',function(e){
         <a class="nav-fly-item" id="n-categories" onclick="go('categories')" role="menuitem"><span class="ni"><i class="ti ti-tag"></i></span><span>Categories</span></a>
         <a class="nav-fly-item" id="n-smartrules" onclick="go('smartrules')" role="menuitem"><span class="ni"><i class="ti ti-bolt"></i></span><span>Smart Rules</span></a>
         <a class="nav-fly-item" id="n-export" onclick="go('export')" role="menuitem"><span class="ni"><i class="ti ti-download"></i></span><span>Export Data</span></a>
+        <a class="nav-fly-item" id="n-dashboard-layout" onclick="go('dashboard-layout')" role="menuitem"><span class="ni"><i class="ti ti-layout-dashboard"></i></span><span>Dashboard Layout</span></a>
         <a class="nav-fly-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')" role="menuitem"><span class="ni"><i class="ti ti-circle-check-filled"></i></span><span>Quick Start</span></a>
       </div>
     </div>
@@ -1105,27 +1106,30 @@ window.addEventListener('unhandledrejection',function(e){
 </nav>
 
 <!-- ═══ CREATE RULE MODAL (global — accessible from any page) ═══ -->
-<div class="modal-overlay" id="create-rule-modal" onclick="if(event.target===this)document.getElementById('create-rule-modal').style.display='none'">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;width:100%">
-    <h3 style="margin-bottom:4px"><i class="ti ti-bolt"></i> Create New Rule</h3>
-    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Auto-assign a category whenever a transaction matches this merchant.</p>
+<div class="modal-overlay" id="create-rule-modal" onclick="if(event.target===this)closeRuleModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:500px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="modal-header">
+      <div class="modal-title" id="create-rule-title"><i class="ti ti-bolt"></i> Create Rule</div>
+      <button class="modal-close" onclick="closeRuleModal()" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <p class="modal-sub" id="create-rule-sub">Auto-assign a category whenever a transaction matches this rule.</p>
     <div style="display:grid;gap:14px">
       <div>
-        <label class="lbl">Merchant Name</label>
-        <input type="text" id="create-rule-merchant" placeholder='e.g. "Woolworths"' style="width:100%;box-sizing:border-box"/>
+        <label class="lbl">Rule text <span style="font-weight:400;color:var(--muted)">(merchant / keyword)</span></label>
+        <input type="text" id="create-rule-merchant" placeholder='e.g. "Woolworths"' oninput="ruleModalScan()" style="width:100%;box-sizing:border-box"/>
       </div>
       <div>
         <label class="lbl">Match Type</label>
         <div style="display:grid;gap:8px;margin-top:4px">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:11px 14px;border:2px solid var(--primary);border-radius:10px;background:rgba(240,83,138,.1);overflow:hidden;transition:all .15s" id="pattern-exact-label" onclick="updatePatternLabels()">
-            <input type="radio" name="create-rule-pattern" value="exact" checked style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)"/>
+            <input type="radio" name="create-rule-pattern" value="exact" checked style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)" onchange="ruleModalScan()"/>
             <div style="min-width:0">
               <div style="font-weight:700;font-size:.85rem;color:var(--primary)">=&nbsp;Exact Match</div>
               <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Name must match exactly — case-insensitive</div>
             </div>
           </label>
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:11px 14px;border:2px solid var(--border);border-radius:10px;background:var(--card2);overflow:hidden;transition:all .15s" id="pattern-contains-label" onclick="updatePatternLabels()">
-            <input type="radio" name="create-rule-pattern" value="contains" style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)"/>
+            <input type="radio" name="create-rule-pattern" value="contains" style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)" onchange="ruleModalScan()"/>
             <div style="min-width:0">
               <div style="font-weight:700;font-size:.85rem;color:var(--muted)">◡&nbsp;Contains</div>
               <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Name only needs to include the keyword — good for chains like "Coles Metro"</div>
@@ -1135,19 +1139,26 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div>
         <label class="lbl">Category</label>
-        <select id="create-rule-category" onchange="createRuleCategoryChanged()" style="width:100%;box-sizing:border-box">
+        <select id="create-rule-category" onchange="createRuleCategoryChanged();ruleModalScan()" style="width:100%;box-sizing:border-box">
           <option value="">— Select Category —</option>
         </select>
       </div>
       <div>
         <label class="lbl">Subcategory <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-        <select id="create-rule-subcat" style="width:100%;box-sizing:border-box">
+        <select id="create-rule-subcat" onchange="ruleModalScan()" style="width:100%;box-sizing:border-box">
           <option value="">— None —</option>
         </select>
       </div>
+      <!-- Live conflict / match preview panel -->
+      <div id="create-rule-conflicts"></div>
+      <!-- Run the rule against every existing transaction -->
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:.82rem;line-height:1.3;padding:2px 0">
+        <input type="checkbox" id="create-rule-apply-all" checked style="width:auto;flex-shrink:0;accent-color:var(--primary)"/>
+        <span id="create-rule-apply-lbl">Run this rule against all existing transactions</span>
+      </label>
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-primary" onclick="createRuleSave()" style="flex:1">Save Rule</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('create-rule-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-ghost" onclick="closeRuleModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -1492,64 +1503,9 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="page-title">Income & Expenses</div>
     <div class="page-sub" id="tx-page-sub">Log transactions for both profiles</div>
     <div id="how-to-transactions"></div>
- <div class="g2 mb">
-      <div class="card">
-        <div class="section-label">Add Transaction</div>
-        <div class="form-grid">
-          <div><label class="lbl">Date</label><input type="date" id="tx-date"/></div>
-          <div><label class="lbl">Type</label>
-            <select id="tx-type" onchange="togglePerson();populateCatSelect()">
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div>
-            <label class="lbl">Name</label>
-            <input type="text" id="tx-name" placeholder="e.g. Woolworths" oninput="AutoCat.onNameInput(this.value)"/>
-            <div id="tx-autocat-pill" style="display:none;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap"></div>
-          </div>
-          <div><label class="lbl">Amount (AUD)</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
-        </div>
-        <div class="form-grid">
-          <div><label class="lbl">Category</label><select id="tx-cat" onchange="refreshSubcatSelect()"></select></div>
-          <div><label class="lbl">Subcategory</label><select id="tx-subcat"></select></div>
-        </div>
-        <div class="form-grid">
-          <div id="tx-person-wrap"><label class="lbl">Earner</label>
-            <select id="tx-person">
-              <option value="brenton" data-profile-name="brenton">Brenton</option>
-              <option value="shelley" data-profile-name="shelley">Shelley</option>
-              <option value="joint">Joint</option>
-            </select>
-          </div>
-          <div><label class="lbl">Account</label>
-            <select id="tx-account">
-              <option value="">— Select Account —</option>
-              <option value="offset">Offset Account</option>
-              <option value="home">Home Transaction</option>
-              <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Brenton Savings</option>
-              <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Shelley Savings</option>
-              <option value="joint">Joint / Other</option>
-            </select>
-          </div>
-          <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
-        </div>
-        <button class="btn btn-primary" onclick="addTx()">＋ Add</button>
-      </div>
-      <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px">
-        <div style="text-align:center">
-          <div class="section-label">Running Balance</div>
-          <div id="tx-balance" style="font-family:var(--font-mono);font-size:2.6rem;font-weight:700;color:var(--primary)">$0.00</div>
-        </div>
-        <div style="display:flex;gap:24px">
-          <div style="text-align:center"><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Total Income</div>
-            <div id="tx-inc-total" style="font-weight:700;color:var(--success)">$0.00</div></div>
-          <div style="text-align:center"><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Total Expenses</div>
-            <div id="tx-exp-total" style="font-weight:700;color:var(--primary)">$0.00</div></div>
-        </div>
-      </div>
+    <div class="tx-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn btn-primary" onclick="openTxModal()"><i class="ti ti-plus"></i> Add Transaction</button>
+      <button class="btn btn-ghost" onclick="go('upload')"><i class="ti ti-upload"></i> Upload Transactions</button>
     </div>
 
     <div class="card">
@@ -1557,7 +1513,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="section-label" style="margin:0">Transaction History</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="txClearFilters()" id="tx-clear-filters" style="display:none"><i class="ti ti-x"></i> Clear filters</button>
-          <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions"><i class="ti ti-robot"></i> Rescan Categories</button>
+          <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions"><i class="ti ti-robot"></i> Re-categorise transactions</button>
           <span id="tx-rescan-result" style="font-size:.76rem;display:none"></span>
         </div>
       </div>
@@ -1592,8 +1548,6 @@ window.addEventListener('unhandledrejection',function(e){
         <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
         <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()"><i class="ti ti-x"></i> Cancel</button>
       </div>
-      <!-- Rule suggestion banner -->
-      <div class="rule-banner" id="tx-rule-banner" style="display:none"></div>
       <div class="tbl-wrap">
         <table class="tx-table"><thead><tr>
           <th style="width:32px"><input type="checkbox" id="tx-select-all" class="tx-check" onchange="toggleSelectAll(this)" title="Select all"/></th>
@@ -1601,6 +1555,62 @@ window.addEventListener('unhandledrejection',function(e){
         </tr></thead>
         <tbody id="tx-tbody"></tbody></table>
         <div class="empty" id="tx-empty" style="display:none"><div class="ei"><i class="ti ti-cash-off"></i></div><p>No transactions yet.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ADD TRANSACTION MODAL ═══ -->
+  <div class="modal-overlay" id="tx-add-modal" onclick="if(event.target===this)closeTxModal()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:560px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div class="modal-header">
+        <div class="modal-title">＋ Add Transaction</div>
+        <button class="modal-close" onclick="closeTxModal()" aria-label="Close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-sub">Manually log an income or expense for either profile</div>
+      <div class="form-grid">
+        <div><label class="lbl">Date</label><input type="date" id="tx-date"/></div>
+        <div><label class="lbl">Type</label>
+          <select id="tx-type" onchange="togglePerson();populateCatSelect()">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="lbl">Name</label>
+          <input type="text" id="tx-name" placeholder="e.g. Woolworths" oninput="AutoCat.onNameInput(this.value)"/>
+          <div id="tx-autocat-pill" style="display:none;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap"></div>
+        </div>
+        <div><label class="lbl">Amount (AUD)</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Category</label><select id="tx-cat" onchange="refreshSubcatSelect()"></select></div>
+        <div><label class="lbl">Subcategory</label><select id="tx-subcat"></select></div>
+      </div>
+      <div class="form-grid">
+        <div id="tx-person-wrap"><label class="lbl">Earner</label>
+          <select id="tx-person">
+            <option value="brenton" data-profile-name="brenton">Brenton</option>
+            <option value="shelley" data-profile-name="shelley">Shelley</option>
+            <option value="joint">Joint</option>
+          </select>
+        </div>
+        <div><label class="lbl">Account</label>
+          <select id="tx-account">
+            <option value="">— Select Account —</option>
+            <option value="offset">Offset Account</option>
+            <option value="home">Home Transaction</option>
+            <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Brenton Savings</option>
+            <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Shelley Savings</option>
+            <option value="joint">Joint / Other</option>
+          </select>
+        </div>
+        <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeTxModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="addTx()">＋ Add Transaction</button>
       </div>
     </div>
   </div>
@@ -2962,6 +2972,14 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ TRANSFERS ═══ -->
   <div class="page" id="page-transfers"></div>
+
+
+  <!-- ═══ DASHBOARD LAYOUT ═══ -->
+  <div class="page" id="page-dashboard-layout">
+    <div class="page-title">Dashboard Layout</div>
+    <div class="page-sub">Choose which set of tiles your dashboard shows</div>
+    <div id="dashboard-layout-content"></div>
+  </div>
 
 
   <!-- ═══ SETTINGS ═══ -->

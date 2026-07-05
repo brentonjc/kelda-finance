@@ -202,6 +202,153 @@ function _settProfileCard(profileId, defaultIcon, defaultName) {
   return html;
 }
 
+// ── Dashboard layout (onboarding profile picker) ──────────────
+// The dashboard tiles are tailored by the onboarding profile stored in
+// kf_profile, plus (for the "full" profile) the asset categories in kf_assets.
+// These functions let the user switch profile from App Controls › Dashboard
+// Layout so a re-run of onboarding no longer strands them on the wrong layout.
+
+var _SETT_DASH_PROFILES = [
+  { id: 'starter',   icon: 'ti-wallet',    accent: 'var(--success)', headline: 'Track my spending',    subline: 'Budgets, bills and savings goals — nothing extra.',              pills: ['Spending', 'Budgets', 'Bills', 'Goals'] },
+  { id: 'household', icon: 'ti-home',       accent: 'var(--primary)', headline: 'Budget smarter',        subline: 'Household planning, mortgage and cashflow forecasting.',          pills: ['Net worth', 'Mortgage', 'Forecast', 'Goals'] },
+  { id: 'full',      icon: 'ti-chart-bar',  accent: 'var(--warn)',    headline: 'Full financial picture', subline: 'Investments, super, property and tax — the complete view.',      pills: ['Net worth', 'Investments', 'Super', 'Property'] }
+];
+
+var _SETT_DASH_ASSETS = [
+  { key: 'property',            icon: 'ti-home',          label: 'Property' },
+  { key: 'equities',           icon: 'ti-trending-up',    label: 'Investments' },
+  { key: 'super',              icon: 'ti-building-bank',   label: 'Superannuation' },
+  { key: 'liabilities',        icon: 'ti-credit-card',     label: 'Liabilities' },
+  { key: 'investment-property', icon: 'ti-building',       label: 'Investment property' }
+];
+
+// Working state, seeded from storage each time the settings page renders.
+var _settDashProfile = 'full';
+var _settDashAssets  = [];
+
+function _settDashLoadState() {
+  try {
+    var p = localStorage.getItem('kf_profile');
+    _settDashProfile = (p === 'starter' || p === 'household' || p === 'full') ? p : 'full';
+  } catch(e) { _settDashProfile = 'full'; }
+  try {
+    var a = JSON.parse(localStorage.getItem('kf_assets') || '[]');
+    _settDashAssets = Array.isArray(a) ? a.slice() : [];
+  } catch(e) { _settDashAssets = []; }
+}
+
+// Standalone page renderer — lives under App Controls › Dashboard Layout.
+// Routed from go('dashboard-layout') into #dashboard-layout-content.
+function renderDashboardLayout() {
+  var el = document.getElementById('dashboard-layout-content');
+  if (!el) return;
+  _settDashLoadState();
+  var html = '';
+  html += '<div class="card mb">';
+  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:16px">Choose which set of tiles your dashboard shows. This is the same choice you made during setup — pick it here any time without re-running onboarding.</p>';
+  html += '<div id="sett-dash-body">' + _settDashBody() + '</div>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function _settDashBody() {
+  var html = '';
+
+  // Profile cards
+  html += '<div style="display:flex;flex-direction:column;gap:10px">';
+  for (var i = 0; i < _SETT_DASH_PROFILES.length; i++) {
+    var p = _SETT_DASH_PROFILES[i];
+    var sel = (p.id === _settDashProfile);
+    var border = sel ? p.accent : 'var(--border)';
+    var bg = sel ? 'color-mix(in srgb,' + p.accent + ' 8%, var(--card2))' : 'var(--card2)';
+    html += '<div role="radio" aria-checked="' + (sel ? 'true' : 'false') + '" tabindex="0"'
+      + ' onclick="settDashSelectProfile(\'' + p.id + '\')"'
+      + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();settDashSelectProfile(\'' + p.id + '\');}"'
+      + ' style="cursor:pointer;border:1.5px solid ' + border + ';background:' + bg + ';border-radius:12px;padding:14px 16px;transition:border-color .15s,background .15s">';
+    html += '<div style="display:flex;align-items:flex-start;gap:14px">';
+    html += '<div style="width:40px;height:40px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:color-mix(in srgb,' + p.accent + ' 14%, transparent);color:' + p.accent + '"><i class="ti ' + p.icon + '"></i></div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-family:var(--font-head,inherit);font-weight:600;font-size:.95rem;color:var(--text);margin-bottom:2px">' + _settEsc(p.headline) + '</div>';
+    html += '<div style="font-size:.78rem;color:var(--muted);line-height:1.45">' + _settEsc(p.subline) + '</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+    for (var j = 0; j < p.pills.length; j++) {
+      html += '<span style="font-size:.68rem;color:var(--muted);background:var(--card3,var(--card2));border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-weight:500">' + _settEsc(p.pills[j]) + '</span>';
+    }
+    html += '</div>';
+    html += '</div>';
+    html += '<div style="width:22px;height:22px;flex-shrink:0;border-radius:50%;border:1.5px solid ' + (sel ? p.accent : 'var(--border)') + ';background:' + (sel ? p.accent : 'transparent') + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem">' + (sel ? '<i class="ti ti-check"></i>' : '') + '</div>';
+    html += '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Asset picker — only relevant to the "full" profile
+  if (_settDashProfile === 'full') {
+    html += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">';
+    html += '<div style="font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:4px">Assets to show</div>';
+    html += '<p style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Pick which asset types appear in your net-worth breakdown and Your assets tile.</p>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    for (var k = 0; k < _SETT_DASH_ASSETS.length; k++) {
+      var a = _SETT_DASH_ASSETS[k];
+      var on = (_settDashAssets.indexOf(a.key) > -1);
+      var abrd = on ? 'var(--warn)' : 'var(--border)';
+      var abg = on ? 'color-mix(in srgb,var(--warn) 12%, transparent)' : 'var(--card2)';
+      var acol = on ? 'var(--text)' : 'var(--muted)';
+      html += '<span role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '" tabindex="0"'
+        + ' onclick="settDashToggleAsset(\'' + a.key + '\')"'
+        + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();settDashToggleAsset(\'' + a.key + '\');}"'
+        + ' style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;border:1.5px solid ' + abrd + ';background:' + abg + ';color:' + acol + ';border-radius:9px;padding:8px 12px;font-size:.78rem;font-weight:500;transition:border-color .15s,background .15s">'
+        + '<i class="ti ' + a.icon + '"></i>' + _settEsc(a.label)
+        + (on ? '<i class="ti ti-check" style="color:var(--warn)"></i>' : '')
+        + '</span>';
+    }
+    html += '</div>';
+    html += '</div>';
+  } else if (_settDashProfile === 'household') {
+    html += '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">';
+    html += '<p style="font-size:.74rem;color:var(--muted);line-height:1.5"><i class="ti ti-info-circle"></i> This layout tracks your home equity and cashflow forecast. Add or edit your mortgage any time from <span style="color:var(--primary);cursor:pointer" onclick="go(\'mortgage\')">Mortgage</span>.</p>';
+    html += '</div>';
+  }
+
+  // Save
+  html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">';
+  html += '<button class="btn btn-primary btn-sm" onclick="settDashSave()">Save Dashboard Layout</button>';
+  html += '</div>';
+
+  return html;
+}
+
+function _settDashRefresh() {
+  var el = document.getElementById('sett-dash-body');
+  if (el) el.innerHTML = _settDashBody();
+}
+
+function settDashSelectProfile(id) {
+  if (id !== 'starter' && id !== 'household' && id !== 'full') return;
+  _settDashProfile = id;
+  _settDashRefresh();
+}
+
+function settDashToggleAsset(key) {
+  var idx = _settDashAssets.indexOf(key);
+  if (idx > -1) _settDashAssets.splice(idx, 1); else _settDashAssets.push(key);
+  _settDashRefresh();
+}
+
+function settDashSave() {
+  try { localStorage.setItem('kf_profile', _settDashProfile); } catch(e) {}
+  // Only the "full" profile uses kf_assets; keep it accurate for the others too.
+  var assets = (_settDashProfile === 'full') ? _settDashAssets : [];
+  try { localStorage.setItem('kf_assets', JSON.stringify(assets)); } catch(e) {}
+  _settDashAssets = assets.slice();
+  // Repaint the dashboard so the change is visible immediately.
+  if (typeof kdRenderDashboard === 'function') {
+    try { kdRenderDashboard(); } catch(e) {}
+  }
+  var name = { starter: 'Track my spending', household: 'Budget smarter', full: 'Full financial picture' }[_settDashProfile] || _settDashProfile;
+  toast('✅ Dashboard set to “' + name + '”');
+}
+
 // ── Action functions ──────────────────────────────────────────
 
 function settingsSaveAppIdentity() {

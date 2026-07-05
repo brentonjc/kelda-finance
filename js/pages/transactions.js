@@ -30,6 +30,22 @@ function togglePerson(){
   if(w)w.style.display=document.getElementById('tx-type').value==='income'?'':'none';
 }
 
+// ── Manual "Add Transaction" modal ───────────────────────────────
+function openTxModal(){
+  var m=document.getElementById('tx-add-modal');
+  if(!m)return;
+  var d=document.getElementById('tx-date'); if(d&&!d.value)d.value=today();
+  populateCatSelect();   // fill category/subcategory selects for the current type
+  togglePerson();        // show/hide the Earner field to match the type
+  m.classList.add('open');
+  var n=document.getElementById('tx-name'); if(n)setTimeout(function(){n.focus();},50);
+}
+function closeTxModal(){
+  var m=document.getElementById('tx-add-modal');
+  if(m)m.classList.remove('open');
+  var pill=document.getElementById('tx-autocat-pill'); if(pill)pill.style.display='none';
+}
+
 function addTx(){
   const date=document.getElementById('tx-date').value;
   const type=document.getElementById('tx-type').value;
@@ -65,6 +81,7 @@ function addTx(){
   document.getElementById('tx-desc').value='';
   const tn=document.getElementById('tx-name');if(tn)tn.value='';
   const ta=document.getElementById('tx-account');if(ta)ta.value='';
+  closeTxModal();
   renderTx();renderDashboard();toast('✅ Transaction added');
   if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
@@ -223,10 +240,10 @@ function txMakeRow(t){
   tr.innerHTML='<td><input type="checkbox" class="tx-check tx-row-check" data-id="'+t.id+'"'+(_txSelected.has(t.id)?' checked':'')+' onchange="onTxRowCheck(this)" title="Select"/></td>'
     +'<td>'+dateStr+'</td>'
     +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">'+ICON('refresh')+'</span>':'')+'</td>'
-    +'<td style="font-weight:600;font-size:.84rem">'+(t.name||'—')+'</td>'
+    +'<td class="tx-cell-clip" style="font-weight:600;font-size:.84rem"'+(t.name?' title="'+esc(t.name)+'"':'')+'>'+(t.name||'—')+'</td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="cat" '+lazyAttrs+' onchange="inlineAssignCat(this)"><option value="'+curCatId+'" selected>'+curCatName+'</option></select></td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="subcat" '+lazyAttrs+' onchange="inlineAssignSubcat(this)"><option value="'+curSub+'" selected>'+(curSub||'—')+'</option></select></td>'
-    +'<td style="color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(t.description||'—')+'</td>'
+    +'<td class="tx-desc-cell" style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'+(t.description?' title="'+esc(t.description)+'"':'')+'>'+(t.description||'—')+'</td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="account" '+lazyAttrs+' onchange="inlineAssignAccount(this)"><option value="'+curAcct+'" selected>'+curAcctLabel+'</option></select></td>'
     +'<td style="font-weight:600;color:'+rowColor+'">'+amtSign+fmt(t.amount)+'</td>'
     +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
@@ -330,15 +347,6 @@ function renderTx(){
   tbody.appendChild(_frag);
   txMountSentinel(tbody);
   txSelectionChanged();
-
-  const _act=activeTX();
-  const inc=_act.reduce((s,t)=>t.type==='income'?s+Number(t.amount):s,0);
-  const exp=_act.reduce((s,t)=>t.type==='expense'?s+Number(t.amount):s,0);
-  const bal=inc-exp;
-  document.getElementById('tx-balance').textContent=fmt(bal);
-  document.getElementById('tx-balance').style.color=bal>=0?'var(--primary)':'var(--danger)';
-  document.getElementById('tx-inc-total').textContent=fmt(inc);
-  document.getElementById('tx-exp-total').textContent=fmt(exp);
 }
 
 

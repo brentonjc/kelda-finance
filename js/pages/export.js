@@ -331,6 +331,14 @@ function csvConfirmImport(){
   closeCsvModal();
   if (typeof go === 'function') go('transactions'); // show the imported rows
   toast(`✅ Imported ${count} transaction${count!==1?'s':''}!`);
+  // Auto re-categorise every transaction against the current rules/engine so the
+  // newly imported rows pick up any learned rules that parse-time didn't apply.
+  if (count > 0 && typeof AutoCat !== 'undefined' && AutoCat.reprocess) {
+    AutoCat.reprocess(null, function(changed) {
+      renderTx(); if (typeof renderDashboard === 'function') renderDashboard();
+      if (changed > 0) toast('🤖 ' + changed + ' transaction' + (changed !== 1 ? 's' : '') + ' re-categorised');
+    });
+  }
 }
 
 // ── TEMPLATE DOWNLOAD ────────────────────────────────────────

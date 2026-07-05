@@ -132,6 +132,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .modal-box h3{font-family:var(--font-display);font-size:1.3rem;margin-bottom:18px;}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
 
+/* Truncated transaction cells: hover shows the full value via native title tooltip */
+.tx-desc-cell[title],.tx-cell-clip[title]{cursor:help;}
+
 /* ══ SUPER CARD ══ */
 .super-header{border-radius:11px;padding:13px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
 .super-ass-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;}
