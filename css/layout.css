@@ -789,3 +789,73 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
   -webkit-tap-highlight-color:transparent;
 }
 .lw-signin-alt:hover { color:#E8EDF5; }
+
+/* ══════════════════════════════════
+   LENS SYSTEM — switcher, pill/sheet, calm hero, escape hatch
+   Mobile-first: base = mobile; desktop rules under @media(min-width:760px)
+   ══════════════════════════════════ */
+
+/* Sidebar lens switcher (desktop rail) */
+.kf-lens-switcher{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:2px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:3px;margin:2px 8px 12px;
+}
+.kf-lens-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  padding:7px 4px;border-radius:8px;border:none;background:transparent;color:var(--muted);
+  font-family:var(--font-body);font-size:9px;font-weight:600;letter-spacing:.02em;
+  cursor:pointer;min-height:44px;transition:background .15s,color .15s;
+}
+.kf-lens-btn:hover{background:var(--card2);color:var(--text);}
+.kf-lens-btn--active{background:var(--primary);color:#fff;}
+.kf-lens-btn__label{display:block;white-space:nowrap;}
+/* Collapsed rail is icon-only — the switcher only makes sense expanded */
+#nav:not(:hover):not(:focus-within) .kf-lens-switcher{display:none;}
+
+/* Manager escape hatch */
+#kf-manage-link{padding:12px 16px;margin-top:8px;}
+.kf-manage-link-a{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:none;white-space:nowrap;}
+.kf-manage-link-a:hover{color:var(--text);}
+#nav:not(:hover):not(:focus-within) #kf-manage-link{display:none !important;}
+
+/* Mobile lens pill (mobile top bar) */
+.kf-lens-pill{
+  display:inline-flex;align-items:center;gap:5px;background:var(--card);
+  border:1px solid var(--border);border-radius:var(--radius-pill);padding:5px 10px;
+  font-size:12px;font-weight:600;color:var(--text);cursor:pointer;font-family:var(--font-body);min-height:32px;
+}
+
+/* Mobile lens bottom sheet */
+.kf-lens-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;}
+.kf-lens-sheet-overlay.open{display:block;}
+.kf-lens-sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:1201;background:var(--n800);
+  border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.kf-lens-sheet.open{transform:translateY(0);}
+.kf-lens-sheet-hd{font-family:var(--font-display);font-weight:700;font-size:1rem;margin-bottom:12px;}
+.kf-lens-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px;border-radius:12px;cursor:pointer;background:none;border:none;width:100%;text-align:left;color:var(--text);font-family:var(--font-body);}
+.kf-lens-row:hover,.kf-lens-row.sel{background:var(--card2);}
+.kf-lens-row-ic{font-size:22px;flex-shrink:0;width:28px;text-align:center;}
+.kf-lens-row-name{font-weight:700;font-size:.9rem;}
+.kf-lens-row-desc{font-size:.74rem;color:var(--muted);}
+
+/* Calm hero — reassuring single card */
+.kf-calm-hero{
+  flex-basis:100%;background:linear-gradient(135deg,#043d2e,#00C896);
+  border-radius:16px;padding:24px;margin-bottom:4px;text-align:center;color:#fff;
+}
+.kf-calm-emoji{font-size:36px;margin-bottom:10px;}
+.kf-calm-status{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:6px;}
+.kf-calm-sub{font-size:14px;opacity:.85;}
+
+/* Calm lens simplifies the tile grid — full-width, top-aligned, no stretch */
+[data-lens="calm"] .kd-bodywrap{align-content:flex-start;}
+[data-lens="calm"] .kd-bodywrap .kdt{flex-basis:100%;}
+
+@media(min-width:760px){
+  /* The mobile pill/sheet are never shown on desktop (sidebar switcher is used) */
+  .kf-lens-pill,.kf-lens-sheet,.kf-lens-sheet-overlay{display:none;}
+}

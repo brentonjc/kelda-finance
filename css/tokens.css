@@ -180,3 +180,16 @@ h1,h2,h3,.heading{font-family:var(--font-display);}
 /* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+/* ── CALM LENS OVERRIDES ──
+   The dashboard computes alarm colours inline, so calm-mode softening is done
+   primarily by hiding alarming sections (data-lens-show, in lens.js). These
+   rules cover elements that use stable classes/ids (habit streaks, health ring). */
+[data-lens="calm"] #db-streaks-row,
+[data-lens="clear"] #db-streaks-row,
+[data-lens="goals"] #db-streaks-row{display:none;}
+[data-lens="calm"] .health-score-ring,
+[data-lens="calm"] .streak-bar,
+[data-lens="calm"] .kd-health-ring{display:none;}
+[data-lens="calm"] .amount--negative{color:var(--muted);}
+[data-lens="calm"] .badge--overdue{background:var(--card2);color:var(--muted);}

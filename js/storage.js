@@ -24,7 +24,10 @@ const K={
   // Missing = never done → treated as "danger" (expected for a fresh household).
   lastFullBackup: 'kf_last_full_backup', // ISO 'YYYY-MM-DD', set on successful full JSON export
   lastCsvImport:  'kf_last_csv_import',   // ISO 'YYYY-MM-DD', set on successful CSV import
-  lastIn:         'kf_last_in'            // { profileId: epoch-ms } — "Last in" meta on profile picker
+  lastIn:         'kf_last_in',           // { profileId: epoch-ms } — "Last in" meta on profile picker
+  // Lens / role architecture (per-user dashboard + nav tailoring)
+  lensConfig:     'kf_lens_config',       // { manager, partnerSetupDone, transferPending, transferTo, users:{...} }
+  managerProfile: 'kf_manager'            // 'brenton' | 'shelley' — fast-read mirror of lensConfig.manager
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}

@@ -1423,7 +1423,7 @@ function kdRenderDashboard() {
     var pct = Math.round((Math.max(x.value, 0) / segTotal) * 100);
     return '<div class="kd-leg-item"><div class="kd-leg-dot" style="background:' + x.color + '"></div>' + kdEsc(x.label) + ' · ' + pct + '%</div>';
   }).join('');
-  var tileNW = '<div class="kdt">'
+  var tileNW = '<div class="kdt" data-lens-show="full,clear,goals">'
     + '<div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-pie"></i> ' + nwTitle + '</div><button class="kdt-act" onclick="go(\'assets\')">Details</button></div>'
     + '<div class="kd-nw-big">' + nwBig + '</div>'
     + '<div class="kd-nw-delta" style="color:' + (periodCF.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + nwDelta + '</div>'
@@ -1456,7 +1456,7 @@ function kdRenderDashboard() {
   }).join('') : (accts.length
     ? '<div class="kd-empty">All accounts hidden — <span style="color:var(--pink);cursor:pointer" onclick="openAcctVisModal()">show accounts →</span></div>'
     : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'cash\')">add balances →</span></div>');
-  var tileAcc = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div>'
+  var tileAcc = '<div class="kdt" data-lens-show="full,clear,goals"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div>'
     + '<div style="display:flex;align-items:center;gap:10px">'
     + '<button class="kdt-act" onclick="openAcctVisModal()" aria-label="Show or hide accounts" title="Show/hide accounts"><i class="ti ti-eye"></i></button>'
     + '<button class="kdt-act" onclick="go(\'cash\')">Manage</button></div></div>'
@@ -1465,7 +1465,7 @@ function kdRenderDashboard() {
 
   // ── TILE 3 — Budget (period-aware) ──
   var bud = kdBudgetActualsRange(range.months);
-  var tileBudget = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-target"></i> Budget · ' + kdEsc(range.label) + '</div><button class="kdt-act" onclick="go(\'bva\')">Edit</button></div>'
+  var tileBudget = '<div class="kdt" data-lens-show="full,clear"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-target"></i> Budget · ' + kdEsc(range.label) + '</div><button class="kdt-act" onclick="go(\'bva\')">Edit</button></div>'
     + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Budgeted</div><div class="kd-bs-v" style="color:var(--text)">' + fmtWhole(bud.budgeted) + '</div></div>'
     + '<div class="kd-bs"><div class="kd-bs-l">Spent</div><div class="kd-bs-v" style="color:var(--muted)">' + fmtWhole(bud.spent) + '</div></div>'
     + '<div class="kd-bs"><div class="kd-bs-l">Left</div><div class="kd-bs-v" style="color:' + (bud.left < 0 ? 'var(--amber)' : 'var(--green)') + '">' + fmtWhole(bud.left) + '</div></div></div>'
@@ -1487,7 +1487,7 @@ function kdRenderDashboard() {
   } else {
     goalsInner = '<div class="kd-empty">No savings goals yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'goals\')">add one →</span></div>';
   }
-  var tileGoals = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-pig-money"></i> Savings goals</div><button class="kdt-act" onclick="go(\'goals\')">+ Add</button></div>' + goalsInner + '</div>';
+  var tileGoals = '<div class="kdt" data-lens-show="full,clear,goals"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-pig-money"></i> Savings goals</div><button class="kdt-act" onclick="go(\'goals\')">+ Add</button></div>' + goalsInner + '</div>';
 
   // ── TILE 5 — Bills (confirmed, no payment tracking) ──
   var bills = (typeof BILLS !== 'undefined' && BILLS) ? BILLS.filter(function(b){ return b.status === 'confirmed'; }) : [];
@@ -1512,7 +1512,7 @@ function kdRenderDashboard() {
       + '<div class="kd-bill-r"><div class="kd-bill-amt">' + fmtWhole(b.amount) + '</div></div></div>';
   }).join('') : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'bills\')">add one →</span></div>';
   var dueSoonPill = dueSoon.length ? '<span class="kd-pillbadge">' + dueSoon.length + ' due soon</span>' : '';
-  var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">View</button></div></div>'
+  var tileBills = '<div class="kdt" data-lens-show="full,clear,calm,goals"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">View</button></div></div>'
     + '<div class="kd-bchips"><div class="kd-bchip"><div class="kd-bchip-l">Overdue</div><div class="kd-bchip-v" style="color:' + (overdue.length ? 'var(--amber)' : '#3D4D70') + '">' + fmtWhole(billSum(overdue)) + '</div></div>'
     + '<div class="kd-bchip"><div class="kd-bchip-l">Due soon</div><div class="kd-bchip-v" style="color:#f48cb2">' + fmtWhole(billSum(dueSoon)) + '</div></div>'
     + '<div class="kd-bchip"><div class="kd-bchip-l">This month</div><div class="kd-bchip-v" style="color:var(--green)">' + fmtWhole(billSum(dueThisMonth)) + '</div></div></div>'
@@ -1537,7 +1537,7 @@ function kdRenderDashboard() {
       }
     } catch(e) {}
     var fcIncome = curFc ? curFc.income : 0, fcExpenses = curFc ? curFc.expenses : 0, fcNet = curFc ? curFc.net : 0;
-    tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-line"></i> Cashflow forecast</div><button class="kdt-act" onclick="go(\'forecast\')">Details</button></div>'
+    tile6 = '<div class="kdt" data-lens-show="full,clear,goals"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-line"></i> Cashflow forecast</div><button class="kdt-act" onclick="go(\'forecast\')">Details</button></div>'
       + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Money in</div><div class="kd-bs-v" style="color:var(--green)">+' + fmtWhole(fcIncome) + '</div></div>'
       + '<div class="kd-bs"><div class="kd-bs-l">Money out</div><div class="kd-bs-v" style="color:var(--muted)">−' + fmtWhole(fcExpenses) + '</div></div>'
       + '<div class="kd-bs"><div class="kd-bs-l">Net</div><div class="kd-bs-v" style="color:' + (fcNet < 0 ? 'var(--amber)' : 'var(--green)') + '">' + (fcNet < 0 ? '−' : '+') + fmtWhole(Math.abs(fcNet)) + '</div></div></div>'
@@ -1557,7 +1557,7 @@ function kdRenderDashboard() {
         + '<div><div class="kd-acc-name">' + (assetLbl[k]||k) + '</div></div>'
         + '<div class="kd-acc-bal" style="color:' + (neg ? 'var(--muted)' : 'var(--text)') + '">' + fmtWhole(v) + '</div></div>';
     }).join('') : '<div class="kd-empty">No assets added yet — set them up any time.</div>';
-    tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-coins"></i> Your assets</div><button class="kdt-act" onclick="go(\'assets\')">+ Add</button></div>'
+    tile6 = '<div class="kdt" data-lens-show="full,clear,goals"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-coins"></i> Your assets</div><button class="kdt-act" onclick="go(\'assets\')">+ Add</button></div>'
       + rows6 + '<div class="kd-acc-total"><span class="kd-acc-total-l">Total assets</span><span class="kd-acc-total-v">' + fmtWhole(atot) + '</span></div></div>';
   } else {
     var txns = (typeof activeTX === 'function') ? activeTX().slice() : [];
@@ -1573,7 +1573,7 @@ function kdRenderDashboard() {
         + '<div><div class="kd-acc-name">' + kdEsc(nm) + '</div><div class="kd-acc-sub">' + kdEsc(t.category || '') + '</div></div>'
         + '<div class="kd-acc-bal" style="color:' + (pos ? 'var(--green)' : 'var(--text)') + '">' + amt + '</div></div>';
     }).join('') : '<div class="kd-empty">No transactions yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'transactions\')">add one →</span></div>';
-    tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-arrows-exchange"></i> Recent activity</div><button class="kdt-act" onclick="go(\'transactions\')">See all</button></div>' + actInner + '</div>';
+    tile6 = '<div class="kdt" data-lens-show="full,clear,goals"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-arrows-exchange"></i> Recent activity</div><button class="kdt-act" onclick="go(\'transactions\')">See all</button></div>' + actInner + '</div>';
   }
 
   // ── Compose ──
@@ -1595,6 +1595,35 @@ function kdRenderDashboard() {
     + '</div>';
 
   host.innerHTML = html;
+
+  // Lens the freshly-rendered tiles (hide/show per view, inject calm hero).
+  try { if (typeof applyLensToDashboard === 'function') applyLensToDashboard(); } catch(e) {}
+}
+
+// Cheap signals for the calm-lens status line: overdue bills, budgets exceeded,
+// and whether net position is positive. Defensive — returns safe defaults.
+function kfCalmSignals() {
+  var overdue = 0, exceeded = 0, netPositive = true;
+  try {
+    var todayStr = (typeof today === 'function') ? today() : new Date().toISOString().slice(0,10);
+    if (typeof BILLS !== 'undefined' && BILLS && BILLS.length) {
+      for (var i = 0; i < BILLS.length; i++) {
+        var b = BILLS[i];
+        if (b && b.nextDueDate && !b.paid && b.nextDueDate < todayStr) overdue++;
+      }
+    }
+  } catch(e) {}
+  try {
+    if (typeof BUDGETS !== 'undefined' && BUDGETS && typeof getCatSpend === 'function') {
+      var keys = Object.keys(BUDGETS);
+      for (var j = 0; j < keys.length; j++) {
+        var cap = Number(BUDGETS[keys[j]]) || 0;
+        if (cap > 0 && getCatSpend(keys[j]) > cap) exceeded++;
+      }
+    }
+  } catch(e) {}
+  try { if (typeof getTotalBal === 'function') netPositive = getTotalBal() >= 0; } catch(e) {}
+  return { overdue: overdue, exceeded: exceeded, netPositive: netPositive };
 }
 
 // ── SVG sparkline helper ──────────────────────────────────────

@@ -1025,6 +1025,14 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
   <div class="nav-body">
 
+    <!-- Lens switcher — quick per-user view change (hidden while the rail is collapsed) -->
+    <div class="kf-lens-switcher" id="kf-lens-switcher" aria-label="View lens">
+      <button class="kf-lens-btn" data-lens="calm" onclick="switchLensUI('calm')" aria-label="Calm view"><span aria-hidden="true">🧘</span><span class="kf-lens-btn__label">Calm</span></button>
+      <button class="kf-lens-btn" data-lens="clear" onclick="switchLensUI('clear')" aria-label="Clear view"><span aria-hidden="true">📋</span><span class="kf-lens-btn__label">Clear</span></button>
+      <button class="kf-lens-btn kf-lens-btn--active" data-lens="full" onclick="switchLensUI('full')" aria-label="Full view"><span aria-hidden="true">📊</span><span class="kf-lens-btn__label">Full</span></button>
+      <button class="kf-lens-btn" data-lens="goals" onclick="switchLensUI('goals')" aria-label="Goals view"><span aria-hidden="true">🎯</span><span class="kf-lens-btn__label">Goals</span></button>
+    </div>
+
     <!-- Pinned shortcuts (user-managed) — populated by renderPinned() -->
     <div id="nav-pinned-wrap" style="display:none">
       <div class="nav-glabel">Pinned</div>
@@ -1037,28 +1045,28 @@ window.addEventListener('unhandledrejection',function(e){
     <a class="nav-item" id="n-quickstart" onclick="go('quickstart')"><span class="ni"><i class="ti ti-rocket"></i></span><span class="nav-lbl">Quick Start</span></a>
     <a class="nav-item" id="n-transactions" onclick="go('transactions')"><span class="ni"><i class="ti ti-credit-card"></i></span><span class="nav-lbl">Transactions</span></a>
     <a class="nav-item" id="n-cash" onclick="go('cash')"><span class="ni"><i class="ti ti-building-bank"></i></span><span class="nav-lbl">Bank Accounts</span></a>
-    <a class="nav-item" id="n-bva" onclick="go('bva')"><span class="ni"><i class="ti ti-chart-bar"></i></span><span class="nav-lbl">Budget</span></a>
+    <a class="nav-item" id="n-bva" data-lens-hide="calm,goals" onclick="go('bva')"><span class="ni"><i class="ti ti-chart-bar"></i></span><span class="nav-lbl">Budget</span></a>
     <a class="nav-item" id="n-goals" onclick="go('goals')"><span class="ni"><i class="ti ti-target"></i></span><span class="nav-lbl">Goals</span></a>
     <a class="nav-item" id="n-bills" onclick="go('bills')"><span class="ni"><i class="ti ti-calendar"></i></span><span class="nav-lbl">Bills</span></a>
     <!-- Graphs — flyout with report sub-pages (stays in Core Features) -->
-    <div class="nav-group" data-fly="graphs">
+    <div class="nav-group" data-fly="graphs" data-lens-hide="calm">
       <div class="nav-item nav-cat" id="nav-cat-graphs" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-graphs">
         <span class="ni"><i class="ti ti-sparkles"></i></span><span class="nav-lbl">Graphs</span><span class="nav-cat-arr">›</span>
       </div>
       <div class="nav-flyout" id="fly-graphs" role="menu" aria-label="Graphs">
         <div class="nav-flyout-hd">Graphs</div>
-        <a class="nav-fly-item" id="n-insights" onclick="go('insights')" role="menuitem"><span class="ni"><i class="ti ti-chart-histogram"></i></span><span>Graphs</span></a>
-        <a class="nav-fly-item" id="n-ins-income" onclick="goInsights('income')" role="menuitem"><span class="ni"><i class="ti ti-cash"></i></span><span>Income</span></a>
-        <a class="nav-fly-item" id="n-ins-expenses" onclick="goInsights('expenses')" role="menuitem"><span class="ni"><i class="ti ti-cash-off"></i></span><span>Expenses</span></a>
-        <a class="nav-fly-item" id="n-assets" onclick="go('assets')" role="menuitem"><span class="ni"><i class="ti ti-coin"></i></span><span>Net Worth</span></a>
-        <a class="nav-fly-item" id="n-forecast" onclick="go('forecast')" role="menuitem"><span class="ni"><i class="ti ti-chart-line"></i></span><span>Forecasts</span></a>
+        <a class="nav-fly-item" id="n-insights" data-lens-hide="calm,goals" onclick="go('insights')" role="menuitem"><span class="ni"><i class="ti ti-chart-histogram"></i></span><span>Graphs</span></a>
+        <a class="nav-fly-item" id="n-ins-income" data-lens-hide="calm,goals" onclick="goInsights('income')" role="menuitem"><span class="ni"><i class="ti ti-cash"></i></span><span>Income</span></a>
+        <a class="nav-fly-item" id="n-ins-expenses" data-lens-hide="calm,goals" onclick="goInsights('expenses')" role="menuitem"><span class="ni"><i class="ti ti-cash-off"></i></span><span>Expenses</span></a>
+        <a class="nav-fly-item" id="n-assets" data-lens-hide="calm" onclick="go('assets')" role="menuitem"><span class="ni"><i class="ti ti-coin"></i></span><span>Net Worth</span></a>
+        <a class="nav-fly-item" id="n-forecast" data-lens-hide="calm,goals" onclick="go('forecast')" role="menuitem"><span class="ni"><i class="ti ti-chart-line"></i></span><span>Forecasts</span></a>
       </div>
     </div>
 
     <div class="nav-div"></div>
 
     <!-- Liabilities — category icon + hover flyout -->
-    <div class="nav-group" data-fly="liabilities">
+    <div class="nav-group" data-fly="liabilities" data-lens-hide="calm">
       <div class="nav-item nav-cat" id="nav-cat-liabilities" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-liabilities">
         <span class="ni"><i class="ti ti-scale"></i></span><span class="nav-lbl">Liabilities</span><span class="nav-cat-arr">›</span>
       </div>
@@ -1070,7 +1078,7 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
 
     <!-- Other Assets — category icon + hover flyout -->
-    <div class="nav-group" data-fly="otherassets">
+    <div class="nav-group" data-fly="otherassets" data-lens-hide="calm,goals">
       <div class="nav-item nav-cat" id="nav-cat-otherassets" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-otherassets">
         <span class="ni"><i class="ti ti-building-bank"></i></span><span class="nav-lbl">Other Assets</span><span class="nav-cat-arr">›</span>
       </div>
@@ -1078,7 +1086,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="nav-flyout-hd">Other Assets</div>
         <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni"><i class="ti ti-briefcase"></i></span><span>Super</span></a>
         <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni"><i class="ti ti-trending-up"></i></span><span>Investments</span></a>
-        <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni"><i class="ti ti-shield-check"></i></span><span>Life Insurance</span></a>
+        <a class="nav-fly-item" id="n-insurance" data-lens-hide="calm,clear,goals" onclick="go('insurance')" role="menuitem"><span class="ni"><i class="ti ti-shield-check"></i></span><span>Life Insurance</span></a>
         <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
       </div>
     </div>
@@ -1090,6 +1098,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div class="nav-flyout" id="fly-controls" role="menu" aria-label="App Controls">
         <div class="nav-flyout-hd">App Controls</div>
+        <a class="nav-fly-item" id="n-customise-views" onclick="go('customise-views')" role="menuitem"><span class="ni"><i class="ti ti-palette"></i></span><span>Customise Views</span></a>
         <a class="nav-fly-item" id="n-upload" onclick="go('upload')" role="menuitem"><span class="ni"><i class="ti ti-upload"></i></span><span>Upload Transactions</span></a>
         <a class="nav-fly-item" id="n-transfers" onclick="go('transfers')" role="menuitem"><span class="ni"><i class="ti ti-refresh"></i></span><span>Transfers</span></a>
         <a class="nav-fly-item" id="n-categories" onclick="go('categories')" role="menuitem"><span class="ni"><i class="ti ti-tag"></i></span><span>Categories</span></a>
@@ -1098,6 +1107,11 @@ window.addEventListener('unhandledrejection',function(e){
         <a class="nav-fly-item" id="n-dashboard-layout" onclick="go('dashboard-layout')" role="menuitem"><span class="ni"><i class="ti ti-layout-dashboard"></i></span><span>Dashboard Layout</span></a>
         <a class="nav-fly-item" id="qs-nav-controls" style="display:none" onclick="go('quickstart')" role="menuitem"><span class="ni"><i class="ti ti-circle-check-filled"></i></span><span>Quick Start</span></a>
       </div>
+    </div>
+
+    <!-- Manager escape hatch — only shown to the manager while on the calm lens -->
+    <div id="kf-manage-link" style="display:none">
+      <a onclick="go('settings')" class="kf-manage-link-a"><span aria-hidden="true">⚙</span><span>Manage household data →</span></a>
     </div>
   </div>
   <div class="nav-foot">
@@ -3226,6 +3240,7 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- ═══════════ JAVASCRIPT MODULES ═══════════ -->
 <script src="js/icons.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/lens.js"></script>
 <script src="js/data.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
