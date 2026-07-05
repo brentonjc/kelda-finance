@@ -1125,25 +1125,24 @@ function applyAutoRules(t) {
 }
 
 // ── BULK SELECTION ────────────────────────────────────────────
+// The transaction bulk-select bar tracks its state in _txSelected (see
+// transactions.js), which spans the whole filtered set — not just the rows
+// currently rendered by the load-more window.
 function onTxCheck() {
-  const checked = document.querySelectorAll('.tx-row-check:checked');
-  const bar = document.getElementById('tx-bulk-bar');
-  const lbl = document.getElementById('tx-bulk-count');
-  const selAll = document.getElementById('tx-select-all');
-  const total  = document.querySelectorAll('.tx-row-check').length;
-  if (bar) bar.style.display = checked.length ? 'flex' : 'none';
-  if (lbl) lbl.textContent = checked.length + ' selected';
-  if (selAll) selAll.indeterminate = checked.length > 0 && checked.length < total;
-  if (selAll) selAll.checked = checked.length === total && total > 0;
+  if (typeof txSelectionChanged === 'function') txSelectionChanged();
 }
 
 function toggleSelectAll(masterCb) {
-  document.querySelectorAll('.tx-row-check').forEach(cb => { cb.checked = masterCb.checked; });
-  onTxCheck();
+  if (masterCb.checked) { _txFiltered.forEach(t => _txSelected.add(t.id)); }
+  else { _txSelected.clear(); }
+  // Sync the checkboxes that are actually in the DOM right now.
+  document.querySelectorAll('.tx-row-check').forEach(cb => { cb.checked = _txSelected.has(Number(cb.dataset.id)); });
+  if (typeof txSelectionChanged === 'function') txSelectionChanged();
 }
 
 function clearTxSelection() {
-  document.querySelectorAll('.tx-row-check,.tx-select-all').forEach(cb => { cb.checked = false; });
+  _txSelected.clear();
+  document.querySelectorAll('.tx-row-check').forEach(cb => { cb.checked = false; });
   const bar = document.getElementById('tx-bulk-bar');
   if (bar) bar.style.display = 'none';
   const sa = document.getElementById('tx-select-all');
@@ -1153,18 +1152,18 @@ function clearTxSelection() {
 function bulkAssignCategory() {
   const catId = document.getElementById('tx-bulk-cat')?.value;
   if (!catId) { toast('⚠️ Pick a category first'); return; }
+  if (!_txSelected.size) { toast('⚠️ No transactions selected'); return; }
   const cat = LCATS.find(c => c.id === catId);
-  const checked = document.querySelectorAll('.tx-row-check:checked');
   let count = 0;
-  checked.forEach(cb => {
-    const txId = Number(cb.dataset.id);
-    const t = TX.find(x => x.id === txId);
-    if (t) { t.catId = catId; t.category = cat ? cat.name : 'Other'; count++; }
+  _txSelected.forEach(id => {
+    const t = TX.find(x => x.id === id);
+    if (t) { t.catId = catId; t.category = cat ? cat.name : 'Other'; t.userSet = true; count++; }
   });
   save(K.tx, TX);
   clearTxSelection();
   renderTx();
-  if (document.getElementById('page-bva').classList.contains('active')) renderBVA();
+  const bva = document.getElementById('page-bva');
+  if (bva && bva.classList.contains('active')) renderBVA();
   toast('✅ Assigned ' + count + ' transactions to ' + (cat ? cat.name : catId));
 }
 

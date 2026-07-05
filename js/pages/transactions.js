@@ -188,6 +188,103 @@ function txSearchInput(){
   _txSearchTimer = setTimeout(renderTx, 180);
 }
 
+// ── Load-more windowing ──────────────────────────────────────────
+// Rather than build all matching rows at once (~2,600 = ~135k DOM nodes), render
+// a window of TX_PAGE rows and append the next page when the user scrolls near
+// the bottom. Rows are only ever added, never recycled, so inline <select>s and
+// checkbox state never get torn out from under the user.
+var TX_PAGE = 100;            // rows rendered initially and per load-more step
+var _txFiltered = [];         // full filtered+sorted set (may be far larger than what's rendered)
+var _txWindow = TX_PAGE;      // how many rows are currently in the DOM
+var _txFilterSig = null;      // filter fingerprint; a change resets the window to the top
+var _txSelected = new Set();  // selected tx ids — spans the whole filtered set, not just visible rows
+var _txObserver = null;       // IntersectionObserver that drives load-more
+var _txLoadingMore = false;
+
+// Build one transaction <tr>. Extracted from renderTx so load-more can append
+// rows without a full re-render.
+function txMakeRow(t){
+  const tr=document.createElement('tr');
+  tr.dataset.id=t.id;
+  const isTr=isTransfer(t);
+  if(isTr)tr.classList.add('transfer-excluded-row');
+  const personBadge=t.type==='income'?'<span style="font-size:.68rem;background:var(--primary-bg);color:var(--pink-light);border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
+  const rowColor=t.type==='income'?'var(--success)':'var(--primary)';
+  const amtSign=t.type==='income'?'+':'-';
+  const dateStr=txFmtDate(t.date);
+  // Lazy selects: render only the current value; full lists build on interaction.
+  const curCatId=catIdFor(t.catId||t.category);
+  const curCatName=catNameFor(curCatId);
+  const curSub=t.subcat||'';
+  const acctLabels={offset:'Offset',home:'Home',brenton:getUserName('brenton'),shelley:getUserName('shelley'),joint:'Joint'};
+  const curAcct=t.account||t.person||'';
+  const curAcctLabel=acctLabels[curAcct]||'—';
+  const lazyAttrs='onmousedown="txHydrateSelect(this)" onfocus="txHydrateSelect(this)"';
+  tr.innerHTML='<td><input type="checkbox" class="tx-check tx-row-check" data-id="'+t.id+'"'+(_txSelected.has(t.id)?' checked':'')+' onchange="onTxRowCheck(this)" title="Select"/></td>'
+    +'<td>'+dateStr+'</td>'
+    +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">'+ICON('refresh')+'</span>':'')+'</td>'
+    +'<td style="font-weight:600;font-size:.84rem">'+(t.name||'—')+'</td>'
+    +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="cat" '+lazyAttrs+' onchange="inlineAssignCat(this)"><option value="'+curCatId+'" selected>'+curCatName+'</option></select></td>'
+    +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="subcat" '+lazyAttrs+' onchange="inlineAssignSubcat(this)"><option value="'+curSub+'" selected>'+(curSub||'—')+'</option></select></td>'
+    +'<td style="color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(t.description||'—')+'</td>'
+    +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="account" '+lazyAttrs+' onchange="inlineAssignAccount(this)"><option value="'+curAcct+'" selected>'+curAcctLabel+'</option></select></td>'
+    +'<td style="font-weight:600;color:'+rowColor+'">'+amtSign+fmt(t.amount)+'</td>'
+    +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
+  return tr;
+}
+
+// Row checkbox → keep the selection set in sync (survives load-more appends).
+function onTxRowCheck(cb){
+  var id=Number(cb.dataset.id);
+  if(cb.checked) _txSelected.add(id); else _txSelected.delete(id);
+  txSelectionChanged();
+}
+// Reflect the selection set in the bulk bar + header "select all" tri-state.
+function txSelectionChanged(){
+  var n=_txSelected.size, total=_txFiltered.length;
+  var bar=document.getElementById('tx-bulk-bar');
+  var lbl=document.getElementById('tx-bulk-count');
+  var selAll=document.getElementById('tx-select-all');
+  if(bar) bar.style.display=n?'flex':'none';
+  if(lbl) lbl.textContent=(n>0&&n===total)?('All '+n+' selected'):(n+' selected');
+  if(selAll){ selAll.indeterminate=n>0&&n<total; selAll.checked=n>0&&n>=total; }
+}
+
+// Load-more machinery -------------------------------------------------
+function txStopObserver(){
+  var s=document.getElementById('tx-sentinel'); if(s) s.remove();
+  if(_txObserver) _txObserver.disconnect();
+}
+function txMountSentinel(tbody){
+  var old=document.getElementById('tx-sentinel'); if(old) old.remove();
+  if(_txObserver) _txObserver.disconnect();
+  if(_txWindow>=_txFiltered.length) return; // everything is already rendered
+  var tr=document.createElement('tr');
+  tr.id='tx-sentinel';
+  tr.innerHTML='<td colspan="10" style="padding:14px;text-align:center;color:var(--muted);font-size:.76rem;border:none">Loading more…</td>';
+  tbody.appendChild(tr);
+  if(!_txObserver){
+    _txObserver=new IntersectionObserver(function(entries){
+      for(var i=0;i<entries.length;i++){ if(entries[i].isIntersecting){ txLoadMore(); break; } }
+    },{ root:null, rootMargin:'600px 0px' });
+  }
+  _txObserver.observe(tr);
+}
+function txLoadMore(){
+  if(_txLoadingMore) return;
+  var tbody=document.getElementById('tx-tbody'); if(!tbody) return;
+  var start=_txWindow, end=Math.min(_txWindow+TX_PAGE,_txFiltered.length);
+  if(start>=end) return;
+  _txLoadingMore=true;
+  var sentinel=document.getElementById('tx-sentinel');
+  var frag=document.createDocumentFragment();
+  for(var i=start;i<end;i++){ frag.appendChild(txMakeRow(_txFiltered[i])); }
+  if(sentinel) tbody.insertBefore(frag,sentinel); else tbody.appendChild(frag);
+  _txWindow=end;
+  _txLoadingMore=false;
+  txMountSentinel(tbody); // re-arm below the new rows, or remove the sentinel if done
+}
+
 function renderTx(){
   buildMonthFilter();
   buildTxCatFilter();
@@ -210,41 +307,29 @@ function renderTx(){
   const cfBtn=document.getElementById('tx-clear-filters');
   if(cfBtn)cfBtn.style.display=hasFilter?'':'none';
 
+  // ── Windowing: reset to the top when the filter changes, otherwise keep the
+  // user's scroll depth across in-place re-renders (delete, bulk assign, add). ──
+  _txFiltered = data;
+  var _sig = [fm,ft,fc,fs,fa,fq].join('');
+  if(_sig !== _txFilterSig){ _txFilterSig = _sig; _txWindow = TX_PAGE; _txSelected.clear(); }
+  if(_txSelected.size){ // drop selected ids that are no longer in the filtered set
+    var _present = new Set(data.map(function(t){ return t.id; }));
+    _txSelected.forEach(function(id){ if(!_present.has(id)) _txSelected.delete(id); });
+  }
+  if(_txWindow > data.length) _txWindow = data.length;
+  if(_txWindow < TX_PAGE) _txWindow = Math.min(TX_PAGE, data.length);
+
   const tbody=document.getElementById('tx-tbody');
   const empty=document.getElementById('tx-empty');
   tbody.innerHTML='';
-  if(!data.length){empty.style.display='block';return;}
+  if(!data.length){empty.style.display='block';txStopObserver();updateTxBulkSelects();txSelectionChanged();return;}
   empty.style.display='none';
   updateTxBulkSelects();
-  data.forEach(t=>{
-    const tr=document.createElement('tr');
-    tr.dataset.id=t.id;
-    const isTr=isTransfer(t);
-    if(isTr)tr.classList.add('transfer-excluded-row');
-    const personBadge=t.type==='income'?'<span style="font-size:.68rem;background:var(--primary-bg);color:var(--pink-light);border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
-    const rowColor=t.type==='income'?'var(--success)':'var(--primary)';
-    const amtSign=t.type==='income'?'+':'-';
-    const dateStr=txFmtDate(t.date);
-    // Lazy selects: render only the current value; full lists build on interaction.
-    const curCatId=catIdFor(t.catId||t.category);
-    const curCatName=catNameFor(curCatId);
-    const curSub=t.subcat||'';
-    const acctLabels={offset:'Offset',home:'Home',brenton:getUserName('brenton'),shelley:getUserName('shelley'),joint:'Joint'};
-    const curAcct=t.account||t.person||'';
-    const curAcctLabel=acctLabels[curAcct]||'—';
-    const lazyAttrs='onmousedown="txHydrateSelect(this)" onfocus="txHydrateSelect(this)"';
-    tr.innerHTML='<td><input type="checkbox" class="tx-check tx-row-check" data-id="'+t.id+'" onchange="onTxCheck()" title="Select"/></td>'
-      +'<td>'+dateStr+'</td>'
-      +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">'+ICON('refresh')+'</span>':'')+'</td>'
-      +'<td style="font-weight:600;font-size:.84rem">'+(t.name||'—')+'</td>'
-      +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="cat" '+lazyAttrs+' onchange="inlineAssignCat(this)"><option value="'+curCatId+'" selected>'+curCatName+'</option></select></td>'
-      +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="subcat" '+lazyAttrs+' onchange="inlineAssignSubcat(this)"><option value="'+curSub+'" selected>'+(curSub||'—')+'</option></select></td>'
-      +'<td style="color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(t.description||'—')+'</td>'
-      +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="account" '+lazyAttrs+' onchange="inlineAssignAccount(this)"><option value="'+curAcct+'" selected>'+curAcctLabel+'</option></select></td>'
-      +'<td style="font-weight:600;color:'+rowColor+'">'+amtSign+fmt(t.amount)+'</td>'
-      +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
-    tbody.appendChild(tr);
-  });
+  var _frag=document.createDocumentFragment();
+  for(var _i=0;_i<_txWindow;_i++){ _frag.appendChild(txMakeRow(data[_i])); }
+  tbody.appendChild(_frag);
+  txMountSentinel(tbody);
+  txSelectionChanged();
 
   const _act=activeTX();
   const inc=_act.reduce((s,t)=>t.type==='income'?s+Number(t.amount):s,0);
