@@ -766,6 +766,13 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="mob-menu" style="display:none">
   <div id="mob-menu-handle"></div>
   <div class="mob-menu-section">
+    <div class="mob-menu-label"><i class="ti ti-eye"></i> View</div>
+    <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="closeMobMenu();openLensSheet()"><span>📊</span>Switch view</button>
+      <button class="mob-menu-item" onclick="goMob('customise-views')"><span>🎨</span>Customise</button>
+    </div>
+  </div>
+  <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-credit-card"></i> Spend</div>
     <div class="mob-menu-grid">
       <button class="mob-menu-item" onclick="goMob('transfers')"><span><i class="ti ti-refresh"></i></span>Transfers</button>

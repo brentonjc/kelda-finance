@@ -839,8 +839,11 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
 .kf-lens-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px;border-radius:12px;cursor:pointer;background:none;border:none;width:100%;text-align:left;color:var(--text);font-family:var(--font-body);}
 .kf-lens-row:hover,.kf-lens-row.sel{background:var(--card2);}
 .kf-lens-row-ic{font-size:22px;flex-shrink:0;width:28px;text-align:center;}
-.kf-lens-row-name{font-weight:700;font-size:.9rem;}
-.kf-lens-row-desc{font-size:.74rem;color:var(--muted);}
+.kf-lens-row-name{font-weight:700;font-size:.9rem;display:block;}
+.kf-lens-row-desc{font-size:.74rem;color:var(--muted);display:block;}
+
+/* Partner first-login overlay (reuses .wz-card / .wz-qcard styling) */
+#kf-partner-overlay{position:fixed;inset:0;z-index:9999;background:var(--n950);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
 
 /* Calm hero — reassuring single card */
 .kf-calm-hero{

@@ -206,3 +206,124 @@ function shouldShowPartnerFirstLogin(profileKey) {
   if (c.users && c.users[profileKey] && c.users[profileKey].q2 && c.users[profileKey].q2 !== '') return false;
   return true;
 }
+
+// ── Partner first-login overlay ───────────────────────────────
+// Deviation: PIN step (P4) is omitted — the partner's PIN is already set in
+// the wizard's second-user step. This flow only captures Q2/Q3 to set their lens.
+var _kfPartner = null;
+function showPartnerFirstLogin(profileKey) {
+  _kfPartner = { key: profileKey, screen: 1, q2: '', q3: '', nudge: false, done: false };
+  var ov = document.getElementById('kf-partner-overlay');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'kf-partner-overlay'; document.body.appendChild(ov); }
+  _kfPartnerRender();
+}
+function _kfPartnerName() {
+  try { return (typeof getUserName === 'function' ? getUserName(_kfPartner.key) : _kfPartner.key) || 'there'; } catch (e) { return 'there'; }
+}
+function _kfPartnerCard(q, val, emoji, h, s) {
+  var on = _kfPartner[q] === val;
+  return '<button type="button" class="wz-qcard' + (on ? ' sel' : '') + '" data-val="' + val + '" onclick="kfPartnerSelect(\'' + q + '\',\'' + val + '\')">'
+    + '<span class="wz-qcard-emoji">' + emoji + '</span><span class="wz-qcard-txt">'
+    + '<span class="wz-qcard-h">' + esc(h) + '</span><span class="wz-qcard-s">' + esc(s) + '</span></span></button>';
+}
+function kfPartnerSelect(q, val) {
+  _kfPartner[q] = val;
+  var cards = document.querySelectorAll('#kf-partner-overlay .wz-qcard');
+  for (var i = 0; i < cards.length; i++) cards[i].classList.toggle('sel', cards[i].getAttribute('data-val') === val);
+  var b = document.getElementById('kf-partner-next'); if (b) b.disabled = false;
+}
+function _kfPartnerRender() {
+  var ov = document.getElementById('kf-partner-overlay'); if (!ov) return;
+  var s = _kfPartner.screen, html = '';
+  if (s === 1) {
+    html = '<h2 class="wz-heading">Welcome to Kelda, ' + esc(_kfPartnerName()) + '.</h2>'
+      + '<p class="wz-sub">Let\'s set up your view. Takes about 30 seconds.</p>'
+      + '<button class="wz-next-btn" onclick="kfPartnerNext()">Get started →</button>';
+  } else if (s === 2) {
+    html = '<button class="wz-back" onclick="kfPartnerBack()">← Back</button>'
+      + '<h2 class="wz-heading">What would make Kelda<br>most useful for you?</h2>'
+      + '<div class="wz-qgroup">'
+      + _kfPartnerCard('q2', 'A', '🎯', 'Progress on our goals', 'Goals front and centre')
+      + _kfPartnerCard('q2', 'B', '📋', 'Where our money goes', 'Clear budget snapshot')
+      + _kfPartnerCard('q2', 'C', '📊', 'The full picture', 'All charts and insights')
+      + '</div>'
+      + '<button class="wz-next-btn" id="kf-partner-next" onclick="kfPartnerNext()"' + (_kfPartner.q2 ? '' : ' disabled') + '>Continue →</button>';
+  } else if (s === 3) {
+    html = '<button class="wz-back" onclick="kfPartnerBack()">← Back</button>'
+      + '<h2 class="wz-heading">How do you want to engage<br>with your finances?</h2>'
+      + '<div class="wz-qgroup">'
+      + _kfPartnerCard('q3', 'A', '👀', 'Daily — all the detail', 'Show me everything')
+      + _kfPartnerCard('q3', 'B', '📅', 'Weekly or monthly', 'A snapshot works fine')
+      + _kfPartnerCard('q3', 'C', '🙈', 'Only when something needs me', 'Keep it simple')
+      + '</div>'
+      + '<button class="wz-next-btn" id="kf-partner-next" onclick="kfPartnerNext()"' + (_kfPartner.q3 ? '' : ' disabled') + '>Finish →</button>'
+      + '<div class="wz-nudge" id="kf-partner-nudge" style="display:none">🧘 We\'ll keep things simple — you\'ll see your balance, bills, and goals.</div>';
+  }
+  ov.innerHTML = '<div class="wz-card">' + html + '</div>';
+}
+function kfPartnerBack() { if (_kfPartner && _kfPartner.screen > 1) { _kfPartner.screen--; _kfPartnerRender(); } }
+function kfPartnerNext() {
+  if (!_kfPartner) return;
+  var s = _kfPartner.screen;
+  if (s === 1) { _kfPartner.screen = 2; _kfPartnerRender(); return; }
+  if (s === 2) { if (!_kfPartner.q2) return; _kfPartner.screen = 3; _kfPartnerRender(); return; }
+  if (s === 3) {
+    if (!_kfPartner.q3) return;
+    if (_kfPartner.q3 === 'C' && !_kfPartner.nudge) {
+      _kfPartner.nudge = true;
+      var n = document.getElementById('kf-partner-nudge'); if (n) n.style.display = 'block';
+      setTimeout(kfPartnerFinish, 3000);
+      return;
+    }
+    kfPartnerFinish();
+  }
+}
+function kfPartnerFinish() {
+  if (!_kfPartner || _kfPartner.done) return;
+  _kfPartner.done = true;
+  var k = _kfPartner.key;
+  var c = loadLensConfig() || { users: {} };
+  if (!c.users) c.users = {};
+  if (!c.users[k]) c.users[k] = { role: 'partner' };
+  c.users[k].q2 = _kfPartner.q2; c.users[k].q3 = _kfPartner.q3;
+  c.users[k].lens = computeLens(_kfPartner.q2, _kfPartner.q3);
+  c.partnerSetupDone = true;
+  saveLensConfig(c);
+  var ov = document.getElementById('kf-partner-overlay'); if (ov) ov.remove();
+  applyLens(k);
+  try { if (typeof toast === 'function') toast('Your view is ready'); } catch (e) {}
+}
+
+// ── Mobile lens bottom sheet ──────────────────────────────────
+function openLensSheet() {
+  var ov = document.getElementById('kf-lens-sheet-overlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'kf-lens-sheet-overlay'; ov.className = 'kf-lens-sheet-overlay';
+    ov.onclick = function (e) { if (e.target === ov) closeLensSheet(); };
+    var sheet = document.createElement('div'); sheet.id = 'kf-lens-sheet'; sheet.className = 'kf-lens-sheet';
+    ov.appendChild(sheet); document.body.appendChild(ov);
+  }
+  var cur = getLens(getCurrentProfileKey());
+  var rows = [
+    ['calm', '🧘', 'Calm', 'Just the essentials. No charts or alerts.'],
+    ['clear', '📋', 'Clear', 'Budget, bills, and recent spending.'],
+    ['full', '📊', 'Full', 'Everything — charts, insights, net worth.'],
+    ['goals', '🎯', 'Goals', 'Goals are front and centre.']
+  ];
+  var h = '<div class="kf-lens-sheet-hd">Switch view</div>';
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    h += '<button class="kf-lens-row' + (r[0] === cur ? ' sel' : '') + '" onclick="kfLensSheetPick(\'' + r[0] + '\')">'
+      + '<span class="kf-lens-row-ic">' + r[1] + '</span><span><span class="kf-lens-row-name">' + esc(r[2]) + '</span>'
+      + '<span class="kf-lens-row-desc">' + esc(r[3]) + '</span></span></button>';
+  }
+  document.getElementById('kf-lens-sheet').innerHTML = h;
+  ov.classList.add('open');
+  requestAnimationFrame(function () { var s = document.getElementById('kf-lens-sheet'); if (s) s.classList.add('open'); });
+}
+function closeLensSheet() {
+  var s = document.getElementById('kf-lens-sheet'), ov = document.getElementById('kf-lens-sheet-overlay');
+  if (s) s.classList.remove('open');
+  if (ov) setTimeout(function () { ov.classList.remove('open'); }, 220);
+}
+function kfLensSheetPick(l) { closeLensSheet(); switchLensUI(l); }
