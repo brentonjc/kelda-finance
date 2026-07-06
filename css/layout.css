@@ -888,3 +888,16 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
 .cv-q-head{font-size:.82rem;font-weight:600;margin-bottom:6px;}
 .cv-q-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:.82rem;}
 .cv-q-opt input{accent-color:var(--primary);}
+
+/* ── Onboarding Q1–Q3 cards + calm nudge ── */
+.wz-qgroup{display:flex;flex-direction:column;gap:10px;margin:8px 0 4px;}
+.wz-qcard{display:flex;align-items:center;gap:14px;text-align:left;width:100%;padding:16px;border-radius:14px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:border-color .15s,transform .12s;font-family:var(--font-body);color:var(--text);}
+.wz-qcard:hover{border-color:var(--muted);}
+.wz-qcard.sel{border-color:var(--primary);transform:scale(1.01);}
+.wz-qcard-emoji{font-size:26px;flex-shrink:0;line-height:1;}
+.wz-qcard-txt{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.wz-qcard-h{font-weight:700;font-size:.9rem;}
+.wz-qcard-s{font-size:.76rem;color:var(--muted);}
+.wz-nudge{background:rgba(0,200,150,.08);border:1px solid #00C896;border-radius:12px;padding:14px 16px;margin-top:14px;font-size:.86rem;line-height:1.5;animation:wzNudgeIn .25s ease;}
+.wz-nudge-mgr{color:var(--n300);font-size:12px;margin-top:8px;}
+@keyframes wzNudgeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}

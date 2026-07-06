@@ -20,7 +20,8 @@ var _wz = {
   p2On    : true,
   p2Name  : '', p2Icon  : '👩',
   p2Input : '', p2First : '', p2Step : 0, p2Done : false,
-  acctOffset : '', acctHome : '', acctSav1 : '', acctSav2 : ''
+  acctOffset : '', acctHome : '', acctSav1 : '', acctSav2 : '',
+  q1 : '', q2 : '', q3 : ''
 };
 
 // Emoji palette for profile picker
@@ -102,6 +103,9 @@ function wzGo(step) {
   var html = '';
   if      (step === 1) html = _wzHtml1();
   else if (step === 2) html = _wzHtml2();
+  else if (step === 'q1') html = _wzHtmlQ1();
+  else if (step === 'q2') html = _wzHtmlQ2();
+  else if (step === 'q3') html = _wzHtmlQ3();
   else if (step === 3) html = _wzHtml3();
   else if (step === 4) html = _wzHtml4();
   else if (step === 5) html = _wzHtml5();
@@ -167,7 +171,7 @@ function wzRestart() {
 // STEP HELPERS
 // ══════════════════════════════════════════════════════════════
 function _wzProg(n) {
-  return '<div class="wz-progress">Step ' + n + ' of 4</div>';
+  return '<div class="wz-progress">Step ' + n + ' of 7</div>';
 }
 
 function _wzEsc(s) {
@@ -255,6 +259,92 @@ function wzStep2Next() {
     return;
   }
   _wz.p1Name = name;
+  wzGo('q1');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCREENS Q1–Q3 — Personalisation (sets the manager's lens + depth)
+// ══════════════════════════════════════════════════════════════
+function _wzQCard(q, val, emoji, headline, subline) {
+  var on = _wz[q] === val;
+  return '<button type="button" class="wz-qcard' + (on ? ' sel' : '') + '" role="radio" aria-checked="'
+    + (on ? 'true' : 'false') + '" data-val="' + val + '" onclick="wzSelectQ(\'' + q + '\',\'' + val + '\')">'
+    + '<span class="wz-qcard-emoji">' + emoji + '</span>'
+    + '<span class="wz-qcard-txt"><span class="wz-qcard-h">' + _wzEsc(headline) + '</span>'
+    + '<span class="wz-qcard-s">' + _wzEsc(subline) + '</span></span></button>';
+}
+function wzSelectQ(q, val) {
+  _wz[q] = val;
+  var group = document.querySelector('.wz-qgroup[data-q="' + q + '"]');
+  if (group) {
+    var cards = group.querySelectorAll('.wz-qcard');
+    for (var i = 0; i < cards.length; i++) {
+      var on = cards[i].getAttribute('data-val') === val;
+      cards[i].classList.toggle('sel', on);
+      cards[i].setAttribute('aria-checked', on ? 'true' : 'false');
+    }
+  }
+  var btn = document.getElementById('wz-' + q + '-next');
+  if (btn) btn.disabled = false;
+}
+
+function _wzHtmlQ1() {
+  return (
+    '<button class="wz-back" onclick="wzGo(2)">← Back</button>' + _wzProg(3) +
+    '<h2 class="wz-heading">Which best describes<br>your household?</h2>' +
+    '<p class="wz-sub">Pick the closest fit — you can update this any time.</p>' +
+    '<div class="wz-qgroup" data-q="q1" role="radiogroup" aria-label="Household situation">' +
+    _wzQCard('q1', 'A', '🌱', 'Getting on top of day-to-day spending', 'Budgets, bills, and savings goals') +
+    _wzQCard('q1', 'B', '🏠', 'Own or paying off a home', 'Mortgage, household budgets, and planning') +
+    _wzQCard('q1', 'C', '📊', 'Property, investments, or super to track', 'The full financial picture') +
+    '</div>' +
+    '<button class="wz-next-btn" id="wz-q1-next" onclick="wzQ1Next()"' + (_wz.q1 ? '' : ' disabled') + '>Continue →</button>'
+  );
+}
+function wzQ1Next() { if (_wz.q1) wzGo('q2'); }
+
+function _wzHtmlQ2() {
+  return (
+    '<button class="wz-back" onclick="wzGo(\'q1\')">← Back</button>' + _wzProg(4) +
+    '<h2 class="wz-heading">What would make Kelda<br>most useful?</h2>' +
+    '<p class="wz-sub">This shapes what you see first on your dashboard.</p>' +
+    '<div class="wz-qgroup" data-q="q2" role="radiogroup" aria-label="Motivation">' +
+    _wzQCard('q2', 'A', '🎯', 'Knowing we\'re making progress on our goals', 'Goals are front and centre') +
+    _wzQCard('q2', 'B', '📋', 'Seeing where our money goes each month', 'Clear budget and spending snapshot') +
+    _wzQCard('q2', 'C', '📊', 'Having the full picture — trends, net worth, everything', 'All charts and insights visible') +
+    '</div>' +
+    '<button class="wz-next-btn" id="wz-q2-next" onclick="wzQ2Next()"' + (_wz.q2 ? '' : ' disabled') + '>Continue →</button>'
+  );
+}
+function wzQ2Next() { if (_wz.q2) wzGo('q3'); }
+
+function _wzHtmlQ3() {
+  return (
+    '<button class="wz-back" onclick="wzGo(\'q2\')">← Back</button>' + _wzProg(5) +
+    '<h2 class="wz-heading">How do you want to engage<br>with your finances?</h2>' +
+    '<p class="wz-sub">No right answer — this sets your default view.</p>' +
+    '<div class="wz-qgroup" data-q="q3" role="radiogroup" aria-label="Frequency">' +
+    _wzQCard('q3', 'A', '👀', 'Daily — I like staying on top of everything', 'Show me all the detail') +
+    _wzQCard('q3', 'B', '📅', 'Weekly or monthly — a regular check-in suits me', 'A clear snapshot works fine') +
+    _wzQCard('q3', 'C', '🙈', 'Only when something needs attention', 'Keep it simple, flag what matters') +
+    '</div>' +
+    '<button class="wz-next-btn" id="wz-q3-next" onclick="wzQ3Next()"' + (_wz.q3 ? '' : ' disabled') + '>Continue →</button>' +
+    '<div class="wz-nudge" id="wz-q3-nudge" style="display:none">' +
+    '<div>🧘 We\'ll keep things simple for you. You\'ll see your balance, bills, and goals — no charts or alerts.</div>' +
+    '<div class="wz-nudge-mgr">As the household manager, you\'ll always be able to access all of Kelda\'s features from Settings → Customise Views.</div>' +
+    '</div>'
+  );
+}
+function wzQ3Next() {
+  if (!_wz.q3) return;
+  if (_wz.q3 === 'C' && !_wz._q3nudge) {
+    _wz._q3nudge = true;
+    var el = document.getElementById('wz-q3-nudge');
+    if (el) el.style.display = 'block';
+    _wz._q3timer = setTimeout(function() { wzGo(3); }, 3000);
+    return;
+  }
+  if (_wz._q3timer) { clearTimeout(_wz._q3timer); _wz._q3timer = null; }
   wzGo(3);
 }
 
@@ -263,8 +353,8 @@ function wzStep2Next() {
 // ══════════════════════════════════════════════════════════════
 function _wzHtml3() {
   return (
-    '<button class="wz-back" onclick="wzBack(2)">← Back</button>' +
-    _wzProg(3) +
+    '<button class="wz-back" onclick="wzGo(\'q3\')">← Back</button>' +
+    _wzProg(6) +
     '<h2 class="wz-heading">Is there a second person<br>sharing this tracker?</h2>' +
     '<p class="wz-sub">You can always add them later in Settings.</p>' +
     '<div id="wz-p2-area">' + _wzP2ChoiceHtml() + '</div>'
@@ -355,7 +445,7 @@ function _wzHtml4() {
   var p2n = _wzEsc(_wz.p2Name || 'Profile 2');
   return (
     '<button class="wz-back" onclick="wzBack(3)">← Back</button>' +
-    _wzProg(4) +
+    _wzProg(7) +
     '<h2 class="wz-heading">Name your accounts</h2>' +
     '<p class="wz-sub">You can change these any time in Settings.</p>' +
     '<label class="wz-label"><i class="ti ti-building-bank"></i> Main / Offset Account</label>' +
@@ -421,6 +511,24 @@ async function wzCommit() {
 
   // 4. Mark wizard complete
   try { localStorage.setItem(WIZARD_KEY, 'true'); } catch(e) {}
+
+  // 5. Lens/role config — primary user (brenton) is the household manager.
+  //    Partner (shelley) defaults to clear until their own first-login flow.
+  try {
+    var mgrKey = 'brenton', partnerKey = 'shelley';
+    var lens = (typeof computeLens === 'function') ? computeLens(_wz.q2, _wz.q3) : 'full';
+    var depth = (typeof computeDepth === 'function') ? computeDepth(_wz.q1) : 'full';
+    var cfg = {
+      manager: mgrKey, partnerSetupDone: false, transferPending: false, transferTo: '',
+      users: {}
+    };
+    cfg.users[mgrKey]     = { role: 'manager', depth: depth, lens: lens, q1: _wz.q1, q2: _wz.q2, q3: _wz.q3 };
+    cfg.users[partnerKey] = { role: 'partner', depth: 'starter', lens: 'clear', q1: '', q2: '', q3: '' };
+    localStorage.setItem(K.lensConfig, JSON.stringify(cfg));
+    localStorage.setItem(K.managerProfile, mgrKey);
+    // Mirror the depth into kf_profile so the existing dashboard layout reads it.
+    localStorage.setItem('kf_profile', depth);
+  } catch(e) {}
 
   wzGo(5);
 }
