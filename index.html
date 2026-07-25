@@ -39,12 +39,13 @@
 <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16.png"/>
 
 <!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<!-- Self-hosted fonts (Sora, DM Sans, DM Mono) — no external calls -->
+<link rel="preload" as="font" type="font/woff2" href="assets/fonts/dm-sans-400-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="assets/fonts/sora-700-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="css/fonts.css"/>
 
 <!-- Tabler Icons (dashboard + onboarding glyphs) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<link rel="stylesheet" href="css/tabler-icons.min.css"/>
 
 <!-- Stylesheets -->
 <link rel="stylesheet" href="css/tokens.css"/>
@@ -54,7 +55,7 @@
 <link rel="stylesheet" href="css/login.css"/>
 
 <!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" onerror="window._chartJsError=true"></script>
+<script defer src="assets/vendor/chart.umd.min.js" onerror="window._chartJsError=true"></script>
 
 <style id="ob-css">
 /* ══ Kelda Finance — Onboarding (two-panel redesign) ═══════════
@@ -3229,34 +3230,34 @@ window.addEventListener('unhandledrejection',function(e){
 
 
 <!-- ═══════════ JAVASCRIPT MODULES ═══════════ -->
-<script src="js/icons.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/data.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/app.js"></script>
+<script defer src="js/icons.js"></script>
+<script defer src="js/storage.js"></script>
+<script defer src="js/data.js"></script>
+<script defer src="js/auth.js"></script>
+<script defer src="js/app.js"></script>
 <!-- Pages -->
-<script src="js/pages/dashboard.js"></script>
-<script src="js/pages/insights.js"></script>
-<script src="js/pages/transactions.js"></script>
-<script src="js/pages/bills.js"></script>
-<script src="js/pages/goals.js"></script>
-<script src="js/pages/mortgage.js"></script>
-<script src="js/pages/cash.js"></script>
-<script src="js/pages/insurance.js"></script>
-<script src="js/pages/super.js"></script>
-<script src="js/pages/assets.js"></script>
-<script src="js/pages/export.js"></script>
-<script src="js/pages/autocategorise.js"></script>
-<script src="js/pages/categories.js"></script>
-<script src="js/pages/bva.js"></script>
-<script src="js/pages/forecast.js"></script>
-<script src="js/pages/transfers.js"></script>
-<script src="js/pages/equities.js"></script>
-<script src="js/pages/liabilities.js"></script>
-<script src="js/pages/settings.js"></script>
-<script src="js/pages/quickstart.js"></script>
-<script src="js/wizard.js"></script>
-<script src="js/login.js"></script>
+<script defer src="js/pages/dashboard.js"></script>
+<script defer src="js/pages/insights.js"></script>
+<script defer src="js/pages/transactions.js"></script>
+<script defer src="js/pages/bills.js"></script>
+<script defer src="js/pages/goals.js"></script>
+<script defer src="js/pages/mortgage.js"></script>
+<script defer src="js/pages/cash.js"></script>
+<script defer src="js/pages/insurance.js"></script>
+<script defer src="js/pages/super.js"></script>
+<script defer src="js/pages/assets.js"></script>
+<script defer src="js/pages/export.js"></script>
+<script defer src="js/pages/autocategorise.js"></script>
+<script defer src="js/pages/categories.js"></script>
+<script defer src="js/pages/bva.js"></script>
+<script defer src="js/pages/forecast.js"></script>
+<script defer src="js/pages/transfers.js"></script>
+<script defer src="js/pages/equities.js"></script>
+<script defer src="js/pages/liabilities.js"></script>
+<script defer src="js/pages/settings.js"></script>
+<script defer src="js/pages/quickstart.js"></script>
+<script defer src="js/wizard.js"></script>
+<script defer src="js/login.js"></script>
 <!-- Onboarding JS -->
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -3724,7 +3725,10 @@ document.addEventListener('DOMContentLoaded',function(){
   if('serviceWorker' in navigator){
     var _swReloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
-      if (_swReloading) return;      // guard against reload loops
+      // Only reload when the user explicitly accepted an update — NOT on the
+      // initial clients.claim() of a first visit, which would reload every new
+      // user and stall first paint. __swUpdateAccepted is set by the Update button.
+      if (!window.__swUpdateAccepted || _swReloading) return;
       _swReloading = true;
       window.location.reload();
     });
@@ -3756,6 +3760,7 @@ function showSwUpdatePrompt(reg){
   var btn = document.getElementById('sw-update-btn');
   if (btn) btn.onclick = function(){
     btn.disabled = true; btn.textContent = 'Updating…';
+    window.__swUpdateAccepted = true;   // permit the controllerchange reload below
     if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
     else window.location.reload();
   };

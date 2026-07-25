@@ -1,7 +1,7 @@
 // Kelda Finance — Service Worker
 // Network-first strategy: always fetches fresh code, falls back to cache if offline.
 
-const CACHE = 'kelda-finance-v36';
+const CACHE = 'kelda-finance-v37';
 
 const SHELL = [
   './',
@@ -12,6 +12,27 @@ const SHELL = [
   './css/layout.css',
   './css/dashboard.css',
   './css/login.css',
+  './css/fonts.css',
+  './css/tabler-icons.min.css',
+  // Self-hosted vendor + fonts (no external CDN calls)
+  './assets/vendor/chart.umd.min.js',
+  './assets/fonts/tabler-icons.woff2',
+  './assets/fonts/sora-400-latin.woff2',
+  './assets/fonts/sora-400-latin-ext.woff2',
+  './assets/fonts/sora-600-latin.woff2',
+  './assets/fonts/sora-600-latin-ext.woff2',
+  './assets/fonts/sora-700-latin.woff2',
+  './assets/fonts/sora-700-latin-ext.woff2',
+  './assets/fonts/dm-sans-400-latin.woff2',
+  './assets/fonts/dm-sans-400-latin-ext.woff2',
+  './assets/fonts/dm-sans-500-latin.woff2',
+  './assets/fonts/dm-sans-500-latin-ext.woff2',
+  './assets/fonts/dm-sans-600-latin.woff2',
+  './assets/fonts/dm-sans-600-latin-ext.woff2',
+  './assets/fonts/dm-mono-400-latin.woff2',
+  './assets/fonts/dm-mono-400-latin-ext.woff2',
+  './assets/fonts/dm-mono-500-latin.woff2',
+  './assets/fonts/dm-mono-500-latin-ext.woff2',
   './js/storage.js',
   './js/data.js',
   './js/auth.js',

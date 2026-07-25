@@ -26101,7 +26101,10 @@ document.addEventListener('DOMContentLoaded',function(){
   if('serviceWorker' in navigator){
     var _swReloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
-      if (_swReloading) return;      // guard against reload loops
+      // Only reload when the user explicitly accepted an update — NOT on the
+      // initial clients.claim() of a first visit, which would reload every new
+      // user and stall first paint. __swUpdateAccepted is set by the Update button.
+      if (!window.__swUpdateAccepted || _swReloading) return;
       _swReloading = true;
       window.location.reload();
     });
@@ -26133,6 +26136,7 @@ function showSwUpdatePrompt(reg){
   var btn = document.getElementById('sw-update-btn');
   if (btn) btn.onclick = function(){
     btn.disabled = true; btn.textContent = 'Updating…';
+    window.__swUpdateAccepted = true;   // permit the controllerchange reload below
     if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
     else window.location.reload();
   };
