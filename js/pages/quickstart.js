@@ -178,7 +178,7 @@ function renderQuickStart() {
       title: 'Add Transactions',
       body: 'Import CSV from your bank or add transactions manually. Our app supports Australia\'s top 10 banks.',
       cta: 'Add Transaction',
-      ctaFn: 'qsNavigateWithContext("transactions", "step-1-add-tx")'
+      ctaFn: "qsNavigateWithContext('transactions', 'step-1-add-tx')"
     },
     {
       id: 'step-2-categorise',
@@ -187,7 +187,7 @@ function renderQuickStart() {
       title: 'Categorise Transactions',
       body: 'Assign each transaction to a category. This helps you track spending by type.',
       cta: 'View Transactions',
-      ctaFn: 'qsNavigateWithContext("transactions", "step-2-categorise")'
+      ctaFn: "qsNavigateWithContext('transactions', 'step-2-categorise')"
     },
     {
       id: 'step-3-rules',
@@ -196,7 +196,7 @@ function renderQuickStart() {
       title: 'Setup Auto-Categorisation Rules',
       body: 'Create rules to automatically categorise transactions based on merchant name. Save time on future transactions.',
       cta: 'Create Rule',
-      ctaFn: 'qsNavigateWithContext("smartrules", "step-3-rules")'
+      ctaFn: "qsNavigateWithContext('smartrules', 'step-3-rules')"
     },
     {
       id: 'step-4-liabilities',
@@ -205,7 +205,7 @@ function renderQuickStart() {
       title: 'Add Liabilities',
       body: 'Record your mortgage, loans, and credit cards. This helps you see your net worth clearly.',
       cta: 'Add Liability',
-      ctaFn: 'qsNavigateWithContext("liabilities", "step-4-liabilities")'
+      ctaFn: "qsNavigateWithContext('liabilities', 'step-4-liabilities')"
     },
     {
       id: 'step-5-goals',
@@ -214,7 +214,7 @@ function renderQuickStart() {
       title: 'Create Savings Goals',
       body: 'Set financial targets like emergency fund, holiday, or home renovation. Track your progress visually.',
       cta: 'Create Goal',
-      ctaFn: 'qsNavigateWithContext("goals", "step-5-goals")'
+      ctaFn: "qsNavigateWithContext('goals', 'step-5-goals')"
     },
     {
       id: 'step-6-bills',
@@ -223,7 +223,7 @@ function renderQuickStart() {
       title: 'Schedule Bills',
       body: 'Add recurring bills (rent, utilities, insurance). Get reminders before they\'re due.',
       cta: 'Add Bill',
-      ctaFn: 'qsNavigateWithContext("bills", "step-6-bills")'
+      ctaFn: "qsNavigateWithContext('bills', 'step-6-bills')"
     },
     {
       id: 'step-7-budget',
@@ -232,7 +232,7 @@ function renderQuickStart() {
       title: 'Configure Budget',
       body: 'Set monthly spending limits by category. Track your actual spend against budget in real-time.',
       cta: 'Set Budget',
-      ctaFn: 'qsNavigateWithContext("bva", "step-7-budget")'
+      ctaFn: "qsNavigateWithContext('bva', 'step-7-budget')"
     }
   ];
 

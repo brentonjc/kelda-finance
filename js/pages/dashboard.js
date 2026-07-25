@@ -1370,7 +1370,6 @@ function kdRenderDashboard() {
     ? computeCurrentNetWorth()
     : { bank: cash, super_: 0, property: 0, equities: 0, liabilities: 0, netWorth: cash };
 
-  var kfMort = kdGetJSON('kf_mortgage', null);
   var kfAssets = kdGetJSON('kf_assets', []);
 
   // ── TILE 1 — Net worth / Total balance ──

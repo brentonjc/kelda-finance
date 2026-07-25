@@ -912,11 +912,11 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="kl-brand-logo"><span class="kl-dot"></span> <span data-app-name>Kelda</span></div>
       <div class="kl-brand-copy">
         <h1>Your money,<br>one clear view.</h1>
-        <p>Net worth, budgets, bills and goals for the Charnley household — all in one private, local-first app.</p>
+        <p>Net worth, budgets, bills and goals for your whole household — all in one private, local-first app.</p>
       </div>
       <div class="kl-float-stats">
-        <div class="kl-fstat"><div class="sl">Net Worth</div><div class="sv up">$412,500 ↑</div></div>
-        <div class="kl-fstat offset"><div class="sl">Savings Streak</div><div class="sv">6 months</div></div>
+        <div class="kl-fstat"><div class="sl">Your data</div><div class="sv up">On-device</div></div>
+        <div class="kl-fstat offset"><div class="sl">Works</div><div class="sv">Offline</div></div>
       </div>
       <div class="kl-brand-foot"><i class="ti ti-lock"></i> Stored only on this device — no cloud, no accounts.</div>
     </div>
@@ -3566,7 +3566,7 @@ function obFinish() {
   // kf_* keys
   try { localStorage.setItem('kf_onboarding_complete', 'true'); } catch(e) {}
   try { localStorage.setItem('kf_user_name', ob.name); } catch(e) {}
-  try { localStorage.setItem('kf_app_name', 'Kelda Finance'); } catch(e) {}
+  try { localStorage.setItem('kf_app_name', localStorage.getItem('kf_app_name') || 'Kelda Finance'); } catch(e) {}
   try { localStorage.setItem('kf_profile', ob.profile || 'full'); } catch(e) {}
   try { localStorage.setItem('kf_account_count', String(ob.accountCount)); } catch(e) {}
   try { localStorage.setItem('kf_accounts', JSON.stringify(names)); } catch(e) {}
@@ -3593,7 +3593,49 @@ function obFinish() {
     for (var ai = 0; ai < 4; ai++) { if (names[ai]) uc[acctKeys[ai]] = names[ai]; }
     localStorage.setItem('cff_userconfig', JSON.stringify(uc));
   } catch(e) {}
-  try { localStorage.setItem('cff_app_name', 'Kelda Finance'); } catch(e) {}
+
+  // Build the real ACCOUNTS list from the onboarding accounts so the count AND
+  // names honour the user's choice. The dashboard/cash tracker read ACCOUNTS
+  // (via getAccountName / CT_ACCTS), which otherwise defaults to a fixed set of
+  // four with placeholder labels — so the "how many accounts?" step and the
+  // 3rd/4th names were previously ignored (kf_accounts was written but unread).
+  try {
+    var _coreIds    = ['offset','home','sav1','sav2'];
+    var _coreIcons  = ['building-bank','home','coin','diamond'];
+    var _coreColors = ['#e8457a','#7c5cbf','#f07aaa','#a29bfe'];
+    var _n = Math.max(1, Math.min(names.length, 4));
+    var _accts = [];
+    for (var _ai = 0; _ai < _n; _ai++) {
+      _accts.push({ id: _coreIds[_ai], name: names[_ai] || ('Account ' + (_ai + 1)),
+        icon: _coreIcons[_ai], currency: 'AUD', location: 'Australia', color: _coreColors[_ai], isCore: true });
+    }
+    localStorage.setItem('cff_accounts', JSON.stringify(_accts));
+  } catch(e) {}
+
+  // Import the onboarding mortgage into the mortgage tracker (MORTGAGE →
+  // cff_mortgage). liabAllMortgages() and the dashboard read MORTGAGE.properties;
+  // the raw kf_mortgage key was never consumed, so the balance was silently lost.
+  try {
+    if (mort && mort.balance) {
+      var _mObj = {
+        properties: [{
+          id: Date.now(),
+          name: mort.lender || 'Home loan',
+          balance: Number(mort.balance) || 0,
+          original: Number(mort.balance) || 0,
+          rate: 0, years: 0, homeValue: 0,
+          reptype: 'pi', offset: 0, offsetName: 'Offset Account',
+          acquiredDate: '', purchasePrice: 0, linkedLiabilityId: null
+        }],
+        // Flat mirror for any legacy reader of the pre-properties shape
+        balance: Number(mort.balance) || 0, lenderName: mort.lender || 'Home loan',
+        original: Number(mort.balance) || 0, rate: 0, years: 0, homeValue: 0, reptype: 'pi'
+      };
+      localStorage.setItem('cff_mortgage', JSON.stringify(_mObj));
+    }
+  } catch(e) {}
+
+  try { localStorage.setItem('cff_app_name', localStorage.getItem('cff_app_name') || 'Kelda Finance'); } catch(e) {}
 
   function _handoff() {
     document.documentElement.removeAttribute('data-ob-active');
@@ -3602,6 +3644,16 @@ function obFinish() {
     // Refresh the in-memory PIN store so the login screen goes straight to
     // "enter your PIN" (verify) rather than treating the profile as unset.
     try { if (typeof load === 'function' && typeof PINS !== 'undefined') PINS = load(K.pins) || {}; } catch(e) {}
+    // Refresh in-memory user config so profile names + account labels reflect the
+    // onboarding choices immediately. obFinish() only wrote them to localStorage;
+    // the in-memory USER_CONFIG was loaded at page start (empty) and would otherwise
+    // stay stale until a manual reload, leaving everything as "Profile 1"/"Profile 2".
+    try { if (typeof load === 'function' && typeof USER_CONFIG !== 'undefined') USER_CONFIG = load('cff_userconfig') || USER_CONFIG; } catch(e) {}
+    // Same for accounts + mortgage: obFinish wrote these to storage, but the
+    // in-memory copies were built at page start and would stay stale until reload.
+    try { if (typeof load === 'function' && typeof ACCOUNTS !== 'undefined') ACCOUNTS = load('cff_accounts') || ACCOUNTS; } catch(e) {}
+    try { if (typeof _buildCTAccts === 'function' && typeof CT_ACCTS !== 'undefined') CT_ACCTS = _buildCTAccts(); } catch(e) {}
+    try { if (typeof load === 'function' && typeof MORTGAGE !== 'undefined') MORTGAGE = load('cff_mortgage') || MORTGAGE; } catch(e) {}
     try { if (typeof applyOnboardingToApp === 'function') applyOnboardingToApp(); } catch(e) {}
     try { if (typeof applyAppName === 'function') applyAppName(); } catch(e) {}
     try { if (typeof applyUserConfig === 'function') applyUserConfig(); } catch(e) {}
