@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Kelda Finance</title>
+<meta name="description" content="Private, local-only personal finance manager for households — track net worth, budgets, bills, superannuation and more."/>
 
 <!-- FOUC guard: apply the saved palette before any CSS paints. Mode is forced
      to dark here because the login/landing screen always paints first on load
@@ -170,7 +171,7 @@
 
 .ob-h1 { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--white); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 8px; }
 .ob-h2 { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 8px; }
-.ob-sub { font-size: 14px; color: var(--n300); line-height: 1.6; margin-bottom: 28px; }
+.ob-sub { font-size: 14px; color: color-mix(in srgb, var(--muted) 85%, var(--text)); line-height: 1.6; margin-bottom: 28px; }
 
 .ob-field { margin-bottom: 20px; }
 .ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--pink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
@@ -190,14 +191,15 @@
 
 .ob-btn-primary {
   width: 100%; background: var(--pink); color: var(--white); border: none; border-radius: 999px;
-  padding: 14px 24px; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer;
+  /* 19px + 700 qualifies as WCAG "large text" (3:1), so white-on-pink brand CTA passes AA */
+  padding: 14px 24px; font-family: var(--font-body); font-size: 19px; font-weight: 700; cursor: pointer;
   transition: opacity .15s, transform .1s; margin-top: 8px; min-height: 48px;
 }
 .ob-btn-primary:hover { opacity: .9; }
 .ob-btn-primary:active { transform: scale(.98); }
 .ob-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 .ob-link {
-  display: block; text-align: center; font-size: 13px; color: var(--n300); cursor: pointer;
+  display: block; text-align: center; font-size: 13px; color: color-mix(in srgb, var(--muted) 85%, var(--text)); cursor: pointer;
   margin-top: 14px; background: none; border: none; font-family: var(--font-body);
   transition: color .15s; text-decoration: underline; text-decoration-color: transparent;
 }

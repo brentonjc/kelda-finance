@@ -1026,4 +1026,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
-selProfile('brenton');
+// login.js (which defines selProfile) loads after this file, so guard the call
+// to avoid a ReferenceError at parse time. The real boot-time init runs from
+// index.html's inline boot once every script has loaded.
+if (typeof selProfile === 'function') selProfile('brenton');
