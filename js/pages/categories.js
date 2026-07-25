@@ -53,12 +53,6 @@ var _LEGACY_CAT_MAP = {
 // Applied to ALL transactions regardless of current category.
 // If catId matches current and subcat matches current, it's a no-op.
 var _SUBCAT_FULL_MAP = {
-  // ── Fitness — v9 renames ──────────────────────────────────────
-  'brenton gym':                      { catId:'fitness',             subcat:'Gym Memberships' },
-  'shelley gym':                      { catId:'fitness',             subcat:'Gym Memberships' },
-  'brenton personal training':        { catId:'fitness',             subcat:'Personal Training' },
-  'shelley personal training':        { catId:'fitness',             subcat:'Personal Training' },
-
   // ── Insurance — v9 moves ──────────────────────────────────────
   'ring insurance':                   { catId:'insurance_utilities', subcat:'Other Insurance' },
   'car insurance & membership':       { catId:'insurance_utilities', subcat:'Car Insurance' },
@@ -494,6 +488,19 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
       + (pattern === 'contains' ? '◡ CONTAINS' : '= EXACT') + '</span>'
     : '';
 
+  // Overlap indicator: flag rules whose match-set intersects another rule's,
+  // since only one can win per transaction (exact > longest contains).
+  var overlapBadge = '';
+  if (source === 'lrule') {
+    var _ov = detectRuleConflicts(merchant, pattern).overlaps;
+    if (_ov.length) {
+      var _ovKeys = _ov.map(function(o) { return o.key; }).join(', ');
+      overlapBadge = '<span title="Overlaps: ' + esc(_ovKeys).replace(/"/g, '&quot;') + '" '
+        + 'style="font-size:.65rem;background:rgba(245,158,11,.15);color:var(--warn);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.03em">'
+        + ICON('alert-triangle') + ' OVERLAPS ' + _ov.length + '</span>';
+    }
+  }
+
   return '<div class="rule-card" data-merchant="' + merchant.replace(/"/g, '&quot;') + '" data-source="' + source + '">'
     + '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">'
     + '<div style="flex:1;min-width:140px">'
@@ -501,6 +508,7 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     + '<span style="font-weight:700;font-size:.88rem">' + ICON('building-store') + ' ' + merchant + '</span>'
     + sourceBadge
     + patternBadge
+    + overlapBadge
     + '</div>'
     + '<div>' + metaLine + '</div>'
     + '</div>'
@@ -654,35 +662,9 @@ function rulesPreviousPage() {
 }
 
 function rulesShowCreateForm() {
-  var modal = document.getElementById('create-rule-modal');
-  if (!modal) return;
-
-  // Always ensure the modal is a direct child of body so display:none on
-  // any parent page div can never block it (cache-safe fix)
-  if (modal.parentElement !== document.body) {
-    document.body.appendChild(modal);
-  }
-
-  // Clear form
-  var merchantInput = document.getElementById('create-rule-merchant');
-  if (merchantInput) { merchantInput.value = ''; }
-  var categorySelect = document.getElementById('create-rule-category');
-  if (categorySelect) {
-    categorySelect.innerHTML = '<option value="">— Select Category —</option>'
-      + LCATS.map(function(c) {
-        return '<option value="' + c.id + '">' + c.name + '</option>';
-      }).join('');
-    categorySelect.value = '';
-  }
-  var subcatSelect = document.getElementById('create-rule-subcat');
-  if (subcatSelect) subcatSelect.innerHTML = '<option value="">— None —</option>';
-  document.querySelectorAll('input[name="create-rule-pattern"]').forEach(function(r) {
-    r.checked = (r.value === 'exact');
-  });
-  updatePatternLabels();
-
-  modal.style.display = 'flex';
-  if (merchantInput) setTimeout(function(){ merchantInput.focus(); }, 80);
+  // Blank "create a rule from scratch" flow — shares the modal with the
+  // inline "save as a rule?" confirmation (see openRuleModal).
+  openRuleModal({});
 }
 
 function createRuleCategoryChanged() {
@@ -699,48 +681,68 @@ function createRuleCategoryChanged() {
 }
 
 function createRuleSave() {
-  var merchant = document.getElementById('create-rule-merchant').value.trim();
-  var catId = document.getElementById('create-rule-category').value;
-  var subcat = document.getElementById('create-rule-subcat').value || '';
-  var pattern = document.querySelector('input[name="create-rule-pattern"]:checked').value;
+  var merchantRaw = document.getElementById('create-rule-merchant').value.trim();
+  var catId       = document.getElementById('create-rule-category').value;
+  var subcat      = document.getElementById('create-rule-subcat').value || '';
+  var patEl       = document.querySelector('input[name="create-rule-pattern"]:checked');
+  var pattern     = patEl ? patEl.value : 'exact';
 
-  // Validation
-  if (!merchant) {
-    toast('⚠️ Please enter a merchant name');
-    return;
-  }
-  if (!catId) {
-    toast('⚠️ Please select a category');
-    return;
-  }
+  if (!merchantRaw) { toast('⚠️ Please enter the rule text'); return; }
+  if (!catId)       { toast('⚠️ Please select a category');   return; }
 
-  // Check for duplicates
-  var merchantLower = merchant.toLowerCase();
-  for (var existing in LRULES) {
-    if (existing.toLowerCase() === merchantLower) {
-      if (confirm('A rule for "' + existing + '" already exists. Replace it?')) {
-        delete LRULES[existing];
-      } else {
-        return;
-      }
-    }
-  }
+  // Keys are stored lowercase so the matching engine can compare directly.
+  var merchant = merchantRaw.toLowerCase();
 
-  // Save rule
-  LRULES[merchant] = {
+  // Remove any existing key that only differs by case (avoids a stray duplicate).
+  Object.keys(LRULES).forEach(function(k) {
+    if (k !== merchant && k.toLowerCase() === merchant) delete LRULES[k];
+  });
+
+  // Preserve match history / thresholds if we're replacing the same key.
+  var prev = (LRULES[merchant] && typeof LRULES[merchant] === 'object') ? LRULES[merchant] : null;
+  LRULES[merchant] = Object.assign({}, prev, {
     catId: catId,
     subcat: subcat,
     pattern: pattern || 'exact',
-    confidence: 'HIGH'
-  };
+    confidence: 'HIGH',
+    userModified: true
+  });
+
+  // Remove any overlapping rules the user ticked.
+  var removed = 0;
+  var learned = null;
+  document.querySelectorAll('#create-rule-conflicts input.rule-conflict-cb:checked').forEach(function(cb) {
+    var k = cb.dataset.key;
+    if (cb.dataset.source === 'learned') {
+      if (!learned) { try { learned = JSON.parse(localStorage.getItem('learnedMappings') || '{}'); } catch(e) { learned = {}; } }
+      if (learned[k]) { delete learned[k]; removed++; }
+    } else if (LRULES[k] && k !== merchant) {
+      delete LRULES[k]; removed++;
+    }
+  });
+  if (learned) { try { localStorage.setItem('learnedMappings', JSON.stringify(learned)); } catch(e) {} }
+
   try { save(K.rules, LRULES); } catch(e) {}
 
-  // Close modal and refresh
-  document.getElementById('create-rule-modal').style.display = 'none';
-  _rulesPage = 0; // Reset to first page
-  _rulesSearch = ''; // Clear search
+  // Apply to existing transactions (protecting manual edits) if requested.
+  var applyCb = document.getElementById('create-rule-apply-all');
+  var res = { updated: 0, skipped: 0 };
+  if (!applyCb || applyCb.checked) {
+    res = applyRuleToTx(merchant, pattern, catId, subcat, true, _ruleModalCtx ? _ruleModalCtx.txId : null);
+    try { save(K.tx, TX); } catch(e) {}
+  }
+
+  closeRuleModal();
+  _rulesPage = 0;
+  _rulesSearch = '';
+  if (typeof renderTx === 'function') renderTx();
   renderRulesList();
-  toast('✅ Rule created for "' + merchant + '"');
+
+  var msg = '⚡ Rule saved';
+  if (res.updated) msg += ' — ' + res.updated + ' transaction' + (res.updated !== 1 ? 's' : '') + ' updated';
+  if (res.skipped) msg += ' · ' + res.skipped + ' manual kept';
+  if (removed)     msg += ' · ' + removed + ' overlap' + (removed !== 1 ? 's' : '') + ' removed';
+  toast(msg);
   if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
 }
 
@@ -902,16 +904,21 @@ function inlineAssignSubcat(sel) {
   t.userSet = true; // protect from auto-fix overwriting this manual assignment
   try { save(K.tx, TX); } catch(e) {}
 
-  // After assigning a subcat, offer to update the rule if one exists, or create one
+  // After assigning a subcat, decide whether a rule decision is needed.
   var key = ruleKey(t);
   var existingRule = ruleRead(key);
   if (key && t.type === 'expense' && t.subcat) {
-    if (existingRule && existingRule.catId === t.catId && existingRule.subcat !== t.subcat) {
-      // Rule exists but subcat changed — update silently
-      LRULES[key] = { catId: t.catId, subcat: t.subcat };
+    if (!existingRule) {
+      // No rule yet — offer to create one (decision).
+      openRuleModal({ merchant: key, catId: t.catId, subcat: t.subcat, pattern: 'exact', txId: t.id });
+    } else if (existingRule.catId === t.catId && (existingRule.subcat || '') !== t.subcat) {
+      // Same category, just refining the subcat — low stakes, update silently
+      // but PRESERVE pattern/confidence (previously these were dropped).
+      LRULES[key] = Object.assign({}, existingRule, { subcat: t.subcat });
       try { save(K.rules, LRULES); } catch(e) {}
-    } else if (!existingRule) {
-      showRuleBanner(key, t.catId, t.subcat);
+    } else if (existingRule.catId !== t.catId) {
+      // Conflicts with an existing rule — let the user decide.
+      openRuleModal({ merchant: key, catId: t.catId, subcat: t.subcat, pattern: existingRule.pattern || 'exact', txId: t.id });
     }
   }
 }
@@ -941,101 +948,242 @@ function inlineAssignCat(selectEl) {
     }
   }
 
-  // Check for existing rule to update, or offer to create one
+  // Decide whether a rule decision is needed (new rule, or a conflict/overwrite).
   var key = ruleKey(t);
   if (key && catId) {
     var existingRule = ruleRead(key);
     if (!existingRule) {
-      showRuleBanner(key, catId, '', cat);
+      // No rule yet — offer to create one.
+      openRuleModal({ merchant: key, catId: catId, subcat: '', pattern: 'exact', txId: t.id });
     } else if (existingRule.catId !== catId) {
-      // Rule exists for different category — update silently
-      LRULES[key] = { catId: catId, subcat: '' };
-      try { save(K.rules, LRULES); } catch(e) {}
+      // A rule already points this merchant somewhere else — surface the conflict
+      // instead of silently clobbering it (which also used to drop its pattern).
+      openRuleModal({ merchant: key, catId: catId, subcat: '', pattern: existingRule.pattern || 'exact', txId: t.id });
     }
+    // else: the rule already targets this category — nothing to decide.
   }
 
   if (document.getElementById('page-bva') && document.getElementById('page-bva').classList.contains('active')) renderBVA();
 }
 
-var _ruleBannerTimer = null;
+// ══════════════════════════════════════════════════════════════
+// RULE MODAL — create/confirm a rule (shared by the "New Rule" button
+// and the inline category/subcategory assignment flow on Transactions).
+// ══════════════════════════════════════════════════════════════
 
-function showRuleBanner(merchant, catId, subcat, cat) {
-  var banner = document.getElementById('tx-rule-banner');
-  if (!banner) return;
-  if (!cat) cat = LCATS.find(function(c) { return c.id === catId; });
-  var catLabel = cat ? iconTag(cat.icon) + ' ' + cat.name : catId;
-  var catColor = cat ? cat.color : 'var(--primary)';
+// Context for the currently-open modal. txId is the transaction that
+// triggered an "assign" flow (if any) so we never count it as a manual
+// edit to protect.
+var _ruleModalCtx = { txId: null, mode: 'create' };
 
-  // Store rule data on element
-  banner._ruleMerchant = merchant;
-  banner._ruleCatId    = catId;
-  banner._ruleSubcat   = subcat || '';
+// Open the rule modal. opts: { merchant, catId, subcat, pattern, txId }.
+// With no opts it's a blank "create a rule" form; with a merchant/txId it's
+// the "save as a rule?" confirmation raised by an inline category change.
+function openRuleModal(opts) {
+  opts = opts || {};
+  var modal = document.getElementById('create-rule-modal');
+  if (!modal) return;
+  // Keep it a direct child of <body> so a hidden parent page can't mask it.
+  if (modal.parentElement !== document.body) document.body.appendChild(modal);
 
-  // Build expanded inline rule editor
-  banner.style.display = 'block';
-  banner.innerHTML =
-    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
-      + '<div style="flex:1;min-width:220px">'
-        + '<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">' + ICON('bolt') + ' Save as a rule?</div>'
-        + '<div style="font-size:.8rem;color:var(--muted)">'
-          + '<strong style="color:var(--text)">' + esc(merchant) + '</strong>'
-          + ' → <strong style="color:' + catColor + '">' + catLabel + '</strong>'
-          + (subcat ? '<span style="color:var(--muted)"> › ' + esc(subcat) + '</span>' : '')
-        + '</div>'
-      + '</div>'
-      + '<button onclick="dismissRuleBanner()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0">' + ICON('x') + '</button>'
-    + '</div>'
-    // Pattern picker
-    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
-      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.8rem;padding:5px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card2)" id="rb-exact-label">'
-        + '<input type="radio" name="rule-banner-pattern" value="exact" checked onchange="updateBannerPatternLabels()"/> = Exact'
-      + '</label>'
-      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.8rem;padding:5px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card2)" id="rb-contains-label">'
-        + '<input type="radio" name="rule-banner-pattern" value="contains" onchange="updateBannerPatternLabels()"/> ◡ Contains'
-      + '</label>'
-    + '</div>'
-    // Apply-all checkbox
-    + '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.8rem;cursor:pointer;line-height:1.3">'
-      + '<input type="checkbox" id="rule-banner-apply-all" checked style="flex-shrink:0"/>'
-      + '<span>Apply to all existing transactions from this merchant</span>'
-    + '</label>'
-    // Countdown + action buttons
-    + '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">'
-      + '<button class="btn btn-primary btn-sm" onclick="createRuleFromBanner()" style="min-width:80px">Save Rule</button>'
-      + '<button class="btn btn-ghost btn-sm" onclick="dismissRuleBanner()">Dismiss</button>'
-      + '<span id="rule-banner-countdown" style="font-size:.72rem;color:var(--muted);margin-left:auto"></span>'
-    + '</div>';
+  _ruleModalCtx = { txId: (typeof opts.txId !== 'undefined' ? opts.txId : null),
+                    mode: opts.merchant ? 'assign' : 'create' };
 
-  // 15-second countdown
-  if (_ruleBannerTimer) clearInterval(_ruleBannerTimer);
-  var remaining = 15;
-  var countEl = banner.querySelector('#rule-banner-countdown');
-  if (countEl) countEl.textContent = remaining + 's';
-  _ruleBannerTimer = setInterval(function() {
-    remaining--;
-    var el = document.getElementById('rule-banner-countdown');
-    if (el) el.textContent = remaining + 's';
-    if (remaining <= 0) {
-      clearInterval(_ruleBannerTimer);
-      _ruleBannerTimer = null;
-      dismissRuleBanner();
-    }
-  }, 1000);
+  // Category select
+  var catSel = document.getElementById('create-rule-category');
+  if (catSel) {
+    catSel.innerHTML = '<option value="">— Select Category —</option>'
+      + LCATS.map(function(c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+    catSel.value = opts.catId || '';
+  }
+  // Subcategory select (built from the chosen category)
+  createRuleCategoryChanged();
+  var subSel = document.getElementById('create-rule-subcat');
+  if (subSel && opts.subcat) subSel.value = opts.subcat;
 
-  // Highlight selected pattern label
-  updateBannerPatternLabels();
+  // Merchant / rule text
+  var mI = document.getElementById('create-rule-merchant');
+  if (mI) mI.value = opts.merchant || '';
+
+  // Pattern
+  var pat = opts.pattern || 'exact';
+  document.querySelectorAll('input[name="create-rule-pattern"]').forEach(function(r) {
+    r.checked = (r.value === pat);
+  });
+  updatePatternLabels();
+
+  // Apply-all defaults on
+  var applyCb = document.getElementById('create-rule-apply-all');
+  if (applyCb) applyCb.checked = true;
+
+  // Title / subtitle reflect the mode
+  var title = document.getElementById('create-rule-title');
+  var sub   = document.getElementById('create-rule-sub');
+  if (_ruleModalCtx.mode === 'assign') {
+    if (title) title.innerHTML = '<i class="ti ti-bolt"></i> Save as a rule?';
+    if (sub) sub.textContent = 'Auto-apply this category next time this merchant appears — and optionally to matching transactions you already have.';
+  } else {
+    if (title) title.innerHTML = '<i class="ti ti-bolt"></i> Create Rule';
+    if (sub) sub.textContent = 'Auto-assign a category whenever a transaction matches this rule.';
+  }
+
+  ruleModalScan();
+  modal.style.display = 'flex';
+  // Focus the rule text only when it's blank (a create-from-scratch flow).
+  if (mI && !opts.merchant) setTimeout(function() { mI.focus(); }, 80);
 }
 
-function updateBannerPatternLabels() {
-  var sel = document.querySelector('input[name="rule-banner-pattern"]:checked');
-  var pattern = sel ? sel.value : 'exact';
-  ['rb-exact-label','rb-contains-label'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var active = (id === 'rb-exact-label' && pattern === 'exact') || (id === 'rb-contains-label' && pattern === 'contains');
-    el.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
-    el.style.color       = active ? 'var(--primary)' : 'var(--text)';
+function closeRuleModal() {
+  var m = document.getElementById('create-rule-modal');
+  if (m) m.style.display = 'none';
+  _ruleModalCtx = { txId: null, mode: 'create' };
+}
+
+// Do two rules' match-sets overlap? exact matches {s===key}; contains
+// matches {s includes key}. Mirrors how the app applies rules to transactions.
+function rulesOverlap(aKey, aPat, bKey, bPat) {
+  if (!aKey || !bKey) return false;
+  if (aKey === bKey) return true;
+  if (aPat === 'exact' && bPat === 'exact')     return aKey === bKey;
+  if (aPat === 'exact' && bPat === 'contains')  return aKey.indexOf(bKey) !== -1;
+  if (aPat === 'contains' && bPat === 'exact')  return bKey.indexOf(aKey) !== -1;
+  return aKey.indexOf(bKey) !== -1 || bKey.indexOf(aKey) !== -1; // both contains
+}
+
+// Find existing rules that either duplicate this key or overlap its matches.
+// Returns { duplicate, overlaps: [{key, catId, subcat, pattern, source}] }.
+function detectRuleConflicts(merchant, pattern) {
+  var m = (merchant || '').toLowerCase();
+  var out = { duplicate: null, overlaps: [] };
+  if (!m) return out;
+
+  Object.keys(LRULES).forEach(function(k) {
+    var r = ruleRead(k); if (!r) return;
+    var kl = k.toLowerCase();
+    if (kl === m) { out.duplicate = { key: k, catId: r.catId, subcat: r.subcat || '', pattern: r.pattern || 'exact', source: 'lrule' }; return; }
+    if (rulesOverlap(m, pattern, kl, r.pattern || 'exact')) {
+      out.overlaps.push({ key: k, catId: r.catId, subcat: r.subcat || '', pattern: r.pattern || 'exact', source: 'lrule' });
+    }
   });
+
+  var learned = {};
+  try { learned = JSON.parse(localStorage.getItem('learnedMappings') || '{}'); } catch(e) {}
+  Object.keys(learned).forEach(function(k) {
+    var meta = learned[k]; if (!meta || !meta.catId) return;
+    var kl = k.toLowerCase(); if (kl === m) return;
+    if (rulesOverlap(m, pattern, kl, 'exact')) {
+      out.overlaps.push({ key: k, catId: meta.catId, subcat: meta.subcat || '', pattern: 'exact', source: 'learned' });
+    }
+  });
+
+  return out;
+}
+
+// How many existing transactions this rule would touch, split by whether
+// they'd change, are already correct, or are manual edits we'd protect.
+function previewRuleMatches(merchant, pattern, catId, subcat) {
+  var m = (merchant || '').toLowerCase();
+  var trigger = _ruleModalCtx ? _ruleModalCtx.txId : null;
+  var r = { total: 0, willChange: 0, manualKept: 0, already: 0 };
+  if (!m) return r;
+  TX.forEach(function(t) {
+    var key = ruleKey(t) || '';
+    var match = pattern === 'contains' ? key.indexOf(m) !== -1 : key === m;
+    if (!match) return;
+    r.total++;
+    var same = t.catId === catId && (t.subcat || '') === (subcat || '');
+    if (t.userSet && t.id !== trigger) { if (same) r.already++; else r.manualKept++; return; }
+    if (same) r.already++; else r.willChange++;
+  });
+  return r;
+}
+
+// Write a rule to matching transactions. Protects manual edits (userSet)
+// except the triggering transaction. Returns { updated, skipped }.
+function applyRuleToTx(merchant, pattern, catId, subcat, protectManual, triggerTxId) {
+  var m = (merchant || '').toLowerCase();
+  var cat = LCATS.find(function(c) { return c.id === catId; });
+  var catName = cat ? cat.name : 'Other';
+  var updated = 0, skipped = 0;
+  TX.forEach(function(t) {
+    var key = ruleKey(t) || '';
+    var match = pattern === 'contains' ? key.indexOf(m) !== -1 : key === m;
+    if (!match) return;
+    var same = t.catId === catId && (t.subcat || '') === (subcat || '');
+    if (protectManual && t.userSet && t.id !== triggerTxId) { if (!same) skipped++; return; }
+    if (!same) { t.catId = catId; t.subcat = subcat || ''; t.category = catName; t.userSet = true; updated++; }
+  });
+  return { updated: updated, skipped: skipped };
+}
+
+// Live conflict + apply preview rendered into #create-rule-conflicts.
+function ruleModalScan() {
+  var box = document.getElementById('create-rule-conflicts');
+  if (!box) return;
+  var merchant = (document.getElementById('create-rule-merchant').value || '').trim();
+  var catId    = document.getElementById('create-rule-category').value;
+  var subcat   = document.getElementById('create-rule-subcat').value || '';
+  var patEl    = document.querySelector('input[name="create-rule-pattern"]:checked');
+  var pattern  = patEl ? patEl.value : 'exact';
+
+  if (merchant.length < 2) { box.innerHTML = ''; return; }
+
+  var html = '';
+
+  // Apply preview
+  if (catId) {
+    var p = previewRuleMatches(merchant, pattern, catId, subcat);
+    var line;
+    if (p.willChange > 0) line = '<strong style="color:var(--primary)">' + p.willChange + '</strong> existing transaction' + (p.willChange !== 1 ? 's' : '') + ' will be re-categorised';
+    else if (p.already > 0) line = 'Matches ' + p.already + ' transaction' + (p.already !== 1 ? 's' : '') + ' — all already correct';
+    else line = 'No existing transactions match yet — this rule applies going forward';
+    html += '<div style="font-size:.78rem;color:var(--muted);background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-top:2px">'
+      + ICON('bolt') + ' ' + line
+      + (p.manualKept > 0 ? '<div style="margin-top:4px;color:var(--warn)">' + ICON('lock') + ' ' + p.manualKept + ' manually-set transaction' + (p.manualKept !== 1 ? 's' : '') + ' will be left untouched</div>' : '')
+      + '</div>';
+  }
+
+  // Conflicts
+  var conf = detectRuleConflicts(merchant, pattern);
+  if (conf.duplicate) {
+    var dCat = LCATS.find(function(c) { return c.id === conf.duplicate.catId; });
+    html += '<div style="font-size:.78rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:9px 11px;margin-top:8px;color:var(--text)">'
+      + ICON('alert-triangle') + ' A rule for <strong>' + esc(conf.duplicate.key) + '</strong> already exists ('
+      + (dCat ? esc(dCat.name) : esc(conf.duplicate.catId)) + '). Saving will <strong>replace</strong> it.'
+      + '</div>';
+  }
+  if (conf.overlaps.length) {
+    html += '<div style="margin-top:8px;border:1px solid rgba(245,158,11,.35);border-radius:8px;overflow:hidden">'
+      + '<div style="font-size:.74rem;font-weight:700;color:var(--warn);background:rgba(245,158,11,.1);padding:8px 11px">'
+      + ICON('alert-triangle') + ' ' + conf.overlaps.length + ' overlapping rule' + (conf.overlaps.length !== 1 ? 's' : '') + ' — tick any you want to remove</div>'
+      + '<div style="padding:6px 11px 9px">';
+    conf.overlaps.forEach(function(o, i) {
+      var oCat = LCATS.find(function(c) { return c.id === o.catId; });
+      var winsNote = _overlapPrecedenceNote(merchant, pattern, o.key, o.pattern);
+      html += '<label style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;cursor:pointer;font-size:.78rem;line-height:1.35">'
+        + '<input type="checkbox" class="rule-conflict-cb" data-key="' + esc(o.key).replace(/"/g, '&quot;') + '" data-source="' + o.source + '" style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--danger)"/>'
+        + '<span><strong>' + esc(o.key) + '</strong> <span style="color:var(--muted)">(' + (o.pattern === 'contains' ? '◡ contains' : '= exact') + ')</span> → '
+        + (oCat ? esc(oCat.name) : esc(o.catId)) + (o.subcat ? ' › ' + esc(o.subcat) : '')
+        + (o.source === 'learned' ? ' <span style="color:var(--success)">· auto-learned</span>' : '')
+        + (winsNote ? '<br><span style="color:var(--muted);font-size:.72rem">' + winsNote + '</span>' : '')
+        + '</span></label>';
+    });
+    html += '</div></div>';
+  }
+
+  box.innerHTML = html;
+}
+
+// Plain-language note on which rule wins for the transactions they share.
+function _overlapPrecedenceNote(newKey, newPat, oldKey, oldPat) {
+  newKey = (newKey || '').toLowerCase(); oldKey = (oldKey || '').toLowerCase();
+  if (newPat === 'exact' && oldPat === 'contains') return 'Exact wins — this new rule takes precedence.';
+  if (newPat === 'contains' && oldPat === 'exact') return 'Exact wins — the existing rule keeps precedence for its exact match.';
+  if (newPat === 'contains' && oldPat === 'contains') {
+    if (newKey.length > oldKey.length) return 'Both "contains" — the longer keyword (this new rule) wins.';
+    if (newKey.length < oldKey.length) return 'Both "contains" — the longer keyword (the existing rule) wins.';
+  }
+  return '';
 }
 
 function updatePatternLabels() {
@@ -1058,57 +1206,6 @@ function updatePatternLabels() {
     applyCard(exactEl,    pattern === 'exact');
     applyCard(containsEl, pattern === 'contains');
   }, 0);
-}
-
-function dismissRuleBanner() {
-  if (_ruleBannerTimer) { clearInterval(_ruleBannerTimer); _ruleBannerTimer = null; }
-  var b = document.getElementById('tx-rule-banner');
-  if (b) { b.style.display = 'none'; b.innerHTML = ''; }
-}
-
-function createRuleFromBanner() {
-  var b = document.getElementById('tx-rule-banner');
-  if (!b) return;
-  var merchant  = b._ruleMerchant || '';
-  var catId     = b._ruleCatId    || '';
-  var subcat    = b._ruleSubcat   || '';
-  var patternEl = b.querySelector('input[name="rule-banner-pattern"]:checked');
-  var pattern   = patternEl ? patternEl.value : 'exact';
-  var applyAll  = b.querySelector('#rule-banner-apply-all');
-  var doApply   = applyAll ? applyAll.checked : true;
-  if (merchant && catId) createRule(merchant, catId, subcat, pattern, doApply);
-  else dismissRuleBanner();
-}
-
-function createRule(merchant, catId, subcat, pattern, applyAll) {
-  if (typeof pattern === 'undefined') pattern = 'exact';
-  if (typeof applyAll === 'undefined') applyAll = true;
-
-  LRULES[merchant] = { catId: catId, subcat: subcat || '', pattern: pattern, confidence: 'HIGH' };
-  try { save(K.rules, LRULES); } catch(e) {}
-
-  var applied = 0;
-  if (applyAll) {
-    TX.forEach(function(t) {
-      var matches = pattern === 'contains'
-        ? (ruleKey(t) || '').indexOf(merchant.toLowerCase()) !== -1
-        : ruleKey(t) === merchant;
-      if (matches) {
-        t.catId    = catId;
-        t.subcat   = subcat || '';
-        t.userSet  = true;
-        var c = LCATS.find(function(x) { return x.id === catId; });
-        t.category = c ? c.name : 'Other';
-        applied++;
-      }
-    });
-    try { save(K.tx, TX); } catch(e) {}
-  }
-
-  dismissRuleBanner();
-  renderTx();
-  if (typeof renderRulesList === 'function') renderRulesList();
-  toast('⚡ Rule saved' + (applied > 0 ? ' — ' + applied + ' transaction' + (applied !== 1 ? 's' : '') + ' updated' : ''));
 }
 
 // Apply auto-rules when a new transaction is added
