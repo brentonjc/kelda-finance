@@ -54,9 +54,9 @@ function renderSettings() {
   html += '<div class="card mb">';
   html += '<div class="section-label" style="margin-bottom:18px">Profiles</div>';
 
-  html += _settProfileCard('brenton', '👔', 'Brenton');
+  html += _settProfileCard('brenton', '👔', 'Profile 1');
   html += '<div style="height:12px"></div>';
-  html += _settProfileCard('shelley', '👩', 'Shelley');
+  html += _settProfileCard('shelley', '👩', 'Profile 2');
 
   html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">';
   html += '<button class="btn btn-primary btn-sm" onclick="settingsSaveProfiles()">Save Profile Names</button>';

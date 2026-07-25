@@ -286,8 +286,8 @@ function renderSuperMonthlyGrid() {
   var bAccts = SUPER_ACCTS.brenton || [];
   var sAccts = SUPER_ACCTS.shelley || [];
   var allAccts = [];
-  var bName = (typeof getUserName === 'function') ? (getUserName('brenton') || 'Brenton') : 'Brenton';
-  var sName = (typeof getUserName === 'function') ? (getUserName('shelley') || 'Shelley') : 'Shelley';
+  var bName = (typeof getUserName === 'function') ? (getUserName('brenton') || 'Profile 1') : 'Profile 1';
+  var sName = (typeof getUserName === 'function') ? (getUserName('shelley') || 'Profile 2') : 'Profile 2';
   bAccts.forEach(function(a) { allAccts.push({ acct: a, profileLabel: bName, color: 'var(--primary)' }); });
   sAccts.forEach(function(a) { allAccts.push({ acct: a, profileLabel: sName, color: '#818CF8' }); });
 
@@ -405,7 +405,7 @@ function artLifecycleReturn(age){
   return{ret:4.5,fees:0.67,label:'Balanced / Cash Pool'};
 }
 
-// Override projectSuper for Brenton to use ART lifecycle year-by-year
+// Override projectSuper for profile 1 to use ART lifecycle year-by-year
 function projectSuperLifecycle(d){
   const yrs=Math.max(0,(d.retire||67)-(d.age||40));
   const infl=(d.inflation||2.5)/100;

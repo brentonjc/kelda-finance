@@ -6,8 +6,8 @@
 var _CT_ACCTS_DEFAULTS = [
   {id:'offset',icon:'building-bank',color:'#e8457a',light:'#2a1030',owner:'shared',def:'Offset Account'},
   {id:'home',  icon:'home',color:'#7c5cbf',light:'#1e1535',owner:'shared',def:'Home Transaction'},
-  {id:'sav1',  icon:'coin',color:'#f07aaa',light:'#261225',owner:'brenton',def:'Brenton Savings'},
-  {id:'sav2',  icon:'diamond',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Shelley Savings'}
+  {id:'sav1',  icon:'coin',color:'#f07aaa',light:'#261225',owner:'brenton',def:'Profile 1 Savings'},
+  {id:'sav2',  icon:'diamond',color:'#a29bfe',light:'#1e1635',owner:'shelley',def:'Profile 2 Savings'}
 ];
 function _buildCTAccts() {
   if (typeof ACCOUNTS !== 'undefined' && ACCOUNTS && ACCOUNTS.length) {

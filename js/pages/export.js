@@ -105,7 +105,7 @@ function csvCatGuess(desc, merchant){
   if(/doctor|gp |medical centre|bulk bill/.test(s))return{cat:'Health & Beauty',subcat:'Doctors, Health, Specialists'};
   if(/chemist|pharmacy|priceline|terry white/.test(s))return{cat:'Health & Beauty',subcat:'Pharmacy'};
   if(/dental|dentist/.test(s))return{cat:'Health & Beauty',subcat:'Doctors, Health, Specialists'};
-  if(/gym|fitness|f45|crossfit|yoga|anytime fitness/.test(s))return{cat:'Fitness',subcat:'Brenton Gym'};
+  if(/gym|fitness|f45|crossfit|yoga|anytime fitness/.test(s))return{cat:'Fitness',subcat:'Gym'};
   if(/salary|payroll|paycheck|wages|pay run/.test(s))return{cat:'Salary',subcat:'Regular Pay'};
   if(/bonus/.test(s))return{cat:'Bonus',subcat:''};
   if(/interest/.test(s))return{cat:'Interest',subcat:'Savings Interest'};
@@ -346,10 +346,10 @@ function csvDownloadTemplate(){
   const rows=[
     ['date','type','name','category','subcategory','description','amount'],
     ['2025-03-01','expense','Woolworths','Food & Eating Out','Groceries','Weekly shop','127.50'],
-    ['2025-03-01','income','','Salary','Regular Pay','Brenton salary','9200.00'],
+    ['2025-03-01','income','','Salary','Regular Pay','Profile 1 salary','9200.00'],
     ['2025-03-03','expense','AGL','Home','Power Bill','March electricity','180.00'],
     ['2025-03-05','expense','Netflix','Entertainment','Netflix','Monthly subscription','19.99'],
-    ['2025-03-07','income','','Salary','Regular Pay','Shelley salary','7800.00'],
+    ['2025-03-07','income','','Salary','Regular Pay','Profile 2 salary','7800.00'],
     ['2025-03-10','expense','The Grill Restaurant','Food & Eating Out','Eating Out (Cafes, Restaurant Food)','Anniversary dinner','95.00'],
     ['2025-03-12','expense','Ampol Fuel','Car & Transport','Petrol','Fill up','90.00'],
   ];

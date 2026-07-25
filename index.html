@@ -1191,7 +1191,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div><label class="lbl">Covered Person</label>
-          <select id="ins-edit-covered"><option value="joint">Both</option><option value="brenton">Brenton</option><option value="shelley">Shelley</option></select>
+          <select id="ins-edit-covered"><option value="joint">Both</option><option value="brenton">Profile 1</option><option value="shelley">Profile 2</option></select>
         </div>
         <div><label class="lbl">Location</label>
           <select id="ins-edit-location"><option value="outside">Outside Super</option><option value="inside">Inside Super</option></select>
@@ -1246,7 +1246,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div><label class="lbl">Covered Person</label>
           <select id="ins-covered" onchange="insAutoFillNeed()">
-            <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Brenton</option><option value="shelley" data-profile-name="shelley">Shelley</option>
+            <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Profile 1</option><option value="shelley" data-profile-name="shelley">Profile 2</option>
           </select>
         </div>
         <div><label class="lbl">Location</label>
@@ -1537,8 +1537,8 @@ window.addEventListener('unhandledrejection',function(e){
           <option value="">All Accounts</option>
           <option value="offset">Offset Account</option>
           <option value="home">Home Transaction</option>
-          <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Brenton Savings</option>
-          <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Shelley Savings</option>
+          <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Profile 1 Savings</option>
+          <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Profile 2 Savings</option>
           <option value="joint">Joint</option>
         </select>
         <input type="text" id="tx-filter-search" placeholder="Search merchant / description..."
@@ -1594,8 +1594,8 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="form-grid">
         <div id="tx-person-wrap"><label class="lbl">Earner</label>
           <select id="tx-person">
-            <option value="brenton" data-profile-name="brenton">Brenton</option>
-            <option value="shelley" data-profile-name="shelley">Shelley</option>
+            <option value="brenton" data-profile-name="brenton">Profile 1</option>
+            <option value="shelley" data-profile-name="shelley">Profile 2</option>
             <option value="joint">Joint</option>
           </select>
         </div>
@@ -1604,8 +1604,8 @@ window.addEventListener('unhandledrejection',function(e){
             <option value="">— Select Account —</option>
             <option value="offset">Offset Account</option>
             <option value="home">Home Transaction</option>
-            <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Brenton Savings</option>
-            <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Shelley Savings</option>
+            <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Profile 1 Savings</option>
+            <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Profile 2 Savings</option>
             <option value="joint">Joint / Other</option>
           </select>
         </div>
@@ -2137,7 +2137,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="li-card">
           <div class="li-card-hd" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
             <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
-            <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Brenton</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+            <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Profile 1</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
             <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-b-income" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
@@ -2159,7 +2159,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="li-card">
           <div class="li-card-hd" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
             <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
-            <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Shelley</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+            <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Profile 2</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
             <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-s-income" placeholder="95000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
@@ -2198,11 +2198,11 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
 
     <div class="g2 mb">
-      <!-- Brenton -->
+      <!-- Profile 1 -->
       <div class="card">
         <div class="super-header" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
           <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
-          <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Brenton</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+          <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Profile 1</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
         </div>
 
         <!-- Account list -->
@@ -2260,11 +2260,11 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="sb-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <div id="sb-result" style="margin-top:14px"></div>
       </div>
-      <!-- Shelley -->
+      <!-- Profile 2 -->
       <div class="card">
         <div class="super-header" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
           <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
-          <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Shelley</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+          <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Profile 2</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
         </div>
 
         <!-- Account list -->

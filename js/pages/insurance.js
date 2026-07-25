@@ -745,7 +745,7 @@ function showSuperResults(){
   ['b','s'].forEach(p=>{
     const d=SUPER[p];const el=document.getElementById('s'+p+'-result');if(!el)return;
     if(!d?.age||!d?.retire||!d?.salary){el.innerHTML='';return;}
-    // Use lifecycle projection for Brenton, standard for Shelley
+    // Use lifecycle projection for profile 1, standard for profile 2
     const rows=projectSuper(d);
     const final=rows[rows.length-1];
     const sgcAmt=(d.salary||0)*(d.sgc||11.5)/100;

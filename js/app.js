@@ -205,8 +205,8 @@ function renderNavUser() {
   var uname = document.getElementById('nav-username');
   if (!avs || !uname) return;
   avs.innerHTML = '';
-  var p1name = (typeof getUserName === 'function' ? getUserName('brenton') : 'Brenton') || 'Brenton';
-  var p2name = (typeof getUserName === 'function' ? getUserName('shelley') : 'Shelley') || 'Shelley';
+  var p1name = (typeof getUserName === 'function' ? getUserName('brenton') : 'Profile 1') || 'Profile 1';
+  var p2name = (typeof getUserName === 'function' ? getUserName('shelley') : 'Profile 2') || 'Profile 2';
   function initial(n) { return (n || '?').trim().charAt(0).toUpperCase() || '?'; }
   function makeAv(cls, letter) {
     var d = document.createElement('div');
@@ -564,7 +564,7 @@ function applyUserConfig() {
   document.querySelectorAll('[data-profile-label]').forEach(function(el) {
     var p = el.getAttribute('data-profile-label');
     var text = el.textContent;
-    // Only carry a suffix if the text contains ' — ' (e.g. "Brenton — Tax Position")
+    // Only carry a suffix if the text contains ' — ' (e.g. "Profile 1 — Tax Position")
     // If the text is just a plain name with no dash, suffix is empty.
     var replaced = text.replace(/^.*? — /, '');
     var suffix = (replaced !== text) ? (' — ' + replaced) : '';
