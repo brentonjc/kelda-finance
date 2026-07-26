@@ -46,6 +46,7 @@ function _lgShow(which) {
 // External entry point — boot, lock, and "Sign in" all funnel here.
 function loginInit() {
   if (loggedIn) return;
+  _lgStampVersion();
   _lgProfiles = _lgBuildProfiles();
   _lgPin = ''; _lgSetup = null; _lgPending = '';
   _lgRenderPicker();
@@ -55,6 +56,12 @@ function loginInit() {
   } else {
     _lgShow('profiles');
   }
+}
+
+// Show the semantic version in the bottom-left badge.
+function _lgStampVersion() {
+  var el = document.getElementById('kl-version');
+  if (el && typeof APP_VERSION === 'string') el.textContent = 'v' + APP_VERSION;
 }
 
 // ── Screen 1: profile picker ──────────────────────────────────
