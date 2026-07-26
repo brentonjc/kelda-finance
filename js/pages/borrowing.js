@@ -192,8 +192,17 @@ function bcSync() {
     bcImportLog.push({type:'warning',msg:'No data found yet. This calculator works best once you have transactions, accounts, mortgage and liabilities entered in the app.'});
   }
 
+  // Persist the synced state DIRECTLY — do NOT call bcSave() here, because
+  // bcSave() reads values back out of the (still-empty) DOM inputs and would
+  // wipe every scalar field we just set. bcRestore() then fills the DOM from
+  // this saved state.
   bcST._imported = imported;
-  bcSave();
+  bcST.properties  = bcProps.slice();
+  bcST.creditCards = bcCC.slice();
+  bcST.loans       = bcLoans.slice();
+  bcST.mortgages   = bcMorts.slice();
+  bcST.importLog   = bcImportLog;
+  try { localStorage.setItem(BC_KEY, JSON.stringify(bcST)); } catch(e) {}
   bcRestore();
   bcRenderReview();
   bcRenderBadges();
@@ -901,20 +910,14 @@ function renderBorrowing(){
   if(!bcMounted){
     host.innerHTML=bcMarkup();
     bcMounted=true;
-    bcLoad();
-    if(bcST && Object.keys(bcST).length>0){
-      bcRestore();
-      if(bcST.importLog) bcImportLog=bcST.importLog;
-      bcRenderReview();
-      bcRenderBadges();
-    } else {
-      bcSync();
-    }
-    var ir=document.getElementById('bc_interest_rate');
-    if(ir && !ir.value) ir.value='6.50';
-    bcGo('review');
-  } else {
-    // Re-entering the page — refresh derived views (data may have changed elsewhere)
-    bcCalcIncome(); bcCalcHEM(); bcCalcAssets(); bcCalcLiabs(); bcCalcLoan();
   }
+  // Always pull the latest app data on open. bcLoad() first restores the
+  // user's persisted loan scenario + borrower details, which bcSync() never
+  // overwrites — so the income/expenses/assets/liabilities always reflect
+  // current app data while the forward-looking loan inputs are preserved.
+  bcLoad();
+  bcSync();
+  var ir=document.getElementById('bc_interest_rate');
+  if(ir && !ir.value) ir.value='6.50';
+  bcGo('review');
 }
