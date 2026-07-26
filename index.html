@@ -52,6 +52,7 @@
 <link rel="stylesheet" href="css/components.css"/>
 <link rel="stylesheet" href="css/layout.css"/>
 <link rel="stylesheet" href="css/dashboard.css"/>
+<link rel="stylesheet" href="css/borrowing.css"/>
 <link rel="stylesheet" href="css/login.css"/>
 
 <!-- Chart.js -->
@@ -1086,6 +1087,17 @@ window.addEventListener('unhandledrejection',function(e){
         <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni"><i class="ti ti-trending-up"></i></span><span>Investments</span></a>
         <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni"><i class="ti ti-shield-check"></i></span><span>Life Insurance</span></a>
         <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
+      </div>
+    </div>
+
+    <!-- Calculators — category icon + hover flyout -->
+    <div class="nav-group" data-fly="calculators">
+      <div class="nav-item nav-cat" id="nav-cat-calculators" tabindex="0" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fly-calculators">
+        <span class="ni"><i class="ti ti-calculator"></i></span><span class="nav-lbl">Calculators</span><span class="nav-cat-arr">›</span>
+      </div>
+      <div class="nav-flyout" id="fly-calculators" role="menu" aria-label="Calculators">
+        <div class="nav-flyout-hd">Calculators</div>
+        <a class="nav-fly-item" id="n-borrowing" onclick="go('borrowing')" role="menuitem"><span class="ni"><i class="ti ti-home-dollar"></i></span><span>Borrowing Power</span></a>
       </div>
     </div>
 
@@ -2981,6 +2993,8 @@ window.addEventListener('unhandledrejection',function(e){
 
 
   <!-- ═══ DASHBOARD LAYOUT ═══ -->
+  <div class="page" id="page-borrowing"></div>
+
   <div class="page" id="page-dashboard-layout">
     <div class="page-title">Dashboard Layout</div>
     <div class="page-sub">Choose which set of tiles your dashboard shows</div>
@@ -3254,6 +3268,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script defer src="js/pages/transfers.js"></script>
 <script defer src="js/pages/equities.js"></script>
 <script defer src="js/pages/liabilities.js"></script>
+<script defer src="js/pages/borrowing.js"></script>
 <script defer src="js/pages/settings.js"></script>
 <script defer src="js/pages/quickstart.js"></script>
 <script defer src="js/wizard.js"></script>
