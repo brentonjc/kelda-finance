@@ -80,6 +80,7 @@ function bcSync() {
   var b1Inc=0, b2Inc=0;
   txAll.forEach(function(t){
     if(t.type!=='income') return;
+    if(bcIsTransfer(t)) return;                        // internal transfers are NOT income
     var d; try { d = new Date(t.date); } catch(e){ return; }
     if(!(d >= twelveAgo)) return;
     var amt = Math.abs(parseFloat(t.amount)||0);
@@ -100,10 +101,14 @@ function bcSync() {
   // ---- EXPENSES — 3-month average, mapped from app categories → HEM buckets ----
   var threeAgo = new Date(now.getFullYear(), now.getMonth()-3, 1);
   var bucket = { groceries:0,utilities:0,comms:0,transport:0,personal:0,dining:0,
-                 entertainment:0,clothing:0,alcohol:0,childcare:0,subs:0,insurance:0 };
-  // Structured mapping: app catId (+ subcategory keywords) → HEM bucket.
+                 entertainment:0,clothing:0,alcohol:0,childcare:0,subs:0,insurance:0,
+                 kids_clothing:0,other:0 };
+  // Explicit subcategory-level mapping (see bcClassifyExpense). Transfers and
+  // non-living categories (tax, business, holidays, mortgage, capital) are
+  // excluded so they can't inflate the figures.
   txAll.forEach(function(t){
     if(t.type!=='expense') return;
+    if(bcIsTransfer(t)) return;                        // internal transfers are NOT spending
     var d; try { d = new Date(t.date); } catch(e){ return; }
     if(!(d >= threeAgo)) return;
     var amt = Math.abs(parseFloat(t.amount)||0);
@@ -112,18 +117,23 @@ function bcSync() {
     var sub  = (t.subcategory||t.subcat||'').toLowerCase();
     var text = ((t.category||'')+' '+sub+' '+(t.merchant||t.name||t.description||'')).toLowerCase();
     var b = bcClassifyExpense(cid, sub, text);
-    if(b) bucket[b]+=amt;
+    if(b && bucket.hasOwnProperty(b)) bucket[b]+=amt;
   });
   var expMap = {
     bc_exp_groceries:'groceries', bc_exp_utilities:'utilities', bc_exp_comms:'comms',
     bc_exp_transport:'transport', bc_exp_personal:'personal', bc_exp_dining:'dining',
     bc_exp_entertainment:'entertainment', bc_exp_clothing:'clothing', bc_exp_alcohol:'alcohol',
-    bc_exp_childcare:'childcare', bc_exp_subs:'subs', bc_exp_insurance:'insurance'
+    bc_exp_childcare:'childcare', bc_exp_subs:'subs', bc_exp_insurance:'insurance',
+    bc_exp_kids_clothing:'kids_clothing', bc_exp_other:'other'
   };
   var expCount=0;
   Object.keys(expMap).forEach(function(field){
     var val = Math.round(bucket[expMap[field]]/3);   // monthly average
-    if(val>0){ bcST[field]=val; imported[field]={val:val,src:'transactions (3-mo avg)'}; expCount++; }
+    // The sync OWNS these fields — always write the computed value (including 0)
+    // so the calculator reflects current app data and never keeps a stale figure
+    // when a category drops to zero. Only >0 gets the "imported" badge/count.
+    bcST[field]=val;
+    if(val>0){ imported[field]={val:val,src:'transactions (3-mo avg)'}; expCount++; }
   });
   if(expCount>0){
     bcImportLog.push({type:'success',msg:'Imported '+expCount+' expense categories (3-month average from your transactions)'});
@@ -208,51 +218,80 @@ function bcSync() {
   bcRenderBadges();
 }
 
-// Classify one expense transaction into a HEM bucket (or null).
+// True if a transaction is an internal transfer (excluded everywhere in the app).
+function bcIsTransfer(t){
+  if(!t) return false;
+  if((t.catId||'')==='transfers') return true;
+  if(typeof isTransfer==='function'){ try { return isTransfer(t); } catch(e){} }
+  return false;
+}
+
+// Classify one expense transaction into a calculator bucket.
+//   → a HEM/committed bucket name  (counted in that field)
+//   → 'other'                      (counted in "Other Committed Expenses")
+//   → null                         (EXCLUDED from the assessment)
+// Routing is explicit at the app's real catId + subcategory level — no greedy
+// keyword matching on already-categorised transactions (that was mis-routing
+// e.g. Council Rates → utilities, Business Insurance → insurance).
 function bcClassifyExpense(cid, sub, text){
-  // Direct category-id routing first (highest confidence)
-  if(cid==='food_eating_out'){
-    if(sub.indexOf('grocer')!==-1) return 'groceries';
-    if(sub.indexOf('alcohol')!==-1||sub.indexOf('bar')!==-1) return 'alcohol';
-    return 'dining';
-  }
-  if(cid==='utilities'){
-    if(sub.indexOf('internet')!==-1||sub.indexOf('broadband')!==-1||sub.indexOf('mobile')!==-1||sub.indexOf('phone')!==-1) return 'comms';
-    if(sub.indexOf('stream')!==-1) return 'subs';
-    return 'utilities';
+  sub = sub || '';
+  function has(s){ return sub.indexOf(s)!==-1; }
+
+  if(cid==='home'){
+    if(has('mortgage')) return null;                       // counted as the mortgage liability
+    if(has('improvement')||has('renovation')) return null; // capital works, not a living cost
+    if(has('internet')) return 'comms';
+    return 'other';                                         // cleaning, strata, maintenance, council rates
   }
   if(cid==='car_transport') return 'transport';
   if(cid==='health_beauty'||cid==='fitness') return 'personal';
-  if(cid==='entertainment'){
-    if(sub.indexOf('netflix')!==-1||sub.indexOf('prime')!==-1||sub.indexOf('apple')!==-1||sub.indexOf('subscription')!==-1) return 'subs';
-    return 'entertainment';
+  if(cid==='food_eating_out'){
+    if(has('grocer')||has('other food')) return 'groceries';
+    if(has('alcohol')||has('bar')) return 'alcohol';
+    return 'dining';                                        // eating out, cafe, meal delivery, uber eats
   }
   if(cid==='children'){
-    if(sub.indexOf('cloth')!==-1) return 'clothing';
-    return 'childcare';
+    if(has('cloth')) return 'kids_clothing';
+    if(has('toy')||has('present')||has('gift')) return 'other';
+    return 'childcare';                                     // childcare, school fees, nannies, activities
   }
-  if(cid==='shopping') return 'clothing';
+  if(cid==='pippen') return 'other';                        // pets
   if(cid==='insurance_utilities') return 'insurance';
-  // Keyword fallback for uncategorised / legacy transactions
+  if(cid==='utilities'){
+    if(has('internet')||has('broadband')||has('mobile')||has('phone')) return 'comms';
+    if(has('stream')) return 'subs';
+    return 'utilities';                                     // power, gas, water, other utilities
+  }
+  if(cid==='entertainment'){
+    if(has('netflix')||has('prime')||has('apple')||has('subscription')) return 'subs';
+    if(has('wine')||has('present')||has('gift')) return 'other';
+    return 'entertainment';
+  }
+  if(cid==='shopping'){
+    if(has('cloth')) return 'clothing';                     // Clothing & Shopping
+    return 'other';                                         // online/home shopping, gifts, donations
+  }
+  // Explicitly excluded categories.
+  if(cid==='tax'||cid==='business'||cid==='holidays_travel'||cid==='transfers') return null;
+
+  // Genuinely uncategorised / "Other" / custom categories: a light keyword
+  // fallback for the common basics, otherwise count as "Other Committed" so the
+  // spend is still captured (conservative) rather than silently dropped.
   var kw = {
     groceries:['grocer','woolworths','coles','aldi','supermarket'],
-    utilities:['electric','power','gas bill','water','council','energy','origin','agl'],
-    comms:['telstra','optus','vodafone','broadband','nbn','mobile'],
+    utilities:['electric','power bill','gas bill','water rates','energy','origin energy','agl'],
+    comms:['telstra','optus','vodafone','broadband','nbn'],
     transport:['fuel','petrol','uber','taxi','opal','toll','rego'],
-    personal:['pharmacy','chemist','doctor','gym','fitness'],
-    dining:['restaurant','cafe','takeaway','uber eats','doordash','menulog','coffee'],
-    entertainment:['cinema','movie','ticketek','concert'],
-    clothing:['clothing','myer','kmart','target','zara'],
-    alcohol:['bottle shop','dan murphy','liquor','wine','beer'],
-    childcare:['childcare','daycare','kinder','school'],
-    subs:['netflix','spotify','disney','subscription'],
-    insurance:['insurance']
+    personal:['pharmacy','chemist','doctor','gym'],
+    dining:['restaurant','cafe','takeaway','uber eats','doordash','menulog'],
+    subs:['netflix','spotify','disney'],
+    alcohol:['bottle shop','dan murphy','liquor']
   };
   var found=null;
   Object.keys(kw).some(function(b){
     return kw[b].some(function(k){ if(text.indexOf(k)!==-1){ found=b; return true; } return false; });
   });
-  return found;
+  return found || 'other';
 }
 
 // ══════════════════════════════════════════════════════════════
