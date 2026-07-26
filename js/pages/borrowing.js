@@ -385,6 +385,15 @@ function bcCalcIncome(){
     '<div class="bc-sc"><div class="bc-sl">Monthly Gross</div><div class="bc-sv">'+bcFmt(total/12)+'</div></div>'+
     '<div class="bc-sc"><div class="bc-sl">HECS Repayment</div><div class="bc-sv bc-amber">'+bcFmt(hm)+'</div><div class="bc-ss">per month</div></div>'+
     '<div class="bc-sc"><div class="bc-sl">Net Monthly</div><div class="bc-sv">'+bcFmt(total/12-hm)+'</div><div class="bc-ss">After HECS</div></div>';
+  // HEM scales with income, so refresh the benchmark whenever income changes.
+  if(typeof bcCalcHEM==='function') bcCalcHEM();
+}
+
+// Gross household income (annual) — drives the HEM income band.
+function bcGrossIncome(){
+  return bcV('bc_b1_salary')+bcV('bc_b2_salary')+bcV('bc_b1_overtime')+bcV('bc_b1_bonus')
+       +bcV('bc_b2_overtime')+bcV('bc_b2_bonus')+bcV('bc_rental_income')
+       +bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income');
 }
 
 function bcGetHEM(){
@@ -393,6 +402,17 @@ function bcGetHEM(){
   var bm=couple?{groceries:900,utilities:280,comms:180,transport:600,personal:250,dining:500,entertainment:300,clothing:300,childcare:0}
     :{groceries:600,utilities:220,comms:120,transport:400,personal:180,dining:300,entertainment:200,clothing:200,childcare:0};
   bm.groceries+=deps*120; bm.transport+=deps*80; bm.childcare+=deps*800; bm.clothing+=deps*80;
+
+  // HEM scales with gross household income (Melbourne Institute HEM is banded by
+  // income — higher earners have a higher assessed spending floor). Flat below
+  // ~$50k, then a graduated uplift that's heavier on discretionary categories
+  // than on basics, capped so it never runs away at very high incomes.
+  var inc = Math.min(0.9, Math.max(0, bcGrossIncome()-50000)/250000);
+  var basic = 1 + inc*0.5;   // groceries, utilities, comms, transport, personal
+  var disc  = 1 + inc;       // dining, entertainment, clothing
+  ['groceries','utilities','comms','transport','personal'].forEach(function(k){ bm[k]=Math.round(bm[k]*basic); });
+  ['dining','entertainment','clothing'].forEach(function(k){ bm[k]=Math.round(bm[k]*disc); });
+
   var m={major:1,other_city:.92,regional:.82,rural:.75}[loc]||1;
   Object.keys(bm).forEach(function(k){ bm[k]=Math.round(bm[k]*m); });
   return bm;
