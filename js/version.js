@@ -14,11 +14,22 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '1.0.0';
+var APP_VERSION = '2.1.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.1.1',
+    date: '2026-07-26',
+    title: 'Version history, borrowing calculator and onboarding fixes',
+    notes: [
+      'Added a version history view on login and in Settings',
+      'Borrowing calculator: corrected expense mapping and HEM benchmarks',
+      'Borrowing calculator: stopped sync wiping imported values',
+      'Fixed onboarding data not carrying through to the app',
+    ],
+  },
   {
     version: '1.0.0',
     date: '2026-07-26',
