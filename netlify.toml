@@ -1,3 +1,9 @@
+# Static site — no build step. Declare explicitly so the deploy never depends
+# on (or is broken by) build settings configured in the Netlify UI.
+[build]
+  publish = "."
+  command = "echo 'Static site — nothing to build'"
+
 [[headers]]
   for = "/sw.js"
   [headers.values]

@@ -12,6 +12,20 @@
 
 .kl-shell { display:flex; min-height:100%; width:100%; }
 
+/* Version badge — bottom-left of the login screen. */
+.kl-version {
+  position:absolute;
+  left:calc(16px + env(safe-area-inset-left));
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  z-index:3;
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  letter-spacing:.02em;
+  color:rgba(232,237,245,.4);
+  pointer-events:none;
+  user-select:none;
+}
+
 /* ── Left brand panel (desktop only) ── */
 .kl-brand {
   flex:1 1 46%; max-width:560px; position:relative; overflow:hidden;

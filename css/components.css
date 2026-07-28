@@ -834,4 +834,175 @@ tr.row-pending{background:transparent;}
 .bill-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
 .bill-row:last-child{border-bottom:none;}
 .bill-main{flex:1;min-width:0;}
+
+/* Recurring-payments table — row actions + hover (edit/delete) */
+#bl-table-body tr{transition:background .12s;}
+#bl-table-body tr:hover{background:var(--card2);}
+.bl-row-actions{display:inline-flex;gap:6px;align-items:center;}
+.bl-icon-btn{width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;transition:background .15s,color .15s,border-color .15s;}
+.bl-icon-btn:hover{background:var(--card3);color:var(--text);}
+.bl-icon-btn.danger:hover{background:rgba(239,68,68,.12);color:var(--danger);border-color:rgba(239,68,68,.35);}
+
+/* Bill Category Flow — full-width tile */
+.bl-flow-tile #bl-sankey{min-height:140px;}
+
+/* Edit-bill delete confirmation bar */
+.modal-delete-confirm{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:12px 14px;margin-top:18px;}
+
+/* ══════════════════════════════════════════════════════════
+   BILLS — tabs, table, calendar, drawer, subscriptions, a11y
+   ══════════════════════════════════════════════════════════ */
+/* Theme-aware contrast lift for small secondary labels (WCAG). Falls back to
+   plain --muted where color-mix is unsupported. */
+.bl-muted{color:var(--muted);}
+@supports (color:color-mix(in srgb,#000,#fff)){ .bl-muted{color:color-mix(in srgb,var(--muted) 55%,var(--text));} }
+
+/* Header icon action (bell) */
+.bl-icon-action{width:44px;height:44px;border-radius:var(--radius-pill);border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem;transition:background .15s,color .15s;}
+.bl-icon-action:hover{background:var(--card2);color:var(--text);}
+
+/* Sub-tabs */
+.bl-tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:4px;margin-bottom:16px;overflow-x:auto;}
+.bl-tab{flex:1;min-height:44px;white-space:nowrap;border:none;background:transparent;color:var(--muted);font-family:var(--font-body);font-size:.82rem;font-weight:600;cursor:pointer;border-radius:var(--radius-pill);padding:0 14px;transition:background .15s,color .15s;}
+.bl-tab:hover{color:var(--text);}
+.bl-tab.active{background:var(--primary);color:var(--primary-text,#fff);}
+
+/* KPI row — 4 columns on wide */
+.kpi-row-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:900px){.kpi-row-4{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.kpi-row-4{grid-template-columns:1fr;}}
+.kpi-cta{margin-top:6px;font-size:.66rem;font-weight:700;color:var(--primary);background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:3px;}
+.kpi-cta:hover{text-decoration:underline;}
+
+/* Forecast-horizon caption */
+.filter-caption{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);align-self:center;margin-right:2px;}
+
+/* Chart period dropdowns (month / year) */
+.bl-period-select{width:auto;flex:0 0 auto;min-width:118px;max-width:160px;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--radius-pill);color:var(--text);font-size:.75rem;font-weight:600;font-family:var(--font-body);padding:0 12px;min-height:44px;cursor:pointer;outline:none;}
+.bl-period-select:focus{border-color:var(--primary);}
+.bl-period-select.on{border-color:var(--primary);color:var(--primary);}
+
+/* Trends section — period-scoped charts grouped under one heading */
+.bl-trends-hd{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.bl-trends-hd .filters{flex-wrap:wrap;margin:0;}
+#bl-trends .chart-card,#bl-trends .tile{background:var(--card2);}
+.bl-trend-card{margin-bottom:12px;}
+.bl-trend-card:last-child{margin-bottom:0;}
+.bl-clear-period{color:var(--primary);border-color:rgba(240,83,138,.4);}
+
+/* Paid-by legend under the bills table */
+.bl-paidby-legend{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid var(--border);font-size:.7rem;color:var(--muted);}
+.bl-paidby-legend:empty{display:none;}
+
+/* Calendar — selected day */
+.bl-cal-cell.selected{outline:2px solid var(--primary);outline-offset:-1px;background:var(--card3);}
+
+/* Mobile — bills table collapses into stacked cards */
+@media(max-width:600px){
+  .bl-table thead{display:none;}
+  .bl-table,.bl-table tbody{display:block;width:100%;}
+  .bl-table tr{display:block;border:1px solid var(--border);border-radius:12px;margin:10px 8px;background:var(--card);}
+  #bl-table-body tr:hover{background:var(--card);}
+  .bl-table td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 14px;text-align:right;border:none;}
+  .bl-table td[data-label]::before{content:attr(data-label);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;flex:0 0 auto;}
+  .bl-table td.bl-td-first{display:block;padding:12px 14px 8px;border-left:none !important;}
+  .bl-table td.bl-td-first::before{display:none;}
+  .bl-table td.bl-th-actions{justify-content:flex-end;}
+  .bl-table td.bl-th-actions::before{display:none;}
+  .bl-table tr.bl-row-pending{border-color:var(--warn);}
+}
+
+/* Card header row (title + action) */
+.bl-card-hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+
+/* Bills table (classes replace inline styles) */
+.bl-table-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px;flex-wrap:wrap;gap:10px;}
+.bl-search-input{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.8rem;font-family:var(--font-body);width:170px;min-height:40px;outline:none;}
+.bl-search-input:focus{border-color:var(--primary);}
+.bl-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.bl-table thead tr{border-bottom:1.5px solid var(--border);}
+.bl-th{padding:9px 12px;text-align:left;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap;}
+.bl-th:first-child{padding-left:18px;}
+.bl-th-right{text-align:right;}
+.bl-th-center{text-align:center;}
+.bl-th-actions{padding-right:18px;}
+.bl-td{padding:12px;vertical-align:middle;}
+.bl-td-first{padding:12px 12px 12px 18px;}
+.bl-pagination{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.bl-page-btn{min-width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--font-body);font-weight:600;}
+.bl-page-btn.active{border-color:var(--primary);background:var(--primary);color:var(--primary-text,#fff);}
+.bl-page-btn:disabled{opacity:.4;cursor:default;}
+.bl-biller-cell{display:flex;align-items:center;gap:10px;}
+.bl-biller-ico{width:32px;height:32px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;}
+.bl-clickable{cursor:pointer;}
+
+/* Paid-by avatar chip */
+.bl-paidby{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:99px;font-size:.6rem;font-weight:700;background:var(--card3);color:var(--muted);margin-left:6px;vertical-align:middle;}
+.bl-paidby.p1{background:rgba(240,83,138,.18);color:var(--pink-light,#F56CA0);}
+.bl-paidby.p2{background:rgba(129,140,248,.18);color:var(--purple);}
+.bl-paidby.joint{background:rgba(0,200,150,.16);color:var(--success);}
+
+/* Due-soon banner + timeline soon badge */
+.bl-duesoon{display:flex;align-items:flex-start;gap:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+.bl-duesoon .ti{color:var(--warn);font-size:1.05rem;margin-top:1px;}
+.bl-duesoon-x{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;min-height:32px;min-width:32px;}
+
+/* Dismissed billers manager */
+.bl-dismissed-bar{margin-top:2px;}
+.bl-dismissed-inner{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;}
+.bl-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:5px 6px 5px 11px;font-size:.74rem;color:var(--text);margin:4px 6px 0 0;}
+.bl-chip button{width:24px;height:24px;border-radius:99px;border:none;background:var(--card3);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;}
+.bl-chip button:hover{background:var(--primary);color:#fff;}
+
+/* Calendar */
+.bl-cal-nav{display:flex;align-items:center;gap:8px;}
+.bl-cal-weekdays,.bl-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.bl-cal-weekdays{margin-bottom:6px;}
+.bl-cal-wd{text-align:center;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+.bl-cal-cell{min-height:64px;border:1px solid var(--border);border-radius:10px;padding:6px;background:var(--card2);display:flex;flex-direction:column;gap:3px;cursor:default;}
+.bl-cal-cell.empty{background:transparent;border-color:transparent;}
+.bl-cal-cell.has-bills{cursor:pointer;border-color:rgba(240,83,138,.35);}
+.bl-cal-cell.has-bills:hover{background:var(--card3);}
+.bl-cal-cell.today{outline:2px solid var(--primary);outline-offset:-1px;}
+.bl-cal-daynum{font-size:.72rem;font-weight:600;color:var(--muted);}
+.bl-cal-cell.today .bl-cal-daynum{color:var(--primary);}
+.bl-cal-dot{display:flex;flex-wrap:wrap;gap:3px;}
+.bl-cal-dot span{width:6px;height:6px;border-radius:99px;background:var(--primary);}
+.bl-cal-amt{font-family:var(--font-mono);font-size:.6rem;font-weight:600;color:var(--text);margin-top:auto;}
+@media(max-width:620px){.bl-cal-cell{min-height:48px;}.bl-cal-amt{display:none;}}
+
+/* Bill detail drawer (slides from right) */
+.bl-drawer-overlay{justify-content:flex-end;padding:0;}
+.bl-drawer{background:var(--card);width:min(440px,100%);height:100%;max-height:100%;border-radius:0;padding:22px;overflow-y:auto;box-shadow:-16px 0 40px rgba(0,0,0,.4);transform:translateX(20px);transition:transform .2s ease;}
+.modal-overlay.open .bl-drawer{transform:translateX(0);}
+.bl-spark{display:block;width:100%;height:52px;}
+.bl-detail-stat{background:var(--card2);border-radius:10px;padding:10px 12px;}
+.bl-detail-stat .l{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;}
+.bl-detail-stat .v{font-family:var(--font-mono);font-weight:700;font-size:1rem;margin-top:2px;}
+.bl-txrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:.78rem;}
+.bl-txrow:last-child{border-bottom:none;}
+
+/* Subscriptions audit */
+.bl-sub-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.bl-sub-flag{font-size:.64rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap;}
+.bl-flag-creep{background:rgba(239,68,68,.14);color:var(--danger);}
+.bl-flag-dormant{background:rgba(245,158,11,.14);color:var(--warn);}
+.bl-flag-ok{background:rgba(0,200,150,.14);color:var(--success);}
+
+/* Toggle switch */
+.bl-switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;}
+.bl-switch input{opacity:0;width:0;height:0;}
+.bl-switch-slider{position:absolute;inset:0;background:var(--card3);border-radius:99px;transition:.2s;cursor:pointer;}
+.bl-switch-slider::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+.bl-switch input:checked + .bl-switch-slider{background:var(--primary);}
+.bl-switch input:checked + .bl-switch-slider::before{transform:translateX(20px);}
+.bl-setting-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+
+/* A11y — lift touch targets to spec (44px) on primary controls */
+.filters .filter-btn{min-height:44px;}
+.type-option{min-height:44px;}
+/* Bill-type badge reads as an interactive control (chevron always shown + hover) */
+.btype-btn{min-height:32px;padding:6px 11px;transition:box-shadow .15s,filter .15s;}
+.btype-btn:hover{filter:brightness(1.12);box-shadow:0 0 0 1.5px var(--border);}
+.btype-btn::after{opacity:.85;margin-left:1px;}
 .confetti{position:fixed;pointer-events:none;font-size:2rem;animation:confetti-fall 3s ease-in forwards;}
