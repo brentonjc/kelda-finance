@@ -1019,6 +1019,9 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
   </div>
+
+  <!-- Version badge — populated by login.js from APP_VERSION -->
+  <div class="kl-version" id="kl-version" aria-label="App version"></div>
 </div>
 
 <!-- SETUP WIZARD (shown on first run, before login) -->
@@ -1638,101 +1641,164 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="bl-page-header">
       <div>
         <div class="page-title">Bills</div>
-        <div class="page-sub">Forecast, subscriptions and annual bill savings — nothing to mark paid</div>
+        <div class="page-sub">See what’s coming, track subscriptions, and set money aside for the big annual bills</div>
       </div>
       <div class="bl-header-actions">
         <button class="review-btn notif-pulse" id="bl-review-btn" style="display:none" onclick="blOpenReviewModal()">
           <span><i class="ti ti-alert-triangle"></i> Review Bills</span>
           <div class="notif-dot" id="bl-review-dot">0</div>
         </button>
+        <button class="bl-icon-action" id="bl-remind-btn" title="Reminder settings" aria-label="Bill reminder settings" onclick="blOpenRemindersModal()"><i class="ti ti-bell"></i></button>
         <button class="btn btn-primary btn-sm" style="border-radius:var(--radius-pill)" onclick="blOpenAddModal()">＋ Add Bill</button>
       </div>
     </div>
     <div id="how-to-bills"></div>
 
-    <!-- KPIs -->
-    <div class="kpi-row" id="bl-kpis"></div>
+    <!-- Due-soon reminder banner (local-first) -->
+    <div id="bl-duesoon-banner"></div>
 
-    <!-- Cash demand chart -->
-    <div class="chart-card" id="bl-chart-card" style="display:none">
-      <div class="chart-header">
-        <div class="section-label" style="margin:0">Cash Demand</div>
-        <span style="font-size:.66rem;color:var(--muted)">confirmed bills · projected</span>
-      </div>
-      <div style="height:170px"><canvas id="bl-cash-chart"></canvas></div>
-      <div class="chart-legend" id="bl-chart-legend"></div>
+    <!-- Sub navigation -->
+    <div class="bl-tabs" role="tablist" aria-label="Bills views">
+      <button class="bl-tab active" id="bl-tab-overview" role="tab" aria-selected="true" onclick="blSetTab('overview')">Overview</button>
+      <button class="bl-tab" id="bl-tab-list" role="tab" aria-selected="false" onclick="blSetTab('list')">All Bills</button>
+      <button class="bl-tab" id="bl-tab-calendar" role="tab" aria-selected="false" onclick="blSetTab('calendar')">Calendar</button>
+      <button class="bl-tab" id="bl-tab-subs" role="tab" aria-selected="false" onclick="blSetTab('subs')">Subscriptions</button>
     </div>
 
-    <!-- Graph tiles -->
-    <div class="graph-tiles">
-      <div class="tile">
-        <div class="tile-label">Bill Category Flow</div>
-        <div id="bl-sankey"></div>
-      </div>
-      <div class="tile" id="bl-yoy-card" style="display:none">
-        <div class="tile-label">Bills — Year on Year</div>
-        <div style="height:100px"><canvas id="bl-yoy-chart"></canvas></div>
-        <div class="yoy-deltas" id="bl-yoy-deltas"></div>
-      </div>
-    </div>
+    <!-- ══ OVERVIEW ══ -->
+    <div class="bl-panel" id="bl-panel-overview" role="tabpanel">
+      <!-- First-run empty state -->
+      <div id="bl-overview-empty" style="display:none"></div>
 
-    <!-- Filters -->
-    <div class="filters">
-      <div class="filter-group">
-        <button class="filter-btn" id="bl-h-30" onclick="blSetHorizon(30)">30d</button>
-        <button class="filter-btn" id="bl-h-90" onclick="blSetHorizon(90)">90d</button>
-        <button class="filter-btn" id="bl-h-365" onclick="blSetHorizon(365)">12m</button>
-      </div>
-      <div class="filter-sep"></div>
-      <div class="filter-group">
-        <button class="filter-btn" id="bl-t-all" onclick="blSetTypeFilter('all')">All</button>
-        <button class="filter-btn" id="bl-t-bill" onclick="blSetTypeFilter('bill')">Bills</button>
-        <button class="filter-btn" id="bl-t-subscription" onclick="blSetTypeFilter('subscription')">Subscriptions</button>
-        <button class="filter-btn" id="bl-t-direct_debit" onclick="blSetTypeFilter('direct_debit')">Direct Debits</button>
-      </div>
-    </div>
+      <!-- Live payload (hidden on first run) -->
+      <div id="bl-overview-body">
+        <!-- KPIs -->
+        <div class="kpi-row kpi-row-4" id="bl-kpis"></div>
 
-    <!-- Recurring payments table -->
-    <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px;flex-wrap:wrap;gap:10px">
-        <div>
-          <div class="section-label" style="margin:0 0 2px">All Recurring Payments</div>
-          <div style="font-size:.7rem;color:var(--muted)" id="bl-table-meta"></div>
+        <!-- Trends — period-scoped charts -->
+        <div class="card" id="bl-trends" style="padding:16px 16px 18px">
+          <div class="bl-trends-hd">
+            <div class="section-label" style="margin:0">Trends</div>
+            <div class="filters" style="margin:0">
+              <span class="filter-caption">Period</span>
+              <div class="filter-group">
+                <button class="filter-btn" id="bl-p-30" onclick="blSetRolling(30)">30 days</button>
+                <button class="filter-btn" id="bl-p-90" onclick="blSetRolling(90)">90 days</button>
+                <button class="filter-btn" id="bl-p-365" onclick="blSetRolling(365)">12 months</button>
+              </div>
+              <select id="bl-period-month" class="bl-period-select" aria-label="Filter charts by month" onchange="blSetPeriodMonth(this.value)"></select>
+              <select id="bl-period-year" class="bl-period-select" aria-label="Filter charts by year" onchange="blSetPeriodYear(this.value)"></select>
+              <button class="filter-btn bl-clear-period" id="bl-clear-period" onclick="blClearPeriod()" style="display:none"><i class="ti ti-x"></i> Clear</button>
+            </div>
+          </div>
+          <div class="bl-muted" style="font-size:.68rem;margin:2px 0 14px">Charts below reflect the selected period. The stat cards above always show your position right now.</div>
+
+          <!-- Cash demand chart -->
+          <div class="chart-card bl-trend-card" id="bl-chart-card" style="display:none">
+            <div class="chart-header">
+              <div class="section-label" style="margin:0">Cash Demand</div>
+              <span style="font-size:.66rem;color:var(--muted)" id="bl-cash-sub">projected</span>
+            </div>
+            <div style="height:170px"><canvas id="bl-cash-chart" role="img" aria-label="Projected bill cash demand by period"></canvas></div>
+            <div class="chart-legend" id="bl-chart-legend"></div>
+          </div>
+
+          <!-- Bill category flow -->
+          <div class="tile bl-flow-tile bl-trend-card" style="margin-bottom:12px">
+            <div class="tile-hd" style="margin-bottom:8px">
+              <div class="tile-label" style="margin-bottom:0">Bill Category Flow</div>
+              <span style="font-size:.66rem;color:var(--muted)" id="bl-sankey-sub">confirmed bills</span>
+            </div>
+            <div id="bl-sankey"></div>
+          </div>
+
+          <!-- Year on year -->
+          <div class="tile bl-trend-card" id="bl-yoy-card" style="display:none;margin-bottom:0">
+            <div class="tile-hd" style="margin-bottom:10px">
+              <div class="tile-label" style="margin-bottom:0">Bills — Year on Year</div>
+              <span style="font-size:.66rem;color:var(--muted)" id="bl-yoy-sub">by category</span>
+            </div>
+            <div style="height:260px"><canvas id="bl-yoy-chart" role="img" aria-label="Bill spend this year versus last year, by category"></canvas></div>
+            <div class="yoy-deltas" id="bl-yoy-deltas"></div>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" placeholder="Search billers…" id="bl-search" oninput="blTableSearch(this.value)" style="background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.76rem;font-family:var(--font-body);width:140px;outline:none"/>
+
+        <!-- Annual bills spotlight -->
+        <div class="card" id="bl-annual-card" style="display:none">
+          <div class="bl-card-hd">
+            <div class="section-label" style="margin:0">Annual Bills — set aside now</div>
+            <button class="btn btn-ghost btn-sm" id="bl-setaside-btn" onclick="blCreateBufferGoal()"><i class="ti ti-target"></i> Create savings goal</button>
+          </div>
+          <div id="bl-annual-list"></div>
         </div>
       </div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
-          <thead>
-            <tr style="border-bottom:1.5px solid var(--border)">
-              <th style="padding:8px 18px 8px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Biller</th>
-              <th style="padding:8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Type / Category</th>
-              <th style="padding:8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Account</th>
-              <th style="padding:8px 12px;text-align:right;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Amount</th>
-              <th style="padding:8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Next Due</th>
-              <th style="padding:8px 12px;text-align:center;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Confidence</th>
-              <th style="padding:8px 18px 8px 12px;text-align:left;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Action</th>
-            </tr>
-          </thead>
-          <tbody id="bl-table-body"></tbody>
-        </table>
-        <div class="empty" id="bl-table-empty" style="display:none"><div class="ei"><i class="ti ti-receipt"></i></div><p>No recurring bills detected yet — add transactions or add a bill manually.</p></div>
+    </div>
+
+    <!-- ══ ALL BILLS (list-first) ══ -->
+    <div class="bl-panel" id="bl-panel-list" role="tabpanel" style="display:none">
+      <div class="filters">
+        <div class="filter-group">
+          <button class="filter-btn" id="bl-t-all" onclick="blSetTypeFilter('all')">All</button>
+          <button class="filter-btn" id="bl-t-bill" onclick="blSetTypeFilter('bill')">Bills</button>
+          <button class="filter-btn" id="bl-t-subscription" onclick="blSetTypeFilter('subscription')">Subscriptions</button>
+          <button class="filter-btn" id="bl-t-direct_debit" onclick="blSetTypeFilter('direct_debit')">Direct Debits</button>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--border)" id="bl-pagination"></div>
+
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+        <div class="bl-table-hd">
+          <div>
+            <div class="section-label" style="margin:0 0 2px">All Recurring Payments</div>
+            <div style="font-size:.7rem;color:var(--muted)" id="bl-table-meta"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" placeholder="Search billers…" id="bl-search" aria-label="Search billers" oninput="blTableSearch(this.value)" class="bl-search-input"/>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="bl-table">
+            <thead>
+              <tr>
+                <th class="bl-th">Biller</th>
+                <th class="bl-th">Type / Category</th>
+                <th class="bl-th">Account</th>
+                <th class="bl-th bl-th-right">Amount</th>
+                <th class="bl-th">Next Due</th>
+                <th class="bl-th bl-th-center" title="How confident we are this is a recurring bill, matched from your transactions">Match</th>
+                <th class="bl-th bl-th-actions">Action</th>
+              </tr>
+            </thead>
+            <tbody id="bl-table-body"></tbody>
+          </table>
+          <div class="empty" id="bl-table-empty" style="display:none"><div class="ei"><i class="ti ti-receipt"></i></div><p>No recurring bills detected yet — add transactions or add a bill manually.</p></div>
+        </div>
+        <div id="bl-paidby-legend" class="bl-paidby-legend"></div>
+        <div class="bl-pagination" id="bl-pagination"></div>
+      </div>
+
+      <!-- Dismissed billers manager -->
+      <div id="bl-dismissed-bar"></div>
     </div>
 
-    <!-- Annual bills spotlight -->
-    <div class="card" id="bl-annual-card" style="display:none">
-      <div class="section-label" style="margin-bottom:12px">Annual Bills</div>
-      <div id="bl-annual-list"></div>
+    <!-- ══ CALENDAR ══ -->
+    <div class="bl-panel" id="bl-panel-calendar" role="tabpanel" style="display:none">
+      <div class="card" id="bl-calendar-card">
+        <div class="bl-card-hd">
+          <div class="bl-cal-nav">
+            <button class="bl-icon-btn" id="bl-cal-prev" aria-label="Previous month" onclick="blCalShift(-1)"><i class="ti ti-chevron-left"></i></button>
+            <div class="section-label" id="bl-cal-title" style="margin:0;min-width:150px;text-align:center"></div>
+            <button class="bl-icon-btn" id="bl-cal-next" aria-label="Next month" onclick="blCalShift(1)"><i class="ti ti-chevron-right"></i></button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="blExportIcs()"><i class="ti ti-calendar-plus"></i> Export .ics</button>
+        </div>
+        <div id="bl-calendar-grid"></div>
+        <div id="bl-cal-daylist"></div>
+      </div>
     </div>
 
-    <!-- Upcoming timeline -->
-    <div class="card" id="bl-timeline-card">
-      <div class="section-label" style="margin-bottom:12px" id="bl-timeline-label">Upcoming</div>
-      <div id="bl-timeline-list"></div>
+    <!-- ══ SUBSCRIPTIONS ══ -->
+    <div class="bl-panel" id="bl-panel-subs" role="tabpanel" style="display:none">
+      <div id="bl-subs-content"></div>
     </div>
   </div>
 
@@ -3219,9 +3285,70 @@ window.addEventListener('unhandledrejection',function(e){
           </select>
         </div>
       </div>
+      <div class="form-grid">
+        <div><label class="lbl">Paid by</label><select id="bill-paidby-input"></select></div>
+        <div></div>
+      </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="blCloseAddModal()">Cancel</button>
         <button type="submit" class="btn btn-primary"><i class="ti ti-plus"></i> Add Bill</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ EDIT BILL MODAL ═══ -->
+<div class="modal-overlay" id="bill-edit-modal" onclick="if(event.target===this)blCloseEditModal()">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title"><i class="ti ti-pencil"></i> Edit Bill</div>
+      <button class="modal-close" onclick="blCloseEditModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-sub" id="bill-edit-sub">Update this bill’s details. Saved to this device only.</div>
+    <form id="bill-edit-form" onsubmit="event.preventDefault();blSaveEditBill()">
+      <input type="hidden" id="bill-edit-id"/>
+      <div class="form-grid"><div><label class="lbl">Bill Name</label><input type="text" id="bill-edit-name" placeholder="e.g. Car Insurance"/></div></div>
+      <div class="form-grid">
+        <div><label class="lbl">Category</label><select id="bill-edit-cat" onchange="blRefreshEditSubcatSelect()"></select></div>
+        <div><label class="lbl">Subcategory</label><select id="bill-edit-subcat"></select></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Amount (AUD)</label><input type="number" id="bill-edit-amount" placeholder="120.00" step="0.01" inputmode="decimal"/></div>
+        <div><label class="lbl">Next Due Date</label><input type="date" id="bill-edit-due"/></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Frequency</label>
+          <select id="bill-edit-frequency">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div><label class="lbl">Bill Type</label>
+          <select id="bill-edit-type">
+            <option value="bill">Bill</option>
+            <option value="subscription">Subscription</option>
+            <option value="direct_debit">Direct Debit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><label class="lbl">Paid by</label><select id="bill-edit-paidby"></select></div>
+        <div></div>
+      </div>
+      <div class="modal-actions" id="bill-edit-actions">
+        <button type="button" class="btn-danger-ghost" onclick="blShowEditDelete()" style="margin-right:auto"><i class="ti ti-trash"></i> Delete</button>
+        <button type="button" class="btn btn-ghost" onclick="blCloseEditModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Save Changes</button>
+      </div>
+      <div class="modal-delete-confirm" id="bill-edit-delete-confirm" style="display:none">
+        <div>
+          <div style="font-size:.78rem;color:var(--danger);font-weight:600"><i class="ti ti-alert-triangle"></i> Delete this bill permanently?</div>
+          <div id="bl-edit-delete-note" style="font-size:.68rem;color:var(--muted);margin-top:2px"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="blHideEditDelete()">Cancel</button>
+          <button type="button" class="btn-danger-ghost" onclick="blDeleteBillConfirmed()">Yes, delete</button>
+        </div>
       </div>
     </form>
   </div>
@@ -3240,11 +3367,51 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
 </div>
 
+<!-- ═══ BILL DETAIL DRAWER ═══ -->
+<div class="modal-overlay bl-drawer-overlay" id="bill-detail-modal" onclick="if(event.target===this)blCloseDetail()">
+  <div class="bl-drawer" id="bl-detail-box" role="dialog" aria-label="Bill details"></div>
+</div>
+
+<!-- ═══ REMINDER SETTINGS MODAL ═══ -->
+<div class="modal-overlay" id="bill-reminders-modal" onclick="if(event.target===this)blCloseRemindersModal()">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header"><div class="modal-title"><i class="ti ti-bell"></i> Bill Reminders</div>
+      <button class="modal-close" onclick="blCloseRemindersModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-sub">Get a heads-up before bills are due. Reminders are local to this device — nothing leaves it.</div>
+    <div class="bl-setting-row">
+      <div><div style="font-weight:600;font-size:.86rem">Show a due-soon banner</div>
+        <div style="font-size:.72rem;color:var(--muted)">Highlight bills due within your reminder window when you open the app.</div></div>
+      <label class="bl-switch"><input type="checkbox" id="bl-remind-banner" onchange="blSaveReminderPrefs()"/><span class="bl-switch-slider"></span></label>
+    </div>
+    <div class="bl-setting-row">
+      <div><div style="font-weight:600;font-size:.86rem">Browser notifications</div>
+        <div style="font-size:.72rem;color:var(--muted)">Ask this browser to notify you about due-soon bills while the app is open.</div></div>
+      <label class="bl-switch"><input type="checkbox" id="bl-remind-notify" onchange="blToggleBrowserNotify(this.checked)"/><span class="bl-switch-slider"></span></label>
+    </div>
+    <div class="form-grid" style="margin-top:6px">
+      <div><label class="lbl">Remind me this many days ahead</label>
+        <select id="bl-remind-days" onchange="blSaveReminderPrefs()">
+          <option value="3">3 days</option>
+          <option value="5">5 days</option>
+          <option value="7" selected>7 days</option>
+          <option value="14">14 days</option>
+        </select>
+      </div>
+      <div></div>
+    </div>
+    <div id="bl-remind-status" style="font-size:.72rem;color:var(--muted);margin-top:4px"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary" onclick="blCloseRemindersModal()">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 
 <!-- ═══════════ JAVASCRIPT MODULES ═══════════ -->
 <script defer src="js/icons.js"></script>
+<script defer src="js/version.js"></script>
 <script defer src="js/storage.js"></script>
 <script defer src="js/data.js"></script>
 <script defer src="js/auth.js"></script>

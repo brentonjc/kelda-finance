@@ -157,9 +157,58 @@ function renderSettings() {
   html += '</div>';
   html += '</div>';
 
+  // ════════════════════════════════════════════════════════════
+  // 3G — ABOUT / VERSION
+  // ════════════════════════════════════════════════════════════
+  html += _settAboutCard();
+
   el.innerHTML = html;
   // Reflect the active palette/mode in the freshly-rendered controls.
   if(typeof syncThemeControls === 'function') syncThemeControls(getPalette(), getMode());
+}
+
+// ── About / version history card ───────────────────────────────
+function _settAboutCard() {
+  var ver = (typeof APP_VERSION === 'string') ? APP_VERSION : '—';
+  var log = (typeof APP_CHANGELOG !== 'undefined' && Array.isArray(APP_CHANGELOG)) ? APP_CHANGELOG : [];
+
+  var h = '<div class="card mb">';
+  h += '<div class="section-label" style="margin-bottom:14px">About</div>';
+
+  // Current version row
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">';
+  h += '<div style="font-weight:600;font-size:.9rem">Kelda Finance</div>';
+  h += '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--primary)">v' + _settEsc(ver) + '</div>';
+  h += '</div>';
+  h += '<p style="font-size:.76rem;color:var(--muted);margin-bottom:16px">Quote this version number when reporting an issue.</p>';
+
+  // Version history
+  h += '<div class="section-label" style="margin-bottom:10px">Version history</div>';
+  if (!log.length) {
+    h += '<p style="font-size:.78rem;color:var(--muted)">No history recorded.</p>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:14px">';
+    log.forEach(function(rel) {
+      h += '<div>';
+      h += '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">';
+      h += '<span style="font-family:var(--font-mono);font-size:.8rem;font-weight:500;color:var(--primary)">v' + _settEsc(rel.version) + '</span>';
+      if (rel.title) h += '<span style="font-size:.82rem;font-weight:600">' + _settEsc(rel.title) + '</span>';
+      if (rel.date) h += '<span style="font-size:.72rem;color:var(--muted);margin-left:auto">' + _settEsc(rel.date) + '</span>';
+      h += '</div>';
+      if (Array.isArray(rel.notes) && rel.notes.length) {
+        h += '<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px">';
+        rel.notes.forEach(function(n) {
+          h += '<li style="font-size:.76rem;color:var(--muted)">' + _settEsc(n) + '</li>';
+        });
+        h += '</ul>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
+  h += '</div>';
+  return h;
 }
 
 // ── Profile card helper ───────────────────────────────────────
