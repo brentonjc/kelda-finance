@@ -14,11 +14,24 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.1.1';
+var APP_VERSION = '2.2.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.2.0',
+    date: '2026-09-23',
+    title: 'Bills overhaul and Borrowing Power (Beta)',
+    notes: [
+      'Bills rebuilt with tabs: Overview, All Bills, Calendar and Subscriptions',
+      'Bills: edit/delete confirmed bills, per-bill detail drawer with amount history',
+      'Bills: calendar month view with .ics export, subscriptions audit for price creep',
+      'Bills: due-soon reminders, household "paid by" split, annual-buffer savings link',
+      'Borrowing Power calculator moved under a new "Beta Features" nav section',
+      'Borrowing calculator: HEM living-expense benchmark now scales with income',
+    ],
+  },
   {
     version: '2.1.1',
     date: '2026-07-26',
