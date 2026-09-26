@@ -1,33 +1,43 @@
 <!DOCTYPE html>
-<html lang="en-AU" data-theme="dark">
+<html lang="en-AU" data-mode="dark" data-palette="kelda">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Kelda — Investment Property</title>
 
-<!-- Google Fonts (matches main app: Sora / DM Sans / DM Mono) -->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet"/>
+<!-- Shared Kelda design system: self-hosted fonts, palette/mode tokens, Tabler icons -->
+<link rel="stylesheet" href="css/fonts.css"/>
+<link rel="stylesheet" href="css/tokens.css"/>
+<link rel="stylesheet" href="css/tabler-icons.min.css"/>
 
 <!-- Chart.js — self-hosted (shared with the main Kelda app); graceful fallback handled by safeChart -->
 <script src="assets/vendor/chart.umd.min.js" onerror="window._chartJsError=true"></script>
 
+<!-- Mirror the parent Kelda app's theme (palette + light/dark). Standalone falls back to the
+     data-mode/data-palette on <html>. -->
+<script>
+(function(){
+  var html=document.documentElement;
+  function sync(){
+    try{
+      if(window.parent && window.parent!==window){
+        var ph=window.parent.document.documentElement;
+        var mode=ph.getAttribute('data-mode'), pal=ph.getAttribute('data-palette');
+        if(mode) html.setAttribute('data-mode',mode);
+        if(pal) html.setAttribute('data-palette',pal);
+      }
+    }catch(e){/* cross-origin or standalone — keep defaults */}
+  }
+  sync();
+  try{
+    if(window.parent && window.parent!==window){
+      new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-mode','data-palette']});
+    }
+  }catch(e){}
+})();
+</script>
+
 <style>
-/* ===== Design tokens (from main app css/tokens.css) ===== */
-:root{
-  --n950:#080C18; --n900:#0D1225; --n800:#111830; --n700:#18213E; --n600:#1E2A4A; --n300:#6278A0;
-  --bg:var(--n950); --card:var(--n800); --card2:var(--n700); --card3:var(--n600);
-  --border:rgba(98,120,160,.22);
-  --primary:#F0538A; --pink-light:#F56CA0; --pink-dark:#c73a6a; --purple:#818CF8;
-  --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-  --success-bg:rgba(0,200,150,.15); --warn-bg:rgba(245,158,11,.15); --danger-bg:rgba(239,68,68,.15);
-  --text:#E8EDF5; --muted:var(--n300);
-  --input-bg:var(--n700); --input-border:rgba(98,120,160,.35);
-  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp6:24px; --sp8:32px; --sp12:48px; --sp16:64px;
-  --radius:16px; --radius-sm:10px; --radius-lg:20px; --radius-pill:9999px;
-  --font-display:'Sora',system-ui,sans-serif; --font-body:'DM Sans',system-ui,sans-serif; --font-mono:'DM Mono',monospace;
-}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -227,7 +237,7 @@ tr.auto td{color:var(--muted); font-style:italic; background:var(--n900);}
   <!-- Sidebar (desktop) -->
   <aside class="sidebar no-print">
     <div class="brand">
-      <div class="brand-mark">🏘️</div>
+      <div class="brand-mark"><i class="ti ti-building-community"></i></div>
       <div>
         <div class="brand-name">Kelda</div>
         <div class="brand-sub">Investment Property</div>
@@ -285,6 +295,7 @@ function fmt(n){ return '$' + Number(n||0).toLocaleString('en-AU',{minimumFracti
 function fmt0(n){ return '$' + Math.round(Number(n||0)).toLocaleString('en-AU'); }
 function pct(n){ return (Math.round(Number(n||0)*10)/10) + '%'; }
 function esc(s){ s = String(s==null?'':s); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ic(name){ return '<i class="ti '+name+'"></i>'; }  // Tabler icon markup (matches main app)
 function uuid(){ try{ if(crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){} return 'id-' + Date.now() + '-' + Math.floor(Math.random()*1e9); }
 function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -323,28 +334,28 @@ var CURRENT_TAB = 'dashboard';
 
 /* ---------- Categories (ATO worksheet order) ---------- */
 var INCOME_CATS = [
-  ['rental-income','Rental income','🏠'],
-  ['other-rental-income','Other rental related income','💰']
+  ['rental-income','Rental income','ti-home'],
+  ['other-rental-income','Other rental related income','ti-cash']
 ];
 var EXPENSE_CATS = [
-  ['advertising','Advertising for tenants','📣'],
-  ['body-corporate','Body corporate fees and charges','🏢'],
-  ['borrowing-expenses','Borrowing expenses','📄'],
-  ['cleaning','Cleaning','🧹'],
-  ['council-rates','Council rates','🏛️'],
-  ['decline-in-value','Deductions for decline in value (Div 40)','📉'],
-  ['gardening','Gardening / lawn mowing','🌿'],
-  ['insurance','Insurance','🛡️'],
-  ['interest-on-loans','Interest on loans','🏦'],
-  ['land-tax','Land tax','🗺️'],
-  ['legal-expenses','Legal expenses','⚖️'],
-  ['pest-control','Pest control','🐜'],
-  ['agent-fees','Property agent fees / commission','🤝'],
-  ['repairs-maintenance','Repairs and maintenance','🔧'],
-  ['capital-works','Capital works deductions (Div 43)','🏗️'],
-  ['stationery','Stationery, telephone and postage','✉️'],
-  ['water-charges','Water charges','💧'],
-  ['sundry','Sundry rental expenses','📦']
+  ['advertising','Advertising for tenants','ti-speakerphone'],
+  ['body-corporate','Body corporate fees and charges','ti-building'],
+  ['borrowing-expenses','Borrowing expenses','ti-file-dollar'],
+  ['cleaning','Cleaning','ti-spray'],
+  ['council-rates','Council rates','ti-building-bank'],
+  ['decline-in-value','Deductions for decline in value (Div 40)','ti-trending-down'],
+  ['gardening','Gardening / lawn mowing','ti-plant-2'],
+  ['insurance','Insurance','ti-shield'],
+  ['interest-on-loans','Interest on loans','ti-percentage'],
+  ['land-tax','Land tax','ti-map-2'],
+  ['legal-expenses','Legal expenses','ti-scale'],
+  ['pest-control','Pest control','ti-bug'],
+  ['agent-fees','Property agent fees / commission','ti-user-dollar'],
+  ['repairs-maintenance','Repairs and maintenance','ti-tool'],
+  ['capital-works','Capital works deductions (Div 43)','ti-building-warehouse'],
+  ['stationery','Stationery, telephone and postage','ti-mail'],
+  ['water-charges','Water charges','ti-droplet'],
+  ['sundry','Sundry rental expenses','ti-package']
 ];
 var AUTO_CATS = ['interest-on-loans','capital-works','decline-in-value'];
 // Expense categories the user can schedule (excludes auto-calculated ones)
@@ -367,7 +378,7 @@ function catLabel(id){
 function catIcon(id){
   var all = INCOME_CATS.concat(EXPENSE_CATS);
   for(var i=0;i<all.length;i++){ if(all[i][0]===id) return all[i][2]; }
-  return '📋';
+  return 'ti-list';
 }
 
 /* ---------- Tax brackets (2024-25, Stage 3) ---------- */
@@ -623,11 +634,11 @@ function cgtEstimate(p){
    NAVIGATION
    ================================================================= */
 var TABS = [
-  ['dashboard','Dashboard','📊','Home'],
-  ['properties','Properties','🏠','Property'],
-  ['transactions','Income & Expenses','💰','Income'],
-  ['tax','Tax Report','📄','Tax'],
-  ['settings','Settings','⚙️','Settings']
+  ['dashboard','Dashboard','ti-layout-dashboard','Home'],
+  ['properties','Properties','ti-building-community','Property'],
+  ['transactions','Income & Expenses','ti-arrows-exchange','Income'],
+  ['tax','Tax Report','ti-report-money','Tax'],
+  ['settings','Settings','ti-settings','Settings']
 ];
 function buildNav(){
   var side = document.getElementById('sideNav'); side.innerHTML='';
@@ -635,7 +646,7 @@ function buildNav(){
     (function(t){
       var b = document.createElement('button');
       b.className = 'nav-item' + (t[0]===CURRENT_TAB?' active':'');
-      b.innerHTML = '<span class="ico">'+t[2]+'</span><span>'+esc(t[1])+'</span>';
+      b.innerHTML = '<span class="ico">'+ic(t[2])+'</span><span>'+esc(t[1])+'</span>';
       b.onclick = function(){ go(t[0]); };
       side.appendChild(b);
     })(TABS[i]);
@@ -646,7 +657,7 @@ function buildNav(){
     (function(t){
       var b = document.createElement('button');
       b.className = (t[0]===CURRENT_TAB?'active':'');
-      b.innerHTML = '<span class="ico">'+t[2]+'</span><span>'+esc(t[3]||t[1])+'</span>';
+      b.innerHTML = '<span class="ico">'+ic(t[2])+'</span><span>'+esc(t[3]||t[1])+'</span>';
       b.onclick = function(){ go(t[0]); };
       bn.appendChild(b);
     })(TABS[j]);
@@ -692,7 +703,7 @@ function renderDashboard(){
     '<button class="btn btn-primary" onclick="openPropForm()">+ Property</button></div>';
 
   if(!PROPERTIES.length){
-    el.innerHTML = h + emptyState('🏘️','No investment properties yet','Add your first property to get started.','+ Add property',"openPropForm()");
+    el.innerHTML = h + emptyState('ti-building-community','No investment properties yet','Add your first property to get started.','+ Add property',"openPropForm()");
     return;
   }
 
@@ -752,7 +763,7 @@ function statusBadge(s){
 }
 function emptyState(ico,title,sub,btn,onclick){
   var b = btn ? '<button class="btn btn-primary" onclick="'+onclick+'">'+esc(btn)+'</button>' : '';
-  return '<div class="card"><div class="empty"><span class="ico">'+ico+'</span><h3>'+esc(title)+'</h3><p>'+esc(sub)+'</p>'+b+'</div></div>';
+  return '<div class="card"><div class="empty"><span class="ico">'+ic(ico)+'</span><h3>'+esc(title)+'</h3><p>'+esc(sub)+'</p>'+b+'</div></div>';
 }
 
 /* =================================================================
@@ -764,7 +775,7 @@ function renderProperties(){
     '<div class="page-sub">'+PROPERTIES.length+' propert'+(PROPERTIES.length===1?'y':'ies')+'</div></div>'+
     '<button class="btn btn-primary" onclick="openPropForm()">+ Add property</button></div>';
   if(!PROPERTIES.length){
-    el.innerHTML = h + emptyState('🏠','No investment properties yet','Add your first property to get started.','+ Add property',"openPropForm()");
+    el.innerHTML = h + emptyState('ti-building-community','No investment properties yet','Add your first property to get started.','+ Add property',"openPropForm()");
     return;
   }
   var cards='';
@@ -1108,8 +1119,8 @@ function stmtInputLine(label, idAmt, idFreq, idAnn, amount, frequency, onInput){
 function incomeLinesHtml(prefix, ri, onInput){
   ri = ri || {};
   var gross = annualize(ri.rentAmount,ri.rentFrequency) + annualize(ri.otherAmount,ri.otherFrequency);
-  return stmtInputLine('🏠 Rental income', prefix+'_inc_rent', prefix+'_incfreq_rent', prefix+'_inc_ann_rent', ri.rentAmount, ri.rentFrequency||'weekly', onInput)+
-    stmtInputLine('💰 Other rental income', prefix+'_inc_other', prefix+'_incfreq_other', prefix+'_inc_ann_other', ri.otherAmount, ri.otherFrequency||'annual', onInput)+
+  return stmtInputLine(ic('ti-home')+' Rental income', prefix+'_inc_rent', prefix+'_incfreq_rent', prefix+'_inc_ann_rent', ri.rentAmount, ri.rentFrequency||'weekly', onInput)+
+    stmtInputLine(ic('ti-cash')+' Other rental income', prefix+'_inc_other', prefix+'_incfreq_other', prefix+'_inc_ann_other', ri.otherAmount, ri.otherFrequency||'annual', onInput)+
     '<div class="stmt-line stmt-total"><span class="stmt-label">Gross rental income</span><span class="stmt-ann mono pos" id="'+prefix+'_inctotal">'+fmt0(gross)+'</span></div>';
 }
 // Editable expense lines for every standard category (writes to p.expenseSchedule on collect)
@@ -1117,7 +1128,7 @@ function expenseLinesHtml(prefix, p, onInput){
   var map=scheduleMap(p); var cats=scheduleableExpenseCats(); var rows=''; var expTotal=0;
   for(var i=0;i<cats.length;i++){ var c=cats[i]; var v=map[c[0]]||{amount:'',frequency:'monthly'};
     expTotal += annualize(v.amount, v.frequency);
-    rows += stmtInputLine(c[2]+' '+esc(c[1]), prefix+'_amt_'+c[0], prefix+'_freq_'+c[0], prefix+'_ann_'+c[0], v.amount, v.frequency||'monthly', onInput);
+    rows += stmtInputLine(ic(c[2])+' '+esc(c[1]), prefix+'_amt_'+c[0], prefix+'_freq_'+c[0], prefix+'_ann_'+c[0], v.amount, v.frequency||'monthly', onInput);
   }
   rows += '<div class="stmt-line stmt-total"><span class="stmt-label">Total scheduled expenses</span><span class="stmt-ann mono" id="'+prefix+'_exptotal">'+fmt0(expTotal)+'</span></div>';
   return rows;
@@ -1162,9 +1173,9 @@ function formStepExpenses(){
     '<div class="stmt-section">Deductible expenses</div>'+
     expenseLinesHtml('fes', FORM, 'fesRecalc()')+
     '<div class="stmt-section">Auto-calculated (from loan &amp; depreciation)</div>'+
-    autoLineRO('🏦 Interest on loans', deductibleInterestAnnual(FORM))+
-    autoLineRO('🏗️ Capital works (Div 43)', div43Annual(FORM,fy))+
-    autoLineRO('📉 Decline in value (Div 40)', div40Annual(FORM,fy))+
+    autoLineRO(ic('ti-building-bank')+' Interest on loans', deductibleInterestAnnual(FORM))+
+    autoLineRO(ic('ti-building-warehouse')+' Capital works (Div 43)', div43Annual(FORM,fy))+
+    autoLineRO(ic('ti-trending-down')+' Decline in value (Div 40)', div40Annual(FORM,fy))+
     '<div class="note">Interest, Div 43 and Div 40 are calculated automatically from your loan and depreciation details — no need to enter them here. Scheduled expenses are apportioned by rental-use days in the tax report.</div>';
 }
 function fesRecalc(){ recalcStatement('fes', false); }
@@ -1327,7 +1338,7 @@ function renderTransactions(){
     '</div></div>';
 
   if(!PROPERTIES.length){
-    el.innerHTML = h + emptyState('💰','No income or expenses yet','Add a property — its rental income and expense schedule populate this tab automatically.','+ Add property',"openPropForm()");
+    el.innerHTML = h + emptyState('ti-arrows-exchange','No income or expenses yet','Add a property — its rental income and expense schedule populate this tab automatically.','+ Add property',"openPropForm()");
     return;
   }
 
@@ -1396,7 +1407,7 @@ function renderTransactions(){
       var sign = t.type==='income'?'+':'−';
       var cls = t.type==='income'?'pos':'';
       listHtml += '<div class="tx-row">'+
-        '<span style="font-size:20px">'+catIcon(t.category)+'</span>'+
+        '<span style="font-size:20px;color:var(--muted)">'+ic(catIcon(t.category))+'</span>'+
         '<div class="desc"><div>'+esc(t.description||catLabel(t.category))+'</div>'+
           '<small>'+esc(t.date)+' · '+esc(catLabel(t.category))+(t.receiptRef?' · '+esc(t.receiptRef):'')+'</small></div>'+
         '<span class="tx-amt '+cls+'">'+sign+fmt(t.amount)+'</span>'+
@@ -1404,7 +1415,7 @@ function renderTransactions(){
         '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteTx(\''+t.id+'\')">×</button></span>'+
       '</div>';
     }
-    listHtml = '<div class="card"><div class="card-title">📒 Transaction ledger</div>'+listHtml+'</div>';
+    listHtml = '<div class="card"><div class="card-title">'+ic('ti-book')+' Transaction ledger</div>'+listHtml+'</div>';
   }
 
   var statements = statementPosition(targets, selFy) + statementPerformance(targets, selFy);
@@ -1437,7 +1448,7 @@ function renderPnlView(){
   }
 
   return '<div class="card">'+
-    '<div class="card-title">🧾 Rental statement (annualised) '+
+    '<div class="card-title">'+ic('ti-receipt')+' Rental statement (annualised) '+
       '<span class="chip" style="margin-left:auto">'+esc(fyLabel(fy))+'</span></div>'+
     propPicker+
     '<div class="hint">Type each expected amount and how often it occurs. Changes save automatically and flow into your statements and tax report.</div>'+
@@ -1446,9 +1457,9 @@ function renderPnlView(){
     '<div class="stmt-section">Deductible expenses</div>'+
     expenseLinesHtml('pnl', p, 'pnlSave()')+
     '<div class="stmt-section">Auto-calculated (from loan &amp; depreciation)</div>'+
-    autoLineRO('🏦 Interest on loans', deductibleInterestAnnual(p))+
-    autoLineRO('🏗️ Capital works (Div 43)', div43Annual(p,fy))+
-    autoLineRO('📉 Decline in value (Div 40)', div40Annual(p,fy))+
+    autoLineRO(ic('ti-building-bank')+' Interest on loans', deductibleInterestAnnual(p))+
+    autoLineRO(ic('ti-building-warehouse')+' Capital works (Div 43)', div43Annual(p,fy))+
+    autoLineRO(ic('ti-trending-down')+' Decline in value (Div 40)', div40Annual(p,fy))+
     '<div class="stmt-line stmt-total"><span class="stmt-label">Net rental result (annualised)</span>'+
       '<span class="stmt-ann mono '+(net<0?'neg':'pos')+'" id="pnl_net">'+fmt0(net)+'</span></div>'+
     '<div class="note">Net = gross income − scheduled expenses − auto-calculated deductions, before rental-day apportionment (applied in the Tax Report). A loss indicates negative gearing.</div>'+
@@ -1487,7 +1498,7 @@ function statementPosition(targets, fy){
         '<tr><td>Loan liability</td><td class="num neg">('+fmt(tLoan)+')</td></tr>'+
         '<tr class="total"><td>Net equity</td><td class="num pos">'+fmt(tEquity)+'</td></tr>'+
       '</tbody>';
-  return '<div class="card"><div class="card-title">📐 Statement of financial position <span class="chip" style="margin-left:auto">as at '+esc(todayISO())+'</span></div>'+
+  return '<div class="card"><div class="card-title">'+ic('ti-report')+' Statement of financial position <span class="chip" style="margin-left:auto">as at '+esc(todayISO())+'</span></div>'+
     '<div class="table-wrap"><table>'+perRows+'</table></div>'+
     '<div class="hint">Assets (market value + offset cash) less the loan liability. A point-in-time snapshot — update values on each property as they change.</div></div>';
 }
@@ -1514,7 +1525,7 @@ function statementPerformance(targets, fy){
   netRow += '<td class="num '+(totNet<0?'neg':'pos')+'">'+fmt0(totNet)+'</td></tr>';
   var cumRow = '<tr class="auto"><td>Cumulative</td>'+cumCells+'<td class="num">'+fmt0(cum)+'</td></tr>';
 
-  return '<div class="card"><div class="card-title">📈 Statement of financial performance <span class="chip" style="margin-left:auto">'+esc(fyLabel(fy))+'</span></div>'+
+  return '<div class="card"><div class="card-title">'+ic('ti-chart-line')+' Statement of financial performance <span class="chip" style="margin-left:auto">'+esc(fyLabel(fy))+'</span></div>'+
     '<div class="grid grid-3" style="margin-bottom:16px">'+
       kpi('Income', fmt0(totInc), 'pos')+
       kpi('Expenses', fmt0(totExp))+
@@ -1549,7 +1560,7 @@ function scheduleSummary(targets){
   var p=targets[0]; var ri=p.rentalIncome||{}; var es=p.expenseSchedule||[];
   var annRent=annualize(ri.rentAmount,ri.rentFrequency)+annualize(ri.otherAmount,ri.otherFrequency);
   var annExp=0; for(var i=0;i<es.length;i++) annExp+=annualize(es[i].amount,es[i].frequency);
-  return '<div class="card card2"><div class="card-title">🔁 Recurring schedule '+
+  return '<div class="card card2"><div class="card-title">'+ic('ti-repeat')+' Recurring schedule '+
     '<button class="btn btn-sm" style="margin-left:auto" onclick="openPropForm(\''+p.id+'\')">Edit</button></div>'+
     '<div class="metric-row">'+
       '<div class="metric"><div class="l">Rent &amp; recoveries (annual)</div><div class="v pos">'+fmt0(annRent)+'</div></div>'+
@@ -1576,7 +1587,7 @@ function vacancyLogCard(){
       '<td><button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteVacancy(\''+v.id+'\')">×</button></td></tr>';
   }
   var table = vlist.length ? '<div class="table-wrap"><table><thead><tr><th>Property</th><th>Period</th><th>Reason</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>' : '<div class="hint">No vacancy periods logged. These reduce the rental apportionment factor.</div>';
-  return '<div class="card"><div class="card-title">📅 Vacancy log</div>'+table+
+  return '<div class="card"><div class="card-title">'+ic('ti-calendar')+' Vacancy log</div>'+table+
     '<button class="btn btn-sm" style="margin-top:10px" onclick="openVacancyForm()">+ Add vacancy period</button>'+
     '<div class="hint">Days logged here are treated as not available for rent and reduce deductible apportionment.</div></div>';
 }
@@ -1619,7 +1630,7 @@ function renderTxForm(){
   var tx=TXFORM;
   var propOpts=''; for(var i=0;i<PROPERTIES.length;i++) propOpts+='<option value="'+PROPERTIES[i].id+'"'+(tx.propertyId===PROPERTIES[i].id?' selected':'')+'>'+esc(PROPERTIES[i].address)+'</option>';
   var cats = tx.type==='income'?INCOME_CATS:EXPENSE_CATS;
-  var catOpts=''; for(var c=0;c<cats.length;c++) catOpts+='<option value="'+cats[c][0]+'"'+(tx.category===cats[c][0]?' selected':'')+'>'+cats[c][2]+' '+esc(cats[c][1])+'</option>';
+  var catOpts=''; for(var c=0;c<cats.length;c++) catOpts+='<option value="'+cats[c][0]+'"'+(tx.category===cats[c][0]?' selected':'')+'>'+esc(cats[c][1])+'</option>';
   var fy = tx.date?fyOf(tx.date):'';
   openSheet('<div class="sheet-head"><h3>'+(tx._editing?'Edit':'Add')+' transaction</h3><button class="x-btn" onclick="closeSheet()">×</button></div>'+
     '<label class="field"><span class="field-label">Property</span><select id="t_prop">'+propOpts+'</select></label>'+
@@ -1665,7 +1676,7 @@ function renderTax(){
   var h='<div class="page-head no-print"><div><h1 class="page-title">Tax Report</h1>'+
     '<div class="page-sub">ATO rental property worksheet</div></div></div>';
   if(!PROPERTIES.length){
-    el.innerHTML=h+emptyState('📄','Nothing to report yet','Add at least one property (with its rental income and expense schedule) to generate your tax report.','+ Add property',"openPropForm()");
+    el.innerHTML=h+emptyState('ti-report-money','Nothing to report yet','Add at least one property (with its rental income and expense schedule) to generate your tax report.','+ Add property',"openPropForm()");
     return;
   }
   var fys=availableFYs();
@@ -1676,7 +1687,7 @@ function renderTax(){
   var controls='<div class="card no-print"><div class="filterbar">'+
     '<label class="field"><span class="field-label">Financial year</span><select onchange="SETTINGS.financialYear=this.value;save(K.settings,SETTINGS);renderTax()">'+fyOpts+'</select></label>'+
     '<label class="field"><span class="field-label">Property</span><select onchange="TAX_PROP=this.value;renderTax()">'+propOpts+'</select></label>'+
-    '<button class="btn" onclick="window.print()">🖨️ Print</button>'+
+    '<button class="btn" onclick="window.print()">'+ic('ti-printer')+' Print</button>'+
   '</div></div>';
 
   var fy=SETTINGS.financialYear;
@@ -1689,8 +1700,8 @@ function renderTax(){
   for(var t=0;t<targets.length;t++){
     report += propertyTaxBlock(targets[t], fy);
   }
-  report += '<div class="card"><div class="card-title">📈 Income vs expenses</div><canvas id="chartIE" height="120"></canvas></div>';
-  report += '<div class="card"><div class="card-title">🥧 Expense breakdown — '+esc(fyLabel(fy))+'</div><canvas id="chartPie" height="160"></canvas></div>';
+  report += '<div class="card"><div class="card-title">'+ic('ti-chart-bar')+' Income vs expenses</div><canvas id="chartIE" height="120"></canvas></div>';
+  report += '<div class="card"><div class="card-title">'+ic('ti-chart-pie')+' Expense breakdown — '+esc(fyLabel(fy))+'</div><canvas id="chartPie" height="160"></canvas></div>';
   report += '</div>';
 
   el.innerHTML = h + controls + report;
@@ -1785,7 +1796,7 @@ function cgtPanel(p){
 function prefillCard(p, fy, ws, ti){
   var owners='';
   for(var i=0;i<ti.length;i++){ owners += '<tr><td>'+esc(ti[i].name)+' net rental '+(ti[i].share<0?'loss':'income')+'</td><td class="num">'+fmt(ti[i].share)+'</td></tr>'; }
-  return '<div class="card card2"><div class="card-title">📝 Tax return pre-fill</div>'+
+  return '<div class="card card2"><div class="card-title">'+ic('ti-file-text')+' Tax return pre-fill</div>'+
     '<div class="hint">Section 20 — Rental property income and expenses</div>'+
     '<div class="table-wrap"><table><tbody>'+
       '<tr><td>Property address</td><td class="num">'+esc(p.address)+'</td></tr>'+
@@ -1796,7 +1807,7 @@ function prefillCard(p, fy, ws, ti){
       owners+
     '</tbody></table></div>'+
     '<div class="note">These figures are suitable for pre-filling your Individual Tax Return, Schedule of Rental Property Income and Deductions.</div>'+
-    '<button class="btn no-print" onclick="window.print()">🖨️ Print this report</button></div>';
+    '<button class="btn no-print" onclick="window.print()">'+ic('ti-printer')+' Print this report</button></div>';
 }
 
 function combinedWorksheet(fy){
@@ -1900,9 +1911,9 @@ function renderSettings(){
       '<div class="hint">When on, reads <span class="mono">cff_mortgage</span> / <span class="mono">cff_tx</span> from the main app (read-only) to surface matching data.</div></div>'+
     '<div class="card"><div class="card-title">Data management</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-        '<button class="btn" onclick="exportData()">⬇️ Export JSON</button>'+
-        '<button class="btn" onclick="document.getElementById(\'importFile\').click()">⬆️ Import JSON</button>'+
-        '<button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear all data</button>'+
+        '<button class="btn" onclick="exportData()">'+ic('ti-download')+' Export JSON</button>'+
+        '<button class="btn" onclick="document.getElementById(\'importFile\').click()">'+ic('ti-upload')+' Import JSON</button>'+
+        '<button class="btn btn-danger" onclick="clearAllData()">'+ic('ti-trash')+' Clear all data</button>'+
       '</div>'+
       '<input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(this)"/>'+
       '<div class="hint" style="margin-top:12px">Storage usage: <span class="mono">'+usage+' KB</span> of localStorage (investment-property data).</div></div>';
@@ -1924,9 +1935,9 @@ function keldaStatusText(){
     var bits=[];
     if(d.mortgage) bits.push('mortgage data');
     if(d.tx&&d.tx.length) bits.push(d.tx.length+' transactions');
-    return '✅ Kelda Finance data found ('+bits.join(', ')+'). Available for pre-fill.';
+    return ic('ti-circle-check')+' Kelda Finance data found ('+bits.join(', ')+'). Available for pre-fill.';
   }
-  return '⚠️ No Kelda Finance data found in this browser (cff_ keys empty).';
+  return ic('ti-alert-triangle')+' No Kelda Finance data found in this browser (cff_ keys empty).';
 }
 function toggleKelda(on){ SETTINGS.keldaConnect=on; save(K.settings,SETTINGS);
   var s=document.getElementById('keldaStatus'); s.style.display=on?'':'none'; if(on) s.innerHTML=keldaStatusText();
