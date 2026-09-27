@@ -72,23 +72,24 @@ function eqVestCalc(h) {
 }
 
 // ── Value & cost helpers ──────────────────────────────────────
-function eqHoldingValue(h) {
+// Units still held: shares/ETF/crypto bought minus sold; RSUs/options vested minus sold
+function eqHeldUnits(h) {
+    var t = h.type || 'stock';
+    if (t === 'bond') return 0;
+    var sold = (h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0);
+    var base = (t === 'rsu' || t === 'option') ? eqVestCalc(h).vested : (parseFloat(h.qty)||0);
+    return Math.max(0, base - sold);
+}
+
+// Value at a given price per unit — options are worth only the price above strike
+function eqHoldingValueAt(h, price) {
     var t = h.type || 'stock';
     if (t === 'bond') return parseFloat(h.currentValue) || 0;
-    if (t === 'rsu') {
-        var v = eqVestCalc(h);
-        var s = (h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0);
-        return Math.max(0, v.vested - s) * (parseFloat(h.currentPrice)||0);
-    }
-    if (t === 'option') {
-        var v2 = eqVestCalc(h);
-        var s2 = (h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0);
-        var intr = Math.max(0, (parseFloat(h.currentPrice)||0) - (parseFloat(h.strikePrice)||0));
-        return Math.max(0, v2.vested - s2) * intr;
-    }
-    var sold = (h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0);
-    return Math.max(0, (parseFloat(h.qty)||0) - sold) * (parseFloat(h.currentPrice)||0);
+    if (t === 'option') return eqHeldUnits(h) * Math.max(0, price - (parseFloat(h.strikePrice)||0));
+    return eqHeldUnits(h) * price;
 }
+
+function eqHoldingValue(h) { return eqHoldingValueAt(h, parseFloat(h.currentPrice)||0); }
 
 function eqHoldingCost(h) {
     var t = h.type || 'stock';
@@ -118,7 +119,123 @@ function eqTotalGain() {
 }
 
 
-// Live price fetch removed — enter prices manually via ✏️ Edit or 💱 Update Prices
+// ══════════════════════════════════════════════════════════════
+// SECURITIES — holdings with the same code share one price
+// Prices are entered by hand (no live feed, so nothing leaves the device). The price
+// stays on each holding so every other reader keeps working, but it only changes through
+// eqSetPrice(), which updates every holding with that code at once.
+// ══════════════════════════════════════════════════════════════
+var EQ_STALE_DAYS = 30;
+var EQ_LISTED = ['ASX', 'NYSE', 'NASDAQ', 'Crypto'];
+
+// Group key: the code upper-cased with an ASX ".AX" suffix dropped, else the company name.
+// Bonds carry their own value and are never grouped.
+function eqSecKey(h) {
+    if (!h || h.type === 'bond') return '';
+    var code = String(h.ticker || '').trim().toUpperCase().replace(/\.AX$/, '');
+    if (code) return code;
+    var name = String(h.company || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    return name ? 'name:' + name : '';
+}
+
+// One entry per security: its holdings, the latest price and when it was set, units held
+function eqSecurities() {
+    var map = {}, list = [];
+    EQUITIES.forEach(function(h) {
+        var key = eqSecKey(h);
+        if (!key) return;
+        var s = map[key];
+        if (!s) {
+            s = map[key] = { key:key, code: key.indexOf('name:') === 0 ? '' : key, name:'', holdings:[],
+                             price:0, updated:0, prices:{}, exchanges:{}, units:0, options:0, value:0, active:false };
+            list.push(s);
+        }
+        s.holdings.push(h);
+        if (!s.name && h.company) s.name = h.company;
+        var px = parseFloat(h.currentPrice) || 0, ts = h.priceUpdated || 0;
+        if (px > 0) {
+            s.prices[px] = true;
+            if (!s.price || ts > s.updated) { s.price = px; s.updated = ts; }
+        }
+        if (EQ_LISTED.indexOf(h.exchange) !== -1) s.exchanges[h.exchange] = true;
+        var held = eqHeldUnits(h);
+        if (h.type === 'option') s.options += held; else s.units += held;
+        s.value += eqHoldingValue(h);
+        if (held > 0 || ((h.type === 'rsu' || h.type === 'option') && eqVestCalc(h).unvested > 0)) s.active = true;
+    });
+    list.forEach(function(s) {
+        s.mixedPrices  = Object.keys(s.prices).length > 1;
+        s.exchangeList = Object.keys(s.exchanges);
+    });
+    return list;
+}
+
+function eqSecLabel(s) { return s.code || s.name || '—'; }
+
+// The one place a security's price changes: every holding with that code gets it
+function eqSetPrice(key, price, when) {
+    var n = 0;
+    EQUITIES.forEach(function(h) {
+        if (!key || eqSecKey(h) !== key) return;
+        h.currentPrice = price;
+        h.priceUpdated = when || Date.now();
+        n++;
+    });
+    return n;
+}
+
+function eqPriceAge(ts) {
+    if (!ts) return { label:'date unknown', stale:true };
+    var days = Math.floor((Date.now() - ts) / 86400000);
+    var label = days <= 0 ? 'today' : days === 1 ? 'yesterday'
+              : days < 60 ? days + ' days ago' : Math.round(days / 30) + ' months ago';
+    return { label:label, stale: days > EQ_STALE_DAYS };
+}
+
+// Securities still held (or vesting) whose price is missing or older than EQ_STALE_DAYS
+function eqStaleSecurities() {
+    return eqSecurities().filter(function(s) { return s.active && (!s.price || eqPriceAge(s.updated).stale); });
+}
+
+// Share prices can run to fractions of a cent below $2
+function eqFmtPrice(p) {
+    return '$' + Number(p || 0).toLocaleString('en-AU', { minimumFractionDigits:2, maximumFractionDigits: p < 2 ? 4 : 2 });
+}
+
+// Company name without punctuation or suffixes like "Ltd", for spotting the same stock
+function eqNameCore(name) {
+    return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\b(the|ltd|limited|inc|corp|corporation|plc|pty|co|company|group|holdings)\b/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+}
+
+// Holdings entered without a code whose name matches a security that has one — probably the
+// same stock, so the price sheet offers to link them
+function eqLinkSuggestions(secs) {
+    var out = [];
+    secs.forEach(function(s) {
+        if (s.code) return;
+        var core = eqNameCore(s.name);
+        if (!core) return;
+        var match = secs.find(function(o) {
+            return o.code && o.holdings.some(function(h) {
+                var n = eqNameCore(h.company);
+                return n && (n === core || n.indexOf(core + ' ') === 0 || core.indexOf(n + ' ') === 0);
+            });
+        });
+        if (match) out.push({ from:s, to:match });
+    });
+    return out;
+}
+
+// Save holdings, record this month's portfolio value for net worth, and redraw
+function eqCommit() {
+    try { save(K.equities, EQUITIES); } catch(e) {}
+    try{if(typeof nwRecordEqMonth==="function")nwRecordEqMonth(_nwCurrentMonth(),eqTotalEquitiesValue());}catch(e){}
+    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
+    renderEquitiesPage();
+    if (typeof renderAssets==='function') renderAssets();
+}
 
 // ══════════════════════════════════════════════════════════════
 // MAIN RENDER
@@ -316,6 +433,11 @@ function renderEqHero() {
         + '<button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">'+ICON('currency-dollar')+' Update Prices</button>'
         + '<button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>'
         + '</div></div>';
+    var stale = eqStaleSecurities().length;
+    if (stale) {
+        el.innerHTML += '<div class="eq-stale-note">' + ICON('alert-triangle') + ' '
+            + (stale === 1 ? '1 price hasn’t' : stale + ' prices haven’t') + ' been updated in over ' + EQ_STALE_DAYS + ' days</div>';
+    }
 }
 
 // ── KPI stats ─────────────────────────────────────────────────
@@ -464,9 +586,17 @@ function renderEqHoldingRow(h) {
     var gc   = gain >= 0 ? 'var(--success)' : 'var(--danger)', gs = gain >= 0 ? '+' : '';
     var isVesting = h.type==='rsu'||h.type==='option';
     var exch = h.exchange||'';
-    var updated = h.priceUpdated ? new Date(h.priceUpdated).toLocaleDateString('en-AU',{day:'numeric',month:'short'}) : '';
+    var priceLine = '';
+    if (h.type === 'bond') {
+        if (h.priceUpdated) priceLine = 'Updated ' + new Date(h.priceUpdated).toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+    } else {
+        var px = parseFloat(h.currentPrice) || 0, age = eqPriceAge(h.priceUpdated);
+        priceLine = px
+            ? '<span class="eq-px-age'+(age.stale?' eq-px-age--stale':'')+'"><span class="mono">'+eqFmtPrice(px)+'</span> · '+age.label+'</span>'
+            : '<span class="eq-px-age eq-px-age--stale">No price yet</span>';
+    }
 
-    var badge = exch==='Private' ? '<span class="eq-badge eq-badge-private">Private</span>' : (exch ? '<span class="eq-badge eq-badge-exch">'+exch+'</span>' : '');
+    var badge = exch==='Private' ? '<span class="eq-badge eq-badge-private">Private</span>' : (exch ? '<span class="eq-badge eq-badge-exch">'+esc(exch)+'</span>' : '');
 
     var vestBar = '';
     if (isVesting) {
@@ -499,8 +629,8 @@ function renderEqHoldingRow(h) {
         + '<div class="eq-row-main" onclick="eqToggleExpand('+h.id+')">'
         + '<div class="eq-row-icon">'+iconTag(tc.icon)+'</div>'
         + '<div class="eq-row-info">'
-        + '<div class="eq-row-name">'+(h.ticker?'<span style="font-weight:700">'+h.ticker+'</span> ':'')+( h.company||'')+ ' '+badge+'</div>'
-        + '<div class="eq-row-sub">'+qtyLine+(updated?' &nbsp;·&nbsp; Updated '+updated:'')+'</div>'
+        + '<div class="eq-row-name">'+(h.ticker?'<span style="font-weight:700">'+esc(h.ticker)+'</span> ':'')+esc(h.company||'')+ ' '+badge+'</div>'
+        + '<div class="eq-row-sub">'+qtyLine+(priceLine?' &nbsp;·&nbsp; '+priceLine:'')+'</div>'
         + (vestBar?'<div style="margin-top:6px">'+vestBar+'</div>':'')
         + '</div>'
         + '<div class="eq-row-values">'
@@ -539,13 +669,13 @@ function renderEqHoldingDetail(h) {
             +'<span class="eq-lbl">Units Held</span><span class="eq-val">'+held+'</span>'
             +'<span class="eq-lbl">Total Cost</span><span class="eq-val">'+fmt(eqHoldingCost(h))+'</span>'
             +'<span class="eq-lbl">Current Value</span><span class="eq-val">'+fmt(eqHoldingValue(h))+'</span>'
-            +(h.owner?'<span class="eq-lbl">Owner</span><span class="eq-val">'+getUserName(h.owner)+'</span>':'')
-            +(h.notes?'<span class="eq-lbl">Notes</span><span class="eq-val" style="color:var(--muted)">'+h.notes+'</span>':'')
+            +(h.owner?'<span class="eq-lbl">Owner</span><span class="eq-val">'+esc(getUserName(h.owner))+'</span>':'')
+            +(h.notes?'<span class="eq-lbl">Notes</span><span class="eq-val" style="color:var(--muted)">'+esc(h.notes)+'</span>':'')
             +'</div>';
     } else if (t==='bond') {
         var matStr = h.maturityDate ? new Date(h.maturityDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
         html += '<div class="eq-detail-grid">'
-            +'<span class="eq-lbl">Issuer</span><span class="eq-val">'+(h.company||'—')+'</span>'
+            +'<span class="eq-lbl">Issuer</span><span class="eq-val">'+esc(h.company||'—')+'</span>'
             +'<span class="eq-lbl">Face Value</span><span class="eq-val">'+fmt(parseFloat(h.faceValue)||0)+'</span>'
             +'<span class="eq-lbl">Coupon Rate</span><span class="eq-val">'+(parseFloat(h.couponRate)||0)+'%</span>'
             +'<span class="eq-lbl">Maturity Date</span><span class="eq-val">'+matStr+'</span>'
@@ -567,7 +697,7 @@ function renderEqHoldingDetail(h) {
             +(t==='option'?'<span class="eq-lbl">Strike Price</span><span class="eq-val">'+fmt(parseFloat(h.strikePrice)||0)+'/unit</span>':'')
             +(t==='option'?'<span class="eq-lbl">Expiry</span><span class="eq-val">'+(h.expiryDate||'—')+'</span>':'')
             +(h.taxWithheld?'<span class="eq-lbl">Tax Withheld</span><span class="eq-val">'+h.taxWithheld+'%</span>':'')
-            +(h.owner?'<span class="eq-lbl">Owner</span><span class="eq-val">'+getUserName(h.owner)+'</span>':'')
+            +(h.owner?'<span class="eq-lbl">Owner</span><span class="eq-val">'+esc(getUserName(h.owner))+'</span>':'')
             +'</div>';
 
         // Vesting schedule table (expandable)
@@ -601,7 +731,7 @@ function renderEqHoldingDetail(h) {
             var proceeds = (sale.qty*sale.price)-(sale.costs||0);
             var cg       = proceeds-(sale.qty*costPer);
             html += '<div class="eq-sales-row">'
-                +'<span style="color:var(--muted)">'+(sale.date||'—')+'</span>'
+                +'<span style="color:var(--muted)">'+esc(sale.date||'—')+'</span>'
                 +'<span>'+(parseFloat(sale.qty)||0)+' units @ '+fmt(sale.price)+'</span>'
                 +'<span style="color:var(--success)">Proceeds: '+fmt(proceeds)+'</span>'
                 +'<span class="'+(cg>=0?'eq-gain-pos':'eq-gain-neg')+'">'+(cg>=0?'+':'')+fmt(Math.abs(cg))+' CG</span>'
@@ -611,9 +741,10 @@ function renderEqHoldingDetail(h) {
         html += '</div>';
     }
 
-    // Sell button
+    // Price + sell actions
     if (t !== 'bond') {
-        html += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">'
+        html += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">'
+            +'<button class="btn btn-ghost btn-sm" onclick="eqOpenPriceFor('+h.id+')">'+ICON('currency-dollar')+' Update price</button>'
             +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">'+ICON('cash')+' Record Sale</button>'
             +'</div>';
     }
@@ -723,10 +854,10 @@ function eqModalBuildFields(type, h) {
     if (type !== 'bond') {
         html += '<div class="form-grid">'
             +'<div><label class="lbl">Ticker / Code</label>'
-            +'<input type="text" id="eq-m-ticker" value="'+(v.ticker||'')+'" placeholder="e.g. AAPL, CBA, VGS.AX" style="text-transform:uppercase"/>'
+            +'<input type="text" id="eq-m-ticker" value="'+esc(v.ticker||'')+'" placeholder="e.g. AAPL, CBA, VGS.AX" style="text-transform:uppercase" oninput="eqModalSecHint(true)"/>'
             +'</div>'
             +'<div><label class="lbl">Company / Asset Name</label>'
-            +'<input type="text" id="eq-m-company" value="'+(v.company||'')+'" placeholder="e.g. Apple Inc."/></div>'
+            +'<input type="text" id="eq-m-company" value="'+esc(v.company||'')+'" placeholder="e.g. Apple Inc." oninput="eqModalSecHint(true)"/></div>'
             +'</div>';
     }
 
@@ -748,14 +879,14 @@ function eqModalBuildFields(type, h) {
             +'<div><label class="lbl">Cost Basis per Unit (AUD)</label><input type="number" id="eq-m-cost" value="'+(v.cost||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>'
             +'</div>'
             +'<div class="form-grid">'
-            +'<div><label class="lbl">Current Price (AUD)</label><input type="number" id="eq-m-price" value="'+(v.currentPrice||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>'
+            +'<div><label class="lbl">Current Price (AUD)</label><input type="number" id="eq-m-price" value="'+(v.currentPrice||'')+'" placeholder="0.00" min="0" step="any" inputmode="decimal"/><div id="eq-m-sec-hint" class="eq-field-hint"></div></div>'
             +'<div><label class="lbl">Purchase Date</label><input type="date" id="eq-m-purchasedate" value="'+(v.purchaseDate||'')+'"/></div>'
             +'</div>';
     }
 
     if (type==='bond') {
         html += '<div class="form-grid">'
-            +'<div><label class="lbl">Issuer / Bond Name</label><input type="text" id="eq-m-company" value="'+(v.company||'')+'" placeholder="e.g. Commonwealth Bank"/></div>'
+            +'<div><label class="lbl">Issuer / Bond Name</label><input type="text" id="eq-m-company" value="'+esc(v.company||'')+'" placeholder="e.g. Commonwealth Bank"/></div>'
             +'<div><label class="lbl">Face Value (AUD)</label><input type="number" id="eq-m-facevalue" value="'+(v.faceValue||'')+'" placeholder="10000" min="0" step="0.01" inputmode="decimal"/></div>'
             +'</div>'
             +'<div class="form-grid">'
@@ -780,7 +911,7 @@ function eqModalBuildFields(type, h) {
             +'</div>'
             +'<div class="form-grid">'
             +'<div><label class="lbl">Vest Frequency</label><select id="eq-m-vestfreq" onchange="eqUpdateVestPreview()">'+freqOpts+'</select></div>'
-            +'<div><label class="lbl">Current Price per Unit (AUD)</label><input type="number" id="eq-m-price" value="'+(v.currentPrice||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>'
+            +'<div><label class="lbl">Current Price per Unit (AUD)</label><input type="number" id="eq-m-price" value="'+(v.currentPrice||'')+'" placeholder="0.00" min="0" step="any" inputmode="decimal"/><div id="eq-m-sec-hint" class="eq-field-hint"></div></div>'
             +'</div>'
             +'<div id="eq-vest-preview" style="background:var(--card2);border-radius:var(--radius-sm);padding:10px 14px;font-size:.8rem;color:var(--muted);margin-bottom:4px"></div>'
             +'<div class="form-grid">'
@@ -805,9 +936,27 @@ function eqModalBuildFields(type, h) {
 
     // Notes
     html += '<div><label class="lbl">Notes (optional)</label>'
-        +'<input type="text" id="eq-m-notes" value="'+(v.notes||'')+'" placeholder="e.g. broker, account, grant #"/></div>';
+        +'<input type="text" id="eq-m-notes" value="'+esc(v.notes||'')+'" placeholder="e.g. broker, account, grant #"/></div>';
 
     el.innerHTML = html;
+    eqModalSecHint(false);
+}
+
+// Under the price field: which other holdings share this code (their price moves together),
+// and, when prefill is set, fill in their price if the field is still empty
+function eqModalSecHint(prefill) {
+    var el = document.getElementById('eq-m-sec-hint');
+    if (!el) return;
+    function fv(id){ var e=document.getElementById(id); return e?e.value:''; }
+    var idStr = fv('eq-m-id');
+    var key = eqSecKey({ type: fv('eq-m-type') || 'stock', ticker: fv('eq-m-ticker'), company: fv('eq-m-company') });
+    var sec = key ? eqSecurities().find(function(s){ return s.key === key; }) : null;
+    var others = sec ? sec.holdings.filter(function(h){ return String(h.id) !== idStr; }).length : 0;
+    if (!others) { el.textContent = ''; return; }
+    el.textContent = 'Shared with ' + others + ' other ' + eqSecLabel(sec) + ' holding' + (others !== 1 ? 's' : '')
+        + ' — changing it updates them too.';
+    var priceEl = document.getElementById('eq-m-price');
+    if (prefill && priceEl && !priceEl.value && sec.price) priceEl.value = sec.price;
 }
 
 function saveEqModal() {
@@ -831,7 +980,7 @@ function saveEqModal() {
     else                                             { if (!ticker&&!company)       { toast('Enter a ticker or company name'); return; }
                                                        if (!fnum('eq-m-qty'))       { toast('Enter quantity'); return; } }
 
-    var obj = { type:type, company:company, ticker:ticker, exchange:exchange, owner:owner, notes:notes, priceUpdated:Date.now() };
+    var obj = { type:type, company:company, ticker:ticker, exchange:exchange, owner:owner, notes:notes };
 
     if (type==='stock'||type==='etf'||type==='crypto') {
         obj.qty=fnum('eq-m-qty'); obj.cost=fnum('eq-m-cost'); obj.currentPrice=fnum('eq-m-price'); obj.purchaseDate=fv('eq-m-purchasedate');
@@ -847,22 +996,41 @@ function saveEqModal() {
         if (type==='rsu')    { obj.taxWithheld=fnum('eq-m-taxwithheld')||32; }
     }
 
-    if (editId) {
-        var idx = -1;
-        for (var i=0;i<EQUITIES.length;i++){ if(String(EQUITIES[i].id)===editId){ idx=i; break; } }
-        if (idx !== -1) { obj.id=EQUITIES[idx].id; obj.sales=EQUITIES[idx].sales||[]; EQUITIES[idx]=obj; }
+    var existing = editId ? EQUITIES.find(function(e){ return String(e.id)===editId; }) : null;
+    var oldKey = existing ? eqSecKey(existing) : '', oldUpdated = existing ? existing.priceUpdated : undefined;
+    var oldPrice = existing ? (parseFloat(existing.currentPrice)||0) : 0;
+    var oldValue = existing ? (parseFloat(existing.currentValue)||0) : 0;
+
+    var rec;
+    if (existing && existing.type === type) {
+        rec = Object.assign(existing, obj);    // keeps fields this form doesn't show
+    } else if (existing) {
+        rec = obj; rec.id = existing.id; rec.sales = existing.sales || [];
+        EQUITIES[EQUITIES.indexOf(existing)] = rec;
     } else {
-        obj.id=Date.now(); obj.sales=[];
-        EQUITIES.push(obj);
+        rec = obj; rec.id = Date.now(); rec.sales = [];
+        EQUITIES.push(rec);
     }
 
-    try { save(K.equities, EQUITIES); } catch(e) {}
-    try{if(typeof nwRecordEqMonth==="function"&&typeof eqTotalEquitiesValue==="function")nwRecordEqMonth(_nwCurrentMonth(),eqTotalEquitiesValue());}catch(e){}
-    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
+    var now = Date.now(), shared = 0;
+    if (type === 'bond') {
+        rec.priceUpdated = (!existing || rec.currentValue !== oldValue) ? now : oldUpdated;
+    } else {
+        // Prices are shared by code. A price typed here goes to every holding with the code
+        // (and moves the date); otherwise a holding joining a code takes the code's price.
+        var key = eqSecKey(rec), price = rec.currentPrice;
+        var peer = EQUITIES.filter(function(h){ return h !== rec && eqSecKey(h) === key && (parseFloat(h.currentPrice)||0) > 0; })
+            .reduce(function(best, h){ return !best || (h.priceUpdated||0) > (best.priceUpdated||0) ? h : best; }, null);
+        var edited = existing ? price !== oldPrice : price > 0 && (!peer || price !== parseFloat(peer.currentPrice));
+        if (price > 0 && edited) shared = eqSetPrice(key, price, now) - 1;
+        else if (peer && (!existing || key !== oldKey)) { rec.currentPrice = parseFloat(peer.currentPrice); rec.priceUpdated = peer.priceUpdated; }
+        else if (existing) rec.priceUpdated = oldUpdated;
+    }
+
     closeEqModal();
-    renderEquitiesPage();
-    if (typeof renderAssets==='function') renderAssets();
-    toast(editId?'Holding updated':'Holding added');
+    eqCommit();
+    toast((editId ? 'Holding updated' : 'Holding added')
+        + (shared > 0 ? ' — price applied to ' + shared + ' other ' + esc(rec.ticker ? key : rec.company) + ' holding' + (shared !== 1 ? 's' : '') : ''));
 }
 
 // ── Delete ────────────────────────────────────────────────────
@@ -961,51 +1129,203 @@ function deleteSaleEq(holdingId, saleId) {
     toast('Sale removed');
 }
 
-// ── Batch price update modal ───────────────────────────────────
-function openBatchPriceModal() {
+// ══════════════════════════════════════════════════════════════
+// UPDATE PRICES SHEET — one row per security; a blank box keeps the current price
+// ══════════════════════════════════════════════════════════════
+var eqPx = null;   // { secs, links } for the open sheet — inputs refer to rows by index
+
+function openBatchPriceModal(focusKey) {
     var overlay = document.getElementById('eq-modal-overlay');
     if (!overlay) return;
-    var priceable = EQUITIES.filter(function(h){ return h.type!=='bond'; });
-    var rows = priceable.map(function(h) {
-        var tc    = eqTypeCfg(h.type);
-        var label = (h.ticker||h.company||'—')+' ('+iconTag(tc.icon)+' '+tc.label+')';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
-            +'<div style="flex:1;font-size:.84rem">'+label+'</div>'
-            +'<div style="flex:0 0 150px"><input type="number" value="'+(h.currentPrice||'')+'" placeholder="Enter price" min="0" step="0.01" inputmode="decimal"'
-            +' style="padding:6px 8px;font-size:.82rem;font-family:var(--font-mono);width:100%" id="batch-price-'+h.id+'"/></div>'
-            +'</div>';
+    var secs  = eqSecurities().sort(function(a, b){ return eqSecLabel(a).localeCompare(eqSecLabel(b)); });
+    var bonds = EQUITIES.filter(function(h){ return h.type === 'bond'; });
+    eqPx = { secs:secs, links:eqLinkSuggestions(secs) };
+
+    var notes = eqPx.links.map(function(l, i) {
+        return '<div class="eq-px-note"><span style="flex:1;min-width:180px">' + ICON('link') + ' <strong>' + esc(l.from.name)
+            + '</strong> has no code but looks like <strong>' + esc(l.to.code) + '</strong>' + (l.to.name ? ' (' + esc(l.to.name) + ')' : '')
+            + '. Same stock?</span><button class="btn btn-ghost btn-sm" onclick="eqPxLink(' + i + ')">Use code ' + esc(l.to.code) + '</button></div>';
+    }).join('');
+
+    var rows = secs.map(function(s, i) {
+        var n = s.holdings.length, age = eqPriceAge(s.updated), label = eqSecLabel(s);
+        var sub = n + ' holding' + (n !== 1 ? 's' : '')
+            + (s.units ? ' · ' + s.units.toLocaleString('en-AU', { maximumFractionDigits:4 }) + ' units' : '')
+            + (s.options ? ' · ' + s.options.toLocaleString('en-AU', { maximumFractionDigits:4 }) + ' options' : '');
+        var last = s.price
+            ? 'Last <span class="mono">' + eqFmtPrice(s.price) + '</span> · <span class="' + (age.stale ? 'eq-px-age--stale' : '') + '">' + age.label + '</span>'
+            : '<span class="eq-px-age--stale">No price yet</span>';
+        var warn = '';
+        if (s.mixedPrices) {
+            var ps = Object.keys(s.prices).map(Number).sort(function(a, b){ return a - b; });
+            warn += '<div class="eq-px-warn">These holdings have different prices (' + eqFmtPrice(ps[0]) + '–' + eqFmtPrice(ps[ps.length - 1]) + '). Enter one price to set them all.</div>';
+        }
+        if (s.exchangeList.length > 1) warn += '<div class="eq-px-warn">Listed on ' + s.exchangeList.join(' and ') + ' — check these are the same stock.</div>';
+        return '<div class="eq-px-row">'
+            + '<div class="eq-px-info">'
+            +   '<div class="eq-px-name"><strong>' + esc(label) + '</strong>' + (s.code && s.name ? ' <span class="eq-px-co">' + esc(s.name) + '</span>' : '') + '</div>'
+            +   '<div class="eq-px-sub">' + sub + '</div><div class="eq-px-sub">' + last + '</div>' + warn
+            + '</div>'
+            + '<div class="eq-px-entry">'
+            +   '<input type="number" class="eq-px-input mono" id="eq-px-' + i + '" data-i="' + i + '" min="0" step="any" inputmode="decimal" enterkeyhint="next"'
+            +   ' placeholder="New price" aria-label="New price for ' + esc(label) + '" oninput="eqPxInput(this)" onkeydown="eqPxKey(event)"/>'
+            +   '<div class="eq-px-delta mono" id="eq-px-d-' + i + '"></div>'
+            + '</div></div>';
+    }).join('');
+
+    var bondRows = bonds.map(function(h) {
+        var val = parseFloat(h.currentValue) || 0;
+        return '<div class="eq-px-row">'
+            + '<div class="eq-px-info"><div class="eq-px-name"><strong>' + esc(h.company || 'Bond') + '</strong></div>'
+            +   '<div class="eq-px-sub">Current value <span class="mono">' + fmt(val) + '</span>' + (h.priceUpdated ? ' · ' + eqPriceAge(h.priceUpdated).label : '') + '</div></div>'
+            + '<div class="eq-px-entry"><input type="number" class="eq-px-bond mono" data-id="' + h.id + '" min="0" step="any" inputmode="decimal" enterkeyhint="next"'
+            +   ' placeholder="New value" aria-label="New value for ' + esc(h.company || 'bond') + '" oninput="eqPxCount()" onkeydown="eqPxKey(event)"/></div>'
+            + '</div>';
     }).join('');
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0">'+ICON('currency-dollar')+' Update Current Prices</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()">'+ICON('x')+'</button>'
-        +'</div>'
-        +'<div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter the latest market price (AUD) for each holding, or click '+ICON('search')+' to fetch live. For US-listed stocks enter the AUD equivalent.</div>'
-        +(priceable.length?rows:'<div class="empty" style="padding:20px 0"><p>No priceable holdings yet.</p></div>')
-        +'<div style="display:flex;gap:10px;margin-top:20px">'
-        +'<button class="btn btn-primary" onclick="saveBatchPrices()">'+ICON('device-floppy')+' Save All</button>'
-        +'<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
-        +'</div></div>';
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<div class="section-label" style="margin:0">' + ICON('currency-dollar') + ' Update prices</div>'
+        + '<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" aria-label="Close">' + ICON('x') + '</button>'
+        + '</div>'
+        + '<div class="eq-px-help">One price per code, and it updates every holding with that code. Leave a box blank to keep the current price. Prices are in AUD, so enter US shares at their AUD value.</div>'
+        + (secs.length ? '<details class="eq-px-paste"><summary>' + ICON('clipboard-text') + ' Paste prices</summary>'
+            + '<div class="eq-px-help">One per line: the code, then the price, e.g. <span class="mono">CBA 112.40</span>. Two columns copied from a spreadsheet work too.</div>'
+            + '<textarea id="eq-px-paste" rows="4" placeholder="CBA 112.40&#10;VGS 98.12"></textarea>'
+            + '<button class="btn btn-ghost btn-sm" onclick="eqPxApplyPaste()">Fill in prices</button>'
+            + '<div id="eq-px-paste-result" class="eq-px-help" role="status"></div>'
+            + '</details>' : '')
+        + notes
+        + (rows || bondRows
+            ? rows + (bondRows ? '<div class="eq-group-label">Bonds — current value</div>' + bondRows : '')
+            : '<div class="empty" style="padding:20px 0"><p>No holdings to price yet.</p></div>')
+        + '<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">'
+        + '<button class="btn btn-primary" id="eq-px-save" onclick="saveBatchPrices()"></button>'
+        + '<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
+        + '</div></div>';
     overlay.style.display = 'flex';
     overlay.onclick = function(e){ if(e.target===overlay) closeEqModal(); };
+    eqPxCount();
+
+    var at = focusKey ? secs.findIndex(function(s){ return s.key === focusKey; }) : -1;
+    var inp = at !== -1 ? document.getElementById('eq-px-' + at) : null;
+    if (inp) {
+        inp.closest('.eq-px-row').classList.add('eq-px-row--focus');
+        inp.scrollIntoView({ block:'center' });
+        inp.focus();
+    }
+}
+
+// From a holding's detail panel: open the sheet on that holding's security
+function eqOpenPriceFor(id) {
+    var h = EQUITIES.find(function(e){ return e.id === id; });
+    openBatchPriceModal(h ? eqSecKey(h) : null);
+}
+
+// Live preview of a typed price: change vs the last price, and in total value
+function eqPxInput(inp) {
+    var s = eqPx && eqPx.secs[+inp.dataset.i], out = document.getElementById('eq-px-d-' + inp.dataset.i);
+    if (s && out) {
+        var p = parseFloat(inp.value);
+        if (inp.value === '' || !(p > 0)) {
+            out.textContent = '';
+        } else {
+            var diff = s.holdings.reduce(function(t, h){ return t + eqHoldingValueAt(h, p); }, 0) - s.value;
+            var pct  = s.price ? (p / s.price - 1) * 100 : null;
+            out.textContent = (pct !== null ? (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1) + '% · ' : '')
+                + (diff >= 0 ? '+' : '−') + fmt(Math.abs(diff));
+            out.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+        }
+    }
+    eqPxCount();
+}
+
+// Boxes with a usable value — these are what Save writes
+function eqPxFilled() {
+    return Array.prototype.filter.call(document.querySelectorAll('.eq-px-input, .eq-px-bond'), function(inp) {
+        var v = parseFloat(inp.value);
+        return inp.value !== '' && (inp.classList.contains('eq-px-bond') ? v >= 0 : v > 0);
+    });
+}
+
+function eqPxCount() {
+    var n = eqPxFilled().length, btn = document.getElementById('eq-px-save');
+    if (btn) btn.innerHTML = ICON('device-floppy') + (n ? ' Save ' + n + ' change' + (n !== 1 ? 's' : '') : ' Save');
+}
+
+// Return moves to the next box, so a list of prices can be typed straight through
+function eqPxKey(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    var inputs = Array.prototype.slice.call(document.querySelectorAll('.eq-px-input, .eq-px-bond'));
+    var next = inputs[inputs.indexOf(e.target) + 1] || document.getElementById('eq-px-save');
+    if (next) next.focus();
+}
+
+// Lines like "CBA 112.40", "VGS.AX, $98.12" or two spreadsheet columns (code, price)
+function eqPxApplyPaste() {
+    var ta = document.getElementById('eq-px-paste'), out = document.getElementById('eq-px-paste-result');
+    if (!ta || !eqPx) return;
+    var rowFor = {};
+    eqPx.secs.forEach(function(s, i){ if (s.code) rowFor[s.key] = i; });
+    var filled = 0, unknown = [], unread = 0;
+    ta.value.split(/\r?\n/).forEach(function(line) {
+        line = line.trim();
+        if (!line) return;
+        var m = line.match(/^([A-Za-z0-9][A-Za-z0-9.\-]*)[\s,;:|=–-]+(?:A?\$|AUD\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)/);
+        var price = m ? parseFloat(m[2].replace(/,/g, '')) : 0;
+        if (!(price > 0)) { unread++; return; }
+        var key = m[1].toUpperCase().replace(/\.AX$/, '');
+        if (!(key in rowFor)) { unknown.push(m[1].toUpperCase()); return; }
+        var inp = document.getElementById('eq-px-' + rowFor[key]);
+        inp.value = price;
+        eqPxInput(inp);
+        filled++;
+    });
+    if (out) out.textContent = (filled ? 'Filled in ' + filled + ' price' + (filled !== 1 ? 's' : '') + '. Check them, then save.' : 'No prices filled in.')
+        + (unknown.length ? ' Not in your holdings: ' + unknown.join(', ') + '.' : '')
+        + (unread ? ' Couldn’t read ' + unread + ' line' + (unread !== 1 ? 's' : '') + '.' : '');
+}
+
+// Give holdings without a code the matching security's code, so they share its price
+function eqPxLink(i) {
+    var l = eqPx && eqPx.links[i];
+    if (!l) return;
+    var typed = {};
+    eqPxFilled().forEach(function(inp) {
+        typed[inp.dataset.id ? 'b:' + inp.dataset.id : 's:' + eqPx.secs[+inp.dataset.i].key] = inp.value;
+    });
+    l.from.holdings.forEach(function(h){ h.ticker = l.to.code; });
+    var merged = eqSecurities().find(function(s){ return s.key === l.to.key; });
+    if (merged && merged.price) eqSetPrice(merged.key, merged.price, merged.updated);
+    eqCommit();
+    openBatchPriceModal();
+    document.querySelectorAll('.eq-px-input, .eq-px-bond').forEach(function(inp) {   // keep what was typed
+        var v = typed[inp.dataset.id ? 'b:' + inp.dataset.id : 's:' + eqPx.secs[+inp.dataset.i].key];
+        if (v === undefined) return;
+        inp.value = v;
+        if (inp.classList.contains('eq-px-input')) eqPxInput(inp); else eqPxCount();
+    });
+    var n = l.from.holdings.length;
+    toast('Linked ' + n + ' holding' + (n !== 1 ? 's' : '') + ' to ' + esc(l.to.code));
 }
 
 function saveBatchPrices() {
-    var changed = 0;
-    EQUITIES.forEach(function(h) {
-        var inp = document.getElementById('batch-price-'+h.id);
-        if (!inp) return;
-        var val = parseFloat(inp.value);
-        if (!isNaN(val) && val > 0) { h.currentPrice=val; h.priceUpdated=Date.now(); changed++; }
+    if (!eqPx) return;
+    var now = Date.now(), changed = 0;
+    eqPxFilled().forEach(function(inp) {
+        var v = parseFloat(inp.value);
+        if (inp.classList.contains('eq-px-bond')) {
+            var h = EQUITIES.find(function(e){ return String(e.id) === inp.dataset.id; });
+            if (h) { h.currentValue = v; h.priceUpdated = now; changed++; }
+        } else if (eqSetPrice(eqPx.secs[+inp.dataset.i].key, v, now)) {
+            changed++;
+        }
     });
-    try { save(K.equities, EQUITIES); } catch(e) {}
-    try{if(typeof nwRecordEqMonth==="function"&&typeof eqTotalEquitiesValue==="function")nwRecordEqMonth(_nwCurrentMonth(),eqTotalEquitiesValue());}catch(e){}
-    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
     closeEqModal();
-    renderEquitiesPage();
-    if (typeof renderAssets==='function') renderAssets();
-    toast('Prices updated for '+changed+' holding'+(changed!==1?'s':''));
+    if (!changed) return;
+    eqCommit();
+    toast('Updated ' + changed + ' price' + (changed !== 1 ? 's' : ''));
 }
 
 // ══════════════════════════════════════════════════════════════
