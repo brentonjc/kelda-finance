@@ -390,13 +390,10 @@ function exportFilename(prefix, ext) {
 }
 
 // ── Backup scope ──────────────────────────────────────────────
-// A full backup captures EVERY key this app keeps in localStorage: anything
-// prefixed cff_/kf_/ledger_/kelda_ (including the Investment Property module's
-// kf_ip_* data and the Borrowing Power scenario) plus AutoCat's learnedMappings.
-// New features are therefore included without editing this list. Skipped: state
+// A full backup captures EVERY key the app owns (see appKeys() in storage.js),
+// including the Investment Property module's data and the Borrowing Power
+// scenario, so new features are included without editing a list. Skipped: state
 // that belongs to this device/session and must not travel with a backup.
-const BACKUP_KEY_RE = /^(cff_|kf_|ledger_|kelda_)/;
-const BACKUP_EXTRA  = ['learnedMappings'];
 const BACKUP_SKIP   = ['cff_cat_version', 'cff_app_version', 'kf_pin_lock_until', 'kf_restore_toast'];
 // Never removed by a restore, so restoring can't send an existing user back through setup.
 const BACKUP_KEEP   = ['kelda_wizard_complete', 'kf_onboarding_complete'];
@@ -409,17 +406,12 @@ const BACKUP_LEGACY = {
 };
 
 function isBackupKey(k) {
-  return !!k && (BACKUP_KEY_RE.test(k) || BACKUP_EXTRA.indexOf(k) !== -1) && BACKUP_SKIP.indexOf(k) === -1;
+  return isAppKey(k) && BACKUP_SKIP.indexOf(k) === -1;
 }
 // Backed-up keys other than the legacy top-level ones.
 function backupStorageKeys() {
   const legacy = Object.values(BACKUP_LEGACY);
-  const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (isBackupKey(k) && legacy.indexOf(k) === -1) keys.push(k);
-  }
-  return keys.sort();
+  return appKeys().filter(k => isBackupKey(k) && legacy.indexOf(k) === -1).sort();
 }
 
 // ── 1. FULL JSON BACKUP ───────────────────────────────────────
@@ -480,12 +472,14 @@ function applyBackup(d) {
   });
 }
 
-function restoreBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const statusEl = document.getElementById('restore-status');
-  statusEl.textContent = 'Reading file…';
-
+// Read a backup file, confirm, write it and reload. `report(text, isError)` shows
+// progress where the restore was started. Used by the Export page and by the
+// welcome screen's "Restore from backup" link (setupDone: true), where restoring
+// replaces setting up — so the setup-complete flags are set even if an older
+// backup doesn't carry them.
+function restoreBackupFile(file, report, opts) {
+  opts = opts || {};
+  report('Reading file…', false);
   const reader = new FileReader();
   reader.onload = e => {
     let d;
@@ -493,27 +487,46 @@ function restoreBackup(event) {
       d = JSON.parse(e.target.result);
       if (!d._version || !d._app) throw new Error('Not a valid backup file');
     } catch (err) {
-      statusEl.innerHTML = '<span style="color:var(--danger)">' + ICON('x') + ' Invalid file: ' + err.message + '</span>';
-      event.target.value = '';
+      report('Invalid file: ' + err.message, true);
       return;
     }
 
-    if (!confirm('⚠️ This will REPLACE all your current data with the backup.\n\nAre you sure?')) {
-      statusEl.textContent = 'Restore cancelled.';
-      event.target.value = '';
+    const question = opts.setupDone
+      ? 'Restore this backup?\n\nAnything already set up on this device will be replaced.'
+      : '⚠️ This will REPLACE all your current data with the backup.\n\nAre you sure?';
+    if (!confirm(question)) {
+      report('Restore cancelled.', false);
       return;
     }
 
     const exportedDate = d._exported ? new Date(d._exported).toLocaleString('en-AU') : 'unknown date';
     let msg = '✅ Restored backup from ' + exportedDate;
-    try { applyBackup(d); }
-    catch (err) { msg = '⚠️ Restore incomplete: ' + err.message; }   // e.g. storage full
+    try {
+      applyBackup(d);
+      if (opts.setupDone) {
+        localStorage.setItem('kf_onboarding_complete', 'true');
+        localStorage.setItem('kelda_wizard_complete', 'true');
+      }
+    } catch (err) { msg = '⚠️ Restore incomplete: ' + err.message; }   // e.g. storage full
     // Reload even after a partial restore, so nothing stale in memory is saved over it.
     try { localStorage.setItem('kf_restore_toast', msg); } catch(e) {}
-    statusEl.textContent = 'Restored — reloading…';
+    report('Restored — reloading…', false);
     location.reload();
   };
+  reader.onerror = () => report('Could not read that file.', true);
   reader.readAsText(file);
+}
+
+function restoreBackup(event) {
+  const file = event.target.files[0];
+  event.target.value = '';   // lets the same file be picked again
+  if (!file) return;
+  const statusEl = document.getElementById('restore-status');
+  restoreBackupFile(file, (text, isError) => {
+    statusEl.innerHTML = isError
+      ? '<span style="color:var(--danger)">' + ICON('x') + ' ' + esc(text) + '</span>'
+      : esc(text);
+  });
 }
 
 // ── 3. TRANSACTIONS CSV ───────────────────────────────────────

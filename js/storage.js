@@ -30,3 +30,9 @@ const K={
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+// Every key this app owns: the cff_/kf_/ledger_/kelda_ prefixes (incl. the Investment
+// Property module's kf_ip_*) plus AutoCat's unprefixed learnedMappings. Full Backup and
+// Erase All both work from this, so a new feature's data is covered automatically.
+const APP_KEY_RE=/^(cff_|kf_|ledger_|kelda_)/;
+function isAppKey(k){return !!k&&(APP_KEY_RE.test(k)||k==='learnedMappings');}
+function appKeys(store){var out=[];try{store=store||localStorage;for(var i=0;i<store.length;i++){var k=store.key(i);if(isAppKey(k))out.push(k);}}catch(e){}return out;}

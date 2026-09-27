@@ -482,7 +482,8 @@ window.addEventListener('unhandledrejection',function(e){
           <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
           <p class="ob-sub" style="margin-top:10px">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
           <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
-          <button class="ob-link" id="ob-restore-link" onclick="obShowRestoreMsg(this)">Already set up? Restore from backup</button>
+          <button class="ob-link" id="ob-restore-link" onclick="document.getElementById('ob-restore-file').click()">Already set up? Restore from backup</button>
+          <input type="file" id="ob-restore-file" accept=".json,application/json" style="display:none" onchange="obRestoreBackup(event)"/>
         </div>
       </div>
 
@@ -1089,7 +1090,6 @@ window.addEventListener('unhandledrejection',function(e){
         <a class="nav-fly-item" id="n-super" onclick="go('super')" role="menuitem"><span class="ni"><i class="ti ti-briefcase"></i></span><span>Super</span></a>
         <a class="nav-fly-item" id="n-equities" onclick="go('equities')" role="menuitem"><span class="ni"><i class="ti ti-trending-up"></i></span><span>Investments</span></a>
         <a class="nav-fly-item" id="n-insurance" onclick="go('insurance')" role="menuitem"><span class="ni"><i class="ti ti-shield-check"></i></span><span>Life Insurance</span></a>
-        <span class="nav-fly-item nav-item-soon" role="menuitem" aria-disabled="true"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Properties</span><span class="nav-soon">Soon</span></span>
       </div>
     </div>
 
@@ -1101,7 +1101,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="nav-flyout" id="fly-calculators" role="menu" aria-label="Beta Features">
         <div class="nav-flyout-hd">Beta Features</div>
         <a class="nav-fly-item" id="n-borrowing" onclick="go('borrowing')" role="menuitem"><span class="ni"><i class="ti ti-home-dollar"></i></span><span>Borrowing Power (Beta)</span></a>
-        <a class="nav-fly-item" id="n-investment" onclick="go('investment')" role="menuitem"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Property</span></a>
+        <a class="nav-fly-item" id="n-investment" onclick="go('investment')" role="menuitem"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Property (Beta)</span></a>
       </div>
     </div>
 
@@ -3926,13 +3926,22 @@ function applyOnboardingToApp() {
   }
 }
 
-// ── Restore-from-backup link (welcome screen stub) ────────────
-function obShowRestoreMsg(el) {
+// ── Restore-from-backup link (welcome screen) ─────────────────
+// Moving to a new device: restore a Full Backup instead of setting up again.
+// Progress and errors show in place of the link text for a few seconds.
+function obRestoreBackup(event) {
+  var file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  var el = document.getElementById('ob-restore-link');
   var orig = el.getAttribute('data-orig') || el.textContent;
   el.setAttribute('data-orig', orig);
-  el.textContent = 'Backup restore isn\'t available yet. Re-entering only takes 90 seconds.';
-  el.style.color = 'var(--n300)';
-  setTimeout(function() { el.textContent = orig; el.style.color = ''; }, 4000);
+  restoreBackupFile(file, function(text, isError) {
+    el.textContent = text;
+    el.style.color = isError ? 'var(--danger)' : 'var(--n300)';
+    clearTimeout(el._resetTimer);
+    el._resetTimer = setTimeout(function() { el.textContent = orig; el.style.color = ''; }, 5000);
+  }, { setupDone: true });
 }
 
 // Enter submits the name field

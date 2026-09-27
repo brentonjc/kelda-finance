@@ -693,25 +693,20 @@ function settingsResetCategories() {
 }
 
 function settingsEraseAll() {
-  if (!confirm('ERASE ALL DATA?\n\nThis will permanently delete:\n• All transactions\n• All bills and budgets\n• Mortgage, super and assets data\n• All settings and PINs\n\nThis CANNOT be undone. Are you absolutely sure?')) {
+  if (!confirm('ERASE ALL DATA?\n\nThis will permanently delete everything Kelda stores on this device:\n• Transactions, bills, budgets and goals\n• Mortgage, liabilities, super, investments and assets\n• Investment Property and Borrowing Power data\n• All settings and PINs\n\nThis CANNOT be undone. Are you absolutely sure?')) {
     return;
   }
   if (!confirm('Last chance.\n\nAll your financial data will be permanently deleted. Tap OK to confirm.')) {
     return;
   }
-  // Clear every known key
-  var allKeys = [
-    K.tx, K.budgets, K.goals, K.bills, K.mortgage,
-    K.ct, K.ctcfg, K.ins, K.superdata, K.pins,
-    K.categories, K.lbudgets, K.rules, K.recurring,
-    K.transfers, K.equities, K.billAliases, K.billsDismissed, K.billsHorizon,
-    'cff_userconfig', 'cff_app_name', 'cff_app_sub',
-    'cff_cat_version', 'cff_settings', 'learnedMappings',
-    'kelda_wizard_complete', 'kelda_pin_salt'
-  ];
-  allKeys.forEach(function(key) {
+  // Clear every key the app owns — including Investment Property, liabilities,
+  // accounts and history — plus its session state (e.g. the PIN lockout)
+  appKeys().forEach(function(key) {
     try { localStorage.removeItem(key); } catch(e) {}
   });
+  try {
+    appKeys(sessionStorage).forEach(function(key) { sessionStorage.removeItem(key); });
+  } catch(e) {}
   location.reload();
 }
 
