@@ -389,11 +389,44 @@ function exportFilename(prefix, ext) {
   return 'kelda-finance-' + prefix + '-' + d + '.' + ext;
 }
 
+// ── Backup scope ──────────────────────────────────────────────
+// A full backup captures EVERY key this app keeps in localStorage: anything
+// prefixed cff_/kf_/ledger_/kelda_ (including the Investment Property module's
+// kf_ip_* data and the Borrowing Power scenario) plus AutoCat's learnedMappings.
+// New features are therefore included without editing this list. Skipped: state
+// that belongs to this device/session and must not travel with a backup.
+const BACKUP_KEY_RE = /^(cff_|kf_|ledger_|kelda_)/;
+const BACKUP_EXTRA  = ['learnedMappings'];
+const BACKUP_SKIP   = ['cff_cat_version', 'cff_app_version', 'kf_pin_lock_until', 'kf_restore_toast'];
+// Never removed by a restore, so restoring can't send an existing user back through setup.
+const BACKUP_KEEP   = ['kelda_wizard_complete', 'kf_onboarding_complete'];
+// v2 backups held these as top-level fields. v3 still writes them there (not in
+// `storage`) so an older build can read a newer backup.
+const BACKUP_LEGACY = {
+  transactions: K.tx, budgets: K.budgets, goals: K.goals, bills: K.bills,
+  billAliases: K.billAliases, billsDismissed: K.billsDismissed, mortgage: K.mortgage,
+  cashTracker: K.ct, cashConfig: K.ctcfg, insurance: K.ins, super: K.superdata, pins: K.pins,
+};
+
+function isBackupKey(k) {
+  return !!k && (BACKUP_KEY_RE.test(k) || BACKUP_EXTRA.indexOf(k) !== -1) && BACKUP_SKIP.indexOf(k) === -1;
+}
+// Backed-up keys other than the legacy top-level ones.
+function backupStorageKeys() {
+  const legacy = Object.values(BACKUP_LEGACY);
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (isBackupKey(k) && legacy.indexOf(k) === -1) keys.push(k);
+  }
+  return keys.sort();
+}
+
 // ── 1. FULL JSON BACKUP ───────────────────────────────────────
-function exportFullBackup() {
+function buildFullBackup() {
   const payload = {
     _app:      getAppName(),
-    _version:  2,
+    _version:  3,
     _exported: new Date().toISOString(),
     transactions: TX,
     budgets:      BUDGETS,
@@ -407,14 +440,46 @@ function exportFullBackup() {
     insurance:    INS,
     super:        SUPER,
     pins:         PINS,
+    storage:      {},   // every other key, as its raw stored string
   };
-  downloadFile(JSON.stringify(payload, null, 2), exportFilename('backup', 'json'), 'application/json');
+  backupStorageKeys().forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v !== null) payload.storage[k] = v;
+  });
+  return payload;
+}
+
+function exportFullBackup() {
+  downloadFile(JSON.stringify(buildFullBackup(), null, 2), exportFilename('backup', 'json'), 'application/json');
   // Record the full-backup timestamp for the data-health insight cards.
   try { save(K.lastFullBackup, today()); } catch(e) {}
   toast('✅ Full backup downloaded!');
 }
 
 // ── 2. RESTORE FROM JSON BACKUP ──────────────────────────────
+// Writes a backup into storage. The caller reloads the app afterwards so every
+// page (and the embedded Investment Property module) starts from the restored
+// data rather than half-updated in-memory state.
+function applyBackup(d) {
+  Object.keys(BACKUP_LEGACY).forEach(field => {
+    if (d[field]) save(BACKUP_LEGACY[field], d[field]);
+  });
+  if (!d.storage || typeof d.storage !== 'object') return;   // v2: legacy fields only
+  // v3 is a complete snapshot: drop app keys the backup doesn't have, so data
+  // added since it was taken (say, a new investment property) doesn't linger.
+  backupStorageKeys().forEach(k => {
+    if (BACKUP_KEEP.indexOf(k) === -1 && !Object.prototype.hasOwnProperty.call(d.storage, k)) {
+      localStorage.removeItem(k);
+    }
+  });
+  const legacy = Object.values(BACKUP_LEGACY);
+  Object.keys(d.storage).forEach(k => {
+    if (!isBackupKey(k) || legacy.indexOf(k) !== -1) return;
+    const v = d.storage[k];
+    localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+  });
+}
+
 function restoreBackup(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -423,42 +488,30 @@ function restoreBackup(event) {
 
   const reader = new FileReader();
   reader.onload = e => {
+    let d;
     try {
-      const d = JSON.parse(e.target.result);
+      d = JSON.parse(e.target.result);
       if (!d._version || !d._app) throw new Error('Not a valid backup file');
-
-      if (!confirm('⚠️ This will REPLACE all your current data with the backup.\n\nAre you sure?')) {
-        statusEl.textContent = 'Restore cancelled.';
-        event.target.value = '';
-        return;
-      }
-
-      if (d.transactions) { TX       = d.transactions; save(K.tx,       TX); }
-      if (d.budgets)      { BUDGETS  = d.budgets;      save(K.budgets,  BUDGETS); }
-      if (d.goals)        { GOALS    = d.goals;         save(K.goals,    GOALS); }
-      if (d.bills)        { BILLS    = d.bills;         save(K.bills,    BILLS); }
-      if (d.billAliases)    { BILL_ALIASES    = d.billAliases;    save(K.billAliases,    BILL_ALIASES); }
-      if (d.billsDismissed) { BILLS_DISMISSED = d.billsDismissed; save(K.billsDismissed, BILLS_DISMISSED); }
-      if (d.mortgage)     { MORTGAGE = d.mortgage;      save(K.mortgage, MORTGAGE); }
-      if (d.cashTracker)  { CT       = d.cashTracker;   save(K.ct,       CT); }
-      if (d.cashConfig)   { CTCFG    = d.cashConfig;    save(K.ctcfg,    CTCFG); }
-      if (d.insurance)    { INS      = d.insurance;     save(K.ins,      INS); }
-      if (d.super)        { SUPER    = d.super;         save(K.superdata,SUPER); }
-      if (d.pins)         { PINS     = d.pins;          save(K.pins,     PINS); }
-
-      // Re-render everything
-      renderDashboard(); renderTx(); renderBudget(); renderGoals();
-      renderBills(); renderMortgage(); renderCashTracker(); renderInsurance();
-      renderSuperPage(); renderAssets(); renderExportPage();
-
-      const exportedDate = d._exported ? new Date(d._exported).toLocaleString('en-AU') : 'unknown date';
-      statusEl.innerHTML = '<span style="color:var(--success);font-weight:700">' + ICON('circle-check-filled') + ' Restored from backup (' + exportedDate + ')</span>';
-      toast('✅ Data restored successfully!');
-      event.target.value = '';
     } catch (err) {
       statusEl.innerHTML = '<span style="color:var(--danger)">' + ICON('x') + ' Invalid file: ' + err.message + '</span>';
       event.target.value = '';
+      return;
     }
+
+    if (!confirm('⚠️ This will REPLACE all your current data with the backup.\n\nAre you sure?')) {
+      statusEl.textContent = 'Restore cancelled.';
+      event.target.value = '';
+      return;
+    }
+
+    const exportedDate = d._exported ? new Date(d._exported).toLocaleString('en-AU') : 'unknown date';
+    let msg = '✅ Restored backup from ' + exportedDate;
+    try { applyBackup(d); }
+    catch (err) { msg = '⚠️ Restore incomplete: ' + err.message; }   // e.g. storage full
+    // Reload even after a partial restore, so nothing stale in memory is saved over it.
+    try { localStorage.setItem('kf_restore_toast', msg); } catch(e) {}
+    statusEl.textContent = 'Restored — reloading…';
+    location.reload();
   };
   reader.readAsText(file);
 }
@@ -695,11 +748,13 @@ function renderExportDataSummary() {
   const clearEl = document.getElementById('export-clear-btns');
   if (!sumEl || !clearEl) return;
 
-  const totalSize = Object.keys(K).reduce((s, k) => {
-    const v = localStorage.getItem(K[k]);
+  // Everything a full backup contains
+  const totalSize = backupStorageKeys().concat(Object.values(BACKUP_LEGACY)).reduce((s, k) => {
+    const v = localStorage.getItem(k);
     return s + (v ? v.length : 0);
   }, 0);
   const sizeKB = (totalSize / 1024).toFixed(1);
+  const ipProps = load('kf_ip_properties') || [];
 
   sumEl.innerHTML = [
     [ICON('credit-card') + ' Transactions',     TX.length + ' records'],
@@ -710,6 +765,7 @@ function renderExportDataSummary() {
     [ICON('shield-check') + ' Insurance Policies', INS.length + ' policies'],
     [ICON('building-bank') + ' Cash Tracker Months', [...new Set(Object.values(CT).flatMap(d => Object.keys(d||{})))].length + ' months'],
     [ICON('briefcase') + ' Super Profiles',    ([SUPER.b?.balance, SUPER.s?.balance].filter(Boolean).length) + ' / 2 set'],
+    [ICON('building-community') + ' Investment Properties', ipProps.length + (ipProps.length === 1 ? ' property' : ' properties')],
     [ICON('device-floppy') + ' Total Data Size',   sizeKB + ' KB'],
   ].map(([k, v]) => '<div class="dr"><span class="dr-k">' + k + '</span><span class="dr-v">' + v + '</span></div>').join('');
 
