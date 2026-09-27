@@ -728,8 +728,8 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- LOGIN -->
 <!-- Mobile top bar -->
 <!-- Floating Action Button (mobile only) -->
-<div id="fab-overlay" onclick="closeFabMenu()" style="display:none;position:fixed;inset:0;z-index:398;"></div>
-<div id="fab-menu" style="display:none;position:fixed;z-index:400;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);">
+<div id="fab-overlay" onclick="closeFabMenu()" style="display:none"></div>
+<div id="fab-menu" style="display:none">
   <div class="fab-arc">
     <button class="fab-arc-item" onclick="fabAction('transaction')" style="--i:0">
       <span class="fab-arc-icon"><i class="ti ti-credit-card"></i></span><span class="fab-arc-lbl">Transaction</span>
@@ -751,21 +751,20 @@ window.addEventListener('unhandledrejection',function(e){
 <button id="fab" onclick="toggleFabMenu()" aria-label="Quick actions" style="display:none">+</button>
 
 <!-- iOS Bottom Tab Bar (mobile only) -->
-<nav id="bottom-tab-bar" style="display:none">
+<!-- Home · Spending · [+ FAB slot] · Budget · More — the FAB is fixed-positioned over the centre slot -->
+<nav id="bottom-tab-bar" style="display:none" aria-label="Main">
   <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
-    <span class="tab-icon"><i class="ti ti-home"></i></span><span class="tab-lbl">Dashboard</span>
-  </button>
-  <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
-    <span class="tab-icon"><i class="ti ti-calendar"></i></span><span class="tab-lbl">Bills</span>
+    <span class="tab-icon"><i class="ti ti-home"></i></span><span class="tab-lbl">Home</span>
   </button>
   <button class="tab-btn" id="tb-transactions"        onclick="goMob('transactions')">
-    <span class="tab-icon"><i class="ti ti-credit-card"></i></span><span class="tab-lbl">Transactions</span>
+    <span class="tab-icon"><i class="ti ti-credit-card"></i></span><span class="tab-lbl">Spending</span>
   </button>
-  <button class="tab-btn" id="tb-cash"                onclick="goMob('cash')">
-    <span class="tab-icon"><i class="ti ti-building-bank"></i></span><span class="tab-lbl">Cash</span>
+  <span class="tab-fab-slot" aria-hidden="true"></span>
+  <button class="tab-btn" id="tb-bva"                 onclick="goMob('bva')">
+    <span class="tab-icon"><i class="ti ti-chart-bar"></i></span><span class="tab-lbl">Budget</span>
   </button>
   <button class="tab-btn" id="tb-settings"            onclick="openMobMenu()">
-    <span class="tab-icon">⋯</span><span class="tab-lbl">More</span>
+    <span class="tab-icon"><i class="ti ti-dots"></i></span><span class="tab-lbl">More</span>
   </button>
 </nav>
 
@@ -776,7 +775,10 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-credit-card"></i> Spend</div>
     <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('bills')"><span><i class="ti ti-calendar"></i></span>Bills</button>
+      <button class="mob-menu-item" onclick="goMob('cash')"><span><i class="ti ti-building-bank"></i></span>Cash</button>
       <button class="mob-menu-item" onclick="goMob('transfers')"><span><i class="ti ti-refresh"></i></span>Transfers</button>
+      <button class="mob-menu-item" onclick="goMob('insights')"><span><i class="ti ti-chart-histogram"></i></span>Graphs</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -799,13 +801,16 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('super')"><span><i class="ti ti-briefcase"></i></span>Super</button>
       <button class="mob-menu-item" onclick="goMob('insurance')"><span><i class="ti ti-shield-check"></i></span>Insurance</button>
       <button class="mob-menu-item" onclick="goMob('equities')"><span><i class="ti ti-trending-up"></i></span>Equities</button>
-      <button class="mob-menu-item" onclick="goMob('bva')"><span><i class="ti ti-chart-bar"></i></span>Budget</button>
       <button class="mob-menu-item" onclick="goMob('forecast')"><span><i class="ti ti-sparkles"></i></span>Forecast</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-tools"></i> Tools</div>
     <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('upload')"><span><i class="ti ti-upload"></i></span>Upload</button>
+      <button class="mob-menu-item" onclick="goMob('smartrules')"><span><i class="ti ti-bolt"></i></span>Smart Rules</button>
+      <button class="mob-menu-item" onclick="goMob('borrowing')"><span><i class="ti ti-home-dollar"></i></span>Borrowing (Beta)</button>
+      <button class="mob-menu-item" onclick="goMob('investment')"><span><i class="ti ti-building-community"></i></span>Investment (Beta)</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -814,6 +819,8 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('categories')"><span><i class="ti ti-tag"></i></span>Categories</button>
       <button class="mob-menu-item" onclick="goMob('export')"><span><i class="ti ti-download"></i></span>Export</button>
       <button class="mob-menu-item" onclick="goMob('settings')"><span><i class="ti ti-settings"></i></span>Settings</button>
+      <button class="mob-menu-item" onclick="goMob('dashboard-layout')"><span><i class="ti ti-layout-dashboard"></i></span>Layout</button>
+      <button class="mob-menu-item" onclick="goMob('quickstart')"><span><i class="ti ti-rocket"></i></span>Quick Start</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -1335,6 +1342,7 @@ window.addEventListener('unhandledrejection',function(e){
         <span class="topbar-greet-hi" id="tb-greeting">Welcome back</span>
         <span class="topbar-greet-date" id="tb-greetdate"></span>
       </div>
+      <h1 class="mob-title" id="mob-title"></h1>
     </div>
     <div class="topbar-actions">
       <button class="tb-ibtn tb-mode-toggle" aria-label="Switch mode" title="Switch mode" onclick="toggleMode()"><i class="ti ti-sun"></i></button>
@@ -4037,9 +4045,20 @@ function showSwUpdatePrompt(reg){
   .sw-update-btn:disabled{ opacity:.6; cursor:default; }
   .sw-update-dismiss{
     background:none; border:none; color:var(--muted,#6278A0); cursor:pointer;
-    font-size:15px; line-height:1; padding:8px; min-height:40px;
+    font-size:15px; line-height:1; padding:8px; min-height:44px; min-width:44px;
   }
-  @media (max-width:760px){ .sw-update-bar{ bottom:88px; } }
+  /* Hidden until shown, so a partly off-screen bar can never peek out or catch taps */
+  .sw-update-bar:not(.show){ visibility:hidden; transition:transform .3s ease, visibility 0s .3s; }
+  /* Mobile (same query as layout.css): full-width bar sitting just above the tab bar */
+  @media (max-width:759px), (pointer:coarse) and (max-height:500px){
+    .sw-update-bar{
+      left:12px; right:12px; max-width:none;
+      bottom:calc(var(--tabbar-h,60px) + 12px + env(safe-area-inset-bottom,0px));
+      transform:translateY(calc(100% + var(--tabbar-h,60px) + 40px));
+    }
+    .sw-update-bar.show{ transform:none; }
+    .sw-update-text{ flex:1; min-width:0; }
+  }
 </style>
 <div class="sw-update-bar" id="sw-update-bar" role="status" aria-live="polite">
   <span class="sw-update-text">A new version of Kelda Finance is ready.</span>

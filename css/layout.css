@@ -143,20 +143,8 @@
 #nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:290;backdrop-filter:blur(2px);}
 #nav-overlay.show{display:block;}
 
-/* ══ MOBILE TOPBAR ══ */
-#mob-bar{
-  display:none;position:fixed;top:0;left:0;right:0;height:var(--topbar-h);
-  background:var(--nav-bg);border-bottom:1px solid var(--border);
-  align-items:center;justify-content:space-between;padding:0 16px;z-index:250;
-}
-#mob-bar .mob-logo{font-family:var(--font-display);font-size:.95rem;color:var(--primary);}
-#mob-bar .mob-logo span{color:#fff;}
-#hamburger{background:none;border:none;cursor:pointer;padding:8px;display:flex;flex-direction:column;gap:5px;-webkit-tap-highlight-color:transparent;}
-#hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s;}
-#hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
-#hamburger.open span:nth-child(2){opacity:0;}
-#hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
-#mob-user{font-size:.78rem;font-weight:600;color:var(--primary);}
+/* Mobile page title in the top bar — hidden on desktop, see mobile block below */
+.mob-title{display:none;}
 
 /* ══ DESKTOP TOPBAR — static across every page (items 5–8, 10, 11) ══ */
 #topbar{
@@ -197,8 +185,6 @@
 .tb-lock{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;transition:all .15s;}
 .tb-lock:hover{background:rgba(239,68,68,.15);color:var(--danger);border-color:var(--danger);}
 
-/* Dashboard's in-page action cluster is redundant on desktop — the top bar owns it now */
-@media(min-width:681px){ .kd-top-r{display:none!important;} }
 
 /* Global search modal */
 .search-modal-bar{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);}
@@ -255,7 +241,8 @@
 #bottom-tab-bar{
   display:none; /* shown via media query */
   position:fixed;bottom:0;left:0;right:0;z-index:9999;
-  height:60px;background:var(--nav-bg);
+  /* border-box is global, so the safe-area padding must be added on top of the bar height */
+  height:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));background:var(--nav-bg);
   border-top:1px solid var(--border);
   box-shadow:0 -2px 12px rgba(0,0,0,.18);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -269,15 +256,18 @@
 }
 .tab-btn.active{color:var(--nav-active);}
 .tab-btn:focus{outline:none;}
+.tab-btn:focus-visible .tab-icon{box-shadow:0 0 0 2px var(--primary);}
 .tab-icon{font-size:1.3rem;line-height:1;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;transition:background .15s;}
 .tab-btn.active .tab-icon{background:rgba(240,83,138,.12);}
-.tab-lbl{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;line-height:1;}
+.tab-lbl{font-size:.7rem;font-weight:600;white-space:nowrap;line-height:1;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* Centre slot the FAB sits over */
+.tab-fab-slot{flex:1;}
 
-/* ══ FLOATING ACTION BUTTON ══ */
+/* ══ FLOATING ACTION BUTTON — sits in the tab bar's centre slot ══ */
 #fab{
   display:none; /* shown via media query */
   position:fixed;
-  bottom:calc(62px + env(safe-area-inset-bottom,0px));
+  bottom:calc((var(--tabbar-h) - 54px) / 2 + env(safe-area-inset-bottom,0px));
   left:50%;transform:translateX(-50%);
   width:54px;height:54px;border-radius:50%;
   background:var(--primary);
@@ -293,8 +283,9 @@
 #fab:active{transform:translateX(-50%) scale(.92);box-shadow:0 2px 10px rgba(240,83,138,.4);}
 
 /* ══ FAB ARC MENU ══ */
-#fab-menu{display:none;position:fixed;z-index:400;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);}
-#fab-overlay{display:none;position:fixed;inset:0;z-index:398;}
+#fab-menu{display:none;position:fixed;z-index:400;bottom:calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);}
+/* Dim + blur the page so the menu items stand apart from content behind them */
+#fab-overlay{display:none;position:fixed;inset:0;z-index:398;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .fab-arc{display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:8px;}
 .fab-arc-item{
   display:flex;align-items:center;gap:10px;
@@ -324,6 +315,9 @@
   padding:0 20px calc(20px + env(safe-area-inset-bottom,0px));
   box-shadow:0 -8px 40px rgba(0,0,0,.3);
   transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.67,0);
+  /* Scroll inside the sheet on short screens rather than running off the top */
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px));
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
 }
 #mob-menu.open{transform:translateY(0);}
 #mob-menu-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 20px;}
@@ -335,6 +329,7 @@
   padding:12px 6px;border-radius:14px;border:none;cursor:pointer;
   background:var(--card2);color:var(--text);font-size:.72rem;font-weight:600;
   transition:all .15s;min-height:64px;justify-content:center;
+  text-align:center;line-height:1.2;min-width:0;
 }
 .mob-menu-item span{font-size:1.4rem;}
 .mob-menu-item:active{transform:scale(.95);opacity:.8;}
@@ -354,6 +349,20 @@ body:has(#login-screen:not(.gone)) #fab-overlay,
 body:has(#login-screen:not(.gone)) #mob-menu,
 body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
 
+/* ══ Hide bottom nav & FAB while a modal or the More sheet is open ══
+   They sit above modals (z 9999/10001 vs 1000), so would otherwise cover modal
+   buttons. Modals open via .open or an inline display set from JS — match both.
+   Modals stay below the login screen (z 9000), so nothing can draw over the lock. */
+body:has(.modal-overlay.open) #bottom-tab-bar,
+body:has(.modal-overlay[style*="display: flex"]) #bottom-tab-bar,
+body:has(.modal-overlay[style*="display:flex"]) #bottom-tab-bar,
+body:has(.modal-overlay[style*="display: block"]) #bottom-tab-bar,
+body:has(.modal-overlay.open) #fab,
+body:has(.modal-overlay[style*="display: flex"]) #fab,
+body:has(.modal-overlay[style*="display:flex"]) #fab,
+body:has(.modal-overlay[style*="display: block"]) #fab,
+body:has(#mob-menu.open) #fab{display:none!important;}
+
 /* ══════════════════════════════════
    RESPONSIVE BREAKPOINTS
    ══════════════════════════════════ */
@@ -365,19 +374,40 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
   .rate-table th:nth-child(n+4),.rate-table td:nth-child(n+4){display:none;}
 }
 
+/* Mobile layout = narrower than 760px, OR a touch device in landscape (short
+   viewport) — a phone on its side is wider than 760px but must not get the
+   hover-driven sidebar. The desktop query below is the exact inverse. */
+
 /* ── Desktop: hide all mobile-only elements ── */
-@media(min-width:681px){
+@media (min-width:760px) and (pointer:fine), (min-width:760px) and (min-height:501px){
   #bottom-tab-bar,#fab,#fab-menu,#fab-overlay{display:none!important;}
 }
 
-/* ── Mobile ≤680px ── */
-@media(max-width:680px){
+/* ── Mobile ── */
+@media (max-width:759px), (pointer:coarse) and (max-height:500px){
   /* Hide desktop nav */
   #nav{display:none!important;}
-  #topbar{display:none!important;}
 
-  /* Show mobile topbar */
-  #mob-bar{display:flex;}
+  /* Compact fixed header: back · title/greeting · search · alerts · lock.
+     Padded for the notch/status bar (the app runs black-translucent in standalone). */
+  #topbar{
+    position:fixed;top:0;left:0;right:0;z-index:250;
+    height:calc(var(--topbar-h) + env(safe-area-inset-top,0px));
+    padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));
+    gap:8px;
+  }
+  .topbar-left{flex:1;gap:8px;}
+  .topbar-actions{gap:4px;flex-shrink:0;}
+  .topbar-greet-hi{font-size:.95rem;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-greet-date,.tb-mode-toggle,.tb-addbtn,.user-pill{display:none;}
+  .tb-back,.tb-ibtn,.tb-lock{width:44px;height:44px;border-color:transparent;background:none;}
+  .mob-title{
+    display:block;margin:0;min-width:0;font-family:var(--font-display);font-size:1rem;font-weight:700;
+    color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .mob-title:empty{display:none;}
+  /* Non-dashboard pages show the page title in place of the greeting */
+  .topbar-left:has(.mob-title:not(:empty)) .topbar-greeting{display:none;}
 
   /* Layout: vertical, full width */
   body{flex-direction:column!important;}
@@ -385,8 +415,8 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
     margin-left:0!important;
     width:100%!important;
     height:auto!important;overflow:visible!important;
-    padding-top:var(--topbar-h);
-    padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))!important;
+    padding-top:calc(var(--topbar-h) + env(safe-area-inset-top,0px));
+    padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))!important;
     min-height:100svh;
   }
   .page-content{overflow-y:visible!important;}
@@ -425,8 +455,6 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
   .btn{min-height:48px;font-size:.88rem;border-radius:12px;}
   .btn-sm{min-height:38px;font-size:.78rem;border-radius:10px;}
 
-  /* Hide hamburger — bottom tab bar handles all navigation */
-  #hamburger{display:none!important;}
 
   /* Tables: show first 3 cols only (for non-transaction tables) */
   .tbl-wrap th:nth-child(n+4),.tbl-wrap td:nth-child(n+4){display:none;}
@@ -443,7 +471,7 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
   .db-charts-row{flex-direction:column!important;}
 
   /* Toast above tab bar */
-  #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px));left:14px;right:14px;border-radius:14px;}
+  #toast{bottom:calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom,0px));left:14px;right:14px;border-radius:14px;}
 
   /* Filters */
   .tx-filter-bar{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:none;}
@@ -474,7 +502,10 @@ body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
   .eq-card,.rule-card{border-radius:14px;}
 
   /* Modals */
-  .modal-box{border-radius:24px;padding:24px 20px;margin:16px;}
+  /* Keep modals clear of the notch and home indicator (tab bar is hidden while open) */
+  .modal-overlay{padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));}
+  .modal-box{border-radius:24px;padding:24px 20px;}
+  .modal-close{min-width:44px;min-height:44px;}
   .modal-actions{flex-direction:column-reverse;gap:8px;}
   .modal-actions .btn{width:100%;}
 }

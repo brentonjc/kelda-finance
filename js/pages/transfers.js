@@ -781,7 +781,7 @@ function renderTransfers() {
   var pendingBadge   = pendingCount;
   var unmatchedBadge = unmatchedTx.length;
 
-  var tabsHtml = '<div role="tablist" aria-label="Transfer categories" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:0">'
+  var tabsHtml = '<div role="tablist" aria-label="Transfer categories" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:0;overflow-x:auto;scrollbar-width:none">'
     + _trTabBtn('confirmed', 'Confirmed', confirmedBadge, 'rgba(0,200,150,.15)', 'var(--success)')
     + _trTabBtn('pending',   'Pending review', pendingBadge, 'rgba(245,158,11,.15)', 'var(--warn)', true)
     + _trTabBtn('unmatched', 'Unmatched', unmatchedBadge, 'rgba(239,68,68,.15)', 'var(--danger)')

@@ -16,12 +16,6 @@
 .kd-pill { padding: 5px 13px; border-radius: 99px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; color: var(--muted); border: 0.5px solid transparent; transition: all .12s; background: none; font-family: var(--font-body); }
 .kd-pill:hover { color: var(--text); border-color: var(--border); }
 .kd-pill.active { color: var(--pink); border-color: rgba(240,83,138,0.4); background: rgba(240,83,138,0.09); }
-.kd-top-r { display: flex; align-items: center; gap: 7px; margin-left: auto; }
-.kd-ibtn { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,0.04); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); font-size: 16px; position: relative; transition: all .12s; }
-.kd-ibtn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
-.kd-ndot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; background: var(--pink); border-radius: 50%; border: 1.5px solid var(--card); }
-.kd-addbtn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--pink); color: #fff; border: none; border-radius: 99px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: var(--font-body); transition: opacity .12s; }
-.kd-addbtn:hover { opacity: .9; }
 
 /* ── Tile grid — flexbox: 3 per row, wrapping to 2 rows, filling the space ── */
 .kd-bodywrap { display: flex; flex-wrap: wrap; gap: 12px; align-content: stretch; flex: 1 1 auto; min-height: 0; }
@@ -132,10 +126,9 @@
 @media (max-width: 900px) {
   .kd-pills { order: 3; width: 100%; }
   .kd-pills .kd-pill { flex: 1; text-align: center; }
-  .kd-top-r { margin-left: auto; }
 }
-@media (max-width: 760px) {
-  /* Mobile: let the dashboard scroll naturally, single-column tiles */
+@media (max-width: 759px), (pointer: coarse) and (max-height: 500px) {
+  /* Mobile (same query as the layout.css shell): let the dashboard scroll naturally, single-column tiles */
   #page-dashboard.active { min-height: 0; display: block; }
   .kd-dash { min-height: 0; display: block; }
   .kd-bodywrap { display: flex; flex-direction: column; }
@@ -143,12 +136,8 @@
   .kd-top { gap: 8px; }
   .kd-greeting { font-size: 16px; white-space: normal; }
   .kd-pills { order: 3; width: 100%; }
-  .kd-top-r { margin-left: auto; }
-  .kd-addbtn span, .kd-addbtn { white-space: nowrap; }
 }
 @media (max-width: 480px) {
-  .kd-addbtn { padding: 8px 12px; font-size: 11.5px; }
-  .kd-top-r { gap: 5px; }
   .kd-cf3 { flex-wrap: wrap; gap: 10px; }
   .kd-goals-grid { grid-template-columns: 1fr 1fr; }
 }

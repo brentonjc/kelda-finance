@@ -103,6 +103,8 @@ function toast(msg,dur=2400,type){
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
 const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','borrowing','investment','settings','dashboard-layout','quickstart'];
+// Short titles for the compact mobile header (the dashboard keeps the greeting instead)
+const MOB_TITLES={insights:'Graphs',transactions:'Spending',bills:'Bills',goals:'Goals',mortgage:'Mortgage',liabilities:'Liabilities',cash:'Cash',insurance:'Insurance',super:'Super',assets:'Net Worth',bva:'Budget',categories:'Categories',smartrules:'Smart Rules',export:'Export',upload:'Upload',forecast:'Forecast',transfers:'Transfers',equities:'Equities',borrowing:'Borrowing Power',investment:'Investment Property',settings:'Settings','dashboard-layout':'Dashboard Layout',quickstart:'Quick Start'};
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -144,15 +146,16 @@ function go(id){
     else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
-  // Sync mobile tab bar
-  var tabs=['dashboard','bva','bills','transactions','cash'];
+  // Sync mobile tab bar — pages without their own tab light up "More"
+  var tabs=['dashboard','transactions','bva'];
   tabs.forEach(function(t){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['dashboard','insights','categories','smartrules','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
-  if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
+  if(stBtn)stBtn.classList.toggle('active',tabs.indexOf(id)<0);
+  var mt=document.getElementById('mob-title');
+  if(mt)mt.textContent=MOB_TITLES[id]||'';
   navSyncActive(id);
 }
 
@@ -471,17 +474,7 @@ function getTotalBal(){return activeTX().reduce((s,t)=>t.type==='income'?s+Numbe
 
 function goMob(pageId) {
   closeMobMenu();
-  go(pageId);
-  // Update tab bar active state
-  var tabs = ['dashboard','bills','transactions','cash'];
-  tabs.forEach(function(t) {
-    var btn = document.getElementById('tb-' + t);
-    if (btn) btn.classList.toggle('active', t === pageId);
-  });
-  // Settings btn active if settings-related page
-  var settingsPages = ['categories','export','mortgage','cash','insurance','super','assets','transfers','forecast'];
-  var settBtn = document.getElementById('tb-settings');
-  if (settBtn) settBtn.classList.toggle('active', settingsPages.indexOf(pageId) >= 0);
+  go(pageId);   // go() syncs the tab bar active state
 }
 
 function openMobMenu() {
@@ -872,14 +865,12 @@ function fabAction(action) {
   closeFabMenu();
   if (action === 'transaction') {
     goMob('transactions');
-    setTimeout(function() {
-      var addBtn = document.getElementById('tx-add-toggle');
-      if (addBtn) addBtn.click();
-    }, 300);
+    if (typeof openTxModal === 'function') openTxModal();
   } else if (action === 'import') {
     goMob('upload');
   } else if (action === 'bill') {
     goMob('bills');
+    if (typeof blOpenAddModal === 'function') blOpenAddModal();
   } else if (action === 'cash') {
     goMob('cash');
   } else if (action === 'transfer') {
@@ -1009,17 +1000,18 @@ function toggleNav(){
   const hb=document.getElementById('hamburger');
   const open=nav.classList.toggle('open');
   ov.classList.toggle('show',open);
-  hb.classList.toggle('open',open);
+  if(hb)hb.classList.toggle('open',open);
 }
 function closeNav(){
   document.getElementById('nav').classList.remove('open');
   document.getElementById('nav-overlay').classList.remove('show');
-  document.getElementById('hamburger').classList.remove('open');
+  const hb=document.getElementById('hamburger');
+  if(hb)hb.classList.remove('open');
 }
 // Auto-close nav on link tap (mobile)
 document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('#nav .nav-item, #nav .nav-fly-item').forEach(a=>{
-    a.addEventListener('click',()=>{if(window.innerWidth<=680)closeNav();});
+    a.addEventListener('click',()=>{if(window.innerWidth<760)closeNav();});
   });
   if (typeof initNavFlyouts === 'function') initNavFlyouts();
   if (typeof initNavPins === 'function') initNavPins();

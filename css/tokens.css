@@ -55,7 +55,7 @@
   --font-mono:'DM Mono',monospace;
   --font-head:var(--font-display);
   /* ── Layout ── */
-  --nav-w:56px; --nav-w-open:200px; --topbar-h:52px;
+  --nav-w:56px; --nav-w-open:200px; --topbar-h:52px; --tabbar-h:60px;
 }
 
 /* ── Shadows depend on MODE only (dark needs heavier depth than light) ── */
