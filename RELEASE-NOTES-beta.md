@@ -44,7 +44,7 @@ The Borrowing Power calculator has moved out from under "Calculators" into its o
 
 ## 🏘️ Investment Property — new in Beta
 
-A new **Investment Property** tool sits under **Beta Features → Investment Property**. It tracks your rental properties through the year and turns them into a tax-time summary. It's an early preview, so expect some rough edges.
+A new **Investment Property** tool sits under **Beta Features → Investment Property (Beta)**. It tracks your rental properties through the year and turns them into a tax-time summary. It's an early preview, so expect some rough edges.
 
 - **Guided property setup** — property details, ownership split, investment loan, rental income, expense schedule, depreciation and capital improvements.
 - **Works from your Kelda data** — link a property to a loan from your **Mortgage** or **Liabilities** page and its balance, rate, offset and value stay in sync. Owner names come from your Kelda profiles.
@@ -53,7 +53,7 @@ A new **Investment Property** tool sits under **Beta Features → Investment Pro
 - **Income & Expenses** — a ledger that fills itself from each property's rent and expense schedule and your tagged Kelda transactions, plus one-off transactions, an annualised rental statement, and a vacancy log for periods the property wasn't available to rent. With more than one property, you choose which one each Kelda transaction belongs to.
 - **Tax Report for each financial year** (1 July – 30 June), set out like the ATO rental property worksheet: gross rent, expenses in the ATO's categories (including Div 40 and Div 43 depreciation) and net rental income or loss, per property and combined.
 - **Negative gearing estimate** — the estimated refund (or extra tax payable) for each owner, based on their ownership share and that year's tax rates (Stage 3 from 2024–25, and the lower 15% bracket from 2026–27), plus a rough capital gains tax estimate.
-- Income-vs-expense and expense-breakdown charts, and a **print-friendly** report.
+- Income-vs-expense and expense-breakdown charts that follow your light/dark theme, and a **print-friendly** report.
 
 ---
 
@@ -62,6 +62,9 @@ A new **Investment Property** tool sits under **Beta Features → Investment Pro
 **Export → Full Backup** used to save only part of your data: transactions, budgets, goals, bills, mortgage, cash tracker, insurance and super. It now includes everything — liabilities, investments, categories, Smart Rules, accounts, profile names, net-worth history, your Borrowing Power scenario and Investment Property. Restoring replaces all your data with the backup, then reloads the app.
 
 Backups made before this version still restore, but they only hold that older, partial set.
+
+- **Moving to a new device?** On the welcome screen, tap **Already set up? Restore from backup** and pick your backup file — no need to set up first.
+- **Settings → Erase all data** now removes everything Kelda stores on the device, including Investment Property and Borrowing Power data (it previously left some of it behind).
 
 ---
 

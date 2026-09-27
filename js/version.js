@@ -34,6 +34,7 @@ var APP_CHANGELOG = [
       'New "Investment Property" category feeds rent and costs into the module',
       'Investment Property: links to Kelda loans so balance, rate and value stay in sync',
       'Full Backup now includes all your data, not just the core set',
+      'Restore a backup from the welcome screen; Erase All now clears everything',
     ],
   },
   {
