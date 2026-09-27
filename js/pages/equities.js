@@ -81,25 +81,33 @@ function eqHeldUnits(h) {
     return Math.max(0, base - sold);
 }
 
-// Value at a given price per unit — options are worth only the price above strike
+// What one unit is worth at a share price — an option only the part above its strike
+function eqUnitValue(h, price) {
+    return h.type === 'option' ? Math.max(0, price - (parseFloat(h.strikePrice)||0)) : price;
+}
+
 function eqHoldingValueAt(h, price) {
-    var t = h.type || 'stock';
-    if (t === 'bond') return parseFloat(h.currentValue) || 0;
-    if (t === 'option') return eqHeldUnits(h) * Math.max(0, price - (parseFloat(h.strikePrice)||0));
-    return eqHeldUnits(h) * price;
+    if ((h.type || 'stock') === 'bond') return parseFloat(h.currentValue) || 0;
+    return eqHeldUnits(h) * eqUnitValue(h, price);
 }
 
 function eqHoldingValue(h) { return eqHoldingValueAt(h, parseFloat(h.currentPrice)||0); }
 
+// Cost base of the units still held. An RSU costs its market price at vest (the vest price
+// entered on the grant); options are granted at no cost.
 function eqHoldingCost(h) {
     var t = h.type || 'stock';
     if (t === 'bond') return parseFloat(h.purchasePrice) || 0;
-    if (t === 'rsu' || t === 'option') return 0;
-    var sold = (h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0);
-    return Math.max(0, (parseFloat(h.qty)||0) - sold) * (parseFloat(h.cost)||0);
+    if (t === 'option') return 0;
+    return eqHeldUnits(h) * (parseFloat(t === 'rsu' ? h.grantPrice : h.cost) || 0);
 }
 
-function eqHoldingGain(h) { return eqHoldingValue(h) - eqHoldingCost(h); }
+// An RSU without a vest price has no known cost, so it adds nothing rather than counting its
+// whole value as profit
+function eqHoldingGain(h) {
+    if (h.type === 'rsu' && !(parseFloat(h.grantPrice) > 0)) return 0;
+    return eqHoldingValue(h) - eqHoldingCost(h);
+}
 
 function eqTotalByType(type) {
     return EQUITIES.filter(function(h){return h.type===type;})
@@ -127,6 +135,8 @@ function eqTotalGain() {
 // ══════════════════════════════════════════════════════════════
 var EQ_STALE_DAYS = 30;
 var EQ_LISTED = ['ASX', 'NYSE', 'NASDAQ', 'Crypto'];
+var EQ_US_LISTED = ['NYSE', 'NASDAQ'];
+var EQ_FX_KEY = 'cff_eq_fx';   // { usdAud: A$ per US$1, updated } — the rate last used on the price sheet
 
 // Group key: the code upper-cased with an ASX ".AX" suffix dropped, else the company name.
 // Bonds carry their own value and are never grouped.
@@ -138,7 +148,8 @@ function eqSecKey(h) {
     return name ? 'name:' + name : '';
 }
 
-// One entry per security: its holdings, the latest price and when it was set, units held
+// One entry per security: its holdings, the latest price and when it was set, units held.
+// price is always A$; quote is the US$ price and rate it came from, when it was entered in US$.
 function eqSecurities() {
     var map = {}, list = [];
     EQUITIES.forEach(function(h) {
@@ -147,7 +158,8 @@ function eqSecurities() {
         var s = map[key];
         if (!s) {
             s = map[key] = { key:key, code: key.indexOf('name:') === 0 ? '' : key, name:'', holdings:[],
-                             price:0, updated:0, prices:{}, exchanges:{}, units:0, options:0, value:0, active:false };
+                             price:0, updated:0, quote:null, prices:{}, exchanges:{}, ccy:'', usListed:false,
+                             units:0, options:0, value:0, active:false };
             list.push(s);
         }
         s.holdings.push(h);
@@ -155,9 +167,14 @@ function eqSecurities() {
         var px = parseFloat(h.currentPrice) || 0, ts = h.priceUpdated || 0;
         if (px > 0) {
             s.prices[px] = true;
-            if (!s.price || ts > s.updated) { s.price = px; s.updated = ts; }
+            if (!s.price || ts > s.updated) {
+                s.price = px; s.updated = ts;
+                s.quote = h.quotePrice > 0 && h.fxRate > 0 ? { price:h.quotePrice, rate:h.fxRate } : null;
+            }
         }
         if (EQ_LISTED.indexOf(h.exchange) !== -1) s.exchanges[h.exchange] = true;
+        if (EQ_US_LISTED.indexOf(h.exchange) !== -1) s.usListed = true;
+        if (!s.ccy && h.priceCcy) s.ccy = h.priceCcy;
         var held = eqHeldUnits(h);
         if (h.type === 'option') s.options += held; else s.units += held;
         s.value += eqHoldingValue(h);
@@ -166,22 +183,62 @@ function eqSecurities() {
     list.forEach(function(s) {
         s.mixedPrices  = Object.keys(s.prices).length > 1;
         s.exchangeList = Object.keys(s.exchanges);
+        if (!s.ccy) s.ccy = s.usListed ? 'USD' : 'AUD';   // US-listed codes are priced in US$ unless switched
     });
     return list;
 }
 
 function eqSecLabel(s) { return s.code || s.name || '—'; }
 
-// The one place a security's price changes: every holding with that code gets it
-function eqSetPrice(key, price, when) {
+// The one place a security's price changes: every holding with that code gets it. price is A$;
+// quote is the US$ price and rate it was converted from — without one, an old US$ quote is dropped.
+function eqSetPrice(key, price, when, quote) {
     var n = 0;
     EQUITIES.forEach(function(h) {
         if (!key || eqSecKey(h) !== key) return;
         h.currentPrice = price;
         h.priceUpdated = when || Date.now();
+        if (quote) { h.quotePrice = quote.price; h.fxRate = quote.rate; }
+        else { delete h.quotePrice; delete h.fxRate; }
         n++;
     });
     return n;
+}
+
+// Which currency a code's price is entered in on the price sheet ('AUD' or 'USD')
+function eqSetCcy(key, ccy) {
+    EQUITIES.forEach(function(h) {
+        if (!key || eqSecKey(h) !== key) return;
+        h.priceCcy = ccy;
+        if (ccy !== 'USD') { delete h.quotePrice; delete h.fxRate; }
+    });
+}
+
+// A$ per US$1, as last saved on the price sheet
+function eqFxRate() {
+    var fx = load(EQ_FX_KEY);
+    return fx && fx.usdAud > 0 ? fx : null;
+}
+
+function eqToAud(price, ccy, rate) {
+    return ccy === 'USD' ? Math.round(price * rate * 10000) / 10000 : price;
+}
+
+// Lines like "CBA 112.40", "VGS.AX, $98.12", "TEAM US$255.10", "TEAM 255.10 USD" or two
+// spreadsheet columns. ccy is 'USD'/'AUD' when the line says which, else null.
+function eqParsePriceLines(text) {
+    var found = [], unread = 0;
+    String(text || '').split(/\r?\n/).forEach(function(line) {
+        line = line.trim();
+        if (!line) return;
+        var m = line.match(/^([A-Za-z0-9][A-Za-z0-9.\-]*)[\s,;:|=–-]+(US\$|USD|A\$|AUD|\$)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)(?:\s*(USD|AUD))?/i);
+        var price = m ? parseFloat(m[3].replace(/,/g, '')) : 0;
+        if (!(price > 0)) { unread++; return; }
+        var mark = (m[2] || m[4] || '').toUpperCase(), code = m[1].toUpperCase();
+        found.push({ code:code, key:code.replace(/\.AX$/, ''), price:price,
+                     ccy: mark.indexOf('US') === 0 ? 'USD' : mark.indexOf('A') === 0 ? 'AUD' : null });
+    });
+    return { found:found, unread:unread };
 }
 
 function eqPriceAge(ts) {
@@ -251,6 +308,21 @@ function renderEquitiesPage() {
 }
 
 // ── Vested vs Unvested — portfolio summary card ───────────────
+// Units and value across RSU and option grants; vested value counts only units still held
+function eqVestTotals(holdings) {
+    var t = { totalUnits:0, vestedUnits:0, unvestedUnits:0, vestedValue:0, unvestedValue:0 };
+    holdings.forEach(function(h) {
+        var v    = eqVestCalc(h);
+        var unit = eqUnitValue(h, parseFloat(h.currentPrice) || 0);
+        t.totalUnits    += parseFloat(h.totalUnits) || 0;
+        t.vestedUnits   += v.vested;
+        t.unvestedUnits += v.unvested;
+        t.vestedValue   += eqHeldUnits(h) * unit;
+        t.unvestedValue += v.unvested * unit;
+    });
+    return t;
+}
+
 function renderEqVestSummary() {
     var el = document.getElementById('eq-vest-summary');
     if (!el) return;
@@ -258,18 +330,9 @@ function renderEqVestSummary() {
     if (!vestHoldings.length) { el.innerHTML=''; el.style.display='none'; return; }
     el.style.display = '';
 
-    var totalUnits=0, vestedUnits=0, unvestedUnits=0, vestedValue=0, unvestedValue=0;
-    vestHoldings.forEach(function(h) {
-        var v   = eqVestCalc(h);
-        var px  = parseFloat(h.currentPrice) || 0;
-        var sold= (h.sales||[]).reduce(function(a,x){ return a+(parseFloat(x.qty)||0); }, 0);
-        var heldVested = Math.max(0, v.vested - sold);
-        totalUnits    += parseFloat(h.totalUnits) || 0;
-        vestedUnits   += v.vested;
-        unvestedUnits += v.unvested;
-        vestedValue   += heldVested * px;
-        unvestedValue += v.unvested * px;
-    });
+    var vt = eqVestTotals(vestHoldings);
+    var totalUnits = vt.totalUnits, vestedUnits = vt.vestedUnits, unvestedUnits = vt.unvestedUnits;
+    var vestedValue = vt.vestedValue, unvestedValue = vt.unvestedValue;
 
     var pct    = totalUnits > 0 ? Math.min(100, vestedUnits / totalUnits * 100) : 0;
     var barClr = pct >= 75 ? 'var(--success)' : pct >= 40 ? 'var(--warn)' : 'var(--danger)';
@@ -302,6 +365,26 @@ function renderEqVestSummary() {
 }
 
 // ── Vested vs Unvested — by year: doughnut + table ────────────
+// year → { vestedUnits, vestedValue, unvestedUnits, unvestedValue } from each grant's schedule
+function eqVestByYear(holdings) {
+    var yearMap = {};
+    holdings.forEach(function(h) {
+        var unit = eqUnitValue(h, parseFloat(h.currentPrice) || 0);
+        eqVestCalc(h).schedule.forEach(function(s) {
+            var yr = s.date.getFullYear();
+            if (!yearMap[yr]) yearMap[yr] = { vestedUnits:0, vestedValue:0, unvestedUnits:0, unvestedValue:0 };
+            if (s.isPast) {
+                yearMap[yr].vestedUnits  += s.units;
+                yearMap[yr].vestedValue  += s.units * unit;
+            } else {
+                yearMap[yr].unvestedUnits += s.units;
+                yearMap[yr].unvestedValue += s.units * unit;
+            }
+        });
+    });
+    return yearMap;
+}
+
 function renderEqVestByYear() {
     var el = document.getElementById('eq-vest-by-year');
     if (!el) return;
@@ -309,23 +392,7 @@ function renderEqVestByYear() {
     if (!vestHoldings.length) { el.style.display='none'; return; }
     el.style.display = '';
 
-    // Build year map: year → { vestedUnits, vestedValue, unvestedUnits, unvestedValue }
-    var yearMap = {};
-    vestHoldings.forEach(function(h) {
-        var v  = eqVestCalc(h);
-        var px = parseFloat(h.currentPrice) || 0;
-        v.schedule.forEach(function(s) {
-            var yr = s.date.getFullYear();
-            if (!yearMap[yr]) yearMap[yr] = { vestedUnits:0, vestedValue:0, unvestedUnits:0, unvestedValue:0 };
-            if (s.isPast) {
-                yearMap[yr].vestedUnits  += s.units;
-                yearMap[yr].vestedValue  += s.units * px;
-            } else {
-                yearMap[yr].unvestedUnits += s.units;
-                yearMap[yr].unvestedValue += s.units * px;
-            }
-        });
-    });
+    var yearMap = eqVestByYear(vestHoldings);
 
     var years        = Object.keys(yearMap).map(Number).sort();
     var totalVested  = years.reduce(function(s,y){ return s + yearMap[y].vestedValue;   }, 0);
@@ -507,7 +574,7 @@ function renderEqCharts() {
             }
             vestHoldings.forEach(function(h) {
                 var vest2 = eqVestCalc(h);
-                var px2   = parseFloat(h.currentPrice)||0;
+                var px2   = eqUnitValue(h, parseFloat(h.currentPrice)||0);
                 vest2.schedule.forEach(function(s) {
                     if (s.isPast) return;
                     for (var qi2 = 0; qi2 < quarters.length; qi2++) {
@@ -592,7 +659,8 @@ function renderEqHoldingRow(h) {
     } else {
         var px = parseFloat(h.currentPrice) || 0, age = eqPriceAge(h.priceUpdated);
         priceLine = px
-            ? '<span class="eq-px-age'+(age.stale?' eq-px-age--stale':'')+'"><span class="mono">'+eqFmtPrice(px)+'</span> · '+age.label+'</span>'
+            ? '<span class="eq-px-age'+(age.stale?' eq-px-age--stale':'')+'"><span class="mono">'+eqFmtPrice(px)+'</span>'
+              + (h.quotePrice > 0 ? ' <span class="mono">(US'+eqFmtPrice(h.quotePrice)+')</span>' : '') + ' · '+age.label+'</span>'
             : '<span class="eq-px-age eq-px-age--stale">No price yet</span>';
     }
 
@@ -702,7 +770,7 @@ function renderEqHoldingDetail(h) {
 
         // Vesting schedule table (expandable)
         if (vest.schedule.length) {
-            var px2 = parseFloat(h.currentPrice)||0;
+            var px2 = eqUnitValue(h, parseFloat(h.currentPrice)||0);
             var schedRows = '';
             vest.schedule.forEach(function(s) {
                 var ds = s.date.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
@@ -1023,7 +1091,10 @@ function saveEqModal() {
             .reduce(function(best, h){ return !best || (h.priceUpdated||0) > (best.priceUpdated||0) ? h : best; }, null);
         var edited = existing ? price !== oldPrice : price > 0 && (!peer || price !== parseFloat(peer.currentPrice));
         if (price > 0 && edited) shared = eqSetPrice(key, price, now) - 1;
-        else if (peer && (!existing || key !== oldKey)) { rec.currentPrice = parseFloat(peer.currentPrice); rec.priceUpdated = peer.priceUpdated; }
+        else if (peer && (!existing || key !== oldKey)) {
+            rec.currentPrice = parseFloat(peer.currentPrice); rec.priceUpdated = peer.priceUpdated;
+            ['priceCcy', 'quotePrice', 'fxRate'].forEach(function(f){ if (peer[f] !== undefined) rec[f] = peer[f]; else delete rec[f]; });
+        }
         else if (existing) rec.priceUpdated = oldUpdated;
     }
 
@@ -1132,14 +1203,14 @@ function deleteSaleEq(holdingId, saleId) {
 // ══════════════════════════════════════════════════════════════
 // UPDATE PRICES SHEET — one row per security; a blank box keeps the current price
 // ══════════════════════════════════════════════════════════════
-var eqPx = null;   // { secs, links } for the open sheet — inputs refer to rows by index
+var eqPx = null;   // { secs, links, fx } for the open sheet — inputs refer to rows by index
 
 function openBatchPriceModal(focusKey) {
     var overlay = document.getElementById('eq-modal-overlay');
     if (!overlay) return;
     var secs  = eqSecurities().sort(function(a, b){ return eqSecLabel(a).localeCompare(eqSecLabel(b)); });
     var bonds = EQUITIES.filter(function(h){ return h.type === 'bond'; });
-    eqPx = { secs:secs, links:eqLinkSuggestions(secs) };
+    eqPx = { secs:secs, links:eqLinkSuggestions(secs), fx:eqFxRate() };
 
     var notes = eqPx.links.map(function(l, i) {
         return '<div class="eq-px-note"><span style="flex:1;min-width:180px">' + ICON('link') + ' <strong>' + esc(l.from.name)
@@ -1152,9 +1223,10 @@ function openBatchPriceModal(focusKey) {
         var sub = n + ' holding' + (n !== 1 ? 's' : '')
             + (s.units ? ' · ' + s.units.toLocaleString('en-AU', { maximumFractionDigits:4 }) + ' units' : '')
             + (s.options ? ' · ' + s.options.toLocaleString('en-AU', { maximumFractionDigits:4 }) + ' options' : '');
-        var last = s.price
-            ? 'Last <span class="mono">' + eqFmtPrice(s.price) + '</span> · <span class="' + (age.stale ? 'eq-px-age--stale' : '') + '">' + age.label + '</span>'
-            : '<span class="eq-px-age--stale">No price yet</span>';
+        var ageTxt = '<span class="' + (age.stale ? 'eq-px-age--stale' : '') + '">' + age.label + '</span>';
+        var last = !s.price ? '<span class="eq-px-age--stale">No price yet</span>'
+            : s.quote ? 'Last <span class="mono">US' + eqFmtPrice(s.quote.price) + '</span> (<span class="mono">' + eqFmtPrice(s.price) + '</span>) · ' + ageTxt
+            : 'Last <span class="mono">' + eqFmtPrice(s.price) + '</span> · ' + ageTxt;
         var warn = '';
         if (s.mixedPrices) {
             var ps = Object.keys(s.prices).map(Number).sort(function(a, b){ return a - b; });
@@ -1166,11 +1238,14 @@ function openBatchPriceModal(focusKey) {
             +   '<div class="eq-px-name"><strong>' + esc(label) + '</strong>' + (s.code && s.name ? ' <span class="eq-px-co">' + esc(s.name) + '</span>' : '') + '</div>'
             +   '<div class="eq-px-sub">' + sub + '</div><div class="eq-px-sub">' + last + '</div>' + warn
             + '</div>'
-            + '<div class="eq-px-entry">'
+            + '<div class="eq-px-entry"><div class="eq-px-field">'
+            +   '<select class="eq-px-ccy" id="eq-px-c-' + i + '" data-i="' + i + '" aria-label="Currency for ' + esc(label) + '" onchange="eqPxCcy(this)">'
+            +     '<option value="AUD"' + (s.ccy === 'AUD' ? ' selected' : '') + '>A$</option>'
+            +     '<option value="USD"' + (s.ccy === 'USD' ? ' selected' : '') + '>US$</option></select>'
             +   '<input type="number" class="eq-px-input mono" id="eq-px-' + i + '" data-i="' + i + '" min="0" step="any" inputmode="decimal" enterkeyhint="next"'
             +   ' placeholder="New price" aria-label="New price for ' + esc(label) + '" oninput="eqPxInput(this)" onkeydown="eqPxKey(event)"/>'
-            +   '<div class="eq-px-delta mono" id="eq-px-d-' + i + '"></div>'
-            + '</div></div>';
+            + '</div><div class="eq-px-delta mono" id="eq-px-d-' + i + '"></div></div>'
+            + '</div>';
     }).join('');
 
     var bondRows = bonds.map(function(h) {
@@ -1183,18 +1258,29 @@ function openBatchPriceModal(focusKey) {
             + '</div>';
     }).join('');
 
+    var fx = eqPx.fx;
+    var fxRow = secs.length
+        ? '<div class="eq-px-fx" id="eq-px-fx"><label for="eq-px-rate">Exchange rate: US$1 = A$</label>'
+            + '<input type="number" class="eq-px-rate mono" id="eq-px-rate" min="0" step="any" inputmode="decimal" enterkeyhint="next"'
+            + ' value="' + (fx ? fx.usdAud : '') + '" placeholder="e.g. 1.52" oninput="eqPxRate()" onkeydown="eqPxKey(event)"/>'
+            + '<div class="eq-px-sub">' + (fx ? 'Saved ' + eqPriceAge(fx.updated).label + '. ' : '')
+            + 'US$ prices are converted to A$ with this rate. Codes listed on NYSE or NASDAQ start in US$.</div>'
+            + '<div class="eq-px-warn" id="eq-px-rate-warn"></div></div>'
+        : '';
+
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<div class="section-label" style="margin:0">' + ICON('currency-dollar') + ' Update prices</div>'
         + '<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" aria-label="Close">' + ICON('x') + '</button>'
         + '</div>'
-        + '<div class="eq-px-help">One price per code, and it updates every holding with that code. Leave a box blank to keep the current price. Prices are in AUD, so enter US shares at their AUD value.</div>'
+        + '<div class="eq-px-help">One price per code, and it updates every holding with that code. Leave a box blank to keep the current price. Choose A$ or US$ for each code.</div>'
         + (secs.length ? '<details class="eq-px-paste"><summary>' + ICON('clipboard-text') + ' Paste prices</summary>'
-            + '<div class="eq-px-help">One per line: the code, then the price, e.g. <span class="mono">CBA 112.40</span>. Two columns copied from a spreadsheet work too.</div>'
+            + '<div class="eq-px-help">One per line: the code, then the price, e.g. <span class="mono">CBA 112.40</span> or <span class="mono">TEAM US$255.10</span>. Two columns copied from a spreadsheet work too.</div>'
             + '<textarea id="eq-px-paste" rows="4" placeholder="CBA 112.40&#10;VGS 98.12"></textarea>'
             + '<button class="btn btn-ghost btn-sm" onclick="eqPxApplyPaste()">Fill in prices</button>'
             + '<div id="eq-px-paste-result" class="eq-px-help" role="status"></div>'
             + '</details>' : '')
+        + fxRow
         + notes
         + (rows || bondRows
             ? rows + (bondRows ? '<div class="eq-group-label">Bonds — current value</div>' + bondRows : '')
@@ -1205,6 +1291,7 @@ function openBatchPriceModal(focusKey) {
         + '</div></div>';
     overlay.style.display = 'flex';
     overlay.onclick = function(e){ if(e.target===overlay) closeEqModal(); };
+    eqPxSyncFx();
     eqPxCount();
 
     var at = focusKey ? secs.findIndex(function(s){ return s.key === focusKey; }) : -1;
@@ -1222,17 +1309,54 @@ function eqOpenPriceFor(id) {
     openBatchPriceModal(h ? eqSecKey(h) : null);
 }
 
-// Live preview of a typed price: change vs the last price, and in total value
+function eqPxCcyOf(inp) {
+    var sel = document.getElementById('eq-px-c-' + inp.dataset.i);
+    return sel ? sel.value : 'AUD';
+}
+
+// A$ per US$1 as typed in the rate box (0 when blank or not a number)
+function eqPxRateValue() {
+    var r = parseFloat((document.getElementById('eq-px-rate') || {}).value);
+    return r > 0 ? r : 0;
+}
+
+// The exchange rate box only shows while some code is priced in US$
+function eqPxSyncFx() {
+    var row = document.getElementById('eq-px-fx');
+    if (row) row.hidden = !Array.prototype.some.call(document.querySelectorAll('.eq-px-ccy'), function(sel){ return sel.value === 'USD'; });
+}
+
+function eqPxCcy(sel) {
+    eqPxSyncFx();
+    eqPxInput(document.getElementById('eq-px-' + sel.dataset.i));
+}
+
+function eqPxRate() {
+    var r = parseFloat((document.getElementById('eq-px-rate') || {}).value), warn = document.getElementById('eq-px-rate-warn');
+    if (warn) warn.textContent = r > 0 && r < 1
+        ? 'That looks like US$ per A$1. Enter A$ per US$1 instead: 1 ÷ ' + r + ' = ' + (1 / r).toFixed(4) + '.' : '';
+    document.querySelectorAll('.eq-px-input').forEach(function(inp){ if (eqPxCcyOf(inp) === 'USD') eqPxInput(inp); });
+    eqPxCount();
+}
+
+// Live preview of a typed price: its A$ value if entered in US$, the change vs the last price,
+// and the change in total value
 function eqPxInput(inp) {
     var s = eqPx && eqPx.secs[+inp.dataset.i], out = document.getElementById('eq-px-d-' + inp.dataset.i);
     if (s && out) {
-        var p = parseFloat(inp.value);
+        var p = parseFloat(inp.value), usd = eqPxCcyOf(inp) === 'USD', rate = eqPxRateValue();
+        out.style.color = '';
         if (inp.value === '' || !(p > 0)) {
             out.textContent = '';
+        } else if (usd && !rate) {
+            out.textContent = 'Enter the exchange rate above';
+            out.style.color = 'var(--warn)';
         } else {
-            var diff = s.holdings.reduce(function(t, h){ return t + eqHoldingValueAt(h, p); }, 0) - s.value;
-            var pct  = s.price ? (p / s.price - 1) * 100 : null;
-            out.textContent = (pct !== null ? (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1) + '% · ' : '')
+            var aud  = eqToAud(p, usd ? 'USD' : 'AUD', rate);
+            var diff = s.holdings.reduce(function(t, h){ return t + eqHoldingValueAt(h, aud); }, 0) - s.value;
+            var pct  = s.price ? (aud / s.price - 1) * 100 : null;
+            out.textContent = (usd ? '= ' + eqFmtPrice(aud) + ' · ' : '')
+                + (pct !== null ? (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1) + '% · ' : '')
                 + (diff >= 0 ? '+' : '−') + fmt(Math.abs(diff));
             out.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
         }
@@ -1240,16 +1364,27 @@ function eqPxInput(inp) {
     eqPxCount();
 }
 
-// Boxes with a usable value — these are what Save writes
-function eqPxFilled() {
-    return Array.prototype.filter.call(document.querySelectorAll('.eq-px-input, .eq-px-bond'), function(inp) {
-        var v = parseFloat(inp.value);
-        return inp.value !== '' && (inp.classList.contains('eq-px-bond') ? v >= 0 : v > 0);
+// What Save would write: filled price and value boxes, codes switched between A$ and US$, and a
+// new exchange rate. count is per code, so a new price in a new currency counts once.
+function eqPxChanges() {
+    var ch = { prices:[], bonds:[], ccys:[], rate:0 }, rows = {};
+    document.querySelectorAll('.eq-px-input').forEach(function(inp) {
+        if (inp.value !== '' && parseFloat(inp.value) > 0) { ch.prices.push(inp); rows[inp.dataset.i] = 1; }
     });
+    document.querySelectorAll('.eq-px-ccy').forEach(function(sel) {
+        if (sel.value !== eqPx.secs[+sel.dataset.i].ccy) { ch.ccys.push(sel); rows[sel.dataset.i] = 1; }
+    });
+    document.querySelectorAll('.eq-px-bond').forEach(function(inp) {
+        if (inp.value !== '' && parseFloat(inp.value) >= 0) ch.bonds.push(inp);
+    });
+    var rate = eqPxRateValue();
+    if (rate && !(eqPx.fx && eqPx.fx.usdAud === rate)) ch.rate = rate;
+    ch.count = Object.keys(rows).length + ch.bonds.length + (ch.rate ? 1 : 0);
+    return ch;
 }
 
 function eqPxCount() {
-    var n = eqPxFilled().length, btn = document.getElementById('eq-px-save');
+    var n = eqPx ? eqPxChanges().count : 0, btn = document.getElementById('eq-px-save');
     if (btn) btn.innerHTML = ICON('device-floppy') + (n ? ' Save ' + n + ' change' + (n !== 1 ? 's' : '') : ' Save');
 }
 
@@ -1257,75 +1392,88 @@ function eqPxCount() {
 function eqPxKey(e) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    var inputs = Array.prototype.slice.call(document.querySelectorAll('.eq-px-input, .eq-px-bond'));
+    var inputs = Array.prototype.filter.call(document.querySelectorAll('.eq-px-rate, .eq-px-input, .eq-px-bond'), function(el) {
+        return el.offsetParent !== null;
+    });
     var next = inputs[inputs.indexOf(e.target) + 1] || document.getElementById('eq-px-save');
     if (next) next.focus();
 }
 
-// Lines like "CBA 112.40", "VGS.AX, $98.12" or two spreadsheet columns (code, price)
+// Fill boxes from pasted lines (see eqParsePriceLines); a line marked US$ or A$ also sets the row's currency
 function eqPxApplyPaste() {
     var ta = document.getElementById('eq-px-paste'), out = document.getElementById('eq-px-paste-result');
     if (!ta || !eqPx) return;
     var rowFor = {};
     eqPx.secs.forEach(function(s, i){ if (s.code) rowFor[s.key] = i; });
-    var filled = 0, unknown = [], unread = 0;
-    ta.value.split(/\r?\n/).forEach(function(line) {
-        line = line.trim();
-        if (!line) return;
-        var m = line.match(/^([A-Za-z0-9][A-Za-z0-9.\-]*)[\s,;:|=–-]+(?:A?\$|AUD\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)/);
-        var price = m ? parseFloat(m[2].replace(/,/g, '')) : 0;
-        if (!(price > 0)) { unread++; return; }
-        var key = m[1].toUpperCase().replace(/\.AX$/, '');
-        if (!(key in rowFor)) { unknown.push(m[1].toUpperCase()); return; }
-        var inp = document.getElementById('eq-px-' + rowFor[key]);
-        inp.value = price;
+    var res = eqParsePriceLines(ta.value), filled = 0, unknown = [];
+    res.found.forEach(function(f) {
+        if (!(f.key in rowFor)) { unknown.push(f.code); return; }
+        var sel = document.getElementById('eq-px-c-' + rowFor[f.key]), inp = document.getElementById('eq-px-' + rowFor[f.key]);
+        if (f.ccy && sel) sel.value = f.ccy;
+        inp.value = f.price;
         eqPxInput(inp);
         filled++;
     });
+    eqPxSyncFx();
     if (out) out.textContent = (filled ? 'Filled in ' + filled + ' price' + (filled !== 1 ? 's' : '') + '. Check them, then save.' : 'No prices filled in.')
         + (unknown.length ? ' Not in your holdings: ' + unknown.join(', ') + '.' : '')
-        + (unread ? ' Couldn’t read ' + unread + ' line' + (unread !== 1 ? 's' : '') + '.' : '');
+        + (res.unread ? ' Couldn’t read ' + res.unread + ' line' + (res.unread !== 1 ? 's' : '') + '.' : '');
 }
 
 // Give holdings without a code the matching security's code, so they share its price
 function eqPxLink(i) {
     var l = eqPx && eqPx.links[i];
     if (!l) return;
-    var typed = {};
-    eqPxFilled().forEach(function(inp) {
-        typed[inp.dataset.id ? 'b:' + inp.dataset.id : 's:' + eqPx.secs[+inp.dataset.i].key] = inp.value;
-    });
+    // Keep what was typed or chosen through the redraw
+    var typed = {}, ccys = {}, rate = (document.getElementById('eq-px-rate') || {}).value;
+    document.querySelectorAll('.eq-px-input').forEach(function(inp){ if (inp.value !== '') typed[eqPx.secs[+inp.dataset.i].key] = inp.value; });
+    document.querySelectorAll('.eq-px-bond').forEach(function(inp){ if (inp.value !== '') typed['b:' + inp.dataset.id] = inp.value; });
+    document.querySelectorAll('.eq-px-ccy').forEach(function(sel){ ccys[eqPx.secs[+sel.dataset.i].key] = sel.value; });
+
     l.from.holdings.forEach(function(h){ h.ticker = l.to.code; });
     var merged = eqSecurities().find(function(s){ return s.key === l.to.key; });
-    if (merged && merged.price) eqSetPrice(merged.key, merged.price, merged.updated);
+    if (merged && merged.price) eqSetPrice(merged.key, merged.price, merged.updated, merged.quote);
     eqCommit();
     openBatchPriceModal();
-    document.querySelectorAll('.eq-px-input, .eq-px-bond').forEach(function(inp) {   // keep what was typed
-        var v = typed[inp.dataset.id ? 'b:' + inp.dataset.id : 's:' + eqPx.secs[+inp.dataset.i].key];
-        if (v === undefined) return;
-        inp.value = v;
-        if (inp.classList.contains('eq-px-input')) eqPxInput(inp); else eqPxCount();
+
+    var rateEl = document.getElementById('eq-px-rate');
+    if (rateEl && rate !== undefined) rateEl.value = rate;
+    document.querySelectorAll('.eq-px-ccy').forEach(function(sel){ var v = ccys[eqPx.secs[+sel.dataset.i].key]; if (v) sel.value = v; });
+    document.querySelectorAll('.eq-px-bond').forEach(function(inp){ var v = typed['b:' + inp.dataset.id]; if (v !== undefined) inp.value = v; });
+    document.querySelectorAll('.eq-px-input').forEach(function(inp) {
+        var v = typed[eqPx.secs[+inp.dataset.i].key];
+        if (v !== undefined) { inp.value = v; eqPxInput(inp); }
     });
+    eqPxSyncFx();
+    eqPxCount();
     var n = l.from.holdings.length;
     toast('Linked ' + n + ' holding' + (n !== 1 ? 's' : '') + ' to ' + esc(l.to.code));
 }
 
 function saveBatchPrices() {
     if (!eqPx) return;
-    var now = Date.now(), changed = 0;
-    eqPxFilled().forEach(function(inp) {
-        var v = parseFloat(inp.value);
-        if (inp.classList.contains('eq-px-bond')) {
-            var h = EQUITIES.find(function(e){ return String(e.id) === inp.dataset.id; });
-            if (h) { h.currentValue = v; h.priceUpdated = now; changed++; }
-        } else if (eqSetPrice(eqPx.secs[+inp.dataset.i].key, v, now)) {
-            changed++;
-        }
+    var ch = eqPxChanges(), now = Date.now(), rate = eqPxRateValue();
+    if (!rate && ch.prices.some(function(inp){ return eqPxCcyOf(inp) === 'USD'; })) {
+        var r = document.getElementById('eq-px-rate');
+        if (r) r.focus();
+        toast('Enter the exchange rate for your US$ prices first');
+        return;
+    }
+    if (ch.rate) save(EQ_FX_KEY, { usdAud:ch.rate, updated:now });
+    ch.ccys.forEach(function(sel){ eqSetCcy(eqPx.secs[+sel.dataset.i].key, sel.value); });
+    ch.prices.forEach(function(inp) {
+        var key = eqPx.secs[+inp.dataset.i].key, v = parseFloat(inp.value);
+        if (eqPxCcyOf(inp) === 'USD') eqSetPrice(key, eqToAud(v, 'USD', rate), now, { price:v, rate:rate });
+        else eqSetPrice(key, v, now);
+    });
+    ch.bonds.forEach(function(inp) {
+        var h = EQUITIES.find(function(e){ return String(e.id) === inp.dataset.id; });
+        if (h) { h.currentValue = parseFloat(inp.value); h.priceUpdated = now; }
     });
     closeEqModal();
-    if (!changed) return;
+    if (!ch.count) return;
     eqCommit();
-    toast('Updated ' + changed + ' price' + (changed !== 1 ? 's' : ''));
+    toast('Saved ' + ch.count + ' change' + (ch.count !== 1 ? 's' : ''));
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -22,10 +22,13 @@ var APP_CHANGELOG = [
   {
     version: '2.3.0',
     date: '2026-09-27',
-    title: 'Faster share price updates',
+    title: 'Faster share price updates, US$ prices and correct RSU gains',
     notes: [
       'Update Prices shows one row per code: one price updates every holding with that code, including both owners, extra parcels, RSU grants and options',
-      'Paste prices from your broker or a spreadsheet, one "code price" per line',
+      'Enter US-listed prices in US$: set the exchange rate once and they’re converted to A$',
+      'Paste prices from your broker or a spreadsheet, one "code price" per line (add US$ for US prices)',
+      'Unrealised profit now costs RSUs at their vest price instead of $0, so it’s no longer overstated',
+      'Options are valued at the price above their strike everywhere, including the vesting cards',
       'Each price shows how old it is, and Investments flags prices not updated in over 30 days',
       'Adding a holding with a code you already hold fills in its current price',
       'Holdings entered without a code can be linked to the matching stock',
