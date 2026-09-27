@@ -135,7 +135,7 @@ function go(id){
     else if(id==='categories')renderCategories();
     else if(id==='smartrules'){if(typeof renderRulesList==='function')renderRulesList();}
     else if(id==='transfers'){if(typeof renderTransfers==='function')renderTransfers();}
-    else if(id==='forecast'){renderForecast();if(typeof fc2SyncBalance==='function')fc2SyncBalance();}
+    else if(id==='forecast'){if(typeof fc2PullBalance==='function')fc2PullBalance();renderForecast();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='borrowing'){if(typeof renderBorrowing==='function')renderBorrowing();}
     else if(id==='investment'){if(typeof renderInvestment==='function')renderInvestment();}
