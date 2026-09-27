@@ -13,7 +13,9 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
+    # SAMEORIGIN, not DENY: the app embeds kelda-investment-property.html in a
+    # same-origin iframe (Beta Features → Investment Property). DENY blocks that too.
+    X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
 
