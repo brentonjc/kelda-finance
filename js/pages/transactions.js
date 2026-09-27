@@ -30,20 +30,105 @@ function togglePerson(){
   if(w)w.style.display=document.getElementById('tx-type').value==='income'?'':'none';
 }
 
-// ── Manual "Add Transaction" modal ───────────────────────────────
-function openTxModal(){
+// ── Add / Edit Transaction modal ─────────────────────────────────
+// One modal serves both: openTxModal() adds, openTxModal(id) edits that transaction.
+var _txEditId = null;      // id being edited, or null when adding
+var _txModalWasEdit = false; // last open was an edit → clear its values before the next add
+
+function txSetModalMode(editing){
+  var set=function(id,txt){var el=document.getElementById(id);if(el)el.textContent=txt;};
+  set('tx-modal-title', editing?'Edit Transaction':'＋ Add Transaction');
+  set('tx-modal-sub', editing?'Update or delete this transaction':'Manually log an income or expense for either profile');
+  set('tx-save-btn', editing?'Save changes':'＋ Add Transaction');
+  var del=document.getElementById('tx-del-btn'); if(del)del.style.display=editing?'':'none';
+}
+function txFillForm(t){
+  var v=function(id,val){var el=document.getElementById(id);if(el)el.value=val;};
+  v('tx-date', t.date||today());
+  v('tx-type', t.type||'expense');
+  v('tx-name', t.name||'');
+  v('tx-amount', t.amount!=null?t.amount:'');
+  v('tx-desc', t.description||'');
+  v('tx-account', t.account||'');
+  v('tx-person', t.person||'brenton');
+  populateCatSelect();
+  if(t.catId||t.category){ v('tx-cat', catIdFor(t.catId||t.category)); refreshSubcatSelect(); }
+  v('tx-subcat', t.subcat||'');
+}
+
+function openTxModal(id){
   var m=document.getElementById('tx-add-modal');
   if(!m)return;
-  var d=document.getElementById('tx-date'); if(d&&!d.value)d.value=today();
-  populateCatSelect();   // fill category/subcategory selects for the current type
+  var t=id!=null?TX.find(function(x){return x.id===id;}):null;
+  _txEditId=t?t.id:null;
+  if(t){
+    txFillForm(t);
+  } else {
+    // New entry: expense is the common case. Clear leftovers from a previous edit;
+    // otherwise keep a cancelled draft so an accidental close doesn't lose typing.
+    if(_txModalWasEdit) txFillForm({type:'expense'});
+    else { var ty=document.getElementById('tx-type'); if(ty)ty.value='expense'; populateCatSelect(); }
+    var d=document.getElementById('tx-date'); if(d&&!d.value)d.value=today();
+  }
+  _txModalWasEdit=!!t;
+  txSetModalMode(!!t);
   togglePerson();        // show/hide the Earner field to match the type
   m.classList.add('open');
-  var n=document.getElementById('tx-name'); if(n)setTimeout(function(){n.focus();},50);
+  // Don't pop the keyboard over a record the user is only reviewing
+  if(!t){ var n=document.getElementById('tx-name'); if(n)setTimeout(function(){n.focus();},50); }
 }
 function closeTxModal(){
   var m=document.getElementById('tx-add-modal');
   if(m)m.classList.remove('open');
   var pill=document.getElementById('tx-autocat-pill'); if(pill)pill.style.display='none';
+  _txEditId=null;
+}
+function txQuickAmount(n){
+  var a=document.getElementById('tx-amount'); if(a)a.value=n;
+}
+function txDeleteFromModal(){
+  if(_txEditId==null)return;
+  var id=_txEditId;
+  if(!confirm('Delete this transaction? This can\'t be undone.'))return;
+  closeTxModal();
+  delTx(id);
+  if(typeof renderDashboard==='function')renderDashboard();
+}
+// Card tap (mobile only) → edit, or toggle selection in Select mode.
+// Ignores taps on the card's own controls; desktop keeps its table behaviour.
+function txRowTap(e,id){
+  if(!txIsCardLayout())return;
+  if(e.target.closest('select,input,button,a,label'))return;
+  if(document.querySelector('.tx-table.tx-selecting')){
+    var cb=e.currentTarget.querySelector('.tx-row-check');
+    if(cb){ cb.checked=!cb.checked; onTxRowCheck(cb); }
+    return;
+  }
+  openTxModal(id);
+}
+// Same query as the layout.css mobile block
+function txIsCardLayout(){
+  return window.matchMedia('(max-width:759px), (pointer:coarse) and (max-height:500px)').matches;
+}
+// Mobile "Select" toggle — reveals row checkboxes + the bulk bar
+function txToggleSelectMode(){
+  var tbl=document.querySelector('.tx-table'); if(!tbl)return;
+  var on=tbl.classList.toggle('tx-selecting');
+  var b=document.getElementById('tx-select-toggle');
+  if(b){ b.innerHTML=on?'<i class="ti ti-x"></i> Done':'<i class="ti ti-checkbox"></i> Select'; b.setAttribute('aria-pressed',on); }
+  if(!on && typeof clearTxSelection==='function') clearTxSelection();
+}
+// Badge on the mobile Filter button: how many dropdown filters are active
+// (search stays visible on phones, so it isn't counted)
+function txUpdateFilterCount(n){
+  var c=document.getElementById('tx-filter-count'); if(!c)return;
+  c.textContent=n?String(n):''; c.style.display=n?'':'none';
+}
+// Mobile "Filter" toggle — the filter row is collapsed by default on phones
+function txToggleFilters(){
+  var f=document.getElementById('tx-filters'); if(!f)return;
+  var on=f.classList.toggle('tx-filters--open');
+  var b=document.getElementById('tx-filter-toggle'); if(b)b.setAttribute('aria-expanded',on);
 }
 
 function addTx(){
@@ -57,6 +142,26 @@ function addTx(){
   const name=document.getElementById('tx-name')?.value.trim()||'';
   const desc=document.getElementById('tx-desc').value.trim();
   if(!date||!amt||amt<=0){toast('⚠️ Enter date and amount');return;}
+  // Edit mode: update the existing record in place, keeping its id and any
+  // import metadata. Auto-rules aren't re-run so they can't undo the user's edit.
+  if(_txEditId!=null){
+    var et=TX.find(function(x){return x.id===_txEditId;});
+    if(et){
+      var prevCat=catIdFor(et.catId||et.category);
+      var catObj=LCATS.find(function(c){return c.id===cat;});
+      et.date=date; et.type=type; et.amount=amt; et.person=person; et.account=account;
+      et.name=name; et.description=desc; et.subcat=subcat;
+      if(cat){ et.catId=cat; et.category=catObj?catObj.name:cat; }
+      if(cat && cat!==prevCat){
+        et.userSet=true;
+        if(cat!=='other' && name && typeof AutoCat!=='undefined') AutoCat.learn(name, cat, subcat);
+      }
+      save(K.tx,TX);
+      closeTxModal();
+      renderTx();renderDashboard();toast('✅ Transaction updated');
+    }
+    return;
+  }
   var _resolvedCatId = cat||'other';
   var _resolvedSubcat = subcat;
   // If no category explicitly chosen, try AutoCat
@@ -223,6 +328,7 @@ var _txLoadingMore = false;
 function txMakeRow(t){
   const tr=document.createElement('tr');
   tr.dataset.id=t.id;
+  tr.addEventListener('click',function(e){txRowTap(e,t.id);});
   const isTr=isTransfer(t);
   if(isTr)tr.classList.add('transfer-excluded-row');
   const personBadge=t.type==='income'?'<span style="font-size:.68rem;background:var(--primary-bg);color:var(--pink-light);border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
@@ -248,6 +354,24 @@ function txMakeRow(t){
     +'<td style="font-weight:600;color:'+rowColor+'">'+amtSign+fmt(t.amount)+'</td>'
     +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
   return tr;
+}
+
+// Month divider row — shown only in the mobile card layout (hidden on desktop in CSS).
+// Rows are sorted newest-first, so a divider goes wherever the YYYY-MM changes.
+var TX_MONTH_FMT = new Intl.DateTimeFormat('en-AU', { month:'long', year:'numeric' });
+function txAppendRows(frag, from, to){
+  var prev = from>0 ? _txFiltered[from-1].date.slice(0,7) : null;
+  for(var i=from;i<to;i++){
+    var t=_txFiltered[i], ym=t.date.slice(0,7);
+    if(ym!==prev){
+      var mr=document.createElement('tr');
+      mr.className='tx-month-row';
+      mr.innerHTML='<td colspan="10">'+TX_MONTH_FMT.format(new Date(ym+'-01T00:00:00'))+'</td>';
+      frag.appendChild(mr);
+      prev=ym;
+    }
+    frag.appendChild(txMakeRow(t));
+  }
 }
 
 // Row checkbox → keep the selection set in sync (survives load-more appends).
@@ -295,7 +419,7 @@ function txLoadMore(){
   _txLoadingMore=true;
   var sentinel=document.getElementById('tx-sentinel');
   var frag=document.createDocumentFragment();
-  for(var i=start;i<end;i++){ frag.appendChild(txMakeRow(_txFiltered[i])); }
+  txAppendRows(frag,start,end);
   if(sentinel) tbody.insertBefore(frag,sentinel); else tbody.appendChild(frag);
   _txWindow=end;
   _txLoadingMore=false;
@@ -323,6 +447,7 @@ function renderTx(){
   const hasFilter=fm||ft||fc||fs||fa||fq;
   const cfBtn=document.getElementById('tx-clear-filters');
   if(cfBtn)cfBtn.style.display=hasFilter?'':'none';
+  txUpdateFilterCount([fm,ft,fc,fs,fa].filter(Boolean).length);
 
   // ── Windowing: reset to the top when the filter changes, otherwise keep the
   // user's scroll depth across in-place re-renders (delete, bulk assign, add). ──
@@ -343,7 +468,7 @@ function renderTx(){
   empty.style.display='none';
   updateTxBulkSelects();
   var _frag=document.createDocumentFragment();
-  for(var _i=0;_i<_txWindow;_i++){ _frag.appendChild(txMakeRow(data[_i])); }
+  txAppendRows(_frag,0,_txWindow);
   tbody.appendChild(_frag);
   txMountSentinel(tbody);
   txSelectionChanged();
