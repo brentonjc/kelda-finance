@@ -18,6 +18,12 @@ function renderInvestment(){
     host.dataset.mounted = '1';
     // Re-size to fill the viewport when the window changes.
     if(!window._ipResizeBound){ window.addEventListener('resize', ipSizeFrame); window._ipResizeBound = true; }
+  } else {
+    // Coming back to the page: let the module pick up Kelda changes made since (loans, tagged transactions).
+    try {
+      var w = document.getElementById('ip-frame').contentWindow;
+      if(w && typeof w.keldaOnShow === 'function') w.keldaOnShow();
+    } catch(e) {}
   }
   ipSizeFrame();
   // Re-measure once layout has settled (first paint can report 0 height).

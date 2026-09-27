@@ -77,13 +77,15 @@ function bcSync() {
   // ---- INCOME — last 12 months of income transactions, split by person ----
   var txAll = (typeof TX !== 'undefined' && Array.isArray(TX)) ? TX : [];
   var twelveAgo = new Date(now.getFullYear()-1, now.getMonth(), 1);
-  var b1Inc=0, b2Inc=0;
+  var b1Inc=0, b2Inc=0, rentInc=0;
   txAll.forEach(function(t){
     if(t.type!=='income') return;
     if(bcIsTransfer(t)) return;                        // internal transfers are NOT income
     var d; try { d = new Date(t.date); } catch(e){ return; }
     if(!(d >= twelveAgo)) return;
     var amt = Math.abs(parseFloat(t.amount)||0);
+    // Rent tagged Investment Property is rental income (lenders shade it), not salary
+    if((t.catId||'')==='investment_property'){ rentInc+=amt; return; }
     var p = (t.person||'').toLowerCase();
     if(p==='shelley'||p==='b2'||p==='person2') b2Inc+=amt; else b1Inc+=amt;
   });
@@ -91,6 +93,10 @@ function bcSync() {
   if(b2Inc>0){ bcST['bc_b2_salary']=Math.round(b2Inc); imported['bc_b2_salary']={val:Math.round(b2Inc),src:'transactions (12-mo)'}; }
   if(b1Inc>0||b2Inc>0){
     bcImportLog.push({type:'success',msg:'Imported income from transactions: '+bcFmt(b1Inc)+' / '+bcFmt(b2Inc)+' (annual, last 12 months)'});
+  }
+  if(rentInc>0){
+    bcST['bc_rental_income']=Math.round(rentInc); imported['bc_rental_income']={val:Math.round(rentInc),src:'transactions (12-mo)'};
+    bcImportLog.push({type:'success',msg:'Imported rental income: '+bcFmt(rentInc)+' (Investment Property, last 12 months)'});
   }
   // Borrower names from the app's profiles
   if(typeof getUserName==='function'){
@@ -271,8 +277,9 @@ function bcClassifyExpense(cid, sub, text){
     if(has('cloth')) return 'clothing';                     // Clothing & Shopping
     return 'other';                                         // online/home shopping, gifts, donations
   }
-  // Explicitly excluded categories.
-  if(cid==='tax'||cid==='business'||cid==='holidays_travel'||cid==='transfers') return null;
+  // Explicitly excluded categories. Investment Property costs aren't living
+  // expenses — lenders net them off through the shaded rental income.
+  if(cid==='tax'||cid==='business'||cid==='holidays_travel'||cid==='transfers'||cid==='investment_property') return null;
 
   // Genuinely uncategorised / "Other" / custom categories: a light keyword
   // fallback for the common basics, otherwise count as "Other Committed" so the

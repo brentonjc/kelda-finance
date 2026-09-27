@@ -43,6 +43,7 @@ html,body{margin:0;padding:0;}
 body{
   background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:15px; line-height:1.5;
   -webkit-font-smoothing:antialiased; padding-bottom:env(safe-area-inset-bottom);
+  display:block; overflow-x:visible;   /* undo tokens.css's app-shell body layout; this page has its own .shell */
 }
 h1,h2,h3,h4{font-family:var(--font-display); font-weight:700; margin:0; line-height:1.2;}
 .mono{font-family:var(--font-mono); font-weight:500; font-variant-numeric:tabular-nums;}
@@ -116,6 +117,7 @@ input,select,textarea{
 }
 textarea{padding:var(--sp3); min-height:72px; resize:vertical; line-height:1.4;}
 input.mono{font-family:var(--font-mono);}
+input[readonly]{color:var(--muted); cursor:default;}   /* figures synced from Kelda */
 input:focus,select:focus,textarea:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(240,83,138,.25);}
 .hint{font-size:12px; color:var(--muted); margin-top:6px;}
 .note{font-size:12.5px; color:var(--muted); background:var(--n900); border-left:3px solid var(--primary); border-radius:6px; padding:var(--sp3); margin:var(--sp3) 0;}
@@ -283,8 +285,9 @@ var K = {
   settings:'kf_ip_settings',
   summary:'kf_ip_summary'
 };
-// KELDA INTEGRATION: main app stores under cff_ prefix (confirmed). When connected we read these read-only.
-var KELDA_KEYS = { mortgage:'cff_mortgage', tx:'cff_tx', userconfig:'cff_userconfig' };
+// KELDA INTEGRATION: the main app's own storage (same origin). Read-only — this module never writes it.
+var KELDA_KEYS = { mortgage:'cff_mortgage', tx:'cff_tx', userconfig:'cff_userconfig',
+  liabilities:'cff_liabilities', categories:'ledger_categories' };
 
 /* ---------- Storage helpers (try/catch for private browsing) ---------- */
 function load(k){ try{ return JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){ return null; } }
@@ -313,7 +316,12 @@ function fyBounds(fy){
 }
 function fyDays(fy){ var b = fyBounds(fy); return Math.round((b.to - b.from)/86400000) + 1; }
 function fyLabel(fy){ var p = fy.split('-'); return p[0] + '–' + p[1]; } // en dash
-var ALL_FYS = ['2022-23','2023-24','2024-25','2025-26'];
+function currentFY(){ return fyOf(todayISO()); }
+function shiftFY(fy, n){ var s = parseInt(fy.slice(0,4), 10) + n; return s + '-' + String(s+1).slice(2); }
+// Selectable years: 2022–23 up to the current financial year
+var ALL_FYS = (function(){ var out=[], fy='2022-23', cur=currentFY(); while(fy <= cur){ out.push(fy); fy = shiftFY(fy, 1); } return out; })();
+// Default to the last completed year — the one a tax return is being prepared for
+function defaultFY(){ return shiftFY(currentFY(), -1); }
 
 // inclusive day count of overlap between [aFrom,aTo] and [bFrom,bTo] (Date objects)
 function overlapDays(aFrom,aTo,bFrom,bTo){
@@ -329,7 +337,7 @@ var PROPERTIES = load(K.properties) || [];
 var TRANSACTIONS = load(K.transactions) || [];
 var VACANCIES = load(K.vacancies) || [];
 var TAX_SETTINGS = load(K.taxSettings) || { owners:[] };
-var SETTINGS = load(K.settings) || { financialYear:'2024-25', keldaConnect:false };
+var SETTINGS = load(K.settings) || { financialYear:defaultFY(), keldaSync:true, keldaAssign:{} };
 var CURRENT_TAB = 'dashboard';
 
 /* ---------- Categories (ATO worksheet order) ---------- */
@@ -381,14 +389,17 @@ function catIcon(id){
   return 'ti-list';
 }
 
-/* ---------- Tax brackets (2024-25, Stage 3) ---------- */
-var BRACKETS = [
-  ['$0 – $18,200','0% (tax-free)','0%',0],
-  ['$18,201 – $45,000','19%','21%',19],
-  ['$45,001 – $135,000','32.5%','34.5%',32.5],
-  ['$135,001 – $190,000','37%','39%',37],
-  ['$190,001+','45%','47%',45]
+/* ---------- Resident tax rates by financial year ---------- */
+// Five bands a year: [taxable income, marginal rate %]. Stage 3 applies from
+// 2024–25; the 16% rate falls to 15% in 2026–27 and 14% from 2027–28 (legislated 2025).
+var TAX_TABLES = [
+  { from:'2022-23', bands:[['$0 – $18,200',0],['$18,201 – $45,000',19],['$45,001 – $120,000',32.5],['$120,001 – $180,000',37],['$180,001+',45]] },
+  { from:'2024-25', bands:[['$0 – $18,200',0],['$18,201 – $45,000',16],['$45,001 – $135,000',30],['$135,001 – $190,000',37],['$190,001+',45]] },
+  { from:'2026-27', bands:[['$0 – $18,200',0],['$18,201 – $45,000',15],['$45,001 – $135,000',30],['$135,001 – $190,000',37],['$190,001+',45]] },
+  { from:'2027-28', bands:[['$0 – $18,200',0],['$18,201 – $45,000',14],['$45,001 – $135,000',30],['$135,001 – $190,000',37],['$190,001+',45]] }
 ];
+var DEFAULT_BAND = 2;   // the middle band ($45k up to $120k/$135k)
+function taxBands(fy){ var t = TAX_TABLES[0]; for(var i=0;i<TAX_TABLES.length;i++){ if(fy >= TAX_TABLES[i].from) t = TAX_TABLES[i]; } return t.bands; }
 function withMedicare(rate){ return rate === 0 ? 0 : rate + 2; }
 
 /* ---------- Persistence + summary ---------- */
@@ -417,6 +428,153 @@ function writeSummary(){
     propertyCount:PROPERTIES.length, lastUpdated:new Date().toISOString()
   });
 }
+
+// Fill in anything added since a user's data was first saved
+function normaliseSettings(){
+  if(!SETTINGS.financialYear) SETTINGS.financialYear = defaultFY();
+  if(SETTINGS.keldaSync === undefined) SETTINGS.keldaSync = true;  // the old keldaConnect switch did nothing, so it isn't carried over
+  delete SETTINGS.keldaConnect;
+  if(!SETTINGS.keldaAssign || typeof SETTINGS.keldaAssign !== 'object') SETTINGS.keldaAssign = {};
+  TAX_SETTINGS.owners = (TAX_SETTINGS.owners||[]).map(normaliseOwner);
+}
+
+/* =================================================================
+   KELDA DATA (read-only)
+   Rent and costs tagged "Investment Property" in Kelda, the Kelda loans a
+   property can link to, and the household's profile names. Read from the main
+   app's storage on the same origin, so this also works when the module is
+   opened on its own.
+   ================================================================= */
+var KELDA = { tx:[], loans:[], owners:[] };
+
+// Kelda subcategory → ATO worksheet line. Keyword-based, so a renamed
+// subcategory ("Strata levies", "Agent commission") still lands correctly.
+var KELDA_EXPENSE_MAP = [
+  ['land tax','land-tax'], ['council','council-rates'], ['water','water-charges'],
+  ['strata','body-corporate'], ['body corp','body-corporate'], ['insurance','insurance'],
+  ['repair','repairs-maintenance'], ['maint','repairs-maintenance'],
+  ['manag','agent-fees'], ['agent','agent-fees'], ['commission','agent-fees'],
+  ['interest','interest-on-loans'], ['clean','cleaning'], ['garden','gardening'], ['lawn','gardening'],
+  ['pest','pest-control'], ['advert','advertising'], ['legal','legal-expenses'], ['conveyanc','legal-expenses'],
+  ['borrowing','borrowing-expenses'], ['stationery','stationery'], ['phone','stationery'], ['postage','stationery']
+];
+var KELDA_OTHER_INCOME = ['other','bond','recover','reimburs','insurance','claim'];
+function keldaCategory(type, subcat){
+  var s = String(subcat||'').toLowerCase(), i;
+  if(type === 'income'){
+    for(i=0;i<KELDA_OTHER_INCOME.length;i++){ if(s.indexOf(KELDA_OTHER_INCOME[i]) !== -1) return 'other-rental-income'; }
+    return 'rental-income';
+  }
+  for(i=0;i<KELDA_EXPENSE_MAP.length;i++){ if(s.indexOf(KELDA_EXPENSE_MAP[i][0]) !== -1) return KELDA_EXPENSE_MAP[i][1]; }
+  return 'sundry';
+}
+// Kelda category ids that mean "investment property" (the built-in one, or a user's own of that name)
+function keldaIpCatIds(){
+  var ids = { investment_property:1 }; var cats = load(KELDA_KEYS.categories) || [];
+  for(var i=0;i<cats.length;i++){ if(String(cats[i].name||'').trim().toLowerCase() === 'investment property') ids[cats[i].id] = 1; }
+  return ids;
+}
+function readKelda(){
+  var out = { tx:[], loans:[], owners:[] }, i;
+  var cfg = load(KELDA_KEYS.userconfig) || {};
+  if(cfg.p1name) out.owners.push(cfg.p1name);
+  if(cfg.p2name && cfg.p2enabled !== false) out.owners.push(cfg.p2name);
+
+  var ids = keldaIpCatIds(), tx = load(KELDA_KEYS.tx) || [];
+  for(i=0;i<tx.length;i++){
+    var t = tx[i];
+    if(!t || !ids[t.catId] || !parseD(t.date) || (t.type !== 'income' && t.type !== 'expense')) continue;
+    var amt = Math.abs(num(t.amount)); if(!amt) continue;
+    out.tx.push({ keldaId:String(t.id), date:t.date, type:t.type, amount:amt,
+      category:keldaCategory(t.type, t.subcat||t.subcategory),
+      description:t.name || t.description || t.subcat || 'Kelda transaction' });
+  }
+
+  // Loans: every Mortgage-page property, plus investment/mortgage liabilities not already tied to one
+  var m = load(KELDA_KEYS.mortgage) || {};
+  var props = (m.properties && m.properties.length) ? m.properties
+    : ((m.balance || m.homeValue) ? [{ id:'mortgage_primary', name:m.lenderName, balance:m.balance, original:m.original, rate:m.rate,
+        years:m.years, reptype:m.reptype, homeValue:m.homeValue, offset:m.offset, purchasePrice:m.purchasePrice, acquiredDate:m.acquiredDate }] : []);
+  var tied = {};
+  for(i=0;i<props.length;i++){
+    var mp = props[i]; if(mp.linkedLiabilityId) tied[mp.linkedLiabilityId] = 1;
+    out.loans.push({ ref:'mortgage:'+(mp.id != null ? mp.id : 'idx'+i), source:'Mortgage', label:mp.name || 'Home Loan',
+      lender:mp.name || '', balance:num(mp.balance), original:num(mp.original), rate:num(mp.rate), termYears:num(mp.years),
+      type:(mp.reptype === 'io' ? 'interest-only' : 'principal-and-interest'), offset:num(mp.offset),
+      value:num(mp.homeValue), purchasePrice:num(mp.purchasePrice), purchaseDate:mp.acquiredDate || '' });
+  }
+  var liabs = load(KELDA_KEYS.liabilities) || [];
+  for(i=0;i<liabs.length;i++){
+    var li = liabs[i];
+    if(!li || tied[li.id] || (li.type !== 'investment_loan' && li.type !== 'mortgage')) continue;
+    out.loans.push({ ref:'liability:'+li.id, source:'Liabilities', label:li.lender || 'Investment Loan',
+      lender:li.lender || '', balance:num(li.balance), original:num(li.originalBalance), rate:num(li.rate),
+      termYears:li.termMonths ? num(li.termMonths)/12 : 0, type:null, offset:null, value:0, purchasePrice:0, purchaseDate:'' });
+  }
+  return out;
+}
+function keldaLoan(ref){
+  if(!ref) return null;
+  for(var i=0;i<KELDA.loans.length;i++){ if(KELDA.loans[i].ref === ref) return KELDA.loans[i]; }
+  // A flat single mortgage becomes property 0 (new id) once Kelda's Mortgage page migrates it
+  if(ref === 'mortgage:mortgage_primary'){ for(var j=0;j<KELDA.loans.length;j++){ if(KELDA.loans[j].source === 'Mortgage') return KELDA.loans[j]; } }
+  return null;
+}
+// Copy a linked Kelda loan's figures onto a property (Kelda is the source of
+// truth for them). Returns true if anything changed. If the loan has gone from
+// Kelda the last synced figures stay.
+function applyKeldaLink(p){
+  if(!p || !p.keldaLoanRef || !SETTINGS.keldaSync) return false;
+  var k = keldaLoan(p.keldaLoanRef); if(!k) return false;
+  var before = JSON.stringify([p.keldaLoanRef, p.loan, p.currentMarketValue, p.purchasePrice, p.purchaseDate]);
+  p.keldaLoanRef = k.ref;   // heals a legacy 'mortgage_primary' link
+  var l = p.loan = p.loan || {};
+  if(k.lender) l.lender = k.lender;
+  l.currentBalance = k.balance; l.interestRate = k.rate;
+  if(k.original) l.originalAmount = k.original;
+  if(k.termYears) l.termYears = Math.round(k.termYears*10)/10;
+  if(k.type) l.type = k.type;
+  if(k.offset != null) l.offsetBalance = k.offset;
+  l.repaymentMonthly = calcRepayment(l);
+  if(k.value) p.currentMarketValue = k.value;
+  if(k.purchasePrice && !num(p.purchasePrice)) p.purchasePrice = k.purchasePrice;   // only fills blanks
+  if(k.purchaseDate && !p.purchaseDate) p.purchaseDate = k.purchaseDate;
+  return JSON.stringify([p.keldaLoanRef, p.loan, p.currentMarketValue, p.purchasePrice, p.purchaseDate]) !== before;
+}
+function keldaRefresh(){
+  KELDA = SETTINGS.keldaSync ? readKelda() : { tx:[], loans:[], owners:[] };
+  var changed = false;
+  for(var i=0;i<PROPERTIES.length;i++){ if(applyKeldaLink(PROPERTIES[i])) changed = true; }
+  if(changed) persistAll();
+}
+// Called by the Kelda app each time Investment Property is opened again
+function keldaOnShow(){ keldaRefresh(); render(CURRENT_TAB); }
+
+function propertyById(id){ for(var i=0;i<PROPERTIES.length;i++){ if(PROPERTIES[i].id === id) return PROPERTIES[i]; } return null; }
+// Kelda rental transactions belonging to a property. With one property they
+// all do; with several, each is assigned once on the Income & Expenses tab.
+function keldaTxFor(propertyId){
+  if(!KELDA.tx.length) return [];
+  var assign = SETTINGS.keldaAssign || {}, single = PROPERTIES.length === 1 && PROPERTIES[0].id === propertyId;
+  return KELDA.tx.filter(function(t){
+    var a = assign[t.keldaId];
+    if(a && propertyById(a)) return a === propertyId;
+    return single;
+  });
+}
+function keldaUnassigned(){
+  if(PROPERTIES.length < 2) return [];
+  var assign = SETTINGS.keldaAssign || {};
+  return KELDA.tx.filter(function(t){ var a = assign[t.keldaId]; return !(a && propertyById(a)); });
+}
+function keldaSums(propertyId, fy){
+  var sums = {}, list = keldaTxFor(propertyId);
+  for(var i=0;i<list.length;i++){ if(fyOf(list[i].date) === fy) sums[list[i].category] = (sums[list[i].category]||0) + list[i].amount; }
+  return sums;
+}
+// Months of a financial year already started: 12 for past years, 0 for future
+// ones. Kelda actuals cover these; a category's estimate fills only the rest.
+function fyElapsedMonths(fy){ var cur = currentFY(); if(fy < cur) return 12; if(fy > cur) return 0; return fyMonthIndex(todayISO()) + 1; }
 
 /* =================================================================
    CALCULATION ENGINE
@@ -508,26 +666,36 @@ function txSums(propertyId, fy){
 var FY_MONTHS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
 function fyMonthIndex(dateStr){ var d=parseD(dateStr); if(!d) return 0; var m=d.getMonth(); return m>=6 ? m-6 : m+6; }
 // Returns {inc:[12], exp:[12]} for a property+fy. Recurring schedule is spread evenly across
-// the 12 months; logged transactions land in their actual month and add on top.
+// the 12 months; logged transactions land in their actual month and add on top. Kelda
+// actuals land in their month too, and a category that has them keeps its schedule only
+// for months not yet elapsed.
 // Operating (un-apportioned) view; the Tax Report applies rental-day apportionment for deductibility.
 function monthlySeries(p, fy){
   var inc=[0,0,0,0,0,0,0,0,0,0,0,0], exp=[0,0,0,0,0,0,0,0,0,0,0,0];
+  var ks = keldaSums(p.id, fy), done = fyElapsedMonths(fy);
+  function spread(arr, cid, annual){
+    for(var m=0;m<12;m++){ if(ks[cid] != null && m < done) continue; arr[m] += annual/12; }
+  }
   var ri = p.rentalIncome||{};
-  var schedIncMo = (annualize(ri.rentAmount, ri.rentFrequency) + annualize(ri.otherAmount, ri.otherFrequency)) / 12;
-  var schedExpMo = 0; var es = p.expenseSchedule||[];
-  for(var s=0;s<es.length;s++) schedExpMo += annualize(es[s].amount, es[s].frequency) / 12;
+  spread(inc, 'rental-income', annualize(ri.rentAmount, ri.rentFrequency));
+  spread(inc, 'other-rental-income', annualize(ri.otherAmount, ri.otherFrequency));
+  var es = p.expenseSchedule||[];
+  for(var s=0;s<es.length;s++) spread(exp, es[s].category, annualize(es[s].amount, es[s].frequency));
   // auto deductions spread monthly, unless a manual tx already covers that category
-  var sums = txSums(p.id, fy); var autoMo = 0;
-  if(sums['interest-on-loans'] == null) autoMo += deductibleInterestAnnual(p) / 12;
-  if(sums['capital-works'] == null) autoMo += div43Annual(p, fy) / 12;
-  if(sums['decline-in-value'] == null) autoMo += div40Annual(p, fy) / 12;
-  for(var m=0;m<12;m++){ inc[m]+=schedIncMo; exp[m]+=schedExpMo+autoMo; }
-  for(var i=0;i<TRANSACTIONS.length;i++){
-    var t = TRANSACTIONS[i];
-    if(t.propertyId !== p.id || fyOf(t.date) !== fy) continue;
+  var sums = txSums(p.id, fy);
+  if(sums['interest-on-loans'] == null) spread(exp, 'interest-on-loans', deductibleInterestAnnual(p));
+  if(sums['capital-works'] == null) spread(exp, 'capital-works', div43Annual(p, fy));
+  if(sums['decline-in-value'] == null) spread(exp, 'decline-in-value', div40Annual(p, fy));
+  function place(t){
     var mi = fyMonthIndex(t.date);
     if(t.type === 'income') inc[mi] += num(t.amount); else exp[mi] += num(t.amount);
   }
+  for(var i=0;i<TRANSACTIONS.length;i++){
+    var t = TRANSACTIONS[i];
+    if(t.propertyId === p.id && fyOf(t.date) === fy) place(t);
+  }
+  var kt = keldaTxFor(p.id);
+  for(var k=0;k<kt.length;k++){ if(fyOf(kt[k].date) === fy) place(kt[k]); }
   return { inc:inc, exp:exp };
 }
 // Combine monthly series across multiple properties
@@ -542,6 +710,10 @@ function monthlySeriesCombined(targets, fy){
 function computeWorksheet(p, fy){
   var ap = apportionment(p, fy);
   var sums = txSums(p.id, fy);
+  var ks = keldaSums(p.id, fy);
+  var rest = (12 - fyElapsedMonths(fy)) / 12;   // share of the year still to come
+  // A category with Kelda actuals uses them for the elapsed months, and its estimate only for the rest
+  function est(cid, annual){ return ks[cid] != null ? ks[cid] + annual*rest : annual; }
   var ownPct = ownerSharePct(p);
 
   // Income (not apportioned): recurring schedule (annualised) + any logged one-off transactions
@@ -549,8 +721,8 @@ function computeWorksheet(p, fy){
   var schedRent = annualize(ri.rentAmount, ri.rentFrequency);
   var schedOther = annualize(ri.otherAmount, ri.otherFrequency);
   var income = {};
-  income['rental-income'] = (sums['rental-income']||0) + schedRent;
-  income['other-rental-income'] = (sums['other-rental-income']||0) + schedOther;
+  income['rental-income'] = (sums['rental-income']||0) + est('rental-income', schedRent);
+  income['other-rental-income'] = (sums['other-rental-income']||0) + est('other-rental-income', schedOther);
   var grossRent = income['rental-income'] + income['other-rental-income'];
 
   // Scheduled recurring expenses by category (annualised)
@@ -568,9 +740,10 @@ function computeWorksheet(p, fy){
   for(var e=0;e<EXPENSE_CATS.length;e++){
     var cid = EXPENSE_CATS[e][0]; var val;
     if(AUTO_CATS.indexOf(cid) !== -1){
-      val = (sums[cid] != null) ? sums[cid] : autoVals[cid]; // manual override if logged
+      // manual override if logged; Kelda actuals (e.g. loan interest charged) replace the calculation for elapsed months
+      val = (sums[cid] != null) ? sums[cid] + (ks[cid]||0) : est(cid, autoVals[cid]);
     } else {
-      val = ((sums[cid]||0) + (sched[cid]||0)) * ap.factor; // scheduled + one-off, apportioned
+      val = ((sums[cid]||0) + est(cid, sched[cid]||0)) * ap.factor; // scheduled + one-off, apportioned
     }
     expenses[cid] = val; totalExp += val;
   }
@@ -578,7 +751,7 @@ function computeWorksheet(p, fy){
   return {
     fy:fy, factor:ap.factor, apportion:ap, ownPct:ownPct,
     income:income, grossRent:grossRent, expenses:expenses, totalExpenses:totalExp, net:net,
-    autoVals:autoVals
+    autoVals:autoVals, keldaCats:Object.keys(ks)
   };
 }
 
@@ -587,23 +760,34 @@ function ownerSharePct(p){
   // primary share = first owner's percentage (used for "your share" column); default 100
   var os = p.ownershipSplit||[]; return os.length ? num(os[0].percentage) : 100;
 }
-function rateForOwner(name){
-  var ow = (TAX_SETTINGS.owners)||[];
-  for(var i=0;i<ow.length;i++){ if(ow[i].name === name) return num(ow[i].marginalRate); }
-  return 32.5;
+// Owners keep an income band (0–4) rather than a rate, so each financial year
+// uses that year's rate. bandByFy holds any year-specific choice.
+function bandFromRate(rate){ rate = num(rate); if(rate <= 0) return 0; if(rate <= 19) return 1; if(rate <= 32.5) return 2; if(rate <= 37) return 3; return 4; }
+function normaliseOwner(o){
+  o = o || {};
+  if(o.band == null) o.band = (o.marginalRate != null) ? bandFromRate(o.marginalRate) : DEFAULT_BAND;  // pre-band data
+  delete o.marginalRate;
+  if(!o.bandByFy || typeof o.bandByFy !== 'object') o.bandByFy = {};
+  return o;
 }
+function ownerBand(name, fy){
+  var ow = (TAX_SETTINGS.owners)||[];
+  for(var i=0;i<ow.length;i++){
+    if(ow[i].name === name){ var b = ow[i].bandByFy && ow[i].bandByFy[fy]; return b != null ? b : (ow[i].band != null ? ow[i].band : DEFAULT_BAND); }
+  }
+  return DEFAULT_BAND;
+}
+function rateForOwner(name, fy){ return taxBands(fy)[ownerBand(name, fy)][1]; }
 function taxImpact(p, fy){
   var ws = computeWorksheet(p, fy);
   var os = p.ownershipSplit||[{name:'Owner 1', percentage:100}];
   var out = [];
   for(var i=0;i<os.length;i++){
     var share = ws.net * (num(os[i].percentage)/100);
-    var rate = withMedicare(rateForOwner(os[i].name)) / 100;
-    var refund = share < 0;
+    var rate = withMedicare(rateForOwner(os[i].name, fy));
     out.push({
-      name:os[i].name, pct:num(os[i].percentage), share:share,
-      rate:withMedicare(rateForOwner(os[i].name)),
-      amount: Math.abs(share) * rate, refund:refund
+      name:os[i].name, pct:num(os[i].percentage), share:share, rate:rate,
+      amount: Math.abs(share) * rate/100, refund: share < 0
     });
   }
   return out;
@@ -784,7 +968,8 @@ function renderProperties(){
     cards += '<div class="card">'+
       '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start">'+
         '<div><div style="font-family:var(--font-display);font-weight:600;font-size:16px">'+esc(p.address||'(no address)')+'</div>'+
-        '<div class="hint">Purchased '+esc(p.purchaseDate||'—')+' · '+fmt0(p.purchasePrice)+'</div></div>'+
+        '<div class="hint">Purchased '+esc(p.purchaseDate||'—')+' · '+fmt0(p.purchasePrice)+
+          (keldaLoan(p.keldaLoanRef)?' · '+ic('ti-link')+' loan synced from Kelda':'')+'</div></div>'+
         statusBadge(p.rentalStatus)+
       '</div>'+
       '<div class="metric-row">'+
@@ -819,7 +1004,8 @@ function blankProperty(){
     id:uuid(), address:'', purchaseDate:'', purchasePrice:0,
     purchaseCosts:{stampDuty:0, legalFees:0, otherCosts:0},
     currentMarketValue:0, rentalStatus:'rented', availableForRentDate:'',
-    ownershipSplit:[{name:'Owner 1', percentage:100}],
+    ownershipSplit:[{name:KELDA.owners[0] || 'Owner 1', percentage:100}],
+    keldaLoanRef:'',
     wasMainResidence:false, mainResidencePeriods:[],
     loan:{type:'interest-only', lender:'', originalAmount:0, currentBalance:0, interestRate:0, offsetBalance:0, termYears:25, repaymentMonthly:0},
     rentalIncome:{rentAmount:0, rentFrequency:'weekly', otherAmount:0, otherFrequency:'annual'},
@@ -900,6 +1086,7 @@ function collectStep(){
       termYears:(term!=null && term!=='') ? num(term) : (FORM.loan.termYears||25)
     };
     FORM.loan.repaymentMonthly = calcRepayment(FORM.loan); // calculated, never entered
+    applyKeldaLink(FORM);   // a linked loan's figures always come from Kelda
   } else if(FORM_STEP===4){
     FORM.rentalIncome = {
       rentAmount:num(g('f_rent')), rentFrequency:g('f_rentfreq')||'weekly',
@@ -951,6 +1138,7 @@ function validateStep(){
     }
   } else if(FORM_STEP===3){
     var l=FORM.loan;
+    if(keldaLoan(FORM.keldaLoanRef)) return true;   // figures come from Kelda, not typed in here
     if(l.currentBalance>l.originalAmount && l.originalAmount>0){ alert('Current loan balance cannot exceed the original loan amount.'); return false; }
     if(l.interestRate && (l.interestRate<0.01 || l.interestRate>30)){ alert('Interest rate must be between 0.01% and 30%.'); return false; }
     if(l.type==='principal-and-interest' && l.termYears && (l.termYears<1 || l.termYears>40)){ alert('Loan term must be between 1 and 40 years.'); return false; }
@@ -970,12 +1158,14 @@ function fieldRow(label, id, type, val, attrs){
 }
 function formStep1(){
   var p=FORM;
+  var k=keldaLoan(p.keldaLoanRef), mvFromKelda = !!(k && k.value);
   return fieldRow('Street address','f_addr','text',p.address,'placeholder="123 Example St, Suburb VIC 3000"')+
     fieldRow('Purchase date','f_pdate','date',p.purchaseDate,'max="'+todayISO()+'"')+
     '<div class="grid grid-2">'+
       fieldRow('Purchase price (AUD)','f_price','number',p.purchasePrice,'class="mono" inputmode="decimal" min="0"')+
-      fieldRow('Current market value (AUD)','f_mv','number',p.currentMarketValue,'class="mono" inputmode="decimal" min="0"')+
+      fieldRow('Current market value (AUD)','f_mv','number',p.currentMarketValue,'class="mono" inputmode="decimal" min="0"'+(mvFromKelda?' readonly':''))+
     '</div>'+
+    (mvFromKelda?'<div class="hint" style="margin-top:-8px">Market value comes from Kelda’s Mortgage page (linked in the Investment loan step).</div>':'')+
     '<div class="field-label">Purchase costs</div><div class="grid grid-3">'+
       fieldRow('Stamp duty','f_stamp','number',p.purchaseCosts.stampDuty,'class="mono" inputmode="decimal" min="0"')+
       fieldRow('Legal fees','f_legal','number',p.purchaseCosts.legalFees,'class="mono" inputmode="decimal" min="0"')+
@@ -1005,13 +1195,14 @@ function formStep2(){
     var rm = n>1 ? '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="removeOwner('+i+')">×</button>' : '';
     ownerFields += '<div data-owner="'+i+'" class="card2" style="padding:12px;border-radius:10px;margin-bottom:8px">'+
       '<div class="grid grid-2">'+
-        fieldRow('Owner '+(i+1)+' name','f_oname'+i,'text',o.name,'')+
+        fieldRow('Owner '+(i+1)+' name','f_oname'+i,'text',o.name,'list="keldaOwners"')+
         fieldRow('Ownership %','f_opct'+i,'number',o.percentage,'class="mono" inputmode="decimal" min="0" max="100"')+
       '</div>'+(rm?'<div style="text-align:right">'+rm+'</div>':'')+
     '</div>';
   }
   var sumCls = Math.round(sum)===100 ? 'pos' : 'amberv';
-  var ownerBlock = '<div class="field-label">Owners</div>'+ownerFields+
+  var nameList = '<datalist id="keldaOwners">'+KELDA.owners.map(function(n){ return '<option value="'+esc(n)+'"></option>'; }).join('')+'</datalist>';
+  var ownerBlock = '<div class="field-label">Owners</div>'+nameList+ownerFields+
     '<button class="btn btn-sm" onclick="addOwner()">+ Add owner</button>'+
     '<div class="hint">Ownership total: <span class="mono '+sumCls+'">'+pct(sum)+'</span> (must sum to 100%).</div>';
   var mrpHtml='';
@@ -1038,7 +1229,14 @@ function formStep2(){
       '<button type="button" class="'+(!p.wasMainResidence?'active':'')+'" onclick="setWasMR(\'no\')">No</button>'+
     '</div><div style="margin-top:16px">'+mrpHtml+'</div>';
 }
-function addOwner(){ collectStep(); FORM.ownershipSplit.push({name:'Owner '+(FORM.ownershipSplit.length+1), percentage:0}); renderForm(); }
+function addOwner(){
+  collectStep();
+  // Suggest the next Kelda profile name not already on this property
+  var used = FORM.ownershipSplit.map(function(o){ return o.name; });
+  var next = KELDA.owners.filter(function(n){ return used.indexOf(n) === -1; })[0];
+  FORM.ownershipSplit.push({name:next || 'Owner '+(FORM.ownershipSplit.length+1), percentage:0});
+  renderForm();
+}
 function removeOwner(i){ collectStep(); if(FORM.ownershipSplit.length>1) FORM.ownershipSplit.splice(i,1); renderForm(); }
 function setWasMR(v){ collectStep(); FORM.wasMainResidence=(v==='yes'); if(FORM.wasMainResidence && !FORM.mainResidencePeriods.length) FORM.mainResidencePeriods=[{from:'',to:'',type:'ppor'}]; renderForm(); }
 function addMrp(){ collectStep(); FORM.mainResidencePeriods.push({from:'',to:'',type:'ppor'}); renderForm(); }
@@ -1047,18 +1245,35 @@ function formStep3(){
   var l=FORM.loan;
   var di = deductibleInterestAnnual(FORM);
   var rep = calcRepayment(l);
+  var k = keldaLoan(FORM.keldaLoanRef);
+  function ro(synced){ return synced ? ' readonly' : ''; }   // fields a linked Kelda loan supplies
   var termField = (l.type==='principal-and-interest')
-    ? fieldRow('Remaining loan term (years)','f_term','number',l.termYears||25,'class="mono" inputmode="decimal" min="1" max="40"')
+    ? fieldRow('Remaining loan term (years)','f_term','number',l.termYears||25,'class="mono" inputmode="decimal" min="1" max="40"'+ro(k && k.termYears))
     : '';
-  return fieldRow('Lender name','f_lender','text',l.lender,'placeholder="e.g. ANZ"')+
-    '<div class="field-label">Loan type</div><div class="seg">'+
-      segBtn('interest-only','Interest Only',l.type,'setLoanType')+
-      segBtn('principal-and-interest','Principal & Interest',l.type,'setLoanType')+
-    '</div><div class="grid grid-2" style="margin-top:16px">'+
-      fieldRow('Original loan amount','f_orig','number',l.originalAmount,'class="mono" inputmode="decimal" min="0"')+
-      fieldRow('Current loan balance','f_bal','number',l.currentBalance,'class="mono" inputmode="decimal" min="0"')+
-      fieldRow('Annual interest rate %','f_rate','number',l.interestRate,'class="mono" inputmode="decimal" step="0.01" min="0.01" max="30"')+
-      fieldRow('Offset account balance','f_offset','number',l.offsetBalance,'class="mono" inputmode="decimal" min="0"')+
+  var link = '';
+  if(SETTINGS.keldaSync && (KELDA.loans.length || FORM.keldaLoanRef)){
+    var opts = '<option value="">Not linked — enter the loan below</option>';
+    for(var i=0;i<KELDA.loans.length;i++){
+      var o = KELDA.loans[i];
+      opts += '<option value="'+esc(o.ref)+'"'+(k===o?' selected':'')+'>'+esc(o.source+' · '+o.label+' · '+fmt0(o.balance))+'</option>';
+    }
+    if(FORM.keldaLoanRef && !k) opts += '<option value="'+esc(FORM.keldaLoanRef)+'" selected>Linked loan is no longer in Kelda</option>';
+    link = '<label class="field"><span class="field-label">Kelda loan</span><select id="f_kloan" onchange="setKeldaLoan(this.value)">'+opts+'</select></label>'+
+      (k ? '<div class="hint" style="margin-top:-8px;margin-bottom:12px">'+ic('ti-link')+' Kept in sync with Kelda’s '+esc(k.source)+' page — update the figures there.</div>' : '');
+  }
+  var typeCtl = (k && k.type)
+    ? '<div class="hint">'+(l.type==='interest-only'?'Interest only':'Principal &amp; interest')+' (from Kelda)</div>'
+    : '<div class="seg">'+
+        segBtn('interest-only','Interest Only',l.type,'setLoanType')+
+        segBtn('principal-and-interest','Principal & Interest',l.type,'setLoanType')+
+      '</div>';
+  return link + fieldRow('Lender name','f_lender','text',l.lender,'placeholder="e.g. ANZ"'+ro(k && k.lender))+
+    '<div class="field-label">Loan type</div>'+typeCtl+
+    '<div class="grid grid-2" style="margin-top:16px">'+
+      fieldRow('Original loan amount','f_orig','number',l.originalAmount,'class="mono" inputmode="decimal" min="0"'+ro(k && k.original))+
+      fieldRow('Current loan balance','f_bal','number',l.currentBalance,'class="mono" inputmode="decimal" min="0"'+ro(k))+
+      fieldRow('Annual interest rate %','f_rate','number',l.interestRate,'class="mono" inputmode="decimal" step="0.01" min="0.01" max="30"'+ro(k))+
+      fieldRow('Offset account balance','f_offset','number',l.offsetBalance,'class="mono" inputmode="decimal" min="0"'+ro(k && k.offset != null))+
     '</div>'+ termField +
     '<div class="hint">Only the interest on the balance net of offset is deductible.</div>'+
     '<div class="note">Calculated monthly repayment ('+(l.type==='interest-only'?'interest-only':'principal &amp; interest')+'): <span class="mono">'+fmt(rep)+'</span><br>'+
@@ -1066,6 +1281,7 @@ function formStep3(){
     'Interest on the offset portion is not deductible. For P&I loans only the interest component is deductible, not principal.</div>';
 }
 function setLoanType(v){ collectStep(); FORM.loan.type=v; renderForm(); }
+function setKeldaLoan(ref){ collectStep(); FORM.keldaLoanRef = ref || ''; applyKeldaLink(FORM); renderForm(); }
 
 /* Step 4 — Rental income (rent payments + recoveries) */
 function formStepIncome(){
@@ -1314,7 +1530,7 @@ function syncOwnersFromProperties(){
   var merged=[];
   for(var n=0;n<names.length;n++){
     var found=existing.filter(function(o){return o.name===names[n];})[0];
-    merged.push(found || {name:names[n], marginalRate:32.5});
+    merged.push(found || normaliseOwner({name:names[n]}));
   }
   TAX_SETTINGS.owners = merged.length ? merged : existing;
   save(K.taxSettings, TAX_SETTINGS);
@@ -1388,8 +1604,15 @@ function renderTransactions(){
     }
   }
 
-  // filtered + grouped list
-  var list = TRANSACTIONS.filter(function(t){
+  // filtered + grouped list: logged one-offs plus (read-only) Kelda transactions
+  var keldaRows = [];
+  for(var kp=0;kp<PROPERTIES.length;kp++){
+    var kpid = PROPERTIES[kp].id;
+    keldaTxFor(kpid).forEach(function(k){
+      keldaRows.push({ kelda:k, propertyId:kpid, date:k.date, type:k.type, category:k.category, description:k.description, amount:k.amount });
+    });
+  }
+  var list = TRANSACTIONS.concat(keldaRows).filter(function(t){
     if(TX_FILTER.property!=='all' && t.propertyId!==TX_FILTER.property) return false;
     if(TX_FILTER.fy!=='all' && fyOf(t.date)!==TX_FILTER.fy) return false;
     if(TX_FILTER.type!=='all' && t.type!==TX_FILTER.type) return false;
@@ -1406,13 +1629,16 @@ function renderTransactions(){
       if(mk!==curMonth){ curMonth=mk; listHtml += '<div class="month-head">'+esc(monthName(mk))+'</div>'; }
       var sign = t.type==='income'?'+':'−';
       var cls = t.type==='income'?'pos':'';
+      var actions = t.kelda
+        ? (PROPERTIES.length>1 ? keldaAssignSelect(t.kelda, t.propertyId) : '')
+        : '<button class="btn btn-sm" onclick="openTxForm(\''+t.id+'\')">Edit</button>'+
+          '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteTx(\''+t.id+'\')">×</button>';
       listHtml += '<div class="tx-row">'+
         '<span style="font-size:20px;color:var(--muted)">'+ic(catIcon(t.category))+'</span>'+
-        '<div class="desc"><div>'+esc(t.description||catLabel(t.category))+'</div>'+
+        '<div class="desc"><div>'+esc(t.description||catLabel(t.category))+(t.kelda?' <span class="chip">Kelda</span>':'')+'</div>'+
           '<small>'+esc(t.date)+' · '+esc(catLabel(t.category))+(t.receiptRef?' · '+esc(t.receiptRef):'')+'</small></div>'+
         '<span class="tx-amt '+cls+'">'+sign+fmt(t.amount)+'</span>'+
-        '<span class="tx-actions"><button class="btn btn-sm" onclick="openTxForm(\''+t.id+'\')">Edit</button>'+
-        '<button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteTx(\''+t.id+'\')">×</button></span>'+
+        '<span class="tx-actions">'+actions+'</span>'+
       '</div>';
     }
     listHtml = '<div class="card"><div class="card-title">'+ic('ti-book')+' Transaction ledger</div>'+listHtml+'</div>';
@@ -1420,10 +1646,49 @@ function renderTransactions(){
 
   var statements = statementPosition(targets, selFy) + statementPerformance(targets, selFy);
   var ledgerHead = '<h3 style="margin:24px 0 4px;font-size:17px">Detailed ledger</h3>'+
-    '<div class="hint" style="margin-bottom:12px">Recurring rent &amp; scheduled expenses (set per property) flow into the statements automatically. Log one-off or irregular amounts here — they are added on top.</div>';
+    '<div class="hint" style="margin-bottom:12px">Recurring rent &amp; scheduled expenses (set per property) flow into the statements automatically. Log one-off or irregular amounts here — they are added on top.'+
+    (SETTINGS.keldaSync?' Transactions tagged <strong>Investment Property</strong> in Kelda appear here too, and replace the schedule for the months they cover.':'')+'</div>';
 
-  el.innerHTML = h + viewToggle + statements + ledgerHead + scheduleSummary(targets) + filter + vacancyLogCard() + autoHtml + listHtml;
+  el.innerHTML = h + viewToggle + keldaInboxCard() + statements + ledgerHead + scheduleSummary(targets) + filter + vacancyLogCard() + autoHtml + listHtml;
   drawPerformanceChart(targets, selFy);
+}
+
+/* ---------- Kelda transactions: which property each belongs to ---------- */
+// Property picker for a Kelda transaction (only shown with more than one property)
+function keldaAssignSelect(k, current){
+  var o = current ? '' : '<option value="">Choose property…</option>';
+  for(var i=0;i<PROPERTIES.length;i++) o += '<option value="'+esc(PROPERTIES[i].id)+'"'+(PROPERTIES[i].id===current?' selected':'')+'>'+esc(PROPERTIES[i].address||'(no address)')+'</option>';
+  return '<select style="max-width:170px" aria-label="Property for this Kelda transaction" onchange="assignKeldaTx(\''+esc(k.keldaId)+'\',this.value)">'+o+'</select>';
+}
+function assignKeldaTx(keldaId, propertyId){
+  if(propertyId) SETTINGS.keldaAssign[keldaId] = propertyId; else delete SETTINGS.keldaAssign[keldaId];
+  persistAll(); renderTransactions();
+}
+function assignAllKeldaTx(propertyId){
+  if(!propertyId) return;
+  keldaUnassigned().forEach(function(k){ SETTINGS.keldaAssign[k.keldaId] = propertyId; });
+  persistAll(); renderTransactions();
+}
+var KELDA_INBOX_ROWS = 30;
+function keldaInboxCard(){
+  var un = keldaUnassigned(); if(!un.length) return '';
+  un.sort(function(a,b){ return b.date<a.date?-1:1; });
+  var rows = '';
+  for(var i=0;i<Math.min(un.length, KELDA_INBOX_ROWS);i++){
+    var k = un[i];
+    rows += '<div class="tx-row">'+
+      '<div class="desc"><div>'+esc(k.description)+'</div><small>'+esc(k.date)+' · '+esc(catLabel(k.category))+'</small></div>'+
+      '<span class="tx-amt '+(k.type==='income'?'pos':'')+'">'+(k.type==='income'?'+':'−')+fmt(k.amount)+'</span>'+
+      '<span class="tx-actions">'+keldaAssignSelect(k, '')+'</span></div>';
+  }
+  if(un.length > KELDA_INBOX_ROWS) rows += '<div class="hint" style="padding:8px 12px">…and '+(un.length-KELDA_INBOX_ROWS)+' more.</div>';
+  var all = '<option value="">Assign all to…</option>';
+  for(var p=0;p<PROPERTIES.length;p++) all += '<option value="'+esc(PROPERTIES[p].id)+'">'+esc(PROPERTIES[p].address||'(no address)')+'</option>';
+  return '<div class="card"><div class="card-title">'+ic('ti-inbox')+' From Kelda — needs a property <span class="chip" style="margin-left:auto">'+un.length+'</span></div>'+
+    '<div class="hint" style="margin-bottom:8px">These are tagged Investment Property in Kelda. You have more than one property, so choose which one each belongs to — they aren’t counted until you do.</div>'+
+    rows+
+    '<label class="field" style="margin-top:12px;max-width:280px"><span class="field-label">Assign everything above</span>'+
+      '<select onchange="assignAllKeldaTx(this.value)">'+all+'</select></label></div>';
 }
 
 /* ---------- Editable P&L statement (standard rental statement view) ---------- */
@@ -1452,6 +1717,7 @@ function renderPnlView(){
       '<span class="chip" style="margin-left:auto">'+esc(fyLabel(fy))+'</span></div>'+
     propPicker+
     '<div class="hint">Type each expected amount and how often it occurs. Changes save automatically and flow into your statements and tax report.</div>'+
+    keldaActualsNote(p, fy)+
     '<div class="stmt-section">Income</div>'+
     incomeLinesHtml('pnl', ri, 'pnlSave()')+
     '<div class="stmt-section">Deductible expenses</div>'+
@@ -1533,7 +1799,9 @@ function statementPerformance(targets, fy){
     '</div>'+
     '<canvas id="chartPerf" height="110" style="margin-bottom:8px"></canvas>'+
     '<div class="table-wrap"><table><thead>'+head+'</thead><tbody>'+incRow+expRow+netRow+cumRow+'</tbody></table></div>'+
-    '<div class="hint">Operating view: recurring rent &amp; scheduled expenses spread evenly across the year, plus logged one-offs in their month. The Tax Report applies rental-day apportionment for deductible figures.</div></div>';
+    '<div class="hint">Operating view: recurring rent &amp; scheduled expenses spread evenly across the year, plus logged one-offs in their month.'+
+    (SETTINGS.keldaSync?' Kelda transactions land in their month and replace the schedule for months already passed.':'')+
+    ' The Tax Report applies rental-day apportionment for deductible figures.</div></div>';
 }
 
 function drawPerformanceChart(targets, fy){
@@ -1572,8 +1840,16 @@ function autoRow(label,val){ return '<tr class="auto"><td>'+esc(label)+'</td><td
 function monthName(mk){ var p=mk.split('-'); var d=new Date(parseInt(p[0]),parseInt(p[1])-1,1); return d.toLocaleDateString('en-AU',{month:'long',year:'numeric'}); }
 function availableFYs(){
   var set={}; for(var i=0;i<TRANSACTIONS.length;i++){ var f=fyOf(TRANSACTIONS[i].date); if(f) set[f]=1; }
+  for(var k=0;k<KELDA.tx.length;k++){ var g=fyOf(KELDA.tx[k].date); if(g) set[g]=1; }
   set[SETTINGS.financialYear]=1;
   return Object.keys(set).sort().reverse();
+}
+// "Kelda actuals replace these estimates…" for a property + year, or '' if none
+function keldaActualsNote(p, fy){
+  var cats = Object.keys(keldaSums(p.id, fy)); if(!cats.length) return '';
+  var done = fyElapsedMonths(fy);
+  return '<div class="note">'+ic('ti-link')+' Your Kelda transactions for '+esc(cats.map(catLabel).join(', '))+
+    (done >= 12 ? ' replace these estimates for '+esc(fyLabel(fy))+'.' : ' replace these estimates for the months of '+esc(fyLabel(fy))+' already passed; the estimates cover the rest.')+'</div>';
 }
 function deleteTx(id){ if(!confirm('Delete this transaction?')) return; TRANSACTIONS=TRANSACTIONS.filter(function(t){return t.id!==id;}); persistAll(); renderTransactions(); }
 
@@ -1748,6 +2024,10 @@ function apportionPanel(p, fy){
 function propertyTaxBlock(p, fy){
   var ws=computeWorksheet(p,fy);
   var out='<h3 style="margin:24px 0 12px;font-size:18px">'+esc(p.address)+' — '+esc(fyLabel(fy))+'</h3>';
+  if(ws.keldaCats.length){
+    out += '<div class="hint" style="margin:-4px 0 12px">'+ic('ti-link')+' Uses your Kelda transactions for '+esc(ws.keldaCats.map(catLabel).join(', '))+
+      (fyElapsedMonths(fy) < 12 ? ' (estimates cover the rest of the year)' : '')+'.</div>';
+  }
   out += apportionPanel(p,fy);
   out += worksheetTable(ws,'ATO rental property worksheet');
   var ti=taxImpact(p,fy); var tiHtml='';
@@ -1772,7 +2052,7 @@ function propertyTaxBlock(p, fy){
 function cgtPanel(p){
   var c=cgtEstimate(p);
   if(c.heldMonths<=12) return '';
-  var rate = withMedicare(rateForOwner((p.ownershipSplit||[{}])[0].name))/100;
+  var rate = withMedicare(rateForOwner((p.ownershipSplit||[{}])[0].name, SETTINGS.financialYear))/100;
   var perOwnerPct = ownerSharePct(p);
   var perOwner = c.taxable*(perOwnerPct/100);
   var cgtPayable = perOwner*rate;
@@ -1879,22 +2159,21 @@ function renderSettings(){
   var el=document.getElementById('page-settings');
   var fyOpts=''; for(var i=0;i<ALL_FYS.length;i++) fyOpts+='<option value="'+ALL_FYS[i]+'"'+(SETTINGS.financialYear===ALL_FYS[i]?' selected':'')+'>'+esc(fyLabel(ALL_FYS[i]))+'</option>';
 
-  var brRows=''; for(var b=0;b<BRACKETS.length;b++){ brRows+='<tr><td>'+esc(BRACKETS[b][0])+'</td><td>'+esc(BRACKETS[b][1])+'</td><td>'+esc(BRACKETS[b][2])+'</td></tr>'; }
+  var fy=SETTINGS.financialYear, bands=taxBands(fy);
+  var brRows=''; for(var b=0;b<bands.length;b++){ brRows+='<tr><td>'+esc(bands[b][0])+'</td><td>'+bands[b][1]+'%</td><td>'+withMedicare(bands[b][1])+'%</td></tr>'; }
 
   var ownerHtml='';
   var owners=TAX_SETTINGS.owners||[];
   if(!owners.length) ownerHtml='<div class="hint">Owners appear here once you add a property.</div>';
   for(var o=0;o<owners.length;o++){
-    var rateOpts=''; var rates=[0,19,32.5,37,45];
-    for(var r=0;r<rates.length;r++) rateOpts+='<option value="'+rates[r]+'"'+(num(owners[o].marginalRate)===rates[r]?' selected':'')+'>'+rates[r]+'% (incl. Medicare: '+withMedicare(rates[r])+'%)</option>';
+    var cur=ownerBand(owners[o].name, fy), bandOpts='';
+    for(var r=0;r<bands.length;r++) bandOpts+='<option value="'+r+'"'+(cur===r?' selected':'')+'>'+esc(bands[r][0])+' ('+bands[r][1]+'%)</option>';
     ownerHtml += '<div class="grid grid-2" style="align-items:end">'+
       '<label class="field"><span class="field-label">Owner name</span><input type="text" value="'+esc(owners[o].name)+'" onchange="updateOwnerName('+o+',this.value)"/></label>'+
-      '<label class="field"><span class="field-label">Marginal rate</span><select onchange="updateOwnerRate('+o+',this.value)">'+rateOpts+'</select></label>'+
+      '<label class="field"><span class="field-label">Taxable income '+esc(fyLabel(fy))+'</span><select onchange="updateOwnerBand('+o+',this.value)">'+bandOpts+'</select></label>'+
     '</div>';
   }
 
-  var connected=SETTINGS.keldaConnect;
-  var keldaStatus = connected ? keldaStatusText() : '';
   var usage = storageKB();
 
   el.innerHTML =
@@ -1902,13 +2181,13 @@ function renderSettings(){
     '<div class="card"><div class="card-title">Financial year</div>'+
       '<label class="field"><span class="field-label">Active financial year</span><select onchange="SETTINGS.financialYear=this.value;persistAll();render(CURRENT_TAB)">'+fyOpts+'</select></label></div>'+
     '<div class="card"><div class="card-title">Tax bracket configuration</div>'+ownerHtml+
-      '<div class="field-label" style="margin-top:16px">2024–25 ATO brackets (reference)</div>'+
+      '<div class="field-label" style="margin-top:16px">'+esc(fyLabel(fy))+' ATO resident rates (reference)</div>'+
       '<div class="table-wrap"><table class="bracket-table"><thead><tr><th>Taxable income</th><th>Marginal rate</th><th>With Medicare (2%)</th></tr></thead><tbody>'+brRows+'</tbody></table></div>'+
-      '<div class="note">Stage 3 tax cuts apply from 1 July 2024. Rates shown are for 2024–25. Select your rate; the app adds the 2% Medicare levy for display.</div></div>'+
-    '<div class="card"><div class="card-title">Kelda Finance integration</div>'+
-      '<label class="switch"><input type="checkbox" '+(connected?'checked':'')+' onchange="toggleKelda(this.checked)"/><span class="track"></span><span>Connect to Kelda Finance data</span></label>'+
-      '<div id="keldaStatus" class="note" style="'+(connected?'':'display:none')+'">'+keldaStatus+'</div>'+
-      '<div class="hint">When on, reads <span class="mono">cff_mortgage</span> / <span class="mono">cff_tx</span> from the main app (read-only) to surface matching data.</div></div>'+
+      '<div class="note">Each financial year uses its own rates: Stage 3 applies from 1 July 2024, and the 16% rate falls to 15% from 1 July 2026 and 14% from 1 July 2027. Choose each owner’s income band for the active year (change the year above to set other years); the 2% Medicare levy is added for you.</div></div>'+
+    '<div class="card"><div class="card-title">Kelda Finance data</div>'+
+      '<label class="switch"><input type="checkbox" '+(SETTINGS.keldaSync?'checked':'')+' onchange="toggleKelda(this.checked)"/><span class="track"></span><span>Use my Kelda data</span></label>'+
+      (SETTINGS.keldaSync?'<div class="note">'+keldaStatusHtml()+'</div>':'')+
+      '<div class="hint">Read-only — nothing in Kelda is changed. Figures refresh each time you open Investment Property.</div></div>'+
     '<div class="card"><div class="card-title">Data management</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
         '<button class="btn" onclick="exportData()">'+ic('ti-download')+' Export JSON</button>'+
@@ -1919,29 +2198,25 @@ function renderSettings(){
       '<div class="hint" style="margin-top:12px">Storage usage: <span class="mono">'+usage+' KB</span> of localStorage (investment-property data).</div></div>';
 }
 function updateOwnerName(i,v){ TAX_SETTINGS.owners[i].name=v; save(K.taxSettings,TAX_SETTINGS); }
-function updateOwnerRate(i,v){ TAX_SETTINGS.owners[i].marginalRate=num(v); save(K.taxSettings,TAX_SETTINGS); }
+// Sets the band for the active year, and makes it the default for years not set individually
+function updateOwnerBand(i,v){
+  var o=normaliseOwner(TAX_SETTINGS.owners[i]), b=parseInt(v,10)||0;
+  o.band=b; o.bandByFy[SETTINGS.financialYear]=b;
+  save(K.taxSettings,TAX_SETTINGS); writeSummary();
+}
 
-// KELDA INTEGRATION: Read cff_ mortgage + transactions from localStorage when connected
-function readKeldaData(){
-  var mortgage=load(KELDA_KEYS.mortgage);
-  var tx=load(KELDA_KEYS.tx);
-  // KELDA INTEGRATION: Pull owner names from cff_userconfig if available
-  var cfg=load(KELDA_KEYS.userconfig);
-  return { mortgage:mortgage, tx:tx, cfg:cfg, found:(mortgage!=null || (tx&&tx.length)) };
+function keldaStatusHtml(){
+  var lines=[], n=KELDA.tx.length, un=keldaUnassigned().length, nl=KELDA.loans.length;
+  lines.push(n
+    ? ic('ti-circle-check')+' '+n+' transaction'+(n===1?'':'s')+' tagged <strong>Investment Property</strong>'+(un?' — '+un+' need a property (see Income &amp; Expenses)':'')
+    : ic('ti-info-circle')+' No transactions tagged <strong>Investment Property</strong> yet. Tag rent and property costs with that category in Kelda — a Smart Rule can do it automatically.');
+  lines.push(nl
+    ? ic('ti-circle-check')+' '+nl+' loan'+(nl===1?'':'s')+' from the Mortgage and Liabilities pages you can link in a property’s Investment loan step'
+    : ic('ti-info-circle')+' No mortgages or investment loans in Kelda to link yet.');
+  if(KELDA.owners.length) lines.push(ic('ti-circle-check')+' Owner names: '+esc(KELDA.owners.join(', ')));
+  return lines.join('<br>');
 }
-function keldaStatusText(){
-  var d=readKeldaData();
-  if(d.found){
-    var bits=[];
-    if(d.mortgage) bits.push('mortgage data');
-    if(d.tx&&d.tx.length) bits.push(d.tx.length+' transactions');
-    return ic('ti-circle-check')+' Kelda Finance data found ('+bits.join(', ')+'). Available for pre-fill.';
-  }
-  return ic('ti-alert-triangle')+' No Kelda Finance data found in this browser (cff_ keys empty).';
-}
-function toggleKelda(on){ SETTINGS.keldaConnect=on; save(K.settings,SETTINGS);
-  var s=document.getElementById('keldaStatus'); s.style.display=on?'':'none'; if(on) s.innerHTML=keldaStatusText();
-}
+function toggleKelda(on){ SETTINGS.keldaSync=on; persistAll(); keldaRefresh(); renderSettings(); }
 
 function storageKB(){
   var total=0;
@@ -1965,6 +2240,7 @@ function importData(input){
       if(!confirm('Import will REPLACE all current investment-property data. Continue?')){ input.value=''; return; }
       PROPERTIES=d.properties||[]; TRANSACTIONS=d.transactions||[]; VACANCIES=d.vacancies||[];
       TAX_SETTINGS=d.taxSettings||{owners:[]}; SETTINGS=d.settings||SETTINGS;
+      normaliseSettings(); keldaRefresh();
       persistAll(); go('dashboard'); alert('Data imported successfully.');
     }catch(e){ alert('Could not read that file: '+e.message); }
     input.value='';
@@ -1975,7 +2251,8 @@ function clearAllData(){
   if(!confirm('This permanently deletes ALL investment-property data (properties, transactions, vacancies, settings). This cannot be undone. Continue?')) return;
   if(!confirm('Are you absolutely sure? Last chance.')) return;
   for(var k in K){ try{ localStorage.removeItem(K[k]); }catch(e){} }
-  PROPERTIES=[]; TRANSACTIONS=[]; VACANCIES=[]; TAX_SETTINGS={owners:[]}; SETTINGS={financialYear:'2024-25',keldaConnect:false};
+  PROPERTIES=[]; TRANSACTIONS=[]; VACANCIES=[]; TAX_SETTINGS={owners:[]}; SETTINGS={financialYear:defaultFY(), keldaSync:true, keldaAssign:{}};
+  keldaRefresh();
   go('dashboard');
 }
 
@@ -1983,6 +2260,8 @@ function clearAllData(){
    INIT
    ================================================================= */
 function boot(){
+  normaliseSettings();
+  keldaRefresh();
   syncOwnersFromProperties();
   writeSummary();
   buildNav();
