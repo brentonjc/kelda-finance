@@ -26,6 +26,7 @@ var APP_CHANGELOG = [
     notes: [
       'Cash Flow Forecast now shows its charts, summary figures and month-by-month view instead of an empty page',
       'Opening Forecast picks up your latest account balances as the starting balance, so the Cumulative view is ready without pressing Sync',
+      'The Forecast how-to guide now explains how the 12-month forecast is worked out',
     ],
   },
   {
