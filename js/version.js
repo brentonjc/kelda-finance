@@ -14,11 +14,21 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.2.0';
+var APP_VERSION = '2.2.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.2.1',
+    date: '2026-09-28',
+    title: 'Mobile tab bar fixes',
+    notes: [
+      'Bottom tab bar labels are no longer cut off on iPhone-sized screens',
+      'The Transactions tab now reads "Txns" on phones; screen readers still say "Transactions"',
+      'Home Screen app: the tab bar now sits above the iPhone home indicator instead of being squashed',
+    ],
+  },
   {
     version: '2.2.0',
     date: '2026-09-27',
