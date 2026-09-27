@@ -147,7 +147,6 @@ function unlock(){
   try{renderCategories();}catch(e){console.warn('renderCategories:',e);}
   try{populateTxCatSelect();}catch(e){console.warn('populateTxCatSelect:',e);}
   try{renderIconPicker();}catch(e){console.warn('renderIconPicker:',e);}
-  try{detectRecurring();}catch(e){console.warn('detectRecurring:',e);}
   try{autoDetectTransfers();}catch(e){console.warn('autoDetectTransfers:',e);}
   // First login after onboarding → open the Quick Start guide (one-shot).
   try {
