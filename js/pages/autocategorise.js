@@ -328,7 +328,7 @@ function resolveAlias(preprocessed) {
 }
 
 // ── Seed rules from real transaction data ─────────────────────
-var SEED_VERSION = '2026-06-28-v1';
+var SEED_VERSION = '2026-09-27-v1';
 
 var SEED_LRULES = {
   // Business Costs
@@ -337,8 +337,8 @@ var SEED_LRULES = {
   'google g suite':               { catId:'business',          subcat:'Website and Digital',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   'google workspace openf sydney':{ catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
   'sqsp* websit':                 { catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  // Capital Gains
-  'from citibank morgan stanley smi':{ catId:'capital_gains',  subcat:'Shares',                 pattern:'contains', source:'manual', confidence:'HIGH' },
+  // Bonus — employee share plan (RSU) sale proceeds are pay arriving as cash, not a capital gain
+  'from citibank morgan stanley smi':{ catId:'bonus',          subcat:'Work Bonus',             pattern:'contains', source:'manual', confidence:'HIGH' },
   // Car & Transport
   '7-eleven':                     { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'},{maxAmount:80,catId:'car_transport',subcat:'Petrol'}] },
   'ampol foodary':                { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },

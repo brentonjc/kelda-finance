@@ -27,6 +27,7 @@ var APP_CHANGELOG = [
       'Payments to and from brokers, crypto exchanges and Vanguard are now filed as Transfers › Investment Transfer, not Capital Gains',
       'Buying shares no longer shows up as spending, and sale proceeds no longer count as income',
       'More Australian platforms recognised: SelfWealth, Pearler, Stake, CoinSpot, Swyftx, BTC Markets and others',
+      'Employee share plan (RSU) sale proceeds from Morgan Stanley are now filed as Bonus income',
       'Fewer false matches: Vanguard Super, distributions, Stake.com and words like "mistake" are left alone',
       'Your own category corrections now take priority over the built-in keyword list, as documented',
       'Existing transactions are unchanged; use Rescan to apply the new rules to past imports',
