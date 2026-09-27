@@ -31,7 +31,10 @@
   sync();
   try{
     if(window.parent && window.parent!==window){
-      new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-mode','data-palette']});
+      new MutationObserver(function(){
+        sync();
+        if(typeof window.onThemeChange==='function') window.onThemeChange();   // canvas charts don't follow CSS
+      }).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-mode','data-palette']});
     }
   }catch(e){}
 })();
@@ -118,6 +121,11 @@ input,select,textarea{
 textarea{padding:var(--sp3); min-height:72px; resize:vertical; line-height:1.4;}
 input.mono{font-family:var(--font-mono);}
 input[readonly]{color:var(--muted); cursor:default;}   /* figures synced from Kelda */
+/* Chart series colours: slots 1–2 of the data-viz reference palette, validated for
+   colour-blind separation and contrast against every Kelda palette's card in each mode.
+   Brand accents can't be used — in some palettes --primary is the same as --success. */
+:root{ --viz-1:#3987e5; --viz-2:#d95926; }             /* dark: the module's default mode */
+[data-mode="light"]{ --viz-1:#2a78d6; --viz-2:#eb6834; }
 input:focus,select:focus,textarea:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(240,83,138,.25);}
 .hint{font-size:12px; color:var(--muted); margin-top:6px;}
 .note{font-size:12.5px; color:var(--muted); background:var(--n900); border-left:3px solid var(--primary); border-radius:6px; padding:var(--sp3); margin:var(--sp3) 0;}
@@ -1810,15 +1818,14 @@ function drawPerformanceChart(targets, fy){
   for(var m=0;m<12;m++){ var n=s.inc[m]-s.exp[m]; net.push(Math.round(n)); cum+=n; cumArr.push(Math.round(cum)); }
   var c=document.getElementById('chartPerf'); if(!c) return;
   if(_charts.perf){ _charts.perf.destroy(); }
+  // One colour per series; a month's gain or loss reads from its bar rising above or dropping below zero
   _charts.perf = safeChart(c, {
     type:'bar',
     data:{ labels:FY_MONTHS, datasets:[
-      {type:'bar', label:'Monthly net', data:net, backgroundColor:net.map(function(v){return v<0?'#EF4444':'#00C896';})},
-      {type:'line', label:'Cumulative net', data:cumArr, borderColor:'#F0538A', backgroundColor:'transparent', tension:.3, pointRadius:2}
+      {type:'bar', label:'Monthly net', data:net, backgroundColor:themeToken('--viz-1')},
+      {type:'line', label:'Cumulative net', data:cumArr, borderColor:themeToken('--viz-2'), backgroundColor:'transparent', tension:.3, pointRadius:2}
     ]},
-    options:{ responsive:true, plugins:{legend:{labels:{color:'#E8EDF5'}}}, scales:{
-      x:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.12)'}},
-      y:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.12)'}} } }
+    options:{ responsive:true, plugins:{legend:{labels:{color:themeToken('--text')}}}, scales:{ x:chartAxis(), y:chartAxis() } }
   });
 }
 
@@ -1977,7 +1984,8 @@ function renderTax(){
     report += propertyTaxBlock(targets[t], fy);
   }
   report += '<div class="card"><div class="card-title">'+ic('ti-chart-bar')+' Income vs expenses</div><canvas id="chartIE" height="120"></canvas></div>';
-  report += '<div class="card"><div class="card-title">'+ic('ti-chart-pie')+' Expense breakdown — '+esc(fyLabel(fy))+'</div><canvas id="chartPie" height="160"></canvas></div>';
+  report += '<div class="card"><div class="card-title">'+ic('ti-chart-bar-popular')+' Expense breakdown — '+esc(fyLabel(fy))+'</div>'+
+    '<div style="position:relative;height:60px"><canvas id="chartExp"></canvas></div></div>';
   report += '</div>';
 
   el.innerHTML = h + controls + report;
@@ -2105,11 +2113,30 @@ function combinedWorksheet(fy){
 
 /* ---------- Charts ---------- */
 var _charts={};
+// Chart colours are read from CSS tokens at draw time (theme ink plus the --viz-* series
+// colours) — the module mirrors the Kelda app's palette and light/dark mode, and a
+// canvas doesn't follow CSS on its own.
+function themeToken(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function chartAxis(){ return { ticks:{color:themeToken('--muted')}, grid:{color:themeToken('--border')}, border:{color:themeToken('--border')} }; }
+// Split a long axis label into lines of about `max` characters (Chart.js draws an array as lines)
+function wrapLabel(text, max){
+  var lines=[], cur='';
+  String(text).split(' ').forEach(function(w){
+    if(cur && (cur+' '+w).length > max){ lines.push(cur); cur=w; } else cur = cur ? cur+' '+w : w;
+  });
+  if(cur) lines.push(cur);
+  return lines.length > 1 ? lines : text;
+}
+function canvasNote(canvas, text){
+  var ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle=themeToken('--muted'); ctx.font='13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(text, canvas.width/2, canvas.height/2);
+}
+// Theme switched in the Kelda app (called by the sync script in <head>): redraw any charts
+function onThemeChange(){ if(CURRENT_TAB==='transactions' || CURRENT_TAB==='tax') render(CURRENT_TAB); }
 function safeChart(canvas, config){
   if(typeof Chart==='undefined' || window._chartJsError){
-    if(canvas){ var ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle='#6278A0'; ctx.font='13px sans-serif'; ctx.textAlign='center';
-      ctx.fillText('Charts unavailable — check internet connection', canvas.width/2, canvas.height/2); }
+    if(canvas) canvasNote(canvas, 'Charts unavailable — check internet connection');
     return null;
   }
   try{ return new Chart(canvas, config); }catch(e){ console.error('Chart error:',e); return null; }
@@ -2127,28 +2154,35 @@ function drawCharts(targets, selFy){
   _charts.ie = safeChart(ie, {
     type:'bar',
     data:{ labels:fys.map(fyLabel), datasets:[
-      {label:'Gross rent', data:rentByFy, backgroundColor:'#00C896'},
-      {label:'Total expenses', data:expByFy, backgroundColor:'#F0538A'}
+      {label:'Gross rent', data:rentByFy, backgroundColor:themeToken('--viz-1')},
+      {label:'Total expenses', data:expByFy, backgroundColor:themeToken('--viz-2')}
     ]},
-    options:{ responsive:true, plugins:{legend:{labels:{color:'#E8EDF5'}}}, scales:{
-      x:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.15)'}},
-      y:{ticks:{color:'#6278A0'},grid:{color:'rgba(98,120,160,.15)'}} } }
+    options:{ responsive:true, plugins:{legend:{labels:{color:themeToken('--text')}}}, scales:{ x:chartAxis(), y:chartAxis() } }
   });
 
-  var labels=[], data=[];
-  var colors=['#F0538A','#00C896','#818CF8','#F59E0B','#EF4444','#F56CA0','#22D3EE','#A78BFA','#FB923C','#34D399','#60A5FA','#F472B6','#FBBF24','#4ADE80','#C084FC','#2DD4BF','#FACC15','#FB7185'];
-  var agg={};
+  // Expense breakdown: one bar per ATO line, largest first. The axis labels carry each
+  // line's identity, so it's a single series in the expenses colour — far more readable
+  // than up to 18 slice colours.
+  var agg={}, rows=[];
   for(var e=0;e<EXPENSE_CATS.length;e++) agg[EXPENSE_CATS[e][0]]=0;
   for(var tt=0;tt<targets.length;tt++){ var w=computeWorksheet(targets[tt],selFy);
     for(var c=0;c<EXPENSE_CATS.length;c++) agg[EXPENSE_CATS[c][0]]+=w.expenses[EXPENSE_CATS[c][0]]; }
-  for(var k=0;k<EXPENSE_CATS.length;k++){ var v=agg[EXPENSE_CATS[k][0]]; if(v>0.5){ labels.push(EXPENSE_CATS[k][1]); data.push(Math.round(v)); } }
-  var pie=document.getElementById('chartPie');
-  if(_charts.pie){ _charts.pie.destroy(); }
-  if(!data.length){ var ctx=pie.getContext('2d'); ctx.clearRect(0,0,pie.width,pie.height); ctx.fillStyle='#6278A0'; ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillText('No expenses for this year', pie.width/2, pie.height/2); return; }
-  _charts.pie = safeChart(pie, {
-    type:'doughnut',
-    data:{ labels:labels, datasets:[{data:data, backgroundColor:colors, borderColor:'#0D1225', borderWidth:2}] },
-    options:{ responsive:true, plugins:{legend:{position:'right', labels:{color:'#E8EDF5', boxWidth:12, font:{size:11}}}} }
+  for(var k=0;k<EXPENSE_CATS.length;k++){ var v=agg[EXPENSE_CATS[k][0]]; if(v>0.5) rows.push({label:EXPENSE_CATS[k][1], value:Math.round(v)}); }
+  rows.sort(function(a,b){ return b.value-a.value; });
+  var cv=document.getElementById('chartExp');
+  if(_charts.exp){ _charts.exp.destroy(); _charts.exp=null; }
+  if(!cv) return;
+  cv.parentNode.style.height = (rows.length ? rows.length*36 + 30 : 60) + 'px';   // room for two-line labels
+  if(!rows.length){ canvasNote(cv, 'No expenses for this year'); return; }
+  _charts.exp = safeChart(cv, {
+    type:'bar',
+    data:{ labels:rows.map(function(r){ return wrapLabel(r.label, 24); }), datasets:[{
+      label:'Deductible expenses', data:rows.map(function(r){ return r.value; }),
+      backgroundColor:themeToken('--viz-2'), borderRadius:4, borderSkipped:'start', barThickness:14
+    }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:function(ctx){ return ' '+fmt0(ctx.parsed.x); } } } },
+      scales:{ x:chartAxis(), y:{ ticks:{color:themeToken('--text')}, grid:{display:false}, border:{color:themeToken('--border')} } } }
   });
 }
 
@@ -2197,7 +2231,19 @@ function renderSettings(){
       '<input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(this)"/>'+
       '<div class="hint" style="margin-top:12px">Storage usage: <span class="mono">'+usage+' KB</span> of localStorage (investment-property data).</div></div>';
 }
-function updateOwnerName(i,v){ TAX_SETTINGS.owners[i].name=v; save(K.taxSettings,TAX_SETTINGS); }
+// Renames the owner on every property too: properties refer to owners by name, and the
+// tax figures look up each owner's income band by that name.
+function updateOwnerName(i,v){
+  var o=TAX_SETTINGS.owners[i], old=o.name, name=String(v||'').trim();
+  if(name && name!==old && TAX_SETTINGS.owners.some(function(x){ return x.name===name; })){
+    alert('There is already an owner called '+name+'.'); name='';
+  }
+  if(!name || name===old){ renderSettings(); return; }
+  o.name=name;
+  for(var p=0;p<PROPERTIES.length;p++){ var os=PROPERTIES[p].ownershipSplit||[];
+    for(var s=0;s<os.length;s++){ if(os[s].name===old) os[s].name=name; } }
+  persistAll(); renderSettings();
+}
 // Sets the band for the active year, and makes it the default for years not set individually
 function updateOwnerBand(i,v){
   var o=normaliseOwner(TAX_SETTINGS.owners[i]), b=parseInt(v,10)||0;
