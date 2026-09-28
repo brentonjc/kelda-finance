@@ -13,6 +13,7 @@ const SHELL = [
   './css/dashboard.css',
   './css/borrowing.css',
   './css/login.css',
+  './css/utilities.css',
   './css/fonts.css',
   './css/tabler-icons.min.css',
   // Self-hosted vendor + fonts (no external CDN calls)

@@ -94,6 +94,9 @@
 .kd-bill-r { margin-left: auto; text-align: right; flex-shrink: 0; }
 .kd-bill-amt { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; color: var(--text); }
 .kd-bill-pay { font-size: 9.5px; color: var(--pink); cursor: pointer; font-weight: 600; margin-top: 2px; }
+.kd-bill--link { cursor: pointer; }
+.kd-bill-ic--pink { background: color-mix(in srgb, var(--pink) 12%, transparent); }
+.kd-bill-ic--pink i { color: var(--pink); }
 
 /* Forecast note (tile 6) */
 .kd-fc-note { display: flex; align-items: center; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 0.5px solid var(--border); font-size: 11.5px; color: var(--muted); line-height: 1.4; }
@@ -141,3 +144,16 @@
   .kd-cf3 { flex-wrap: wrap; gap: 10px; }
   .kd-goals-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Dashboard bits that were inline styles ── */
+.kd-spark-svg { display: block; }
+.kd-donut-svg { flex-shrink: 0; }
+.kd-empty-link { color: var(--pink); cursor: pointer; padding-block: 14px; }
+.kdt-hd-r { display: flex; align-items: center; gap: 10px; }
+.kdt-hd-r--tight { gap: 7px; }
+.notif-section-lbl--gap { margin-top: 16px; }
+/* Show/hide accounts modal */
+.acctvis-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; }
+.acctvis-row input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--primary); }
+.acctvis-name { flex: 1; font-size: .85rem; color: var(--text); }
+.acctvis-bal { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); }
