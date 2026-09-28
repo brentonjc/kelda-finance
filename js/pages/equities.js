@@ -697,7 +697,7 @@ function renderEqHoldingRow(h) {
         + '<div class="eq-row-main" onclick="eqToggleExpand('+h.id+')">'
         + '<div class="eq-row-icon">'+iconTag(tc.icon)+'</div>'
         + '<div class="eq-row-info">'
-        + '<div class="eq-row-name">'+(h.ticker?'<span style="font-weight:700">'+esc(h.ticker)+'</span> ':'')+esc(h.company||'')+ ' '+badge+'</div>'
+        + '<div class="eq-row-name">'+(h.ticker?'<span class="eq-code">'+esc(h.ticker)+'</span> ':'')+esc(h.company||'')+ ' '+badge+'</div>'
         + '<div class="eq-row-sub">'+qtyLine+(priceLine?' &nbsp;·&nbsp; '+priceLine:'')+'</div>'
         + (vestBar?'<div style="margin-top:6px">'+vestBar+'</div>':'')
         + '</div>'
@@ -738,7 +738,7 @@ function renderEqHoldingDetail(h) {
             +'<span class="eq-lbl">Total Cost</span><span class="eq-val">'+fmt(eqHoldingCost(h))+'</span>'
             +'<span class="eq-lbl">Current Value</span><span class="eq-val">'+fmt(eqHoldingValue(h))+'</span>'
             +(h.owner?'<span class="eq-lbl">Owner</span><span class="eq-val">'+esc(getUserName(h.owner))+'</span>':'')
-            +(h.notes?'<span class="eq-lbl">Notes</span><span class="eq-val" style="color:var(--muted)">'+esc(h.notes)+'</span>':'')
+            +(h.notes?'<span class="eq-lbl">Notes</span><span class="eq-val eq-muted">'+esc(h.notes)+'</span>':'')
             +'</div>';
     } else if (t==='bond') {
         var matStr = h.maturityDate ? new Date(h.maturityDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
@@ -799,7 +799,7 @@ function renderEqHoldingDetail(h) {
             var proceeds = (sale.qty*sale.price)-(sale.costs||0);
             var cg       = proceeds-(sale.qty*costPer);
             html += '<div class="eq-sales-row">'
-                +'<span style="color:var(--muted)">'+esc(sale.date||'—')+'</span>'
+                +'<span class="eq-muted">'+esc(sale.date||'—')+'</span>'
                 +'<span>'+(parseFloat(sale.qty)||0)+' units @ '+fmt(sale.price)+'</span>'
                 +'<span style="color:var(--success)">Proceeds: '+fmt(proceeds)+'</span>'
                 +'<span class="'+(cg>=0?'eq-gain-pos':'eq-gain-neg')+'">'+(cg>=0?'+':'')+fmt(Math.abs(cg))+' CG</span>'
@@ -811,7 +811,7 @@ function renderEqHoldingDetail(h) {
 
     // Price + sell actions
     if (t !== 'bond') {
-        html += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">'
+        html += '<div class="eq-detail-actions">'
             +'<button class="btn btn-ghost btn-sm" onclick="eqOpenPriceFor('+h.id+')">'+ICON('currency-dollar')+' Update price</button>'
             +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">'+ICON('cash')+' Record Sale</button>'
             +'</div>';
@@ -893,7 +893,7 @@ function openEqModal(id) {
         +'<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
         +'</div></div>';
 
-    overlay.style.display = 'flex';
+    overlay.classList.add('open');
     overlay.onclick = function(e){ if(e.target===overlay) closeEqModal(); };
     eqModalBuildFields(selType, h);
     setTimeout(eqUpdateVestPreview, 0);
@@ -901,7 +901,7 @@ function openEqModal(id) {
 
 function closeEqModal() {
     var overlay = document.getElementById('eq-modal-overlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) overlay.classList.remove('open');
 }
 
 function eqModalTypeChange() {
@@ -922,7 +922,7 @@ function eqModalBuildFields(type, h) {
     if (type !== 'bond') {
         html += '<div class="form-grid">'
             +'<div><label class="lbl">Ticker / Code</label>'
-            +'<input type="text" id="eq-m-ticker" value="'+esc(v.ticker||'')+'" placeholder="e.g. AAPL, CBA, VGS.AX" style="text-transform:uppercase" oninput="eqModalSecHint(true)"/>'
+            +'<input type="text" id="eq-m-ticker" value="'+esc(v.ticker||'')+'" placeholder="e.g. AAPL, CBA, VGS.AX" class="eq-code-input" oninput="eqModalSecHint(true)"/>'
             +'</div>'
             +'<div><label class="lbl">Company / Asset Name</label>'
             +'<input type="text" id="eq-m-company" value="'+esc(v.company||'')+'" placeholder="e.g. Apple Inc." oninput="eqModalSecHint(true)"/></div>'
@@ -1142,13 +1142,13 @@ function openEqSale(id) {
         +'<button class="btn btn-primary" onclick="saveEqSale()">Record Sale</button>'
         +'<button class="btn btn-ghost" onclick="closeEqSale()">Cancel</button>'
         +'</div></div>';
-    overlay.style.display = 'flex';
+    overlay.classList.add('open');
     overlay.onclick = function(e){ if(e.target===overlay) closeEqSale(); };
 }
 
 function closeEqSale() {
     var overlay = document.getElementById('eq-sale-overlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) overlay.classList.remove('open');
 }
 
 function calcEqSalePreview() {
@@ -1213,7 +1213,7 @@ function openBatchPriceModal(focusKey) {
     eqPx = { secs:secs, links:eqLinkSuggestions(secs), fx:eqFxRate() };
 
     var notes = eqPx.links.map(function(l, i) {
-        return '<div class="eq-px-note"><span style="flex:1;min-width:180px">' + ICON('link') + ' <strong>' + esc(l.from.name)
+        return '<div class="eq-px-note"><span class="eq-px-note-text">' + ICON('link') + ' <strong>' + esc(l.from.name)
             + '</strong> has no code but looks like <strong>' + esc(l.to.code) + '</strong>' + (l.to.name ? ' (' + esc(l.to.name) + ')' : '')
             + '. Same stock?</span><button class="btn btn-ghost btn-sm" onclick="eqPxLink(' + i + ')">Use code ' + esc(l.to.code) + '</button></div>';
     }).join('');
@@ -1269,8 +1269,8 @@ function openBatchPriceModal(focusKey) {
         : '';
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<div class="section-label" style="margin:0">' + ICON('currency-dollar') + ' Update prices</div>'
+        + '<div class="eq-modal-head eq-modal-head--tight">'
+        + '<div class="section-label eq-modal-title">' + ICON('currency-dollar') + ' Update prices</div>'
         + '<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" aria-label="Close">' + ICON('x') + '</button>'
         + '</div>'
         + '<div class="eq-px-help">One price per code, and it updates every holding with that code. Leave a box blank to keep the current price. Choose A$ or US$ for each code.</div>'
@@ -1284,12 +1284,12 @@ function openBatchPriceModal(focusKey) {
         + notes
         + (rows || bondRows
             ? rows + (bondRows ? '<div class="eq-group-label">Bonds — current value</div>' + bondRows : '')
-            : '<div class="empty" style="padding:20px 0"><p>No holdings to price yet.</p></div>')
-        + '<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">'
+            : '<div class="empty empty--compact"><p>No holdings to price yet.</p></div>')
+        + '<div class="eq-modal-actions">'
         + '<button class="btn btn-primary" id="eq-px-save" onclick="saveBatchPrices()"></button>'
         + '<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
         + '</div></div>';
-    overlay.style.display = 'flex';
+    overlay.classList.add('open');
     overlay.onclick = function(e){ if(e.target===overlay) closeEqModal(); };
     eqPxSyncFx();
     eqPxCount();
@@ -1345,12 +1345,12 @@ function eqPxInput(inp) {
     var s = eqPx && eqPx.secs[+inp.dataset.i], out = document.getElementById('eq-px-d-' + inp.dataset.i);
     if (s && out) {
         var p = parseFloat(inp.value), usd = eqPxCcyOf(inp) === 'USD', rate = eqPxRateValue();
-        out.style.color = '';
+        out.className = 'eq-px-delta mono';
         if (inp.value === '' || !(p > 0)) {
             out.textContent = '';
         } else if (usd && !rate) {
             out.textContent = 'Enter the exchange rate above';
-            out.style.color = 'var(--warn)';
+            out.classList.add('eq-px-delta--warn');
         } else {
             var aud  = eqToAud(p, usd ? 'USD' : 'AUD', rate);
             var diff = s.holdings.reduce(function(t, h){ return t + eqHoldingValueAt(h, aud); }, 0) - s.value;
@@ -1358,7 +1358,7 @@ function eqPxInput(inp) {
             out.textContent = (usd ? '= ' + eqFmtPrice(aud) + ' · ' : '')
                 + (pct !== null ? (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1) + '% · ' : '')
                 + (diff >= 0 ? '+' : '−') + fmt(Math.abs(diff));
-            out.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+            out.classList.add(diff >= 0 ? 'eq-px-delta--up' : 'eq-px-delta--down');
         }
     }
     eqPxCount();
