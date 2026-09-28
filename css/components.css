@@ -580,6 +580,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
    min-width covers the icon-only close buttons. */
 @media (max-width:759px), (pointer:coarse){
   .eq-modal-box .btn-sm{min-height:44px;min-width:44px;}
+  .eq-detail-actions .btn-sm{min-height:44px;}
 }
 .eq-field-hint{font-size:.68rem;color:var(--muted);margin-top:3px;}
 .eq-stale-note{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:.78rem;color:var(--warn);}
