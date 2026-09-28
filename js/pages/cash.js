@@ -221,7 +221,7 @@ function ctRenderAcct(a) {
 
   var rows = '';
   if (!months.length) {
-    rows = '<div class="empty" style="padding:16px 0"><div class="ei">' + ICON('calendar') + '</div><p>No entries yet — add your first balance below.</p></div>';
+    rows = '<div class="empty empty--compact"><div class="ei">' + ICON('calendar') + '</div><p>No entries yet — add your first balance below.</p></div>';
   } else {
     for (var i = 0; i < months.length; i++) {
       var m    = months[i];
@@ -262,12 +262,12 @@ function ctRenderAcct(a) {
 
   // Delete button — only for non-core custom accounts
   var deleteBtn = (!acctObj.isCore && acctObj.id)
-    ? '<button onclick="ctDeleteAccount(\'' + a.id + '\')" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:rgba(255,255,255,.5);font-size:.8rem;line-height:1;flex-shrink:0" title="Delete account">' + ICON('trash') + '</button>'
+    ? '<button class="ct-acct-del" onclick="ctDeleteAccount(\'' + a.id + '\')" title="Delete account">' + ICON('trash') + '</button>'
     : '';
 
   el.innerHTML = '<div class="acct-hd" style="background:' + a.light + '">'
     + '<div class="acct-ic" style="background:' + a.color + '">' + iconTag(a.icon) + '</div>'
-    + '<div class="acct-meta" style="flex:1;min-width:0">'
+    + '<div class="acct-meta">'
     + '<div class="acct-title" style="color:' + a.color + '">' + label + '</div>'
     + '<div class="acct-sub" style="color:' + a.color + '">' + subLine + '</div>'
     + '</div>'
@@ -276,15 +276,15 @@ function ctRenderAcct(a) {
     + '</div>'
     + '<div class="acct-body">' + rows
     + '<div class="add-mo-row">'
-    + '<div><label class="lbl" style="font-size:.68rem">Month</label>'
+    + '<div><label class="lbl lbl--xs">Month</label>'
     + '<select id="ct-add-m-' + a.id + '">' + ctMonthOpts(nowYM) + '</select></div>'
-    + '<div><label class="lbl" style="font-size:.68rem">Closing Balance</label>'
+    + '<div><label class="lbl lbl--xs">Closing Balance</label>'
     + '<input type="number" id="ct-add-b-' + a.id + '" placeholder="e.g. 85000" step="100"'
-    + ' style="width:140px" inputmode="decimal"'
+    + ' class="ct-add-bal" inputmode="decimal"'
     + ' onkeydown="if(event.key===\'Enter\')ctAddMonth(\'' + a.id + '\')" /></div>'
-    + '<div><label class="lbl" style="font-size:.68rem">Date Updated</label>'
-    + '<input type="date" id="ct-add-d-' + a.id + '" value="' + ctTodayISO() + '" style="width:145px"/></div>'
-    + '<button class="btn btn-primary btn-sm" onclick="ctAddMonth(\'' + a.id + '\')" style="margin-top:20px">＋ Add</button>'
+    + '<div><label class="lbl lbl--xs">Date Updated</label>'
+    + '<input type="date" id="ct-add-d-' + a.id + '" value="' + ctTodayISO() + '" class="ct-add-date"/></div>'
+    + '<button class="btn btn-primary btn-sm ct-add-btn" onclick="ctAddMonth(\'' + a.id + '\')">＋ Add</button>'
     + '</div>'
     + '</div>';
 }
@@ -359,19 +359,19 @@ function ctGoalStatus(){
   const combined=CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[lm]||0),0);
   const annualTarget=goalFreq==='annual'?goalAmt:goalAmt*12;
   const gap=annualTarget-combined;
-  if(gap<=0){el.innerHTML='<span style="color:var(--success);font-weight:700">'+ICON('circle-check-filled')+' Goal reached! '+fmt(combined)+'</span>';return;}
+  if(gap<=0){el.innerHTML='<span class="ct-goal-ok">'+ICON('circle-check-filled')+' Goal reached! '+fmt(combined)+'</span>';return;}
   const prevM=months.length>1?months[months.length-2]:null;
   const prevCombined=prevM?CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[prevM]||0),0):0;
   const mGrowth=prevM?(combined-prevCombined):0;
   const eta=mGrowth>0?Math.ceil(gap/mGrowth):null;
   const etaStr=eta?'· ETA ~'+(eta<12?eta+'mo':Math.round(eta/12*10)/10+'yrs'):'';
-  el.innerHTML=`<span style="color:var(--warn);font-weight:600">⬆ ${fmt(gap)} to go ${etaStr}</span>`;
+  el.innerHTML=`<span class="ct-goal-gap">⬆ ${fmt(gap)} to go ${etaStr}</span>`;
 }
 
 function ctRenderNet(){
   const el=document.getElementById('ct-net');if(!el)return;
   const months=ctAllMonths();
-  if(!months.length){el.innerHTML='<div class="empty" style="padding:14px"><p>No data yet</p></div>';return;}
+  if(!months.length){el.innerHTML='<div class="empty empty--tight"><p>No data yet</p></div>';return;}
   const lm=months[months.length-1];
   const pm=months.length>1?months[months.length-2]:null;
   let grandNow=0,grandPrev=0;
@@ -381,15 +381,15 @@ function ctRenderNet(){
     const prev=pm?((CT[a.id]||{})[pm]||0):null;
     grandNow+=now;if(prev!==null)grandPrev+=prev;
     const diff=prev!==null?now-prev:null;
-    const ds=diff===null?'—':`<span style="color:${diff>=0?'var(--success)':'var(--danger)'};font-weight:600">${diff>=0?'+':''}${fmt(diff)}</span>`;
-    rows+=`<div class="dr"><div class="dr-k">${iconTag(a.icon)} ${ctLabel(a)}</div><div style="display:flex;gap:18px;align-items:center"><div class="dr-v">${fmt(now)}</div><div style="min-width:80px;text-align:right;font-size:.76rem">${ds}</div></div></div>`;
+    const ds=diff===null?'—':`<span class="ct-diff ${diff>=0?'tone-green':'tone-danger'}">${diff>=0?'+':''}${fmt(diff)}</span>`;
+    rows+=`<div class="dr"><div class="dr-k">${iconTag(a.icon)} ${ctLabel(a)}</div><div class="ct-net-r"><div class="dr-v">${fmt(now)}</div><div class="ct-net-diff">${ds}</div></div></div>`;
   });
   const gd=grandNow-grandPrev;
-  rows+=`<div class="dr" style="background:var(--card2);border-radius:8px;padding:8px 10px;margin-top:6px">
-    <div class="dr-k" style="font-weight:700">Combined Total</div>
-    <div style="display:flex;gap:18px;align-items:center">
-      <div style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--primary)">${fmt(grandNow)}</div>
-      <div style="min-width:80px;text-align:right;font-size:.76rem"><span style="color:${gd>=0?'var(--success)':'var(--danger)'};font-weight:600">${gd>=0?'+':''}${fmt(gd)}</span></div>
+  rows+=`<div class="dr ct-net-total">
+    <div class="dr-k">Combined Total</div>
+    <div class="ct-net-r">
+      <div class="ct-net-grand">${fmt(grandNow)}</div>
+      <div class="ct-net-diff"><span class="ct-diff ${gd>=0?'tone-green':'tone-danger'}">${gd>=0?'+':''}${fmt(gd)}</span></div>
     </div></div>`;
   el.innerHTML = rows;
 }

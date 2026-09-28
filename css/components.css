@@ -125,6 +125,8 @@ tr:hover td{background:#221e2a;}
 hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .empty{text-align:center;padding:32px 20px;color:var(--muted);}
 .empty .ei{font-size:2rem;margin-bottom:10px;}
+.empty--compact{padding:16px 0;}
+.empty--tight{padding:14px;}
 .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
 
 /* ══ MODAL ══ */
@@ -210,6 +212,34 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .acct-title{font-weight:700;font-size:.9rem;}
 .acct-sub{font-size:.7rem;margin-top:1px;opacity:.75;}
 .acct-total{font-family:var(--font-display);font-size:1.35rem;font-weight:700;flex-shrink:0;}
+/* Cash page (was inline) */
+.ct-manage-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.ct-account-count{font-size:.78rem;color:var(--muted);}
+.ct-new-hd{margin-bottom:14px;}
+.ct-form-row{margin-bottom:10px;}
+.ct-form-row--icon{grid-template-columns:56px 1fr;}
+.ct-nickname{font-size:16px;}
+.ct-form-actions{display:flex;gap:8px;margin-top:4px;}
+.ct-chart-hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.ct-chart-hd .section-label{margin:0;}
+#ct-goal-freq{width:110px;}
+#ct-goal-amt{width:160px;}
+#ct-goal-start{width:145px;}
+#ct-goal-status{flex:1;text-align:right;font-size:.78rem;color:var(--muted);}
+.ct-net-wrap{margin-top:18px;}
+.ct-acct-del{background:none;border:none;cursor:pointer;padding:4px 6px;color:rgba(255,255,255,.5);font-size:.8rem;line-height:1;flex-shrink:0;}
+.lbl.lbl--xs{font-size:.68rem;}
+.ct-add-bal{width:140px;}
+.ct-add-date{width:145px;}
+.ct-add-btn{margin-top:20px;}
+.ct-goal-ok{color:var(--success);font-weight:700;}
+.ct-goal-gap{color:var(--warn);font-weight:600;}
+.ct-diff{font-weight:600;}
+.ct-net-r{display:flex;gap:18px;align-items:center;}
+.ct-net-diff{min-width:80px;text-align:right;font-size:.76rem;}
+.dr.ct-net-total{background:var(--card2);border-radius:8px;padding:8px 10px;margin-top:6px;}
+.ct-net-total .dr-k{font-weight:700;}
+.ct-net-grand{font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--primary);}
 .acct-body{padding:0 16px 14px;}
 .mo-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:nowrap;}
 .mo-row:last-child{border-bottom:none;}
@@ -798,6 +828,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 /* ── CASH TRACKER EXPLAINER + ENTRY DATE ── */
 .ct-explainer{cursor:default;}
 .ct-exp-hd{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:2px 0;}
+.ct-exp-title-row{display:flex;align-items:center;gap:10px;}
+.ct-exp-book{font-size:1.2rem;}
+.ct-exp-hd-title{font-weight:700;font-size:.9rem;color:var(--text);}
+.ct-exp-sub{font-size:.74rem;color:var(--muted);}
+.ct-exp-chevron{font-size:1rem;color:var(--muted);transition:transform .2s;}
+.ct-exp-body{margin-top:14px;border-top:1px solid var(--border);padding-top:14px;}
 .ct-exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .ct-exp-item{display:flex;align-items:flex-start;gap:10px;}
 .ct-exp-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}

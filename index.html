@@ -2000,16 +2000,16 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- How to use explainer -->
     <div class="card mb ct-explainer" id="ct-explainer">
       <div class="ct-exp-hd" onclick="ctToggleExplainer()">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.2rem"><i class="ti ti-book"></i></span>
+        <div class="ct-exp-title-row">
+          <span class="ct-exp-book"><i class="ti ti-book"></i></span>
           <div>
-            <div style="font-weight:700;font-size:.9rem;color:var(--text)">How to use Cash Tracker</div>
-            <div style="font-size:.74rem;color:var(--muted)">Manual monthly balance snapshots — tap to expand</div>
+            <div class="ct-exp-hd-title">How to use Cash Tracker</div>
+            <div class="ct-exp-sub">Manual monthly balance snapshots — tap to expand</div>
           </div>
         </div>
-        <span id="ct-exp-chevron" style="font-size:1rem;color:var(--muted);transition:transform .2s">▼</span>
+        <span id="ct-exp-chevron" class="ct-exp-chevron">▼</span>
       </div>
-      <div id="ct-exp-body" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+      <div id="ct-exp-body" class="ct-exp-body" style="display:none">
         <div class="ct-exp-grid">
           <div class="ct-exp-item">
             <div class="ct-exp-icon"><i class="ti ti-calendar"></i></div>
@@ -2045,22 +2045,22 @@ window.addEventListener('unhandledrejection',function(e){
 
 
     <!-- Add Account / manage bar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-      <div id="ct-account-count" style="font-size:.78rem;color:var(--muted)"></div>
+    <div class="ct-manage-bar">
+      <div id="ct-account-count" class="ct-account-count"></div>
       <button class="btn btn-primary btn-sm" onclick="ctShowAddAccountForm()" id="ct-add-acct-btn">+ Add Account</button>
     </div>
 
     <!-- Inline add-account form (hidden by default) -->
     <div id="ct-add-acct-form" class="card mb" style="display:none">
-      <div class="section-label" style="margin-bottom:14px">New Account</div>
-      <div class="form-grid" style="grid-template-columns:56px 1fr;margin-bottom:10px">
+      <div class="section-label ct-new-hd">New Account</div>
+      <div class="form-grid ct-form-row ct-form-row--icon">
         <div><label class="lbl">Icon</label><div id="ct-new-icon-wrap"></div></div>
-        <div><label class="lbl">Nickname</label><input type="text" id="ct-new-name" placeholder="e.g. Everyday Account" style="font-size:16px"/></div>
+        <div><label class="lbl">Nickname</label><input type="text" id="ct-new-name" placeholder="e.g. Everyday Account" class="ct-nickname"/></div>
       </div>
-      <div class="form-grid" style="margin-bottom:10px">
+      <div class="form-grid ct-form-row">
         <div>
           <label class="lbl">Bank</label>
-          <select id="ct-new-bank" style="width:100%;box-sizing:border-box">
+          <select id="ct-new-bank">
             <option value="">— Select Bank —</option>
             <option value="CBA">Commonwealth Bank (CBA)</option>
             <option value="Westpac">Westpac</option>
@@ -2087,7 +2087,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div>
           <label class="lbl">Account Type</label>
-          <select id="ct-new-acct-type" style="width:100%;box-sizing:border-box">
+          <select id="ct-new-acct-type">
             <option value="">— Select Type —</option>
             <option value="Everyday">Everyday / Transaction</option>
             <option value="Savings">Savings</option>
@@ -2099,7 +2099,7 @@ window.addEventListener('unhandledrejection',function(e){
           </select>
         </div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:4px">
+      <div class="ct-form-actions">
         <button class="btn btn-primary btn-sm" onclick="ctAddAccount()">Add Account</button>
         <button class="btn btn-ghost btn-sm" onclick="ctHideAddAccountForm()">Cancel</button>
       </div>
@@ -2110,21 +2110,21 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Account cards — built dynamically by renderCashTracker() -->
     <div id="ct-accts-container"></div>
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-        <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Combined Balances Over Time</div>
+      <div class="ct-chart-hd">
+        <div class="section-label"><i class="ti ti-trending-up"></i> Combined Balances Over Time</div>
         <button class="btn btn-ghost btn-sm" onclick="ctExportCSV()"><i class="ti ti-download"></i> Export CSV</button>
       </div>
       <div class="goal-bar">
         <label><i class="ti ti-target"></i> Goal:</label>
-        <select id="ct-goal-freq" onchange="saveCTGoal()" style="width:110px">
+        <select id="ct-goal-freq" onchange="saveCTGoal()">
           <option value="monthly">Monthly</option><option value="annual">Annual</option>
         </select>
-        <input type="number" id="ct-goal-amt" placeholder="Target amount" step="1000" onchange="saveCTGoal()" style="width:160px" inputmode="decimal"/>
-        <input type="month" id="ct-goal-start" onchange="saveCTGoal()" style="width:145px"/>
-        <div id="ct-goal-status" style="flex:1;text-align:right;font-size:.78rem;color:var(--muted)"></div>
+        <input type="number" id="ct-goal-amt" placeholder="Target amount" step="1000" onchange="saveCTGoal()" inputmode="decimal"/>
+        <input type="month" id="ct-goal-start" onchange="saveCTGoal()"/>
+        <div id="ct-goal-status"></div>
       </div>
       <div class="chart-box"><canvas id="ct-chart"></canvas></div>
-      <div style="margin-top:18px"><div class="section-label">Latest Month Net Position</div><div id="ct-net"></div></div>
+      <div class="ct-net-wrap"><div class="section-label">Latest Month Net Position</div><div id="ct-net"></div></div>
     </div>
   </div>
 
