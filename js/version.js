@@ -14,14 +14,14 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.2.1';
+var APP_VERSION = '2.2.2';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
-    version: '2.2.1',
-    date: '2026-09-27',
+    version: '2.2.2',
+    date: '2026-09-28',
     title: 'Share and crypto trades no longer counted as spending or income',
     notes: [
       'Payments to and from brokers, crypto exchanges and Vanguard are now filed as Transfers › Investment Transfer, not Capital Gains',
@@ -31,6 +31,16 @@ var APP_CHANGELOG = [
       'Fewer false matches: Vanguard Super, distributions, Stake.com and words like "mistake" are left alone',
       'Your own category corrections now take priority over the built-in keyword list, as documented',
       'Existing transactions are unchanged; use Rescan to apply the new rules to past imports',
+    ],
+  },
+  {
+    version: '2.2.1',
+    date: '2026-09-28',
+    title: 'Cash Flow Forecast fix',
+    notes: [
+      'Cash Flow Forecast now shows its charts, summary figures and month-by-month view instead of an empty page',
+      'Opening Forecast picks up your latest account balances as the starting balance, so the Cumulative view is ready without pressing Sync',
+      'The Forecast how-to guide now explains how the 12-month forecast is worked out',
     ],
   },
   {

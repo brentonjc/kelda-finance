@@ -191,7 +191,10 @@ function fc2GetMonths() {
 }
 
 // ── Cash Tracker balance sync ─────────────────────────────────
-function fc2SyncBalance() {
+// Saves the latest Cash Tracker total as the starting balance, with no
+// render or toast. Runs silently each time the tab opens (see go()).
+// Returns the balance, or null when Cash Tracker has none.
+function fc2PullBalance() {
   var bal = null;
   try {
     // CT and CT_ACCTS are global, loaded in data.js
@@ -201,14 +204,22 @@ function fc2SyncBalance() {
       var total = CT_ACCTS.reduce(function(s,a){ return s + ((CT[a.id]||{})[lm]||0); }, 0);
       if (total !== 0) bal = total;
     }
-  } catch(e) { console.warn('fc2SyncBalance error', e); }
+  } catch(e) { console.warn('fc2PullBalance error', e); }
 
+  if (bal !== null) {
+    fc2Save(FC_BAL_KEY,   bal);
+    fc2Save(FC_SYNC_KEY,  new Date().toISOString());
+  }
+  return bal;
+}
+
+// Sync Balance button: pull, re-render and report the result.
+function fc2SyncBalance() {
+  var bal = fc2PullBalance();
   if (bal === null) {
     toast('No balance found in Cash Tracker — add balances first');
     return;
   }
-  fc2Save(FC_BAL_KEY,   bal);
-  fc2Save(FC_SYNC_KEY,  new Date().toISOString());
   renderForecast();
   toast('Balance synced: ' + fmt(bal));
 }
