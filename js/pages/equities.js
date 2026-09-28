@@ -645,8 +645,8 @@ function renderEqHero() {
         + '<div><div style="font-size:.7rem;color:var(--muted)">Cost Basis</div><div style="font-family:var(--font-mono);font-weight:600;font-size:.9rem">' + fmt(cost) + '</div></div>'
         + '<div><div style="font-size:.7rem;color:var(--muted)">Unrealised P&amp;L</div><div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:' + gc + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + gainPct + '%)</div></div>'
         + (soldThisFy
-            ? '<div><div style="font-size:.7rem;color:var(--muted)">Realised FY ' + fy.label + '</div><div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:'
-              + (realised >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + (realised >= 0 ? '+' : '−') + fmt(Math.abs(realised)) + '</div></div>'
+            ? '<div><div class="eq-hero-lbl">Realised FY ' + fy.label + '</div><div class="eq-hero-val ' + (realised >= 0 ? 'eq-up' : 'eq-down') + '">'
+              + (realised >= 0 ? '+' : '−') + fmt(Math.abs(realised)) + '</div></div>'
             : '')
         + '</div></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
@@ -818,22 +818,22 @@ function renderEqSecurityRow(s, i) {
         + (Object.keys(types).length > 1 ? Object.keys(types).map(function(t){ return '<span class="eq-badge eq-badge-exch">' + eqTypeCfg(t).label + '</span>'; }).join('') : '');
     var units = (s.units ? eqFmtUnits(s.units) + ' units' : '') + (s.units && s.options ? ' · ' : '') + (s.options ? eqFmtUnits(s.options) + ' options' : '');
     var canSell = EQ_OWNERS.some(function(o){ return eqSellableLots(s.holdings, o, eqIsoDate(new Date())).length; });
-    var gc = gain >= 0 ? 'var(--success)' : 'var(--danger)', gs = gain >= 0 ? '+' : '−';
+    var gs = gain >= 0 ? '+' : '−';
 
     return '<div class="eq-row eq-sec">'
         + '<div class="eq-row-main" onclick="eqToggleSec(' + i + ')" aria-expanded="' + open + '">'
         + '<div class="eq-row-icon">' + iconTag(eqTypeCfg(main.type).icon) + '</div>'
         + '<div class="eq-row-info">'
-        +   '<div class="eq-row-name"><span style="font-weight:700">' + esc(eqSecLabel(s)) + '</span> ' + (s.code ? esc(s.name) : '') + ' ' + badges + '</div>'
+        +   '<div class="eq-row-name"><span class="eq-code">' + esc(eqSecLabel(s)) + '</span> ' + (s.code ? esc(s.name) : '') + ' ' + badges + '</div>'
         +   '<div class="eq-row-sub">' + n + ' holding' + (n !== 1 ? 's' : '') + (units ? ' · ' + units : '') + ' &nbsp;·&nbsp; ' + price + '</div>'
         + '</div>'
         + '<div class="eq-row-values">'
-        +   '<div style="font-family:var(--font-mono);font-weight:700;font-size:.95rem">' + fmt(s.value) + '</div>'
-        +   (cost > 0 ? '<div style="font-family:var(--font-mono);font-size:.78rem;color:' + gc + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + Math.abs(gain / cost * 100).toFixed(1) + '%)</div>' : '')
+        +   '<div class="eq-sec-value">' + fmt(s.value) + '</div>'
+        +   (cost > 0 ? '<div class="eq-sec-gain ' + (gain >= 0 ? 'eq-up' : 'eq-down') + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + Math.abs(gain / cost * 100).toFixed(1) + '%)</div>' : '')
         + '</div>'
         + '<div class="eq-sec-chev" aria-hidden="true">' + ICON(open ? 'chevron-up' : 'chevron-down') + '</div>'
         + '</div>'
-        + '<div class="eq-row-detail eq-sec-body" id="eq-sec-' + i + '"' + (open ? '' : ' style="display:none"') + '>'
+        + '<div class="eq-row-detail eq-sec-body" id="eq-sec-' + i + '"' + (open ? '' : ' hidden') + '>'
         +   '<div class="eq-sec-actions">'
         +     '<button class="btn btn-primary btn-sm" onclick="eqOpenBuy(' + i + ')">' + ICON('plus') + ' Buy</button>'
         +     (canSell ? '<button class="btn btn-ghost btn-sm" onclick="eqOpenSellAt(' + i + ')">' + ICON('cash') + ' Sell</button>' : '')
@@ -848,8 +848,8 @@ function renderEqSecurityRow(s, i) {
 function eqToggleSec(i) {
     var s = eqList[i], body = document.getElementById('eq-sec-' + i);
     if (!s || !body) return;
-    var open = body.style.display === 'none';
-    body.style.display = open ? '' : 'none';
+    var open = body.hidden;
+    body.hidden = !open;
     if (open) eqOpenSecs[s.key] = true; else delete eqOpenSecs[s.key];
     var head = body.previousElementSibling;
     head.setAttribute('aria-expanded', open);
@@ -863,13 +863,13 @@ function renderEqTrades(s) {
     return '<div class="eq-sec-trades"><div class="eq-lbl">Sales</div>'
         + trades.map(function(tr) {
             return '<div class="eq-trade">'
-                + '<span style="color:var(--muted)">' + eqFmtDate(tr.date) + '</span>'
+                + '<span class="eq-muted">' + eqFmtDate(tr.date) + '</span>'
                 + '<span>Sold <span class="mono">' + eqFmtUnits(tr.qty) + '</span> @ <span class="mono">' + eqFmtPrice(tr.price) + '</span>'
                 +   (tr.quotePrice ? ' <span class="mono">(US' + eqFmtPrice(tr.quotePrice) + ')</span>' : '') + '</span>'
                 + '<span>Proceeds <span class="mono">' + fmt(tr.proceeds) + '</span></span>'
                 + '<span class="mono ' + (tr.gain >= 0 ? 'eq-gain-pos' : 'eq-gain-neg') + '">' + (tr.gain >= 0 ? '+' : '−') + fmt(Math.abs(tr.gain)) + '</span>'
                 + (tr.gainHeld12 > 0 ? '<span class="eq-badge eq-badge-12m" title="Gain from parcels held 12 months or more">12m+ <span class="mono">' + fmt(tr.gainHeld12) + '</span></span>' : '')
-                + '<button class="del-btn" style="margin-left:auto" aria-label="Delete this sale" onclick="eqDeleteTrade(\'' + tr.key + '\')">' + ICON('trash') + '</button>'
+                + '<button class="del-btn eq-trade-del" aria-label="Delete this sale" onclick="eqDeleteTrade(\'' + tr.key + '\')">' + ICON('trash') + '</button>'
                 + '</div>';
         }).join('') + '</div>';
 }
@@ -1126,7 +1126,7 @@ function openEqModal(id) {
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" id="eq-m-title" style="margin:0">'+title+'</div>'
+        +'<div class="section-label eq-modal-title" id="eq-m-title">'+title+'</div>'
         +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" style="padding:6px 10px">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-m-id" value="'+(id||'')+'"/>'
@@ -1395,8 +1395,8 @@ function openEqSell(key) {
         : '<input type="hidden" id="eq-sell-owner" value="' + owners[0] + '"/>';
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        + '<div class="section-label" style="margin:0">' + ICON('cash') + ' Sell ' + esc(eqSecLabel(s))
+        + '<div class="eq-modal-head">'
+        + '<div class="section-label eq-modal-title">' + ICON('cash') + ' Sell ' + esc(eqSecLabel(s))
         +   (s.code && s.name ? ' <span class="eq-px-co">' + esc(s.name) + '</span>' : '') + '</div>'
         + '<button class="btn btn-ghost btn-sm" onclick="closeEqSale()" aria-label="Close">' + ICON('x') + '</button>'
         + '</div>'
@@ -1422,11 +1422,11 @@ function openEqSell(key) {
         +   '<label class="eq-sell-choose"><input type="checkbox" id="eq-sell-manual" onchange="eqSellLots()"/> Choose parcels</label></div>'
         + '<div id="eq-sell-lots"></div>'
         + '<div id="eq-sell-summary" class="eq-sell-summary" role="status"></div>'
-        + '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">'
+        + '<div class="eq-modal-actions eq-modal-actions--snug">'
         + '<button class="btn btn-primary" onclick="saveEqSell()">Record sale</button>'
         + '<button class="btn btn-ghost" onclick="closeEqSale()">Cancel</button>'
         + '</div></div>';
-    overlay.style.display = 'flex';
+    overlay.classList.add('open');
     overlay.onclick = function(e){ if (e.target === overlay) closeEqSale(); };
     eqSellLots();
     document.getElementById('eq-sell-qty').focus();
@@ -1505,13 +1505,13 @@ function eqSellUpdate() {
         if (el) el.textContent = p ? 'Sell ' + eqFmtUnits(p.units) : '';
     });
     var out = document.getElementById('eq-sell-summary');
-    if (st.error) { out.innerHTML = st.quiet ? '' : '<div class="eq-px-warn" style="margin:0">' + esc(st.error) + '</div>'; return; }
+    if (st.error) { out.innerHTML = st.quiet ? '' : '<div class="eq-px-warn">' + esc(st.error) + '</div>'; return; }
     var s = st.summary;
     function row(label, amount, cls) {
         return '<div class="eq-sell-row"><span>' + label + '</span><span class="mono' + (cls ? ' ' + cls : '') + '">' + amount + '</span></div>';
     }
     function signed(n) { return (n >= 0 ? '+' : '−') + fmt(Math.abs(n)); }
-    out.innerHTML = (st.usd ? '<div class="eq-px-sub" style="margin:0 0 6px">US' + eqFmtPrice(st.price) + ' is ' + eqFmtPrice(st.audPrice) + ' a unit</div>' : '')
+    out.innerHTML = (st.usd ? '<div class="eq-px-sub eq-sell-fxline">US' + eqFmtPrice(st.price) + ' is ' + eqFmtPrice(st.audPrice) + ' a unit</div>' : '')
         + row('Proceeds after brokerage', fmt(s.proceeds))
         + row('Cost base', fmt(s.costBase))
         + row('<strong>' + (s.gain >= 0 ? 'Gain' : 'Loss') + '</strong>', '<strong>' + signed(s.gain) + '</strong>', s.gain >= 0 ? 'eq-gain-pos' : 'eq-gain-neg')
@@ -1540,8 +1540,8 @@ function openEqSale(id) {
     if (!overlay) return;
     var label = h.ticker||h.company||'Holding';
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0">'+ICON('cash')+' Record exercise or sale — '+esc(label)+'</div>'
+        +'<div class="eq-modal-head">'
+        +'<div class="section-label eq-modal-title">'+ICON('cash')+' Record exercise or sale — '+esc(label)+'</div>'
         +'<button class="btn btn-ghost btn-sm" onclick="closeEqSale()" aria-label="Close">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-sale-id" value="'+id+'"/>'
@@ -1554,8 +1554,8 @@ function openEqSale(id) {
         +'<div><label class="lbl">Date</label><input type="date" id="eq-sale-date" value="'+eqIsoDate(new Date())+'"/></div>'
         +'<div><label class="lbl">Brokerage / Costs (AUD)</label><input type="number" id="eq-sale-costs" placeholder="0.00" min="0" step="any" inputmode="decimal" oninput="calcEqSalePreview()"/></div>'
         +'</div>'
-        +'<div id="eq-sale-preview" style="margin-top:10px;font-size:.78rem;color:var(--muted)"></div>'
-        +'<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">'
+        +'<div id="eq-sale-preview" class="eq-sale-preview"></div>'
+        +'<div class="eq-modal-actions eq-modal-actions--snug">'
         +'<button class="btn btn-primary" onclick="saveEqSale()">Record</button>'
         +'<button class="btn btn-ghost" onclick="closeEqSale()">Cancel</button>'
         +'</div></div>';
@@ -1580,9 +1580,9 @@ function calcEqSalePreview() {
     var h = EQUITIES.find(function(e){ return e.id===Number(id); });
     if (!h) return;
     var proceeds = qty*price-costs, costBase = qty*eqCostPerUnit(h), gain = proceeds-costBase;
-    prev.innerHTML = '<span style="color:var(--muted)">Proceeds: </span><strong>'+fmt(proceeds)+'</strong>'
-        +' &nbsp;·&nbsp; <span style="color:var(--muted)">Cost (strike): </span><strong>'+fmt(costBase)+'</strong>'
-        +' &nbsp;·&nbsp; <span style="color:'+(gain>=0?'var(--success)':'var(--danger)')+';font-weight:700">'
+    prev.innerHTML = '<span class="eq-muted">Proceeds: </span><strong>'+fmt(proceeds)+'</strong>'
+        +' &nbsp;·&nbsp; <span class="eq-muted">Cost (strike): </span><strong>'+fmt(costBase)+'</strong>'
+        +' &nbsp;·&nbsp; <span class="'+(gain>=0?'eq-gain-pos':'eq-gain-neg')+'">'
         +(gain>=0?'Gain: +':'Loss: ')+fmt(Math.abs(gain))+'</span>';
 }
 

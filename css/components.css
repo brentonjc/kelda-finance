@@ -563,6 +563,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .eq-sales-row:last-child{border-bottom:none;}
 .eq-code{font-weight:700;}
 .eq-muted{color:var(--muted);}
+.eq-up{color:var(--success);}
+.eq-down{color:var(--danger);}
+.eq-hero-lbl{font-size:.7rem;color:var(--muted);}
+.eq-hero-val{font-family:var(--font-mono);font-weight:700;font-size:.9rem;}
 .eq-code-input{text-transform:uppercase;}
 .eq-gain-pos{color:var(--success);font-weight:700;}
 .eq-gain-neg{color:var(--danger);font-weight:700;}
@@ -574,12 +578,14 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .eq-modal-head--tight{margin-bottom:8px;}
 .eq-modal-title{margin:0;}
 .eq-modal-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+.eq-modal-actions--snug{margin-top:16px;}
+.eq-sale-preview{margin-top:10px;font-size:.78rem;color:var(--muted);}
 .eq-detail-actions{margin-top:14px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;}
 .empty--compact{padding:20px 0;}
 /* 44×44 touch targets on phones and touch devices; desktop keeps the compact buttons.
    min-width covers the icon-only close buttons. */
 @media (max-width:759px), (pointer:coarse){
-  .eq-modal-box .btn-sm{min-height:44px;min-width:44px;}
+  .eq-modal-box .btn-sm,.eq-trade-del{min-height:44px;min-width:44px;}
 }
 .eq-field-hint{font-size:.68rem;color:var(--muted);margin-top:3px;}
 .eq-stale-note{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:.78rem;color:var(--warn);}
@@ -620,15 +626,17 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 }
 
 /* Holdings list: one row per security, opening to its holdings and sales. On phones a row's value
-   and gain drop to a line of their own, so the name keeps the width; from 760px they sit on the right. */
+   and gain drop to a line of their own, so the name keeps the width; in the desktop layout they sit on the right. */
 .eq-row-main{flex-wrap:wrap;}
 .eq-row-values{order:3;flex-basis:100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding-left:34px;text-align:left;}
 .eq-row-actions,.eq-sec-chev{order:2;}
-@media (min-width:760px){
+@media (min-width:760px) and (pointer:fine), (min-width:760px) and (min-height:501px){
   .eq-row-main{flex-wrap:nowrap;}
   .eq-row-values{order:0;flex-basis:auto;display:block;padding-left:0;text-align:right;}
   .eq-row-actions,.eq-sec-chev{order:0;}
 }
+.eq-sec-value{font-family:var(--font-mono);font-weight:700;font-size:.95rem;}
+.eq-sec-gain{font-family:var(--font-mono);font-size:.78rem;}
 .eq-sec-chev{flex-shrink:0;align-self:center;color:var(--muted);}
 .eq-sec-body{padding:12px;}
 .eq-sec-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
@@ -637,6 +645,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .eq-sec-trades{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
 .eq-trade{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.78rem;}
 .eq-trade:last-child{border-bottom:none;}
+.eq-trade-del{margin-left:auto;}
 .eq-badge-12m{background:var(--success-bg);color:var(--success);margin-left:0;}
 
 /* Sell sheet */
@@ -650,6 +659,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .eq-sell-summary{margin-top:12px;background:var(--card2);border-radius:var(--radius-sm);padding:12px;font-size:.82rem;}
 .eq-sell-summary:empty{display:none;}
 .eq-sell-row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;}
+.eq-sell-summary .eq-px-warn{margin:0;}
+.eq-sell-summary .eq-sell-fxline{margin:0 0 6px;}
 
 /* ── GAMIFICATION STYLES ── */
 
