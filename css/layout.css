@@ -5,7 +5,7 @@
 
 /* ══ SIDEBAR (desktop) — collapsible icon rail, 56px → 200px on hover ══ */
 #nav{
-  width:var(--nav-w);min-width:var(--nav-w);height:100vh;background:var(--nav-bg);
+  width:var(--nav-w);min-width:var(--nav-w);height:100vh;height:100dvh;background:var(--nav-bg);
   display:flex;flex-direction:column;align-items:flex-start;
   position:fixed;top:0;left:0;z-index:300;
   border-right:1px solid var(--border);
@@ -207,7 +207,7 @@
 /* ══ MAIN LAYOUT ══ */
 /* #main is a fixed-height flex column: the top bar is a static header and the
    page content scrolls beneath it, so the top nav never scrolls away (item 2). */
-#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;margin-left:var(--nav-w);}
+#main{flex:1;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;margin-left:var(--nav-w);}
 .page-content{padding:28px;flex:1;min-height:0;width:100%;box-sizing:border-box;max-width:1200px;margin-left:auto;margin-right:auto;overflow-y:auto;}
 
 /* ══ PAGE VISIBILITY ══ */
