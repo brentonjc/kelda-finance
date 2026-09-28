@@ -403,7 +403,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 /* ══ FORECAST v2 (fc2-*) ══ */
 .fc2-sync-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px 18px!important;}
 .fc2-kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.fc2-kpi{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.fc2-kpi{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;min-width:0;}
 .fc2-kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px;}
 .fc2-kpi-val{font-family:var(--font-mono);font-size:1.15rem;font-weight:700;margin-bottom:3px;}
 .fc2-kpi-sub{font-size:.72rem;color:var(--muted);}

@@ -457,7 +457,7 @@ body:has(#mob-menu.open) #fab{display:none!important;}
 
   /* Buttons */
   .btn{min-height:48px;font-size:.88rem;border-radius:12px;}
-  .btn-sm{min-height:38px;font-size:.78rem;border-radius:10px;}
+  .btn-sm{min-height:44px;font-size:.78rem;border-radius:10px;}
 
 
   /* Wide tables scroll sideways inside their card (Transactions + Budget use cards instead) */
@@ -598,12 +598,62 @@ body:has(#mob-menu.open) #fab{display:none!important;}
   .modal-actions .btn{width:100%;}
 }
 
+/* ── Touch targets: 44×44 minimum (Apple HIG) on phones and any touch device ──
+   Visual size stays compact where it can; min-height only grows short controls. */
+@media (max-width:759px), (pointer:coarse){
+  .btn,.btn-sm,.btn-danger-ghost{min-height:44px;}
+  select,textarea,
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]){min-height:44px;}
+  .kd-pill,.bva-view-btn,.dash-today-btn,.dash-mode-btn,.fc-range-btn,.li-tab,.bc-tab,.mode-toggle-btn,
+  .how-to-hd,.ct-exp-hd,.ob-back,.ob-link,.sett-asset-chip{min-height:44px;}
+  .ob-pill{min-height:44px;display:inline-flex;align-items:center;padding:0 14px;}
+  .subcat-chip{min-height:36px;line-height:32px;}
+  /* Icon-only buttons / pickers need the width too */
+  .del-btn,.modal-close,.dash-nav-btn,.bl-duesoon-x,.sw-update-dismiss,
+  .g-icon-opt,#cat-icon-picker>div{min-width:44px;min-height:44px;}
+  .g-icon-opt{display:inline-flex;align-items:center;justify-content:center;}
+  .tx-check{width:22px;height:22px;}
+  /* Inline text links ("Details", "View …", "Add →") get a 44px hit area without
+     changing the layout: grow the box, pull it back with negative margin */
+  .kdt-act,.tile-link{display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;margin:-14px 0;}
+  /* Links inside running text: vertical padding on an inline box widens the
+     hit area without moving the line */
+  .page-content p a:not(.btn),.page-content .card a:not(.btn):not(.tile-link){padding-block:12px;}
+}
+
+/* ── Touch tablet (iPad): keep the sidebar, but make it work by tap ──
+   The rail normally reveals labels on :hover, which touch doesn't have (and iOS
+   "sticks" hover after a tap, leaving the rail expanded over the content).
+   So it stays expanded with labels always visible; flyouts open on tap and
+   close after a pick or a tap outside (initNavFlyouts). */
+@media (pointer:coarse) and (min-width:760px) and (min-height:501px){
+  #nav{width:var(--nav-w-open);}
+  #main{margin-left:var(--nav-w-open);}
+  #nav .nav-logo h1,#nav .nav-glabel,#nav .nav-item .nav-lbl,#nav .nav-soon,
+  #nav .nav-settings-btn .nav-lbl,#nav .nav-lock-btn .nav-lbl,#nav .kd-uname,
+  #nav #nav-pinned .nav-item .nav-lbl{opacity:1;}
+  #nav .ni{filter:none;}
+  #nav .nav-cat-arr{opacity:.55;}
+  #nav .nav-item,#nav .nav-settings-btn,#nav .nav-lock-btn,.nav-fly-item{min-height:44px;}
+}
+
+/* ── Top bar between tablet and small desktop: icon-only Upload, drop the user pill ── */
+@media (min-width:760px) and (max-width:1080px){
+  .tb-addbtn{padding:0;width:34px;justify-content:center;}
+  .tb-addbtn-lbl{display:none;}
+}
+@media (min-width:760px) and (max-width:900px){
+  .user-pill{display:none;}
+}
+
 /* ── Small mobile ≤380px ── */
 @media(max-width:380px){
   .g4>*{flex:1 1 100%;}
   .stat .sv{font-size:1.1rem;}
   .occ-grid>*{flex:1 1 100%;}
   .rate-badge{flex:1 1 100%;}
+  .fc2-kpi{padding:12px;}
+  .fc2-kpi-val{font-size:.95rem;}
 }
 
 /* ══════════════════════════════════

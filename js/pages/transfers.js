@@ -499,11 +499,11 @@ function _trShowInlineConfirm(msg, onConfirm, onCancel) {
   var confirmBtn = document.createElement('button');
   confirmBtn.textContent = 'Confirm';
   confirmBtn.style.cssText = 'background:var(--danger);color:#fff;border:none;border-radius:999px;'
-    + 'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;';
+    + 'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:44px;';
   var cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
   cancelBtn.style.cssText = 'background:var(--card3);color:var(--text);border:1px solid var(--border);border-radius:999px;'
-    + 'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;';
+    + 'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:44px;';
   confirmBtn.onclick = function() { el.remove(); onConfirm(); };
   cancelBtn.onclick = function() { el.remove(); if (onCancel) onCancel(); };
   el.appendChild(msgEl);
@@ -902,7 +902,7 @@ function _trBuildChartCard() {
   var periodToggle = '<div style="display:flex;gap:4px">';
   periodBtns.forEach(function(pb) {
     var active = _trPeriod === pb[0];
-    periodToggle += '<button onclick="_trSetPeriod(\'' + pb[0] + '\')" style="background:' + (active ? 'rgba(240,83,138,.15)' : 'transparent') + ';color:' + (active ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (active ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:5px 12px;font-size:.7rem;cursor:pointer;min-height:32px;font-family:var(--font-body)">' + esc(pb[1]) + '</button>';
+    periodToggle += '<button onclick="_trSetPeriod(\'' + pb[0] + '\')" style="background:' + (active ? 'rgba(240,83,138,.15)' : 'transparent') + ';color:' + (active ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (active ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:5px 12px;font-size:.7rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">' + esc(pb[1]) + '</button>';
   });
   periodToggle += '</div>';
 
@@ -922,7 +922,7 @@ function _trBuildChartCard() {
     + '<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7A8FBC;margin-bottom:8px">Outliers</div>'
     + outlierHtml
     + '<div id="tr-acct-flow-toggle" style="margin-top:12px">'
-    + '<button onclick="_trToggleAcctFlow()" style="background:none;border:none;color:#7A8FBC;font-size:.72rem;cursor:pointer;padding:0;font-family:var(--font-body)">Account flow ▸</button>'
+    + '<button onclick="_trToggleAcctFlow()" style="background:none;border:none;color:#7A8FBC;font-size:.72rem;cursor:pointer;padding:0;min-height:44px;font-family:var(--font-body)">Account flow ▸</button>'
     + '<div id="tr-acct-flow" style="display:none;margin-top:8px">' + _trBuildAccountFlow() + '</div>'
     + '</div>'
     + '</div></div></div>';
@@ -1069,7 +1069,7 @@ function _trBuildConfigCard(rules, threshold, lastRun, activeRules) {
     + '<div style="display:flex;align-items:center;justify-content:space-between">'
     + '<div><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7A8FBC;margin-bottom:2px">Detection rules</div>'
     + '<div id="tr-config-summary" style="font-size:.74rem;color:#7A8FBC">' + esc(summary) + '</div></div>'
-    + '<button onclick="_trToggleConfig()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">▸ Configure</button>'
+    + '<button onclick="_trToggleConfig()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">▸ Configure</button>'
     + '</div>'
     + '<div id="tr-config-body" style="display:none;margin-top:16px">'
     + _trToggleRow('exactAmount', 'Exact amount match', 'Same amount within ±3 days across accounts', rules.exactAmount !== false)
@@ -1158,19 +1158,19 @@ function _trBuildConfirmedTab() {
   var monthKeys = Object.keys(months).sort().reverse();
 
   var filterHtml = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">'
-    + '<button onclick="_trSetAcctFilter(\'all\')" style="background:' + (_trAcctFilter === 'all' ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (_trAcctFilter === 'all' ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (_trAcctFilter === 'all' ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">All accounts</button>'
+    + '<button onclick="_trSetAcctFilter(\'all\')" style="background:' + (_trAcctFilter === 'all' ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (_trAcctFilter === 'all' ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (_trAcctFilter === 'all' ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">All accounts</button>'
     + acctKeys.map(function(a) {
       var active = _trAcctFilter === a;
-      return '<button onclick="_trSetAcctFilter(\'' + esc(a) + '\')" style="background:' + (active ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (active ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (active ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">' + esc(a) + '</button>';
+      return '<button onclick="_trSetAcctFilter(\'' + esc(a) + '\')" style="background:' + (active ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (active ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (active ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">' + esc(a) + '</button>';
     }).join('')
-    + '<select onchange="_trSetMonthFilter(this.value)" style="padding:6px 10px;font-size:.72rem;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;min-height:36px">'
+    + '<select onchange="_trSetMonthFilter(this.value)" style="padding:6px 10px;font-size:.72rem;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;min-height:44px">'
     + '<option value="all"' + (_trMonthFilter === 'all' ? ' selected' : '') + '>All months</option>'
     + monthKeys.map(function(m) {
       var lbl = new Date(m + '-02').toLocaleString('en-AU', { month: 'long', year: 'numeric' });
       return '<option value="' + m + '"' + (_trMonthFilter === m ? ' selected' : '') + '>' + lbl + '</option>';
     }).join('')
     + '</select>'
-    + '<button onclick="_trToggleAutoFilter()" style="background:' + (_trAutoFilter ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (_trAutoFilter ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (_trAutoFilter ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">Auto only</button>'
+    + '<button onclick="_trToggleAutoFilter()" style="background:' + (_trAutoFilter ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (_trAutoFilter ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (_trAutoFilter ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">Auto only</button>'
     + '</div>';
 
   // Filter pairs
@@ -1418,18 +1418,18 @@ function _trPagination(total, pageSize, current, tabKey) {
     + '<div style="display:flex;gap:4px">';
 
   // Prev
-  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current - 1) + ')" ' + (current <= 1 ? 'disabled' : '') + ' style="min-height:36px;min-width:36px;background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;cursor:pointer;font-size:.75rem">‹</button>';
+  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current - 1) + ')" ' + (current <= 1 ? 'disabled' : '') + ' style="min-height:44px;min-width:36px;background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;cursor:pointer;font-size:.75rem">‹</button>';
 
   // Page numbers (max 5)
   var pStart = Math.max(1, current - 2);
   var pEnd   = Math.min(totalPages, pStart + 4);
   for (var i = pStart; i <= pEnd; i++) {
     var isActive = i === current;
-    html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + i + ')" style="min-height:36px;min-width:36px;background:' + (isActive ? 'rgba(240,83,138,.15)' : 'transparent') + ';border:1px solid ' + (isActive ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';color:' + (isActive ? 'var(--primary)' : '#7A8FBC') + ';border-radius:6px;cursor:pointer;font-size:.75rem">' + i + '</button>';
+    html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + i + ')" style="min-height:44px;min-width:36px;background:' + (isActive ? 'rgba(240,83,138,.15)' : 'transparent') + ';border:1px solid ' + (isActive ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';color:' + (isActive ? 'var(--primary)' : '#7A8FBC') + ';border-radius:6px;cursor:pointer;font-size:.75rem">' + i + '</button>';
   }
 
   // Next
-  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current + 1) + ')" ' + (current >= totalPages ? 'disabled' : '') + ' style="min-height:36px;min-width:36px;background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;cursor:pointer;font-size:.75rem">›</button>';
+  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current + 1) + ')" ' + (current >= totalPages ? 'disabled' : '') + ' style="min-height:44px;min-width:36px;background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;cursor:pointer;font-size:.75rem">›</button>';
 
   html += '</div></div>';
   return html;

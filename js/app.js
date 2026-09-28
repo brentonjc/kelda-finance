@@ -261,12 +261,26 @@ function navFlyHideSoon(group) {
     if (cat) cat.setAttribute('aria-expanded', 'false');
   }, 160);
 }
+function navFlyCloseAll() {
+  document.querySelectorAll('.nav-group.fly-open').forEach(function(g){
+    g.classList.remove('fly-open');
+    var cat = g.querySelector('.nav-cat');
+    if (cat) cat.setAttribute('aria-expanded', 'false');
+  });
+}
 function initNavFlyouts() {
+  // Touch (iPad) has no hover to close a flyout: close it once an item is
+  // picked, or on any tap outside the nav groups.
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.nav-pin')) return;   // pinning keeps the flyout open
+    if (e.target.closest('.nav-fly-item') || !e.target.closest('#nav .nav-group')) navFlyCloseAll();
+  });
   document.querySelectorAll('#nav .nav-group').forEach(function(g){
     g.addEventListener('mouseenter', function(){ navFlyShow(g); });
     g.addEventListener('mouseleave', function(){ navFlyHideSoon(g); });
     var cat = g.querySelector('.nav-cat');
     if (cat) {
+      cat.addEventListener('click', function(){ navFlyShow(g); });
       cat.addEventListener('focus', function(){ navFlyShow(g); });
       cat.addEventListener('keydown', function(e){
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navFlyShow(g); var first = g.querySelector('.nav-fly-item'); if (first) first.focus(); }
@@ -447,7 +461,7 @@ function showUndoToast(message,durationMs,onUndo){
   var btn=document.createElement('button');
   btn.textContent='Undo';
   btn.style.cssText='background:var(--primary);color:#fff;border:none;border-radius:999px;'
-    +'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;'
+    +'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:44px;'
     +'font-family:var(--font-body);';
   btn.onclick=function(){el.remove();clearTimeout(timer);onUndo();};
   el.appendChild(msg);

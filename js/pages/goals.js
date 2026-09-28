@@ -86,7 +86,7 @@ function renderGoalsPage(){
   var presetsEl = document.getElementById('g-icon-presets');
   if (presetsEl) {
     presetsEl.innerHTML = ICON_PICKER_SET.map(function(k) {
-      return '<span style="cursor:pointer;font-size:1.15rem;padding:6px;border-radius:6px;background:var(--card2);color:var(--muted)" onclick="_gNewPickIcon(\'' + k + '\')">' + ICON(k) + '</span>';
+      return '<span class="g-icon-opt" style="cursor:pointer;font-size:1.15rem;padding:6px;border-radius:6px;background:var(--card2);color:var(--muted)" onclick="_gNewPickIcon(\'' + k + '\')">' + ICON(k) + '</span>';
     }).join('');
   }
 }

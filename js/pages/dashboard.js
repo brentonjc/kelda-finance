@@ -1454,7 +1454,7 @@ function kdRenderDashboard() {
       + '<div class="kd-acc2-bal">' + fmtWhole(b) + ' · ' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</div></div></div>';
   }).join('') : (accts.length
     ? '<div class="kd-empty">All accounts hidden — <span style="color:var(--pink);cursor:pointer" onclick="openAcctVisModal()">show accounts →</span></div>'
-    : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'cash\')">add balances →</span></div>');
+    : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer;padding-block:14px" onclick="go(\'cash\')">add balances →</span></div>');
   var tileAcc = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div>'
     + '<div style="display:flex;align-items:center;gap:10px">'
     + '<button class="kdt-act" onclick="openAcctVisModal()" aria-label="Show or hide accounts" title="Show/hide accounts"><i class="ti ti-eye"></i></button>'
@@ -1484,7 +1484,7 @@ function kdRenderDashboard() {
         + '<div class="kd-goal-amt">' + kdShort(cur) + ' / ' + kdShort(tgt) + '</div></div>';
     }).join('') + '</div>';
   } else {
-    goalsInner = '<div class="kd-empty">No savings goals yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'goals\')">add one →</span></div>';
+    goalsInner = '<div class="kd-empty">No savings goals yet — <span style="color:var(--pink);cursor:pointer;padding-block:14px" onclick="go(\'goals\')">add one →</span></div>';
   }
   var tileGoals = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-pig-money"></i> Savings goals</div><button class="kdt-act" onclick="go(\'goals\')">+ Add</button></div>' + goalsInner + '</div>';
 
@@ -1509,7 +1509,7 @@ function kdRenderDashboard() {
     return '<div class="kd-bill" onclick="go(\'bills\')" style="cursor:pointer"><div class="kd-bill-ic" style="background:color-mix(in srgb,var(--pink) 12%, transparent)"><i class="ti ti-calendar-event" style="color:var(--pink)"></i></div>'
       + '<div><div class="kd-bill-name">' + kdEsc(b.displayName || 'Bill') + '</div><div class="kd-bill-due" style="color:#f48cb2">' + billDateLabel(b) + '</div></div>'
       + '<div class="kd-bill-r"><div class="kd-bill-amt">' + fmtWhole(b.amount) + '</div></div></div>';
-  }).join('') : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'bills\')">add one →</span></div>';
+  }).join('') : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer;padding-block:14px" onclick="go(\'bills\')">add one →</span></div>';
   var dueSoonPill = dueSoon.length ? '<span class="kd-pillbadge">' + dueSoon.length + ' due soon</span>' : '';
   var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">View</button></div></div>'
     + '<div class="kd-bchips"><div class="kd-bchip"><div class="kd-bchip-l">Overdue</div><div class="kd-bchip-v" style="color:' + (overdue.length ? 'var(--amber)' : '#3D4D70') + '">' + fmtWhole(billSum(overdue)) + '</div></div>'
@@ -1571,7 +1571,7 @@ function kdRenderDashboard() {
       return '<div class="kd-acc"><div class="kd-acc-ic" style="background:color-mix(in srgb,' + col + ' 13%, transparent)"><i class="ti ' + (pos ? 'ti-businessplan' : isTransfer ? 'ti-arrows-exchange' : 'ti-shopping-cart') + '" style="color:' + col + '"></i></div>'
         + '<div><div class="kd-acc-name">' + kdEsc(nm) + '</div><div class="kd-acc-sub">' + kdEsc(t.category || '') + '</div></div>'
         + '<div class="kd-acc-bal" style="color:' + (pos ? 'var(--green)' : 'var(--text)') + '">' + amt + '</div></div>';
-    }).join('') : '<div class="kd-empty">No transactions yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'transactions\')">add one →</span></div>';
+    }).join('') : '<div class="kd-empty">No transactions yet — <span style="color:var(--pink);cursor:pointer;padding-block:14px" onclick="go(\'transactions\')">add one →</span></div>';
     tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-arrows-exchange"></i> Recent activity</div><button class="kdt-act" onclick="go(\'transactions\')">See all</button></div>' + actInner + '</div>';
   }
 

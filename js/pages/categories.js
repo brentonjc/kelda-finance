@@ -410,7 +410,7 @@ function renderCategories() {
       const typeBg   = c.type === 'income' ? '#1a3020' : c.type === 'both' ? '#0a1a30' : '#2a1020';
       const typeLbl  = c.type || 'expense';
       const subcatPills = (c.subcats || []).map(s =>
-        '<span style="display:inline-block;font-size:.68rem;background:#2a2535;color:var(--muted);'
+        '<span class="subcat-chip" style="display:inline-block;font-size:.68rem;background:#2a2535;color:var(--muted);'
         + 'border-radius:99px;padding:2px 8px;margin:2px 3px 2px 0;cursor:pointer;border:1px solid var(--border)"'
         + ' onclick="deleteSubcat(\'' + c.id + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="Click to remove">'
         + s + ' ' + ICON('x') + '</span>'
@@ -428,7 +428,7 @@ function renderCategories() {
         + ' <span style="font-size:.7rem;color:var(--muted)">' + count + ' tx</span>'
         + '</div>'
         + '<div style="margin-top:8px;line-height:1.8">' + subcatPills
-        + '<span style="font-size:.68rem;color:var(--primary);cursor:pointer;padding:2px 8px;border:1px dashed var(--primary);'
+        + '<span class="subcat-chip" style="display:inline-block;font-size:.68rem;color:var(--primary);cursor:pointer;padding:2px 8px;border:1px dashed var(--primary);'
         + 'border-radius:99px;margin-left:2px" onclick="promptAddSubcat(\'' + c.id + '\')" title="Add subcategory">+ add</span>'
         + '</div>'
         + '</div>'

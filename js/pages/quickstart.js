@@ -287,7 +287,7 @@ function renderQuickStart() {
 
   // Reset button
   html += '<div style="margin-top:20px;text-align:center">';
-  html += '<button onclick="qsReset()" style="background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.85rem;text-decoration:underline;padding:0">Reset progress</button>';
+  html += '<button onclick="qsReset()" style="background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.85rem;text-decoration:underline;padding:0;min-height:44px">Reset progress</button>';
   html += '</div>';
 
   el.innerHTML = html;

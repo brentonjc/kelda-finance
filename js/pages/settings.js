@@ -343,7 +343,7 @@ function _settDashBody() {
       var abrd = on ? 'var(--warn)' : 'var(--border)';
       var abg = on ? 'color-mix(in srgb,var(--warn) 12%, transparent)' : 'var(--card2)';
       var acol = on ? 'var(--text)' : 'var(--muted)';
-      html += '<span role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '" tabindex="0"'
+      html += '<span class="sett-asset-chip" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '" tabindex="0"'
         + ' onclick="settDashToggleAsset(\'' + a.key + '\')"'
         + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();settDashToggleAsset(\'' + a.key + '\');}"'
         + ' style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;border:1.5px solid ' + abrd + ';background:' + abg + ';color:' + acol + ';border-radius:9px;padding:8px 12px;font-size:.78rem;font-weight:500;transition:border-color .15s,background .15s">'
