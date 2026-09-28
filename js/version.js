@@ -21,7 +21,7 @@ var APP_VERSION = '2.3.0';
 var APP_CHANGELOG = [
   {
     version: '2.3.0',
-    date: '2026-09-27',
+    date: '2026-09-28',
     title: 'Faster share price updates, US$ prices and correct RSU gains',
     notes: [
       'Update Prices shows one row per code: one price updates every holding with that code, including both owners, extra parcels, RSU grants and options',
@@ -34,6 +34,16 @@ var APP_CHANGELOG = [
       'Holdings entered without a code can be linked to the matching stock',
       'Editing a holding no longer resets its price date or drops details the form doesn’t show',
       'Phones: the + button and tab bar no longer cover Investments pop-ups, and the RSU vesting table no longer pushes the page sideways',
+    ],
+  },
+  {
+    version: '2.2.1',
+    date: '2026-09-28',
+    title: 'Cash Flow Forecast fix',
+    notes: [
+      'Cash Flow Forecast now shows its charts, summary figures and month-by-month view instead of an empty page',
+      'Opening Forecast picks up your latest account balances as the starting balance, so the Cumulative view is ready without pressing Sync',
+      'The Forecast how-to guide now explains how the 12-month forecast is worked out',
     ],
   },
   {
