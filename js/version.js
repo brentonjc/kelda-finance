@@ -14,13 +14,13 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.3.1';
+var APP_VERSION = '2.2.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
-    version: '2.3.1',
+    version: '2.2.1',
     date: '2026-09-28',
     title: 'Cash Flow Forecast fix',
     notes: [
