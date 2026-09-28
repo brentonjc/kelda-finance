@@ -2735,14 +2735,14 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="bva-header">
       <div>
         <div class="page-title" id="bva-title">Budget vs Actuals</div>
-        <div class="page-sub" style="margin-bottom:0">Compare what you planned to spend vs what you actually spent.</div>
+        <div class="page-sub">Compare what you planned to spend vs what you actually spent.</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">
-          <button class="bva-view-btn active" data-view="month" onclick="bvaSetView('month')" style="padding:7px 14px;font-size:.8rem;font-weight:600;background:transparent;border:none;cursor:pointer;color:var(--text)">Monthly</button>
-          <button class="bva-view-btn" data-view="annual" onclick="bvaSetView('annual')" style="padding:7px 14px;font-size:.8rem;font-weight:600;background:transparent;border:none;border-left:1px solid var(--border);cursor:pointer;color:var(--muted)">Annual</button>
+      <div class="bva-controls">
+        <div class="bva-view-toggle">
+          <button class="bva-view-btn active" data-view="month" onclick="bvaSetView('month')">Monthly</button>
+          <button class="bva-view-btn" data-view="annual" onclick="bvaSetView('annual')">Annual</button>
         </div>
-        <select id="bva-period-select" onchange="bvaPeriodChanged()" style="padding:6px 10px;font-size:.78rem;width:auto;"></select>
+        <select id="bva-period-select" onchange="bvaPeriodChanged()"></select>
       </div>
     </div>
 
@@ -2751,11 +2751,11 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Budget vs Actuals table -->
     <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">Category Breakdown</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer;font-weight:400;color:var(--muted)">
-            <input type="checkbox" id="bva-show-all" onchange="renderBVA()" style="accent-color:var(--primary);width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+      <div class="bva-card-hd">
+        <div class="section-label">Category Breakdown</div>
+        <div class="bva-card-tools">
+          <label class="bva-showall">
+            <input type="checkbox" id="bva-show-all" onchange="renderBVA()"/>
             Show all categories
           </label>
           <button class="btn btn-ghost btn-sm" onclick="go('categories')"><i class="ti ti-settings"></i> Manage Categories</button>
@@ -2770,7 +2770,7 @@ window.addEventListener('unhandledrejection',function(e){
               <th id="bva-th-actual">Actual</th>
               <th id="bva-th-remain">Remaining</th>
               <th>% Used</th>
-              <th style="min-width:100px">Progress</th>
+              <th class="bva-th-progress">Progress</th>
             </tr>
           </thead>
           <tbody id="bva-tbody"></tbody>
@@ -2781,8 +2781,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Set budgets inline -->
     <div class="card">
-      <div class="section-label" style="margin-bottom:3px">Set Monthly Budgets</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter a monthly limit for each category. Leave blank for no budget. Changes save automatically.</p>
+      <div class="section-label bva-inputs-label">Set Monthly Budgets</div>
+      <p class="bva-inputs-note">Enter a monthly limit for each category. Leave blank for no budget. Changes save automatically.</p>
       <div id="bva-budget-inputs"></div>
     </div>
   </div>

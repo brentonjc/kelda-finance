@@ -323,8 +323,29 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 
 /* ══ BUDGET VS ACTUALS ══ */
 .bva-header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
-.bva-view-btn{background:transparent;color:var(--muted);transition:background .18s,color .18s;}
-.bva-view-btn.active{background:var(--primary) !important;color:#fff !important;}
+.bva-view-btn{background:transparent;color:var(--muted);transition:background .18s,color .18s;padding:7px 14px;font-size:.8rem;font-weight:600;border:none;cursor:pointer;}
+.bva-view-btn+.bva-view-btn{border-left:1px solid var(--border);}
+.bva-view-btn.active{background:var(--primary);color:#fff;}
+/* Budget page (was inline) */
+.bva-header .page-sub{margin-bottom:0;}
+.bva-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.bva-controls select{padding:6px 10px;font-size:.78rem;width:auto;}
+.bva-view-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.bva-card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.bva-card-hd .section-label{margin:0;}
+.bva-card-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.bva-showall{display:flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer;font-weight:400;color:var(--muted);}
+.bva-showall input{accent-color:var(--primary);width:auto;padding:0;border:none;background:none;box-shadow:none;}
+.bva-th-progress{min-width:100px;}
+.bva-inputs-label{margin-bottom:3px;}
+.bva-inputs-note{font-size:.76rem;color:var(--muted);margin-bottom:14px;}
+.bva-icon--muted{background:var(--card3);color:var(--muted);}
+.bva-annual-note{font-size:.7rem;color:var(--muted);margin-left:4px;}
+.dr-k.bva-input-k{display:flex;align-items:center;gap:8px;}
+.bva-input-icon{font-size:.9rem;}
+.bva-input-v{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.bva-input-v input{width:120px;padding:6px 10px;font-size:.82rem;text-align:right;}
+.bva-per{font-size:.74rem;color:var(--muted);}
 .bva-table{width:100%;border-collapse:collapse;font-size:.84rem;}
 .bva-table th{text-align:left;padding:10px 12px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap;}
 .bva-table th:not(:first-child){text-align:right;}
