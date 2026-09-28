@@ -1389,8 +1389,8 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- Cash Flow Trend -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Cash Flow — Last 12 Months</div>
+        <div class="tile-hd ins-tile-hd ins-tile-hd--tight">
+          <div class="section-label section-label--flush"><i class="ti ti-trending-up"></i> Cash Flow — Last 12 Months</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div class="db-chart-fill"><canvas id="ins-cashflow-chart"></canvas></div>
@@ -1398,90 +1398,90 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- Period Comparison -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Income vs Expenses — Period Comparison</div>
+        <div class="tile-hd ins-tile-hd ins-tile-hd--mid">
+          <div class="section-label section-label--flush"><i class="ti ti-chart-bar"></i> Income vs Expenses — Period Comparison</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
-        <div class="db-chart-fill" style="min-height:200px"><canvas id="ins-compare-chart"></canvas></div>
-        <div id="ins-compare-deltas" style="margin-top:14px"></div>
+        <div class="db-chart-fill db-chart-fill--md"><canvas id="ins-compare-chart"></canvas></div>
+        <div id="ins-compare-deltas" class="ins-compare-deltas"></div>
       </div>
 
       <!-- Net Worth Over Time -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Net Worth Over Time</div>
+        <div class="tile-hd ins-tile-hd ins-tile-hd--tight">
+          <div class="section-label section-label--flush"><i class="ti ti-trending-up"></i> Net Worth Over Time</div>
           <a href="#" onclick="go('assets');return false;" class="tile-link">View net worth →</a>
         </div>
-        <div id="ins-nw-deltas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
-        <div class="db-chart-fill" style="min-height:260px"><canvas id="ins-nw-chart"></canvas></div>
+        <div id="ins-nw-deltas" class="ins-nw-deltas"></div>
+        <div class="db-chart-fill db-chart-fill--lg"><canvas id="ins-nw-chart"></canvas></div>
       </div>
 
       <!-- Income Flow Sankey -->
-      <div class="card" id="ins-sankey-row" style="position:relative;overflow:hidden">
-        <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0"><i class="ti ti-cash-off"></i> Income Flow</div>
+      <div class="card ins-sankey-card" id="ins-sankey-row">
+        <div class="tile-hd ins-tile-hd ins-tile-hd--mid">
+          <div class="section-label section-label--flush"><i class="ti ti-cash-off"></i> Income Flow</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-sankey-container"></div>
-        <div id="ins-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
+        <div id="ins-sankey-tip" class="ins-sankey-tip" style="display:none"></div>
       </div>
 
       <!-- Spending by Category -->
-      <div class="card" id="ins-expense-section" style="scroll-margin-top:16px">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Spending by Category</div>
-            <div id="ins-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+      <div class="card ins-anchor" id="ins-expense-section">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l">
+            <div class="section-label section-label--flush"><i class="ti ti-chart-bar"></i> Spending by Category</div>
+            <div id="ins-cat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-cat-chart-wrap"><canvas id="ins-cat-chart"></canvas></div>
-        <div id="ins-cat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-cat-breakdown" class="ins-breakdown"></div>
       </div>
 
       <!-- Spending by Subcategory -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <div class="section-label" style="margin:0"><i class="ti ti-search"></i> Spending by Subcategory</div>
-            <select id="ins-subcat-filter-cat" onchange="insRenderSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l ins-hd-l--wrap">
+            <div class="section-label section-label--flush"><i class="ti ti-search"></i> Spending by Subcategory</div>
+            <select id="ins-subcat-filter-cat" onchange="insRenderSubcatChart()" class="ins-filter-sel">
               <option value="">All Categories</option>
             </select>
-            <div id="ins-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+            <div id="ins-subcat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-subcat-chart-wrap"><canvas id="ins-subcat-chart"></canvas></div>
-        <div id="ins-subcat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-subcat-breakdown" class="ins-breakdown"></div>
       </div>
 
       <!-- Income by Category -->
-      <div class="card" id="ins-income-section" style="scroll-margin-top:16px">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="section-label" style="margin:0"><i class="ti ti-coin"></i> Income by Category</div>
-            <div id="ins-inc-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+      <div class="card ins-anchor" id="ins-income-section">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l">
+            <div class="section-label section-label--flush"><i class="ti ti-coin"></i> Income by Category</div>
+            <div id="ins-inc-cat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="insGoToTxFiltered('income','','',insPeriodStr());return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-inc-cat-chart-wrap"><canvas id="ins-inc-cat-chart"></canvas></div>
-        <div id="ins-inc-cat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-inc-cat-breakdown" class="ins-breakdown"></div>
       </div>
 
       <!-- Income by Subcategory -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <div class="section-label" style="margin:0"><i class="ti ti-search"></i> Income by Subcategory</div>
-            <select id="ins-inc-subcat-filter-cat" onchange="insRenderIncSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l ins-hd-l--wrap">
+            <div class="section-label section-label--flush"><i class="ti ti-search"></i> Income by Subcategory</div>
+            <select id="ins-inc-subcat-filter-cat" onchange="insRenderIncSubcatChart()" class="ins-filter-sel">
               <option value="">All Categories</option>
             </select>
-            <div id="ins-inc-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+            <div id="ins-inc-subcat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="insIncSubcatViewAll();return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-inc-subcat-chart-wrap"><canvas id="ins-inc-subcat-chart"></canvas></div>
-        <div id="ins-inc-subcat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-inc-subcat-breakdown" class="ins-breakdown"></div>
       </div>
 
     </div><!-- /db-layout -->

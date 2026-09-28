@@ -237,6 +237,8 @@
 
 /* Chart area that fills available card height via flex */
 .db-chart-fill{flex:1;min-height:180px;position:relative;}
+.db-chart-fill.db-chart-fill--md{min-height:200px;}
+.db-chart-fill.db-chart-fill--lg{min-height:260px;}
 
 /* Category/subcat chart wraps — height set by JS, position:relative for Chart.js */
 #db-cat-chart-wrap,#db-subcat-chart-wrap{width:100%;position:relative;overflow:hidden;}
