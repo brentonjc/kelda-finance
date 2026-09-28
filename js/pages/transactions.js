@@ -331,8 +331,7 @@ function txMakeRow(t){
   tr.addEventListener('click',function(e){txRowTap(e,t.id);});
   const isTr=isTransfer(t);
   if(isTr)tr.classList.add('transfer-excluded-row');
-  const personBadge=t.type==='income'?'<span style="font-size:.68rem;background:var(--primary-bg);color:var(--pink-light);border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
-  const rowColor=t.type==='income'?'var(--success)':'var(--primary)';
+  const personBadge=t.type==='income'?'<span class="tx-person-badge">'+(t.person==='brenton'?getUserName('brenton').charAt(0):t.person==='shelley'?getUserName('shelley').charAt(0):'J')+'</span>':'';
   const amtSign=t.type==='income'?'+':'-';
   const dateStr=txFmtDate(t.date);
   // Lazy selects: render only the current value; full lists build on interaction.
@@ -346,12 +345,12 @@ function txMakeRow(t){
   tr.innerHTML='<td><input type="checkbox" class="tx-check tx-row-check" data-id="'+t.id+'"'+(_txSelected.has(t.id)?' checked':'')+' onchange="onTxRowCheck(this)" title="Select"/></td>'
     +'<td>'+dateStr+'</td>'
     +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">'+ICON('refresh')+'</span>':'')+'</td>'
-    +'<td class="tx-cell-clip" style="font-weight:600;font-size:.84rem"'+(t.name?' title="'+esc(t.name)+'"':'')+'>'+(t.name||'—')+'</td>'
+    +'<td class="tx-cell-clip tx-cell-name"'+(t.name?' title="'+esc(t.name)+'"':'')+'>'+(t.name||'—')+'</td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="cat" '+lazyAttrs+' onchange="inlineAssignCat(this)"><option value="'+curCatId+'" selected>'+curCatName+'</option></select></td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="subcat" '+lazyAttrs+' onchange="inlineAssignSubcat(this)"><option value="'+curSub+'" selected>'+(curSub||'—')+'</option></select></td>'
-    +'<td class="tx-desc-cell" style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'+(t.description?' title="'+esc(t.description)+'"':'')+'>'+(t.description||'—')+'</td>'
+    +'<td class="tx-desc-cell"'+(t.description?' title="'+esc(t.description)+'"':'')+'>'+(t.description||'—')+'</td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="account" '+lazyAttrs+' onchange="inlineAssignAccount(this)"><option value="'+curAcct+'" selected>'+curAcctLabel+'</option></select></td>'
-    +'<td style="font-weight:600;color:'+rowColor+'">'+amtSign+fmt(t.amount)+'</td>'
+    +'<td class="tx-amt tx-amt--'+(t.type==='income'?'income':'expense')+'">'+amtSign+fmt(t.amount)+'</td>'
     +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
   return tr;
 }
@@ -402,7 +401,7 @@ function txMountSentinel(tbody){
   if(_txWindow>=_txFiltered.length) return; // everything is already rendered
   var tr=document.createElement('tr');
   tr.id='tx-sentinel';
-  tr.innerHTML='<td colspan="10" style="padding:14px;text-align:center;color:var(--muted);font-size:.76rem;border:none">Loading more…</td>';
+  tr.innerHTML='<td colspan="10">Loading more…</td>';
   tbody.appendChild(tr);
   if(!_txObserver){
     _txObserver=new IntersectionObserver(function(entries){

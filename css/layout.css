@@ -482,9 +482,9 @@ body:has(#mob-menu.open) #fab{display:none!important;}
   }
   .tx-table tbody tr:active{background:var(--card2);}
   .tx-table tbody td{display:none;padding:0;border:none;}
-  .tx-table tbody td:nth-child(4){display:block;grid-area:name;font-size:.92rem!important;}
+  .tx-table tbody td:nth-child(4){display:block;grid-area:name;font-size:.92rem;}
   .tx-table tbody td:nth-child(5){display:block;grid-area:cat;min-width:0;}
-  .tx-table tbody td:nth-child(9){display:block;grid-area:amt;text-align:right;font-family:var(--font-mono);font-weight:500!important;}
+  .tx-table tbody td:nth-child(9){display:block;grid-area:amt;text-align:right;font-family:var(--font-mono);font-weight:500;}
   .tx-table tbody td:nth-child(2){display:block;grid-area:date;text-align:right;font-size:.74rem;color:var(--muted);white-space:nowrap;}
   .tx-table .tx-cat-sel{
     font-size:.78rem!important;padding:4px 26px 4px 10px;min-height:36px;max-width:100%;width:auto;
@@ -500,8 +500,7 @@ body:has(#mob-menu.open) #fab{display:none!important;}
   .tx-table tbody tr.tx-month-row td{
     display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   }
-  #tx-sentinel{display:block!important;}
-  #tx-sentinel td{display:block!important;}
+  #tx-sentinel,#tx-sentinel td{display:block;}
 
   /* ── Budget vs Actuals: each category row becomes a card with a traffic-light bar ──
      Columns: 1 category · 2 budget · 3 actual · 4 remaining · 5 % used · 6 progress bar
@@ -538,14 +537,14 @@ body:has(#mob-menu.open) #fab{display:none!important;}
 
   /* Filters collapse behind the Filter button; search stays visible */
   .tx-filters:not(.tx-filters--open) select{display:none;}
-  .tx-filters input{max-width:none!important;flex:1 1 100%!important;}
-  .tx-filters select{flex:1 1 calc(50% - 6px);width:auto!important;}
+  .tx-filters input{max-width:none;flex:1 1 100%;}
+  .tx-filters select{flex:1 1 calc(50% - 6px);}
   .tx-filter-count{
     min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--primary);color:#fff;
     font-size:.68rem;display:inline-flex;align-items:center;justify-content:center;
   }
   /* The FAB is the add action on mobile; Upload lives in the + menu and More */
-  .tx-actions{display:none!important;}
+  .tx-actions{display:none;}
   .tx-bulk-bar{position:sticky;top:calc(var(--topbar-h) + env(safe-area-inset-top,0px));z-index:2;}
   .tx-bulk-bar select{flex:1 1 100%;}
 

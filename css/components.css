@@ -129,6 +129,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;padding:16px;}
 .modal-overlay.open{display:flex;}
 .modal-box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+/* Modal modifiers (replace per-modal inline styles). --scroll's doubled class keeps
+   90vh on phones too, matching the old inline value. */
+.modal-box.modal-box--scroll{max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.modal-box--md{max-width:560px;}
 .modal-box h3{font-family:var(--font-display);font-size:1.3rem;margin-bottom:18px;}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
 /* Quick-amount chips under the Add Transaction amount field */
@@ -353,6 +357,26 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .tx-bulk-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#2a1030;border-radius:10px;margin-bottom:12px;animation:fadeUp .2s ease;}
 .tx-bulk-count{font-size:.82rem;font-weight:600;color:var(--pink-light);}
 .tx-check{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;}
+/* Transactions page (was inline) */
+.tx-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.tx-hist-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.tx-hist-hd .section-label{margin:0;}
+.tx-hist-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.tx-rescan-result{font-size:.76rem;}
+.tx-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.tx-filters select{padding:6px 10px;font-size:.78rem;width:auto;}
+.tx-filters input{padding:6px 10px;font-size:.78rem;flex:1;min-width:160px;max-width:240px;}
+.tx-bulk-bar select{padding:7px 10px;font-size:.82rem;width:auto;}
+.tx-th-check{width:32px;}
+.tx-person-badge{font-size:.68rem;background:var(--primary-bg);color:var(--pink-light);border-radius:99px;padding:2px 7px;font-weight:600;margin-left:5px;}
+.tx-cell-name{font-weight:600;font-size:.84rem;}
+.tx-desc-cell{color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tx-amt{font-weight:600;}
+.tx-amt--income{color:var(--success);}
+.tx-amt--expense{color:var(--primary);}
+#tx-sentinel td{padding:14px;text-align:center;color:var(--muted);font-size:.76rem;border:none;}
+.tx-autocat-pill{align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;}
+.tx-del-btn{margin-right:auto;}
 
 /* ══ AUTO-RULE BANNER ══ */
 .rule-banner{padding:14px 16px;background:#1a2a1a;border:1px solid rgba(0,200,150,.25);border-radius:12px;margin-bottom:12px;font-size:.8rem;animation:fadeUp .2s ease;}

@@ -1533,36 +1533,36 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="page-title">Income & Expenses</div>
     <div class="page-sub" id="tx-page-sub">Log transactions for both profiles</div>
     <div id="how-to-transactions"></div>
-    <div class="tx-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <div class="tx-actions">
       <button class="btn btn-primary" onclick="openTxModal()"><i class="ti ti-plus"></i> Add Transaction</button>
       <button class="btn btn-ghost" onclick="go('upload')"><i class="ti ti-upload"></i> Upload Transactions</button>
     </div>
 
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">Transaction History</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <div class="tx-hist-hd">
+        <div class="section-label">Transaction History</div>
+        <div class="tx-hist-tools">
           <button class="btn btn-ghost btn-sm mob-only" id="tx-filter-toggle" onclick="txToggleFilters()" aria-expanded="false" aria-controls="tx-filters"><i class="ti ti-adjustments-horizontal"></i> Filter <span class="tx-filter-count" id="tx-filter-count" style="display:none"></span></button>
           <button class="btn btn-ghost btn-sm mob-only" id="tx-select-toggle" onclick="txToggleSelectMode()" aria-pressed="false"><i class="ti ti-checkbox"></i> Select</button>
           <button class="btn btn-ghost btn-sm" onclick="txClearFilters()" id="tx-clear-filters" style="display:none"><i class="ti ti-x"></i> Clear filters</button>
           <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions"><i class="ti ti-robot"></i> Re-categorise transactions</button>
-          <span id="tx-rescan-result" style="font-size:.76rem;display:none"></span>
+          <span id="tx-rescan-result" class="tx-rescan-result" style="display:none"></span>
         </div>
       </div>
-      <div class="tx-filters" id="tx-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-        <select id="tx-filter-month" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;"></select>
-        <select id="tx-filter-type" onchange="txFilterCatChanged();renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+      <div class="tx-filters" id="tx-filters">
+        <select id="tx-filter-month" onchange="renderTx()"></select>
+        <select id="tx-filter-type" onchange="txFilterCatChanged();renderTx()">
           <option value="">All Types</option>
           <option value="income">Income</option>
           <option value="expense">Expenses</option>
         </select>
-        <select id="tx-filter-cat" onchange="txFilterCatChanged();renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+        <select id="tx-filter-cat" onchange="txFilterCatChanged();renderTx()">
           <option value="">All Categories</option>
         </select>
-        <select id="tx-filter-subcat" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+        <select id="tx-filter-subcat" onchange="renderTx()">
           <option value="">All Subcategories</option>
         </select>
-        <select id="tx-filter-account" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+        <select id="tx-filter-account" onchange="renderTx()">
           <option value="">All Accounts</option>
           <option value="offset">Offset Account</option>
           <option value="home">Home Transaction</option>
@@ -1571,18 +1571,18 @@ window.addEventListener('unhandledrejection',function(e){
           <option value="joint">Joint</option>
         </select>
         <input type="text" id="tx-filter-search" placeholder="Search merchant / description..."
-          oninput="txSearchInput()" style="padding:6px 10px;font-size:.78rem;flex:1;min-width:160px;max-width:240px"/>
+          oninput="txSearchInput()"/>
       </div>
       <!-- Bulk action bar (shown when items selected) -->
       <div class="tx-bulk-bar" id="tx-bulk-bar" style="display:none">
         <span class="tx-bulk-count" id="tx-bulk-count">0 selected</span>
-        <select id="tx-bulk-cat" style="padding:7px 10px;font-size:.82rem;width:auto;"></select>
+        <select id="tx-bulk-cat"></select>
         <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
         <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()"><i class="ti ti-x"></i> Cancel</button>
       </div>
       <div class="tbl-wrap">
         <table class="tx-table"><thead><tr>
-          <th style="width:32px"><input type="checkbox" id="tx-select-all" class="tx-check" onchange="toggleSelectAll(this)" title="Select all"/></th>
+          <th class="tx-th-check"><input type="checkbox" id="tx-select-all" class="tx-check" onchange="toggleSelectAll(this)" title="Select all"/></th>
           <th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Account</th><th>Amount</th><th></th>
         </tr></thead>
         <tbody id="tx-tbody"></tbody></table>
@@ -1593,7 +1593,7 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ ADD TRANSACTION MODAL ═══ -->
   <div class="modal-overlay" id="tx-add-modal" onclick="if(event.target===this)closeTxModal()">
-    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:560px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="modal-box modal-box--scroll modal-box--md" onclick="event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title" id="tx-modal-title">＋ Add Transaction</div>
         <button class="modal-close" onclick="closeTxModal()" aria-label="Close"><i class="ti ti-x"></i></button>
@@ -1612,7 +1612,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div>
           <label class="lbl">Name</label>
           <input type="text" id="tx-name" placeholder="e.g. Woolworths" oninput="AutoCat.onNameInput(this.value)"/>
-          <div id="tx-autocat-pill" style="display:none;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap"></div>
+          <div id="tx-autocat-pill" class="tx-autocat-pill" style="display:none"></div>
         </div>
         <div><label class="lbl">Amount (AUD)</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
           <div class="amt-chips" aria-label="Quick amounts">
@@ -1647,7 +1647,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-danger" id="tx-del-btn" onclick="txDeleteFromModal()" style="display:none;margin-right:auto"><i class="ti ti-trash"></i> Delete</button>
+        <button class="btn btn-danger tx-del-btn" id="tx-del-btn" onclick="txDeleteFromModal()" style="display:none"><i class="ti ti-trash"></i> Delete</button>
         <button class="btn btn-ghost" onclick="closeTxModal()">Cancel</button>
         <button class="btn btn-primary" id="tx-save-btn" onclick="addTx()">＋ Add Transaction</button>
       </div>
