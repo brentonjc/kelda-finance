@@ -14,11 +14,21 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.2.0';
+var APP_VERSION = '2.2.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.2.1',
+    date: '2026-09-28',
+    title: 'Cash Flow Forecast fix',
+    notes: [
+      'Cash Flow Forecast now shows its charts, summary figures and month-by-month view instead of an empty page',
+      'Opening Forecast picks up your latest account balances as the starting balance, so the Cumulative view is ready without pressing Sync',
+      'The Forecast how-to guide now explains how the 12-month forecast is worked out',
+    ],
+  },
   {
     version: '2.2.0',
     date: '2026-09-27',
