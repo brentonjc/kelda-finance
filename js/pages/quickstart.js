@@ -241,21 +241,21 @@ function renderQuickStart() {
 
   // Progress header
   html += '<div class="card mb">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-  html += '<div><div class="section-label">Your Progress</div><div style="font-size:1.4rem;font-weight:700;margin-top:4px">' + progress.completed + ' of ' + progress.total + ' complete</div></div>';
-  html += '<div style="text-align:right"><div style="font-size:2rem;font-weight:700;color:var(--primary)">' + progress.pct + '%</div></div>';
+  html += '<div class="qs-prog-hd">';
+  html += '<div><div class="section-label">Your Progress</div><div class="qs-prog-count">' + progress.completed + ' of ' + progress.total + ' complete</div></div>';
+  html += '<div class="qs-prog-pctwrap"><div class="qs-prog-pct">' + progress.pct + '%</div></div>';
   html += '</div>';
   html += '<div class="prog-track"><div class="prog-fill" style="width:' + progress.pct + '%"></div></div>';
   html += '</div>';
 
   // Completion banner
   if (progress.allDone) {
-    html += '<div class="card mb" style="border-left:4px solid var(--success);background:rgba(0,200,150,0.08)">';
-    html += '<div style="display:flex;align-items:center;gap:12px">';
-    html += '<div style="font-size:2rem">' + ICON('circle-check-filled') + '</div>';
+    html += '<div class="card mb qs-done">';
+    html += '<div class="qs-done-row">';
+    html += '<div class="qs-done-ico">' + ICON('circle-check-filled') + '</div>';
     html += '<div>';
-    html += '<div style="font-weight:700;color:var(--success)">You\'ve Completed the Quick Start!</div>';
-    html += '<div style="font-size:.85rem;color:var(--muted);margin-top:4px">You\'re all set to manage your finances. Explore other features anytime.</div>';
+    html += '<div class="qs-done-title">You\'ve Completed the Quick Start!</div>';
+    html += '<div class="qs-done-sub">You\'re all set to manage your finances. Explore other features anytime.</div>';
     html += '</div>';
     html += '</div>';
     html += '</div>';
@@ -265,19 +265,19 @@ function renderQuickStart() {
   html += '<div>';
   steps.forEach(function(step) {
     var isDone = tasks[step.id];
-    html += '<div class="card mb" style="opacity:' + (isDone ? '0.6' : '1') + ';transition:opacity 0.3s">';
-    html += '<div style="display:flex;gap:12px;margin-bottom:10px;align-items:flex-start">';
-    html += '<div style="font-size:1.8rem">' + ICON(step.emoji) + '</div>';
-    html += '<div style="flex:1">';
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
-    html += '<div style="font-weight:700;font-size:.9rem;color:var(--muted)">STEP ' + step.num + '</div>';
-    if (isDone) html += '<span style="font-size:.7rem;background:var(--success);color:#000;padding:2px 6px;border-radius:3px;font-weight:700">' + ICON('check') + '</span>';
+    html += '<div class="card mb qs-step' + (isDone ? ' qs-step--done' : '') + '">';
+    html += '<div class="qs-step-row">';
+    html += '<div class="qs-step-ico">' + ICON(step.emoji) + '</div>';
+    html += '<div class="qs-step-body">';
+    html += '<div class="qs-step-hd">';
+    html += '<div class="qs-step-num">STEP ' + step.num + '</div>';
+    if (isDone) html += '<span class="qs-done-badge">' + ICON('check') + '</span>';
     html += '</div>';
-    html += '<div style="font-weight:600;font-size:1rem">' + step.title + '</div>';
-    html += '<div style="font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.5">' + step.body + '</div>';
-    html += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">';
-    html += '<button onclick="' + step.ctaFn + '" class="btn btn-sm" style="background:var(--primary);color:#000;font-weight:600;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.8rem">→ ' + step.cta + '</button>';
-    html += '<button onclick="qsMarkComplete(\'' + step.id + '\')" class="btn btn-sm" style="background:var(--card3);color:var(--text);padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.8rem">' + (isDone ? 'Undo' : 'Mark Done') + '</button>';
+    html += '<div class="qs-step-title">' + step.title + '</div>';
+    html += '<div class="qs-step-text">' + step.body + '</div>';
+    html += '<div class="qs-step-actions">';
+    html += '<button onclick="' + step.ctaFn + '" class="btn btn-sm qs-cta">→ ' + step.cta + '</button>';
+    html += '<button onclick="qsMarkComplete(\'' + step.id + '\')" class="btn btn-sm qs-mark">' + (isDone ? 'Undo' : 'Mark Done') + '</button>';
     html += '</div>';
     html += '</div>';
     html += '</div>';
@@ -286,8 +286,8 @@ function renderQuickStart() {
   html += '</div>';
 
   // Reset button
-  html += '<div style="margin-top:20px;text-align:center">';
-  html += '<button onclick="qsReset()" style="background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.85rem;text-decoration:underline;padding:0;min-height:44px">Reset progress</button>';
+  html += '<div class="qs-reset-wrap">';
+  html += '<button onclick="qsReset()" class="qs-reset">Reset progress</button>';
   html += '</div>';
 
   el.innerHTML = html;

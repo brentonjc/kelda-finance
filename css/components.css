@@ -877,6 +877,31 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .ex-restore-status{font-size:.82rem;color:var(--muted);}
 .ex-clear-desc{font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;}
 .ex-clear-btns{display:flex;flex-wrap:wrap;gap:8px;}
+/* Quick Start page (was inline) */
+.qs-prog-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.qs-prog-count{font-size:1.4rem;font-weight:700;margin-top:4px;}
+.qs-prog-pctwrap{text-align:right;}
+.qs-prog-pct{font-size:2rem;font-weight:700;color:var(--primary);}
+.card.qs-done{border-left:4px solid var(--success);background:rgba(0,200,150,0.08);}
+.qs-done-row{display:flex;align-items:center;gap:12px;}
+.qs-done-ico{font-size:2rem;}
+.qs-done-title{font-weight:700;color:var(--success);}
+.qs-done-sub{font-size:.85rem;color:var(--muted);margin-top:4px;}
+.card.qs-step{opacity:1;transition:opacity .3s;}
+.card.qs-step--done{opacity:.6;}
+.qs-step-row{display:flex;gap:12px;margin-bottom:10px;align-items:flex-start;}
+.qs-step-ico{font-size:1.8rem;}
+.qs-step-body{flex:1;}
+.qs-step-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.qs-step-num{font-weight:700;font-size:.9rem;color:var(--muted);}
+.qs-done-badge{font-size:.7rem;background:var(--success);color:#000;padding:2px 6px;border-radius:3px;font-weight:700;}
+.qs-step-title{font-weight:600;font-size:1rem;}
+.qs-step-text{font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.5;}
+.qs-step-actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+.btn.qs-cta{background:var(--primary);color:#000;font-weight:600;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.8rem;}
+.btn.qs-mark{background:var(--card3);color:var(--text);padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.8rem;}
+.qs-reset-wrap{margin-top:20px;text-align:center;}
+.qs-reset{background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.85rem;text-decoration:underline;padding:0;min-height:44px;}
 
 /* ══ EQUITIES / RSU ══ */
 .rsu-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border);}
