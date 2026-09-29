@@ -2926,13 +2926,13 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Sync / chart-mode bar -->
     <div class="card mb fc2-sync-bar">
-      <div style="flex:1;min-width:0">
-        <div id="fc2-bal-value" style="font-size:.85rem;color:var(--muted)">Sync from Cash Tracker to enable cumulative view</div>
-        <div id="fc2-sync-time" style="font-size:.72rem;color:var(--muted);margin-top:2px"></div>
+      <div class="fc2-bal-wrap">
+        <div id="fc2-bal-value" class="fc2-bal-value">Sync from Cash Tracker to enable cumulative view</div>
+        <div id="fc2-sync-time" class="fc2-sync-time"></div>
       </div>
-      <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:center">
+      <div class="fc2-sync-actions">
         <button class="btn btn-ghost btn-sm active" id="fc2-bars-btn" onclick="fc2SetChartMode('bars')"><i class="ti ti-chart-bar"></i> Bar Chart</button>
-        <button class="btn btn-ghost btn-sm" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled style="opacity:.4"><i class="ti ti-trending-up"></i> Cumulative</button>
+        <button class="btn btn-ghost btn-sm fc2-cum-toggle" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled><i class="ti ti-trending-up"></i> Cumulative</button>
         <button class="btn btn-primary btn-sm" onclick="fc2SyncBalance()">⟳ Sync Balance</button>
       </div>
     </div>
@@ -2942,8 +2942,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Chart -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">Monthly Cash Flow</div>
-      <div class="chart-box" style="height:300px"><canvas id="fc2-chart"></canvas></div>
+      <div class="section-label fc2-sl">Monthly Cash Flow</div>
+      <div class="chart-box fc2-chart-box"><canvas id="fc2-chart"></canvas></div>
     </div>
 
     <!-- Month strip — click any month for breakdown -->
@@ -2951,16 +2951,16 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Insights -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px"><i class="ti ti-bulb"></i> Insights</div>
+      <div class="section-label fc2-sl"><i class="ti ti-bulb"></i> Insights</div>
       <div id="fc2-insights"></div>
     </div>
 
     <!-- Adjustments -->
     <div class="card mb">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div class="fc2-adj-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px">Forecast Adjustments</div>
-          <div style="font-size:.76rem;color:var(--muted)">Override the baseline for specific months or add recurring income/expense changes.</div>
+          <div class="section-label fc2-sl-2">Forecast Adjustments</div>
+          <div class="fc2-adj-desc">Override the baseline for specific months or add recurring income/expense changes.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="fc2OpenAdjForm(-1)">+ Add Adjustment</button>
       </div>
@@ -2969,7 +2969,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Add / edit adjustment form (inline card) -->
     <div class="card mb" id="fc2-adj-form" style="display:none">
-      <div class="section-label" style="margin-bottom:14px">Add / Edit Adjustment</div>
+      <div class="section-label fc2-sl">Add / Edit Adjustment</div>
       <div class="form-grid">
         <div>
           <label class="lbl">Description</label>
@@ -3018,12 +3018,12 @@ window.addEventListener('unhandledrejection',function(e){
           <label class="lbl">End Month</label>
           <select id="fc2-adj-end"></select>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;padding-top:22px">
+        <div class="fc2-ongoing">
           <input type="checkbox" id="fc2-adj-ongoing" onchange="fc2AdjOngoingChange()"/>
-          <label for="fc2-adj-ongoing" style="font-size:.82rem;color:var(--muted);cursor:pointer">Ongoing (no end date)</label>
+          <label for="fc2-adj-ongoing" class="fc2-ongoing-lbl">Ongoing (no end date)</label>
         </div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+      <div class="fc2-form-actions">
         <button class="btn btn-primary" onclick="fc2SaveAdj()"><i class="ti ti-device-floppy"></i> Save</button>
         <button class="btn btn-ghost" onclick="fc2CloseAdjForm()">Cancel</button>
       </div>
