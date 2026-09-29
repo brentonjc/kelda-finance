@@ -1970,18 +1970,18 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card" id="liab-summary"></div>
 
     <!-- Mortgage section -->
-    <div style="margin-top:20px">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px"><i class="ti ti-home"></i> Mortgage</div>
+    <div class="liab-sec">
+      <div class="liab-sec-lbl liab-sec-lbl--mb"><i class="ti ti-home"></i> Mortgage</div>
       <div id="liab-mortgages"></div>
     </div>
 
     <!-- Manual liabilities -->
-    <div style="margin-top:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap">
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Other Liabilities</div>
-        <button class="btn btn-primary" onclick="liabOpenModal()" style="border-radius:9999px;padding:10px 20px;min-height:48px;font-size:.82rem">+ Add Liability</button>
+    <div class="liab-sec">
+      <div class="liab-sec-hd">
+        <div class="liab-sec-lbl">Other Liabilities</div>
+        <button class="btn btn-primary liab-add-btn" onclick="liabOpenModal()">+ Add Liability</button>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="liab-sort">
         <button id="liab-sort-rate"    onclick="liabSetSort('rate')"    class="fc-range-btn active">Rate ↓</button>
         <button id="liab-sort-balance" onclick="liabSetSort('balance')" class="fc-range-btn">Balance ↓</button>
         <button id="liab-sort-due"     onclick="liabSetSort('due')"     class="fc-range-btn">Due Date</button>
@@ -3117,10 +3117,10 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- GOAL UPDATE MODAL -->
 <!-- ═══ LIABILITIES MODAL ═══ -->
 <div class="modal-overlay" id="liab-modal">
-  <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div class="modal-box modal-box--scroll liab-modal-box">
     <h3 id="liab-modal-title">Add Liability</h3>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Liability Type</label>
       <select id="liab-m-type" onchange="liabModalTypeChange()">
         <option value="personal_loan">Personal Loan</option>
@@ -3134,12 +3134,12 @@ window.addEventListener('unhandledrejection',function(e){
       </select>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Lender / Provider</label>
-      <input type="text" id="liab-m-lender" placeholder="e.g. CommBank, Afterpay" style="font-size:16px"/>
+      <input type="text" id="liab-m-lender" placeholder="e.g. CommBank, Afterpay" class="liab-in16"/>
     </div>
 
-    <div class="form-grid" style="margin-bottom:14px">
+    <div class="form-grid">
       <div>
         <label class="lbl">Current Balance (AUD)</label>
         <input type="number" id="liab-m-balance" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
@@ -3150,18 +3150,18 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Opened / Start Date (optional)</label>
       <input type="date" id="liab-m-opened"/>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:4px">When the debt began — keeps it off Net Worth history before this month.</div>
+      <div class="liab-fld-hint">When the debt began — keeps it off Net Worth history before this month.</div>
     </div>
 
-    <div id="liab-m-rate-row" style="margin-bottom:14px">
+    <div id="liab-m-rate-row" class="liab-fld">
       <label class="lbl" id="liab-m-rate-label">Interest Rate (% p.a.)</label>
       <input type="number" id="liab-m-rate" placeholder="0" min="0" step="0.01" inputmode="decimal"/>
     </div>
 
-    <div class="form-grid" style="margin-bottom:14px">
+    <div class="form-grid">
       <div>
         <label class="lbl">Rate Type</label>
         <select id="liab-m-rate-type" onchange="liabModalRateTypeChange()">
@@ -3175,12 +3175,12 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <div id="liab-m-payment-row" style="margin-bottom:14px">
+    <div id="liab-m-payment-row" class="liab-fld">
       <label class="lbl" id="liab-m-payment-label">Minimum Monthly Payment (AUD)</label>
       <input type="number" id="liab-m-payment" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
     </div>
 
-    <div id="liab-m-due-row" class="form-grid" style="margin-bottom:14px">
+    <div id="liab-m-due-row" class="form-grid">
       <div>
         <label class="lbl">Payment Due Day (1–31)</label>
         <input type="number" id="liab-m-due-day" placeholder="15" min="1" max="31" inputmode="numeric"/>
@@ -3191,23 +3191,23 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <div id="liab-m-credit-limit-row" style="display:none;margin-bottom:14px">
+    <div id="liab-m-credit-limit-row" class="liab-fld" style="display:none">
       <label class="lbl">Credit Limit (AUD)</label>
       <input type="number" id="liab-m-credit-limit" placeholder="10000" min="0" step="0.01" inputmode="decimal"/>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Notes (optional)</label>
-      <input type="text" id="liab-m-notes" placeholder="e.g. Consolidation loan" style="font-size:16px"/>
+      <input type="text" id="liab-m-notes" placeholder="e.g. Consolidation loan" class="liab-in16"/>
     </div>
 
-    <div id="liab-m-sched-note" style="display:none;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:10px 14px;font-size:.76rem;color:var(--muted);margin-bottom:14px">
+    <div id="liab-m-sched-note" class="liab-m-note" style="display:none">
       <i class="ti ti-school"></i> HECS repayments are managed via ATO payroll deduction. Enter your estimated annual repayment. No amortisation schedule is generated.
     </div>
 
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:var(--card2);border-radius:10px">
-      <input type="checkbox" id="liab-m-add-to-bills" style="width:18px;height:18px;min-width:18px;accent-color:var(--primary)"/>
-      <label for="liab-m-add-to-bills" style="font-size:.82rem;color:var(--text);cursor:pointer">Add monthly payment to Bills tab</label>
+    <div class="liab-m-bills">
+      <input type="checkbox" id="liab-m-add-to-bills" class="liab-m-bills-cb"/>
+      <label for="liab-m-add-to-bills" class="liab-m-bills-lbl">Add monthly payment to Bills tab</label>
     </div>
 
     <div class="modal-actions">

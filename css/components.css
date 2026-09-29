@@ -1267,6 +1267,97 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .eq-bp-desc{font-size:.76rem;color:var(--muted);margin-bottom:14px;}
 .eq-mo-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
 
+/* Liabilities page (was inline) */
+.liab-sec{margin-top:20px;}
+.liab-sec-lbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.liab-sec-lbl--mb{margin-bottom:10px;}
+.liab-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap;}
+.btn.liab-add-btn{border-radius:9999px;padding:10px 20px;min-height:48px;font-size:.82rem;}
+.liab-sort{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.liab-mono{font-family:var(--font-mono);}
+.liab-strong{font-weight:600;}
+.liab-kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;}
+.liab-kpi-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;}
+.liab-kpi-val{font-family:var(--font-mono);font-size:2rem;font-weight:700;}
+.liab-kpi-unit{font-size:1rem;color:var(--muted);}
+.liab-tot-int{font-size:.76rem;color:var(--muted);margin-top:6px;}
+.liab-dti{display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;background:var(--card2);border-radius:10px;flex-wrap:wrap;}
+.liab-sum-lbl{font-size:.78rem;color:var(--muted);}
+.liab-dti-val{font-family:var(--font-mono);font-weight:700;margin-left:auto;}
+.liab-dti-badge{font-size:.72rem;padding:2px 8px;border-radius:12px;}
+hr.liab-hr{border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0;}
+.liab-grp{margin-bottom:10px;}
+.liab-grp-hd{display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:4px;}
+.prog-track.liab-track-6{height:6px;}
+.prog-track.liab-track-5{height:5px;}
+.liab-hi{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;margin-top:10px;flex-wrap:wrap;}
+.liab-hi-ico{font-size:1rem;}
+.liab-hi-lender{font-size:.78rem;color:var(--text);}
+.liab-hint{margin-top:12px;padding:10px 14px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.2);border-radius:10px;font-size:.78rem;color:var(--muted);}
+.card.liab-card{margin-bottom:12px;border-left:3px solid var(--n300);}
+.card.liab-card--amber{border-left-color:var(--warn);}
+.card.liab-card--green{border-left-color:var(--success);}
+.card.liab-card--danger{border-left-color:var(--danger);}
+.card.liab-card--purple{border-left-color:var(--purple);}
+.liab-mg-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.liab-pill{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;}
+.liab-pill--mg{background:rgba(98,120,160,.15);color:var(--n300);}
+.liab-tone-slate{color:var(--n300);}
+.liab-ro{font-size:.7rem;color:var(--muted);margin-left:auto;}
+.liab-lender{font-size:1rem;font-weight:600;margin-bottom:10px;}
+.liab-lender--12{margin-bottom:12px;}
+.liab-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.liab-stat-lbl{font-size:.68rem;color:var(--muted);margin-bottom:2px;}
+.liab-stat-val{font-family:var(--font-mono);font-size:1.1rem;font-weight:700;}
+.liab-stat-pay{font-family:var(--font-mono);font-size:1rem;font-weight:600;}
+.liab-stat-txt{font-size:.9rem;font-weight:600;}
+.liab-prog{margin-top:10px;}
+.liab-prog--12{margin-top:12px;}
+.liab-prog-hd{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:4px;}
+.empty.liab-empty{padding:32px 0;text-align:center;}
+.liab-empty .liab-empty-p{color:var(--muted);}
+.liab-util{margin-top:10px;padding:8px 12px;background:var(--card2);border-radius:8px;}
+.liab-util-hd{display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px;}
+.liab-util-fill{height:100%;border-radius:3px;}
+.liab-fixed-warn{margin-top:8px;padding:7px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:.74rem;color:var(--warn);}
+.liab-note{font-size:.7rem;color:var(--muted);margin-top:4px;}
+.liab-hecs{margin-top:8px;padding:8px 12px;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:8px;font-size:.74rem;color:var(--muted);}
+.liab-sync{margin-top:8px;padding:8px 12px;background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted);}
+.liab-sched{margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;}
+.liab-sched-warn{font-size:.76rem;}
+.liab-sched-warn--neg{font-weight:600;}
+.liab-sched-sum{display:flex;gap:16px;flex-wrap:wrap;font-size:.75rem;}
+.liab-sched .liab-sched-btn{margin-top:8px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--muted);font-size:.74rem;padding:5px 14px;cursor:pointer;min-height:36px;}
+.liab-sch-wrap{overflow-x:auto;margin-top:10px;max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.liab-sch-tbl{width:100%;font-size:.72rem;border-collapse:collapse;min-width:380px;}
+.liab-sch-tbl .liab-sch-hrow{background:var(--card2);}
+.liab-sch-tbl .liab-sch-alt{background:rgba(255,255,255,.02);}
+.liab-sch-tbl .liab-sch-th{padding:6px 8px;text-align:left;font-weight:600;color:var(--muted);}
+.liab-sch-tbl .liab-sch-th--mo{white-space:nowrap;}
+.liab-sch-tbl .liab-sch-td{padding:5px 8px;}
+.liab-sch-tbl .liab-sch-num{text-align:right;font-family:var(--font-mono);}
+.liab-sch-tbl .liab-sch-mo{color:var(--muted);white-space:nowrap;}
+.liab-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.liab-badge{padding:2px 8px;border-radius:12px;font-size:.68rem;}
+.liab-badge--fixed{background:rgba(240,83,138,.12);color:var(--primary);}
+.liab-badge--var{background:rgba(98,120,160,.12);color:var(--n300);}
+.liab-badge--link{background:rgba(0,200,150,.12);color:var(--success);display:inline-flex;align-items:center;gap:4px;}
+.liab-card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;}
+.liab-acts{display:flex;gap:4px;flex-shrink:0;}
+.liab-acts .liab-act{background:none;border:none;font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px;}
+.liab-notes{margin-top:10px;font-size:.75rem;color:var(--muted);border-top:1px solid rgba(255,255,255,.06);padding-top:8px;}
+.section-label.liab-mo-title{margin-bottom:12px;}
+.liab-mo-ico{font-size:1.1rem;}
+.liab-mo-note{font-size:.68rem;color:var(--muted);margin-top:1px;}
+.modal-box.liab-modal-box{max-width:480px;}
+.liab-fld{margin-bottom:14px;}
+.liab-modal-box .liab-in16{font-size:16px;}
+.liab-fld-hint{font-size:.72rem;color:var(--muted);margin-top:4px;}
+.liab-m-note{background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:10px 14px;font-size:.76rem;color:var(--muted);margin-bottom:14px;}
+.liab-m-bills{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:var(--card2);border-radius:10px;}
+.liab-m-bills .liab-m-bills-cb{width:18px;height:18px;min-width:18px;accent-color:var(--primary);}
+.liab-m-bills .liab-m-bills-lbl{font-size:.82rem;color:var(--text);cursor:pointer;}
+
 /* ── GAMIFICATION STYLES ── */
 
 /* Health Score Ring */
