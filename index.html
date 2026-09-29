@@ -2489,8 +2489,8 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Vested vs Unvested by Year: pie + table -->
     <div class="card mb" id="eq-vest-by-year" style="display:none">
       <div class="section-label mb-sm">Vested vs Unvested by Year</div>
-      <div class="g2" style="align-items:start">
-        <div style="height:260px"><canvas id="eq-vest-donut-chart"></canvas></div>
+      <div class="g2 eq-g2-start">
+        <div class="eq-chart eq-chart--260"><canvas id="eq-vest-donut-chart"></canvas></div>
         <div id="eq-vest-year-table"></div>
       </div>
     </div>
@@ -2499,25 +2499,25 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="g2 mb">
       <div class="card">
         <div class="section-label mb-sm">Portfolio Allocation</div>
-        <div style="height:220px"><canvas id="eq-alloc-chart"></canvas></div>
+        <div class="eq-chart eq-chart--220"><canvas id="eq-alloc-chart"></canvas></div>
       </div>
       <div class="card">
         <div class="section-label mb-sm">Top Holdings by Value</div>
-        <div style="height:220px"><canvas id="eq-bar-chart"></canvas></div>
+        <div class="eq-chart eq-chart--220"><canvas id="eq-bar-chart"></canvas></div>
       </div>
     </div>
 
     <!-- Vesting timeline -->
     <div class="card mb">
       <div class="section-label mb-sm">Vesting Timeline — Next 3 Years</div>
-      <div style="height:200px"><canvas id="eq-vest-chart"></canvas></div>
+      <div class="eq-chart eq-chart--200"><canvas id="eq-vest-chart"></canvas></div>
     </div>
 
     <!-- Holdings list (grouped by type) -->
     <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
-        <div class="section-label" style="margin:0">Holdings</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="eq-hold-hd">
+        <div class="section-label section-label--flush">Holdings</div>
+        <div class="eq-hold-btns">
           <button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()"><i class="ti ti-currency-dollar"></i> Update Prices</button>
           <button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>
         </div>

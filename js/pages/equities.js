@@ -156,30 +156,31 @@ function renderEqVestSummary() {
 
     var pct    = totalUnits > 0 ? Math.min(100, vestedUnits / totalUnits * 100) : 0;
     var barClr = pct >= 75 ? 'var(--success)' : pct >= 40 ? 'var(--warn)' : 'var(--danger)';
+    var barTone = pct >= 75 ? 'tone-green' : pct >= 40 ? 'tone-amber' : 'tone-danger';
 
     el.innerHTML = '<div class="section-label mb-sm">RSU &amp; Options — Vesting Status</div>'
-        + '<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px">'
+        + '<div class="eq-vs-stats">'
         + '<div>'
-        +   '<div style="font-size:.7rem;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Vested (held)</div>'
-        +   '<div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--success)">' + fmt(vestedValue) + '</div>'
-        +   '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">' + vestedUnits.toFixed(0) + ' units vested</div>'
+        +   '<div class="eq-vs-lbl">Vested (held)</div>'
+        +   '<div class="eq-vs-val tone-green">' + fmt(vestedValue) + '</div>'
+        +   '<div class="eq-vs-sub">' + vestedUnits.toFixed(0) + ' units vested</div>'
         + '</div>'
-        + '<div style="border-left:1px solid var(--border);padding-left:24px">'
-        +   '<div style="font-size:.7rem;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Unvested (future)</div>'
-        +   '<div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--warn)">' + fmt(unvestedValue) + '</div>'
-        +   '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">' + unvestedUnits.toFixed(0) + ' units remaining</div>'
+        + '<div class="eq-vs-col">'
+        +   '<div class="eq-vs-lbl">Unvested (future)</div>'
+        +   '<div class="eq-vs-val tone-amber">' + fmt(unvestedValue) + '</div>'
+        +   '<div class="eq-vs-sub">' + unvestedUnits.toFixed(0) + ' units remaining</div>'
         + '</div>'
-        + '<div style="border-left:1px solid var(--border);padding-left:24px">'
-        +   '<div style="font-size:.7rem;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Total Granted</div>'
-        +   '<div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700">' + fmt(vestedValue + unvestedValue) + '</div>'
-        +   '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">' + totalUnits.toFixed(0) + ' total units</div>'
+        + '<div class="eq-vs-col">'
+        +   '<div class="eq-vs-lbl">Total Granted</div>'
+        +   '<div class="eq-vs-val">' + fmt(vestedValue + unvestedValue) + '</div>'
+        +   '<div class="eq-vs-sub">' + totalUnits.toFixed(0) + ' total units</div>'
         + '</div>'
         + '</div>'
-        + '<div style="background:var(--card2);border-radius:6px;height:10px;overflow:hidden">'
-        +   '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + barClr + ';border-radius:6px"></div>'
+        + '<div class="eq-vs-track">'
+        +   '<div class="eq-vs-fill" style="width:' + pct.toFixed(1) + '%;background:' + barClr + '"></div>'
         + '</div>'
-        + '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:.72rem;color:var(--muted)">'
-        +   '<span style="color:' + barClr + ';font-weight:600">' + pct.toFixed(1) + '% vested</span>'
+        + '<div class="eq-vs-foot">'
+        +   '<span class="eq-vs-pct ' + barTone + '">' + pct.toFixed(1) + '% vested</span>'
         +   '<span>' + (100 - pct).toFixed(1) + '% unvested</span>'
         + '</div>';
 }
@@ -249,18 +250,18 @@ function renderEqVestByYear() {
     var rows = '';
     years.forEach(function(yr) {
         var d   = yearMap[yr];
-        var tag = yr < curYr ? '<span style="font-size:.65rem;background:var(--card2);color:var(--muted);padding:1px 6px;border-radius:20px;margin-left:6px">past</span>'
-                : yr === curYr ? '<span style="font-size:.65rem;background:#00C89622;color:var(--success);padding:1px 6px;border-radius:20px;margin-left:6px">current</span>'
+        var tag = yr < curYr ? '<span class="eq-yr-tag">past</span>'
+                : yr === curYr ? '<span class="eq-yr-tag eq-yr-tag--cur">current</span>'
                 : '';
-        rows += '<tr style="border-bottom:1px solid var(--border)">'
-            + '<td style="padding:7px 12px 7px 0;font-weight:600;white-space:nowrap">' + yr + tag + '</td>'
-            + '<td style="padding:7px 8px;font-family:var(--font-mono);font-size:.82rem;color:var(--success);text-align:right">'
+        rows += '<tr class="eq-yr-row">'
+            + '<td class="eq-yr-td eq-yr-td--yr">' + yr + tag + '</td>'
+            + '<td class="eq-yr-td eq-yr-num tone-green">'
             +   (d.vestedUnits > 0 ? d.vestedUnits.toFixed(0) : '—') + '</td>'
-            + '<td style="padding:7px 8px;font-family:var(--font-mono);font-size:.82rem;color:var(--success);text-align:right">'
+            + '<td class="eq-yr-td eq-yr-num tone-green">'
             +   (d.vestedValue > 0 ? fmt(d.vestedValue) : '—') + '</td>'
-            + '<td style="padding:7px 8px;font-family:var(--font-mono);font-size:.82rem;color:var(--warn);text-align:right">'
+            + '<td class="eq-yr-td eq-yr-num tone-amber">'
             +   (d.unvestedUnits > 0 ? d.unvestedUnits.toFixed(0) : '—') + '</td>'
-            + '<td style="padding:7px 0 7px 8px;font-family:var(--font-mono);font-size:.82rem;color:var(--warn);text-align:right">'
+            + '<td class="eq-yr-td eq-yr-num eq-yr-last tone-amber">'
             +   (d.unvestedValue > 0 ? fmt(d.unvestedValue) : '—') + '</td>'
             + '</tr>';
     });
@@ -268,27 +269,27 @@ function renderEqVestByYear() {
     // Totals row
     var tvU = years.reduce(function(s,y){ return s+yearMap[y].vestedUnits; }, 0);
     var tuU = years.reduce(function(s,y){ return s+yearMap[y].unvestedUnits; }, 0);
-    rows += '<tr style="border-top:2px solid var(--border)">'
-        + '<td style="padding:8px 12px 4px 0;font-weight:700;font-size:.82rem">Total</td>'
-        + '<td style="padding:8px 8px 4px;font-family:var(--font-mono);font-size:.82rem;color:var(--success);font-weight:700;text-align:right">' + tvU.toFixed(0) + '</td>'
-        + '<td style="padding:8px 8px 4px;font-family:var(--font-mono);font-size:.82rem;color:var(--success);font-weight:700;text-align:right">' + fmt(totalVested) + '</td>'
-        + '<td style="padding:8px 8px 4px;font-family:var(--font-mono);font-size:.82rem;color:var(--warn);font-weight:700;text-align:right">' + tuU.toFixed(0) + '</td>'
-        + '<td style="padding:8px 0 4px 8px;font-family:var(--font-mono);font-size:.82rem;color:var(--warn);font-weight:700;text-align:right">' + fmt(totalUnvested) + '</td>'
+    rows += '<tr class="eq-yr-total">'
+        + '<td class="eq-yr-tt eq-yr-tt--lbl">Total</td>'
+        + '<td class="eq-yr-tt eq-yr-num tone-green">' + tvU.toFixed(0) + '</td>'
+        + '<td class="eq-yr-tt eq-yr-num tone-green">' + fmt(totalVested) + '</td>'
+        + '<td class="eq-yr-tt eq-yr-num tone-amber">' + tuU.toFixed(0) + '</td>'
+        + '<td class="eq-yr-tt eq-yr-num eq-yr-last tone-amber">' + fmt(totalUnvested) + '</td>'
         + '</tr>';
 
-    tableEl.innerHTML = '<div style="overflow-x:auto">'
-        + '<table style="width:100%;border-collapse:collapse;font-size:.82rem">'
-        + '<thead><tr style="border-bottom:1.5px solid var(--border)">'
-        +   '<th style="padding:0 12px 8px 0;text-align:left;color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">Year</th>'
-        +   '<th style="padding:0 8px 8px;text-align:right;color:var(--success);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">Units</th>'
-        +   '<th style="padding:0 8px 8px;text-align:right;color:var(--success);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">Value</th>'
-        +   '<th style="padding:0 8px 8px;text-align:right;color:var(--warn);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">Units</th>'
-        +   '<th style="padding:0 0 8px 8px;text-align:right;color:var(--warn);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">Value</th>'
+    tableEl.innerHTML = '<div class="eq-yr-wrap">'
+        + '<table class="eq-yr-tbl">'
+        + '<thead><tr class="eq-yr-hrow">'
+        +   '<th class="eq-yr-th eq-yr-th--yr">Year</th>'
+        +   '<th class="eq-yr-th tone-green">Units</th>'
+        +   '<th class="eq-yr-th tone-green">Value</th>'
+        +   '<th class="eq-yr-th tone-amber">Units</th>'
+        +   '<th class="eq-yr-th eq-yr-last tone-amber">Value</th>'
         + '</tr>'
-        + '<tr style="border-bottom:1px solid var(--border)">'
+        + '<tr class="eq-yr-row">'
         +   '<td></td>'
-        +   '<td colspan="2" style="padding:2px 8px 6px;text-align:center;font-size:.68rem;color:var(--success);font-weight:600">' + ICON('check') + ' Vested</td>'
-        +   '<td colspan="2" style="padding:2px 0 6px 8px;text-align:center;font-size:.68rem;color:var(--warn);font-weight:600">⏳ Unvested</td>'
+        +   '<td colspan="2" class="eq-yr-grp tone-green">' + ICON('check') + ' Vested</td>'
+        +   '<td colspan="2" class="eq-yr-grp eq-yr-last tone-amber">⏳ Unvested</td>'
         + '</tr></thead>'
         + '<tbody>' + rows + '</tbody>'
         + '</table></div>';
@@ -302,17 +303,17 @@ function renderEqHero() {
     var cost  = eqTotalCostBasis();
     var gain  = eqTotalGain();
     var gainPct = cost > 0 ? ((gain / cost) * 100).toFixed(2) : '0.00';
-    var gc  = gain >= 0 ? 'var(--success)' : 'var(--danger)';
+    var gTone = gain >= 0 ? 'tone-green' : 'tone-danger';
     var gs  = gain >= 0 ? '+' : '';
-    el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">'
+    el.innerHTML = '<div class="eq-hero-row">'
         + '<div>'
-        + '<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">Total Portfolio Value</div>'
-        + '<div style="font-family:var(--font-mono);font-size:2.2rem;font-weight:700;line-height:1">' + fmt(total) + '</div>'
-        + '<div style="margin-top:10px;display:flex;gap:20px;flex-wrap:wrap">'
-        + '<div><div style="font-size:.7rem;color:var(--muted)">Cost Basis</div><div style="font-family:var(--font-mono);font-weight:600;font-size:.9rem">' + fmt(cost) + '</div></div>'
-        + '<div><div style="font-size:.7rem;color:var(--muted)">Unrealised P&amp;L</div><div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:' + gc + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + gainPct + '%)</div></div>'
+        + '<div class="eq-hero-lbl">Total Portfolio Value</div>'
+        + '<div class="eq-hero-val">' + fmt(total) + '</div>'
+        + '<div class="eq-hero-stats">'
+        + '<div><div class="eq-hero-slbl">Cost Basis</div><div class="eq-hero-sval">' + fmt(cost) + '</div></div>'
+        + '<div><div class="eq-hero-slbl">Unrealised P&amp;L</div><div class="eq-hero-sval eq-hero-sval--bold ' + gTone + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + gainPct + '%)</div></div>'
         + '</div></div>'
-        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
+        + '<div class="eq-hero-btns">'
         + '<button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">'+ICON('currency-dollar')+' Update Prices</button>'
         + '<button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>'
         + '</div></div>';
@@ -461,7 +462,7 @@ function renderEqHoldingRow(h) {
     var tc   = eqTypeCfg(h.type);
     var val  = eqHoldingValue(h), cost = eqHoldingCost(h), gain = eqHoldingGain(h);
     var gPct = cost > 0 ? ((gain/cost)*100).toFixed(1) : null;
-    var gc   = gain >= 0 ? 'var(--success)' : 'var(--danger)', gs = gain >= 0 ? '+' : '';
+    var gTone = gain >= 0 ? 'tone-green' : 'tone-danger', gs = gain >= 0 ? '+' : '';
     var isVesting = h.type==='rsu'||h.type==='option';
     var exch = h.exchange||'';
     var updated = h.priceUpdated ? new Date(h.priceUpdated).toLocaleDateString('en-AU',{day:'numeric',month:'short'}) : '';
@@ -473,14 +474,14 @@ function renderEqHoldingRow(h) {
         var vest = eqVestCalc(h), pct = vest.pct;
         var barClr = pct>=70?'var(--success)':pct>=30?'var(--warn)':'var(--danger)';
         vestBar = '<div class="eq-vest-bar-wrap"><div class="eq-vest-bar" style="width:'+pct.toFixed(1)+'%;background:'+barClr+'"></div></div>'
-            + '<div style="font-size:.68rem;color:var(--muted);margin-top:2px">'
+            + '<div class="eq-vest-note">'
             + pct.toFixed(0)+'% vested &nbsp;·&nbsp; '+vest.vested.toFixed(0)+' / '+(parseFloat(h.totalUnits)||0).toFixed(0)+' units'
             + (vest.nextVestDate ? ' &nbsp;·&nbsp; Next: '+vest.nextVestDate.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})+' ('+vest.nextVestQty+' units)' : '')
             + '</div>';
         if (h.type==='option' && h.expiryDate) {
             var dExp = Math.ceil((new Date(h.expiryDate+'T00:00:00')-new Date())/86400000);
-            if (dExp<=0) vestBar += '<div style="font-size:.7rem;color:var(--danger);font-weight:700;margin-top:3px">'+ICON('circle-filled')+' Expired</div>';
-            else if (dExp<=90) vestBar += '<div style="font-size:.7rem;color:var(--warn);font-weight:700;margin-top:3px">'+ICON('alert-triangle')+' Expires in '+dExp+' days</div>';
+            if (dExp<=0) vestBar += '<div class="eq-expiry tone-danger">'+ICON('circle-filled')+' Expired</div>';
+            else if (dExp<=90) vestBar += '<div class="eq-expiry tone-amber">'+ICON('alert-triangle')+' Expires in '+dExp+' days</div>';
         }
     }
 
@@ -499,21 +500,21 @@ function renderEqHoldingRow(h) {
         + '<div class="eq-row-main" onclick="eqToggleExpand('+h.id+')">'
         + '<div class="eq-row-icon">'+iconTag(tc.icon)+'</div>'
         + '<div class="eq-row-info">'
-        + '<div class="eq-row-name">'+(h.ticker?'<span style="font-weight:700">'+h.ticker+'</span> ':'')+( h.company||'')+ ' '+badge+'</div>'
+        + '<div class="eq-row-name">'+(h.ticker?'<span class="eq-row-ticker">'+h.ticker+'</span> ':'')+( h.company||'')+ ' '+badge+'</div>'
         + '<div class="eq-row-sub">'+qtyLine+(updated?' &nbsp;·&nbsp; Updated '+updated:'')+'</div>'
-        + (vestBar?'<div style="margin-top:6px">'+vestBar+'</div>':'')
+        + (vestBar?'<div class="eq-row-vest">'+vestBar+'</div>':'')
         + '</div>'
         + '<div class="eq-row-values">'
-        + '<div style="font-family:var(--font-mono);font-weight:700;font-size:.95rem">'+fmt(val)+'</div>'
+        + '<div class="eq-row-val">'+fmt(val)+'</div>'
         + (gPct!==null
-            ? '<div style="font-family:var(--font-mono);font-size:.78rem;color:'+gc+'">'+gs+fmt(Math.abs(gain))+' ('+gs+gPct+'%)</div>'
+            ? '<div class="eq-row-gain '+gTone+'">'+gs+fmt(Math.abs(gain))+' ('+gs+gPct+'%)</div>'
             : (isVesting && h.grantPrice && parseFloat(h.currentPrice) > 0
-                ? (function(){ var gp=parseFloat(h.grantPrice),cp=parseFloat(h.currentPrice),vest2=eqVestCalc(h),sold2=(h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0),held2=Math.max(0,vest2.vested-sold2),rg=(cp-gp)*held2,rgc=rg>=0?'var(--success)':'var(--danger)',rgs=rg>=0?'+':''; return '<div style="font-family:var(--font-mono);font-size:.78rem;color:'+rgc+'">'+rgs+fmt(Math.abs(rg))+ ' vs grant</div>'; })()
-                : (isVesting?'<div style="font-size:.7rem;color:var(--muted)">Set price to see gain</div>':'')))
+                ? (function(){ var gp=parseFloat(h.grantPrice),cp=parseFloat(h.currentPrice),vest2=eqVestCalc(h),sold2=(h.sales||[]).reduce(function(a,x){return a+(parseFloat(x.qty)||0);},0),held2=Math.max(0,vest2.vested-sold2),rg=(cp-gp)*held2,rgTone=rg>=0?'tone-green':'tone-danger',rgs=rg>=0?'+':''; return '<div class="eq-row-gain '+rgTone+'">'+rgs+fmt(Math.abs(rg))+ ' vs grant</div>'; })()
+                : (isVesting?'<div class="eq-row-hint">Set price to see gain</div>':'')))
         + '</div>'
         + '<div class="eq-row-actions">'
-        + '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEqModal('+h.id+')" style="padding:8px 10px" title="Edit">'+ICON('pencil')+'</button>'
-        + '<button class="del-btn" onclick="event.stopPropagation();deleteEquity('+h.id+')" style="padding:8px 10px" title="Delete">'+ICON('trash')+'</button>'
+        + '<button class="btn btn-ghost btn-sm eq-act-btn" onclick="event.stopPropagation();openEqModal('+h.id+')" title="Edit">'+ICON('pencil')+'</button>'
+        + '<button class="del-btn eq-act-btn" onclick="event.stopPropagation();deleteEquity('+h.id+')" title="Delete">'+ICON('trash')+'</button>'
         + '</div>'
         + '</div>'
         + '<div class="eq-row-detail" id="eq-detail-'+h.id+'" style="display:none">'+renderEqHoldingDetail(h)+'</div>'
@@ -540,7 +541,7 @@ function renderEqHoldingDetail(h) {
             +'<span class="eq-lbl">Total Cost</span><span class="eq-val">'+fmt(eqHoldingCost(h))+'</span>'
             +'<span class="eq-lbl">Current Value</span><span class="eq-val">'+fmt(eqHoldingValue(h))+'</span>'
             +(h.owner?'<span class="eq-lbl">Owner</span><span class="eq-val">'+getUserName(h.owner)+'</span>':'')
-            +(h.notes?'<span class="eq-lbl">Notes</span><span class="eq-val" style="color:var(--muted)">'+h.notes+'</span>':'')
+            +(h.notes?'<span class="eq-lbl">Notes</span><span class="eq-val tone-muted">'+h.notes+'</span>':'')
             +'</div>';
     } else if (t==='bond') {
         var matStr = h.maturityDate ? new Date(h.maturityDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
@@ -560,8 +561,8 @@ function renderEqHoldingDetail(h) {
             +'<span class="eq-lbl">Cliff</span><span class="eq-val">'+((h.cliffYears!==undefined?parseFloat(h.cliffYears):(parseInt(h.cliffMonths)||0)/12)||0)+' yrs</span>'
             +'<span class="eq-lbl">Vesting Period</span><span class="eq-val">'+((h.vestingYears!==undefined?parseFloat(h.vestingYears):(parseInt(h.vestingMonths)||48)/12)||4)+' yrs — '+(h.vestFrequency||'quarterly')+'</span>'
             +'<span class="eq-lbl">Units / Period</span><span class="eq-val">'+eqVestCalc(h).unitsPerVest+' units</span>'
-            +'<span class="eq-lbl">Vested</span><span class="eq-val" style="color:var(--success)">'+vest.vested+' units</span>'
-            +'<span class="eq-lbl">Unvested</span><span class="eq-val" style="color:var(--muted)">'+vest.unvested+' units</span>'
+            +'<span class="eq-lbl">Vested</span><span class="eq-val tone-green">'+vest.vested+' units</span>'
+            +'<span class="eq-lbl">Unvested</span><span class="eq-val tone-muted">'+vest.unvested+' units</span>'
             +'<span class="eq-lbl">Grant Price / Unit</span><span class="eq-val">'+(h.grantPrice?fmt(parseFloat(h.grantPrice)):'—')+'</span>'
             +'<span class="eq-lbl">Current Price</span><span class="eq-val">'+fmt(parseFloat(h.currentPrice)||0)+'/unit</span>'
             +(t==='option'?'<span class="eq-lbl">Strike Price</span><span class="eq-val">'+fmt(parseFloat(h.strikePrice)||0)+'/unit</span>':'')
@@ -578,15 +579,15 @@ function renderEqHoldingDetail(h) {
                 var ds = s.date.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
                 schedRows += '<tr class="'+(s.isPast?'eq-sched-past':'')+'">'
                     +'<td>'+ds+'</td>'
-                    +'<td style="font-family:var(--font-mono)">'+s.units+'</td>'
-                    +'<td style="font-family:var(--font-mono)">'+s.cumulative+'</td>'
-                    +'<td style="font-family:var(--font-mono)">'+fmt(s.units*px2)+'</td>'
-                    +'<td>'+(s.isPast?'<span style="color:var(--success)">'+ICON('check')+' Vested</span>':'<span style="color:var(--muted)">Upcoming</span>')+'</td>'
+                    +'<td class="eq-sched-mono">'+s.units+'</td>'
+                    +'<td class="eq-sched-mono">'+s.cumulative+'</td>'
+                    +'<td class="eq-sched-mono">'+fmt(s.units*px2)+'</td>'
+                    +'<td>'+(s.isPast?'<span class="tone-green">'+ICON('check')+' Vested</span>':'<span class="tone-muted">Upcoming</span>')+'</td>'
                     +'</tr>';
             });
-            html += '<div style="margin-top:14px">'
+            html += '<div class="eq-sched">'
                 +'<div class="eq-schedule-toggle" onclick="eqToggleSchedule('+h.id+')">'+ICON('calendar')+' Vesting Schedule <span id="eq-sched-arrow-'+h.id+'">▶</span></div>'
-                +'<div id="eq-schedule-'+h.id+'" style="display:none;margin-top:8px;overflow-x:auto">'
+                +'<div id="eq-schedule-'+h.id+'" class="eq-sched-wrap" style="display:none">'
                 +'<table class="eq-sched-table"><thead><tr><th>Vest Date</th><th>Units</th><th>Cumulative</th><th>Est. Value</th><th>Status</th></tr></thead>'
                 +'<tbody>'+schedRows+'</tbody></table></div></div>';
         }
@@ -594,18 +595,18 @@ function renderEqHoldingDetail(h) {
 
     // Sales history
     if (h.sales && h.sales.length) {
-        html += '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">'
-            +'<div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Sales History</div>';
+        html += '<div class="eq-detail-sec">'
+            +'<div class="eq-sales-hd">Sales History</div>';
         h.sales.forEach(function(sale) {
             var costPer  = parseFloat(h.cost)||parseFloat(h.currentPrice)||0;
             var proceeds = (sale.qty*sale.price)-(sale.costs||0);
             var cg       = proceeds-(sale.qty*costPer);
             html += '<div class="eq-sales-row">'
-                +'<span style="color:var(--muted)">'+(sale.date||'—')+'</span>'
+                +'<span class="tone-muted">'+(sale.date||'—')+'</span>'
                 +'<span>'+(parseFloat(sale.qty)||0)+' units @ '+fmt(sale.price)+'</span>'
-                +'<span style="color:var(--success)">Proceeds: '+fmt(proceeds)+'</span>'
+                +'<span class="tone-green">Proceeds: '+fmt(proceeds)+'</span>'
                 +'<span class="'+(cg>=0?'eq-gain-pos':'eq-gain-neg')+'">'+(cg>=0?'+':'')+fmt(Math.abs(cg))+' CG</span>'
-                +'<button class="del-btn" style="margin-left:auto" onclick="deleteSaleEq('+h.id+','+sale.id+')">'+ICON('trash')+'</button>'
+                +'<button class="del-btn eq-sale-del" onclick="deleteSaleEq('+h.id+','+sale.id+')">'+ICON('trash')+'</button>'
                 +'</div>';
         });
         html += '</div>';
@@ -613,7 +614,7 @@ function renderEqHoldingDetail(h) {
 
     // Sell button
     if (t !== 'bond') {
-        html += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">'
+        html += '<div class="eq-detail-sec">'
             +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">'+ICON('cash')+' Record Sale</button>'
             +'</div>';
     }
@@ -653,7 +654,7 @@ function eqUpdateVestPreview() {
         var fd = new Date(gd.getFullYear(), gd.getMonth() + cliffM, gd.getDate());
         firstDate = ' · first vest ' + fd.toLocaleDateString('en-AU', {day:'numeric',month:'short',year:'numeric'});
     }
-    el.innerHTML = '<strong style="color:var(--success)">'
+    el.innerHTML = '<strong class="tone-green">'
         + perVest + ' units / ' + freqLabel
         + '</strong> &nbsp;·&nbsp; '
         + numVests + ' events over ' + vestY + ' yr'
@@ -679,17 +680,17 @@ function openEqModal(id) {
         +'<option value="joint"'+(h&&h.owner==='joint'?' selected':'')+'>Joint</option>';
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0">'+title+'</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" style="padding:6px 10px">'+ICON('x')+'</button>'
+        +'<div class="eq-modal-hd">'
+        +'<div class="section-label section-label--flush">'+title+'</div>'
+        +'<button class="btn btn-ghost btn-sm eq-modal-x" onclick="closeEqModal()">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-m-id" value="'+(id||'')+'"/>'
-        +'<div class="form-grid" style="margin-bottom:14px">'
+        +'<div class="form-grid eq-form-top">'
         +'<div><label class="lbl">Asset Type</label><select id="eq-m-type" onchange="eqModalTypeChange()">'+typeOpts+'</select></div>'
         +'<div><label class="lbl">Held By</label><select id="eq-m-owner">'+ownerOpts+'</select></div>'
         +'</div>'
         +'<div id="eq-m-fields"></div>'
-        +'<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">'
+        +'<div class="eq-modal-actions eq-modal-actions--wrap">'
         +'<button class="btn btn-primary" onclick="saveEqModal()">'+ICON('device-floppy')+' Save</button>'
         +'<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
         +'</div></div>';
@@ -723,7 +724,7 @@ function eqModalBuildFields(type, h) {
     if (type !== 'bond') {
         html += '<div class="form-grid">'
             +'<div><label class="lbl">Ticker / Code</label>'
-            +'<input type="text" id="eq-m-ticker" value="'+(v.ticker||'')+'" placeholder="e.g. AAPL, CBA, VGS.AX" style="text-transform:uppercase"/>'
+            +'<input type="text" id="eq-m-ticker" value="'+(v.ticker||'')+'" placeholder="e.g. AAPL, CBA, VGS.AX" class="eq-upper"/>'
             +'</div>'
             +'<div><label class="lbl">Company / Asset Name</label>'
             +'<input type="text" id="eq-m-company" value="'+(v.company||'')+'" placeholder="e.g. Apple Inc."/></div>'
@@ -775,16 +776,16 @@ function eqModalBuildFields(type, h) {
             +'<div><label class="lbl">Grant Date</label><input type="date" id="eq-m-grantdate" value="'+(v.grantDate||'')+'" onchange="eqUpdateVestPreview()"/></div>'
             +'</div>'
             +'<div class="form-grid">'
-            +'<div><label class="lbl">Cliff Period (years)</label><input type="number" id="eq-m-cliffyears" value="'+(v.cliffYears!==undefined?v.cliffYears:(v.cliffMonths!==undefined?(v.cliffMonths/12):0))+'" placeholder="0" min="0" step="0.5" inputmode="decimal" oninput="eqUpdateVestPreview()"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Years before first vest event (0 = vesting starts immediately)</div></div>'
+            +'<div><label class="lbl">Cliff Period (years)</label><input type="number" id="eq-m-cliffyears" value="'+(v.cliffYears!==undefined?v.cliffYears:(v.cliffMonths!==undefined?(v.cliffMonths/12):0))+'" placeholder="0" min="0" step="0.5" inputmode="decimal" oninput="eqUpdateVestPreview()"/><div class="field-hint">Years before first vest event (0 = vesting starts immediately)</div></div>'
             +'<div><label class="lbl">Vesting Period (years)</label><input type="number" id="eq-m-vestyears" value="'+(v.vestingYears!==undefined?v.vestingYears:(v.vestingMonths?(v.vestingMonths/12):4))+'" placeholder="4" min="0.5" step="0.5" inputmode="decimal" oninput="eqUpdateVestPreview()"/></div>'
             +'</div>'
             +'<div class="form-grid">'
             +'<div><label class="lbl">Vest Frequency</label><select id="eq-m-vestfreq" onchange="eqUpdateVestPreview()">'+freqOpts+'</select></div>'
             +'<div><label class="lbl">Current Price per Unit (AUD)</label><input type="number" id="eq-m-price" value="'+(v.currentPrice||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>'
             +'</div>'
-            +'<div id="eq-vest-preview" style="background:var(--card2);border-radius:var(--radius-sm);padding:10px 14px;font-size:.8rem;color:var(--muted);margin-bottom:4px"></div>'
+            +'<div id="eq-vest-preview" class="eq-vest-prev"></div>'
             +'<div class="form-grid">'
-            +'<div><label class="lbl">Price at Grant / Vest (AUD)</label><input type="number" id="eq-m-grantprice" value="'+(v.grantPrice||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Market price on vest date — used to calculate net gain</div></div>'
+            +'<div><label class="lbl">Price at Grant / Vest (AUD)</label><input type="number" id="eq-m-grantprice" value="'+(v.grantPrice||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/><div class="field-hint">Market price on vest date — used to calculate net gain</div></div>'
             +'</div>';
 
         if (type==='option') {
@@ -885,8 +886,8 @@ function openEqSale(id) {
     if (!overlay) return;
     var label = h.ticker||h.company||'Holding';
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0;color:var(--success)">'+ICON('cash')+' Record Sale — '+label+'</div>'
+        +'<div class="eq-modal-hd">'
+        +'<div class="section-label section-label--flush tone-green">'+ICON('cash')+' Record Sale — '+label+'</div>'
         +'<button class="btn btn-ghost btn-sm" onclick="closeEqSale()">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-sale-id" value="'+id+'"/>'
@@ -898,8 +899,8 @@ function openEqSale(id) {
         +'<div><label class="lbl">Sale Date</label><input type="date" id="eq-sale-date" value="'+today()+'"/></div>'
         +'<div><label class="lbl">Brokerage / Costs (AUD)</label><input type="number" id="eq-sale-costs" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="calcEqSalePreview()"/></div>'
         +'</div>'
-        +'<div id="eq-sale-preview" style="margin-top:10px;font-size:.78rem;color:var(--muted)"></div>'
-        +'<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">'
+        +'<div id="eq-sale-preview" class="eq-sale-prev"></div>'
+        +'<div class="eq-modal-actions eq-modal-actions--sale">'
         +'<button class="btn btn-primary" onclick="saveEqSale()">Record Sale</button>'
         +'<button class="btn btn-ghost" onclick="closeEqSale()">Cancel</button>'
         +'</div></div>';
@@ -923,9 +924,9 @@ function calcEqSalePreview() {
     if (!h) return;
     var costPer  = parseFloat(h.cost)||parseFloat(h.currentPrice)||0;
     var proceeds = qty*price-costs, costBase = qty*costPer, gain = proceeds-costBase;
-    prev.innerHTML = '<span style="color:var(--muted)">Proceeds: </span><strong>'+fmt(proceeds)+'</strong>'
-        +' &nbsp;·&nbsp; <span style="color:var(--muted)">Cost base: </span><strong>'+fmt(costBase)+'</strong>'
-        +' &nbsp;·&nbsp; <span style="color:'+(gain>=0?'var(--success)':'var(--danger)')+';font-weight:700">'
+    prev.innerHTML = '<span class="tone-muted">Proceeds: </span><strong>'+fmt(proceeds)+'</strong>'
+        +' &nbsp;·&nbsp; <span class="tone-muted">Cost base: </span><strong>'+fmt(costBase)+'</strong>'
+        +' &nbsp;·&nbsp; <span class="eq-sale-gain '+(gain>=0?'tone-green':'tone-danger')+'">'
         +(gain>=0?'Gain: +':'Loss: ')+fmt(Math.abs(gain))+'</span>';
 }
 
@@ -969,21 +970,21 @@ function openBatchPriceModal() {
     var rows = priceable.map(function(h) {
         var tc    = eqTypeCfg(h.type);
         var label = (h.ticker||h.company||'—')+' ('+iconTag(tc.icon)+' '+tc.label+')';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
-            +'<div style="flex:1;font-size:.84rem">'+label+'</div>'
-            +'<div style="flex:0 0 150px"><input type="number" value="'+(h.currentPrice||'')+'" placeholder="Enter price" min="0" step="0.01" inputmode="decimal"'
-            +' style="padding:6px 8px;font-size:.82rem;font-family:var(--font-mono);width:100%" id="batch-price-'+h.id+'"/></div>'
+        return '<div class="eq-bp-row">'
+            +'<div class="eq-bp-lbl">'+label+'</div>'
+            +'<div class="eq-bp-field"><input type="number" value="'+(h.currentPrice||'')+'" placeholder="Enter price" min="0" step="0.01" inputmode="decimal"'
+            +' class="eq-bp-input" id="batch-price-'+h.id+'"/></div>'
             +'</div>';
     }).join('');
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0">'+ICON('currency-dollar')+' Update Current Prices</div>'
+        +'<div class="eq-modal-hd">'
+        +'<div class="section-label section-label--flush">'+ICON('currency-dollar')+' Update Current Prices</div>'
         +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()">'+ICON('x')+'</button>'
         +'</div>'
-        +'<div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter the latest market price (AUD) for each holding, or click '+ICON('search')+' to fetch live. For US-listed stocks enter the AUD equivalent.</div>'
-        +(priceable.length?rows:'<div class="empty" style="padding:20px 0"><p>No priceable holdings yet.</p></div>')
-        +'<div style="display:flex;gap:10px;margin-top:20px">'
+        +'<div class="eq-bp-desc">Enter the latest market price (AUD) for each holding, or click '+ICON('search')+' to fetch live. For US-listed stocks enter the AUD equivalent.</div>'
+        +(priceable.length?rows:'<div class="empty empty--pad20"><p>No priceable holdings yet.</p></div>')
+        +'<div class="eq-modal-actions">'
         +'<button class="btn btn-primary" onclick="saveBatchPrices()">'+ICON('device-floppy')+' Save All</button>'
         +'<button class="btn btn-ghost" onclick="closeEqModal()">Cancel</button>'
         +'</div></div>';
@@ -1078,7 +1079,7 @@ function renderEqMonthlyGrid() {
 
   var rows = '';
   if (!months.length) {
-    rows = '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No entries yet.</div>';
+    rows = '<div class="sp-mo-none">No entries yet.</div>';
   } else {
     months.forEach(function(m, i) {
       var closing = (EQ_MONTHLY[m] || {}).closing;
@@ -1087,32 +1088,32 @@ function renderEqMonthlyGrid() {
       var prevVal = prevMo ? ((EQ_MONTHLY[prevMo] || {}).closing) : null;
       var diff    = prevVal !== null && prevVal !== undefined ? closing - prevVal : null;
       var diffStr = diff === null ? '' : (diff >= 0 ? '+' : '') + fmt(diff);
-      var diffColor = diff === null ? '' : diff >= 0 ? 'var(--success)' : 'var(--danger)';
+      var diffTone = diff === null ? '' : diff >= 0 ? 'tone-green' : 'tone-danger';
       var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
-      rows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
-        + '<div style="min-width:80px;font-size:.78rem;color:var(--muted)">' + ml + '</div>'
+      rows += '<div class="sp-mo-row">'
+        + '<div class="sp-mo-month">' + ml + '</div>'
         + '<input type="number" step="1000" value="' + closing + '" inputmode="decimal"'
         + ' onchange="eqMonthUpdate(\'' + m + '\',this.value)"'
-        + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
-        + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
-        + '<button onclick="eqMonthDel(\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">'+ICON('trash')+'</button>'
+        + ' class="sp-mo-input"/>'
+        + (diffStr ? '<div class="sp-mo-diff ' + diffTone + '">' + diffStr + '</div>' : '<div class="sp-mo-diff-empty"></div>')
+        + '<button onclick="eqMonthDel(\'' + m + '\')" class="sp-mo-del">'+ICON('trash')+'</button>'
         + '</div>';
     });
   }
 
   el.innerHTML = '<div class="card mb">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">'
-    + '<div class="section-label" style="margin:0">'+ICON('calendar')+' Monthly Portfolio Snapshots</div>'
-    + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:var(--primary);font-weight:700">' + fmt(curVal) + '</span></div>'
+    + '<div class="eq-mo-hd">'
+    + '<div class="section-label section-label--flush">'+ICON('calendar')+' Monthly Portfolio Snapshots</div>'
+    + '<div class="sp-mo-cur">Current: <span class="sp-mo-cur-val tone-pink">' + fmt(curVal) + '</span></div>'
     + '</div>'
-    + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record your total portfolio closing value each month to track growth and link to Net Worth history. Holdings-level data auto-populates the current value above.</div>'
+    + '<div class="sp-mo-desc">Record your total portfolio closing value each month to track growth and link to Net Worth history. Holdings-level data auto-populates the current value above.</div>'
     + rows
-    + '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">'
-    + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Month</label>'
-    + '<select id="eq-mo-inp" style="width:100%;font-size:.82rem">' + _eqMonthlyMonthOpts(curMo) + '</select></div>'
-    + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Closing Portfolio Value (AUD)</label>'
-    + '<input type="number" id="eq-mo-val" placeholder="0" step="1000" inputmode="decimal" style="width:100%;font-size:16px;box-sizing:border-box"/></div>'
-    + '<button class="btn btn-primary btn-sm" onclick="eqMonthSave()" style="flex-shrink:0;min-height:44px">Save</button>'
+    + '<div class="sp-mo-add">'
+    + '<div class="sp-field"><label class="sp-mo-lbl">Month</label>'
+    + '<select id="eq-mo-inp" class="sp-mo-sel">' + _eqMonthlyMonthOpts(curMo) + '</select></div>'
+    + '<div class="sp-field"><label class="sp-mo-lbl">Closing Portfolio Value (AUD)</label>'
+    + '<input type="number" id="eq-mo-val" placeholder="0" step="1000" inputmode="decimal" class="sp-input-16"/></div>'
+    + '<button class="btn btn-primary btn-sm sp-mo-save" onclick="eqMonthSave()">Save</button>'
     + '</div>'
     + '</div>';
 }
