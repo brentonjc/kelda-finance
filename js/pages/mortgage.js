@@ -439,7 +439,7 @@ function renderMortgage(){
   // ── Acquired / capital growth rows ──────────────────────────
   const holdDur = _mortgageHoldDuration(m.acquiredDate);
   const acqRows = m.acquiredDate ? `
-    <div class="dr"><span class="dr-k">' + ICON('calendar') + ' Acquired</span><span class="dr-v">${new Date(m.acquiredDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</span></div>
+    <div class="dr"><span class="dr-k">${ICON('calendar')} Acquired</span><span class="dr-v">${new Date(m.acquiredDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</span></div>
     <div class="dr"><span class="dr-k">Hold Period</span><span class="dr-v">${holdDur||'—'}</span></div>` : '';
   const capGainRows = (m.purchasePrice > 0 && m.homeValue > 0) ? (() => {
     const gain = m.homeValue - m.purchasePrice;
@@ -747,7 +747,7 @@ function updateRateImpact(simRate){
         const extraPerWeek = deltaAnnual / 52;
         callout.className = 'mg-callout mg-callout--rise';
         callout.innerHTML = `
-          <div class="mg-callout-title tone-danger">' + ICON('alert-triangle') + ' Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
+          <div class="mg-callout-title tone-danger">${ICON('alert-triangle')} Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
           To absorb a rate rise to <strong>${simRate.toFixed(2)}%</strong>, you'd need to find an extra
           <strong class="tone-danger">${fmt(deltaMonthly)} per month</strong>
           (${fmt(extraPerWeek)}/week · ${fmt(deltaAnnual)}/year).<br/><br/>
@@ -760,7 +760,7 @@ function updateRateImpact(simRate){
         const savedPerWeek = Math.abs(deltaAnnual) / 52;
         callout.className = 'mg-callout mg-callout--cut';
         callout.innerHTML = `
-          <div class="mg-callout-title tone-green">' + ICON('circle-check-filled') + ' Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>
+          <div class="mg-callout-title tone-green">${ICON('circle-check-filled')} Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>
           At <strong>${simRate.toFixed(2)}%</strong> you'd save
           <strong class="tone-green">${fmt(Math.abs(deltaMonthly))} per month</strong>
           (${fmt(savedPerWeek)}/week · ${fmt(Math.abs(deltaAnnual))}/year).<br/><br/>
