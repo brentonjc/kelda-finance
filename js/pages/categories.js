@@ -406,34 +406,29 @@ function renderCategories() {
   } else {
     el.innerHTML = filtered.map(c => {
       const count    = TX.filter(t => t.catId === c.id || t.category === c.name).length;
-      const typeCol  = c.type === 'income' ? 'var(--success)' : c.type === 'both' ? '#74b9ff' : 'var(--primary)';
-      const typeBg   = c.type === 'income' ? '#1a3020' : c.type === 'both' ? '#0a1a30' : '#2a1020';
+      const typeMod  = c.type === 'income' ? 'income' : c.type === 'both' ? 'both' : 'expense';
       const typeLbl  = c.type || 'expense';
       const subcatPills = (c.subcats || []).map(s =>
-        '<span class="subcat-chip" style="display:inline-block;font-size:.68rem;background:#2a2535;color:var(--muted);'
-        + 'border-radius:99px;padding:2px 8px;margin:2px 3px 2px 0;cursor:pointer;border:1px solid var(--border)"'
+        '<span class="subcat-chip"'
         + ' onclick="deleteSubcat(\'' + c.id + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="Click to remove">'
         + s + ' ' + ICON('x') + '</span>'
       ).join('');
-      return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;'
-        + 'padding:14px 16px;margin-bottom:10px">'
-        + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
-        + '<div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;'
-        + 'justify-content:center;font-size:1.2rem;flex-shrink:0;background:' + c.color + '33;color:' + c.color + '">'
+      return '<div class="cg-card">'
+        + '<div class="cg-card-row">'
+        + '<div class="cg-card-ico" style="background:' + c.color + '33;color:' + c.color + '">'
         + iconTag(c.icon) + '</div>'
-        + '<div style="flex:1;min-width:0">'
-        + '<div style="font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<div class="cg-card-body">'
+        + '<div class="cg-card-name">'
         + c.name
-        + ' <span style="font-size:.66rem;padding:2px 7px;border-radius:99px;background:' + typeBg + ';color:' + typeCol + '">' + typeLbl + '</span>'
-        + ' <span style="font-size:.7rem;color:var(--muted)">' + count + ' tx</span>'
+        + ' <span class="cg-type-badge cg-type-badge--' + typeMod + '">' + typeLbl + '</span>'
+        + ' <span class="cg-count">' + count + ' tx</span>'
         + '</div>'
-        + '<div style="margin-top:8px;line-height:1.8">' + subcatPills
-        + '<span class="subcat-chip" style="display:inline-block;font-size:.68rem;color:var(--primary);cursor:pointer;padding:2px 8px;border:1px dashed var(--primary);'
-        + 'border-radius:99px;margin-left:2px" onclick="promptAddSubcat(\'' + c.id + '\')" title="Add subcategory">+ add</span>'
+        + '<div class="cg-subcats">' + subcatPills
+        + '<span class="subcat-chip subcat-chip--add" onclick="promptAddSubcat(\'' + c.id + '\')" title="Add subcategory">+ add</span>'
         + '</div>'
         + '</div>'
-        + '<div style="display:flex;gap:6px;flex-shrink:0">'
-        + '<button class="del-btn" onclick="renameCategory(\'' + c.id + '\')" title="Rename" style="font-size:.9rem">' + ICON('pencil') + '</button>'
+        + '<div class="cg-card-actions">'
+        + '<button class="del-btn cg-rename" onclick="renameCategory(\'' + c.id + '\')" title="Rename">' + ICON('pencil') + '</button>'
         + '<button class="del-btn" onclick="deleteCategory(\'' + c.id + '\')" title="Delete">' + ICON('trash') + '</button>'
         + '</div>'
         + '</div></div>';
@@ -864,9 +859,7 @@ function setCatFilter(f) {
   ['expense','income','all'].forEach(x => {
     const b = document.getElementById('cat-filter-' + x);
     if (!b) return;
-    b.style.background = x === f ? 'rgba(232,69,122,.15)' : 'transparent';
-    b.style.borderColor = x === f ? 'var(--primary)' : 'var(--border)';
-    b.style.color = x === f ? 'var(--primary)' : 'var(--muted)';
+    b.classList.toggle('is-active', x === f);
   });
   renderCategories();
 }
@@ -1273,9 +1266,7 @@ function renderIconPicker() {
   const prev = document.getElementById('cat-icon-preview');
   if (prev) prev.innerHTML = ICON(cur);
   el.innerHTML = ICON_PICKER_SET.map(k =>
-    '<div onclick="pickIcon(\'' + k + '\')" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;background:'
-    + (cur === k ? 'var(--primary)' : 'var(--card)') + ';color:' + (cur === k ? '#fff' : 'var(--muted)') + ';border:1.5px solid '
-    + (cur === k ? 'var(--primary)' : 'var(--border)') + ';transition:all .15s">'
+    '<div class="cg-icon-opt' + (cur === k ? ' is-active' : '') + '" onclick="pickIcon(\'' + k + '\')">'
     + ICON(k) + '</div>'
   ).join('');
 }
@@ -1494,10 +1485,7 @@ function setBankFilter(bank) {
   // Update pill styles
   var pills = document.querySelectorAll('.bank-filter-pill');
   pills.forEach(function(p) {
-    var active = p.dataset.bank === bank;
-    p.style.background   = active ? 'var(--primary)' : 'var(--card2)';
-    p.style.color        = active ? '#fff' : 'var(--muted)';
-    p.style.borderColor  = active ? 'var(--primary)' : 'var(--border)';
+    p.classList.toggle('is-active', p.dataset.bank === bank);
   });
   renderBankComparison();
 }
@@ -1510,11 +1498,7 @@ function renderBankComparison() {
   // Pills
   pillsEl.innerHTML = _BANKS.map(function(b) {
     var active = b === _bankCmpFilter;
-    return '<button class="bank-filter-pill" data-bank="' + b + '" onclick="setBankFilter(\'' + b + '\')" '
-      + 'style="font-size:.72rem;padding:4px 12px;border-radius:99px;border:1px solid '
-      + (active ? 'var(--primary)' : 'var(--border)') + ';background:'
-      + (active ? 'var(--primary)' : 'var(--card2)') + ';color:'
-      + (active ? '#fff' : 'var(--muted)') + ';cursor:pointer;font-weight:600;white-space:nowrap">'
+    return '<button class="bank-filter-pill' + (active ? ' is-active' : '') + '" data-bank="' + b + '" onclick="setBankFilter(\'' + b + '\')">'
       + b + '</button>';
   }).join('');
 
@@ -1529,32 +1513,31 @@ function renderBankComparison() {
   var isDark = document.documentElement.getAttribute('data-mode') !== 'light';
 
   // Table header
-  var headerCells = '<th style="text-align:left;padding:8px 12px 8px 0;font-size:.72rem;color:var(--muted);font-weight:700;white-space:nowrap">Kelda Category</th>';
+  var headerCells = '<th class="cg-bth">Kelda Category</th>';
   bankCols.forEach(function(b) {
     var c = _BANK_COLORS[b] || {};
     var bg   = isDark ? (c.dark_bg   || 'rgba(180,180,180,.1)')  : (c.bg   || '#f0f0f0');
     var col  = isDark ? (c.dark_text || 'var(--muted)')           : (c.text || '#444');
-    headerCells += '<th style="text-align:left;padding:8px 10px;font-size:.72rem;font-weight:700;'
-      + 'background:' + bg + ';color:' + col + ';border-radius:6px 6px 0 0;white-space:nowrap">'
+    headerCells += '<th class="cg-bth-bank" style="background:' + bg + ';color:' + col + '">'
       + b + '</th>';
   });
 
   // Table rows
   var rows = _BANK_MAP.map(function(row) {
     var _bmCat = LCATS.find(function(c){ return c.id === row[0]; });
-    var cells = '<td style="padding:7px 12px 7px 0;font-size:.8rem;font-weight:600;white-space:nowrap;color:var(--text)">'
+    var cells = '<td class="cg-btd-cat">'
       + (_bmCat ? iconTag(_bmCat.icon) + ' ' : '') + row[1] + '</td>';
     bankCols.forEach(function(b) {
       var idx = _BANK_COL[b];
       var val = idx !== undefined ? (row[idx] || '—') : '—';
       var isEmpty = val === '—';
-      cells += '<td style="padding:7px 10px;font-size:.78rem;color:' + (isEmpty ? 'var(--muted)' : 'var(--text)') + ';border-bottom:1px solid var(--border)">'
+      cells += '<td class="cg-btd ' + (isEmpty ? 'tone-muted' : 'tone-text') + '">'
         + val + '</td>';
     });
     return '<tr>' + cells + '</tr>';
   }).join('');
 
-  tableEl.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+  tableEl.innerHTML = '<table class="cg-btable">'
     + '<thead><tr>' + headerCells + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table>';

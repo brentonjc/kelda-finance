@@ -2754,84 +2754,84 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Add category -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">Add New Category</div>
-      <div style="margin-bottom:12px">
-        <label class="lbl" style="margin-bottom:8px">Icon — click to select</label>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span id="cat-icon-preview" style="width:40px;height:40px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary)"></span>
+      <div class="section-label section-label--mb14">Add New Category</div>
+      <div class="cg-icon-block">
+        <label class="lbl cg-icon-lbl">Icon — click to select</label>
+        <div class="cg-icon-row">
+          <span id="cat-icon-preview" class="cg-icon-preview"></span>
           <input type="hidden" id="cat-icon-input" value="tag"/>
         </div>
-        <div id="cat-icon-picker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div id="cat-icon-picker" class="cg-icon-picker"></div>
       </div>
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div style="flex:1 1 160px"><label class="lbl">Name</label><input type="text" id="cat-name-input" placeholder="e.g. Subscriptions" maxlength="30"/></div>
-        <div style="flex:0 0 90px"><label class="lbl">Colour</label><input type="color" id="cat-color-input" value="#e8457a" style="height:44px;padding:3px 6px;cursor:pointer;width:100%"/></div>
+      <div class="cg-add-row">
+        <div class="cg-f-name"><label class="lbl">Name</label><input type="text" id="cat-name-input" placeholder="e.g. Subscriptions" maxlength="30"/></div>
+        <div class="cg-f-color"><label class="lbl">Colour</label><input type="color" id="cat-color-input" class="cg-color-input" value="#e8457a"/></div>
         <div><label class="lbl">Type</label>
-          <select id="cat-type-input" style="height:44px">
+          <select id="cat-type-input" class="cg-type-sel">
             <option value="expense">Expense</option>
             <option value="income">Income</option>
             <option value="both">Both</option>
           </select>
         </div>
-        <button class="btn btn-primary" onclick="addCategoryWithSubcats()" style="align-self:flex-end">+ Add</button>
+        <button class="btn btn-primary cg-add-btn" onclick="addCategoryWithSubcats()">+ Add</button>
       </div>
     </div>
 
     <!-- Import / Export / Reset -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:10px"><i class="ti ti-download"></i> Import / Export</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+      <div class="section-label section-label--mb10"><i class="ti ti-download"></i> Import / Export</div>
+      <div class="cg-io-row">
+        <label class="btn btn-ghost btn-sm cg-file-btn">
           <i class="ti ti-folder"></i> Import JSON
-          <input type="file" accept=".json" style="display:none" onchange="importCategories(event)"/>
+          <input type="file" accept=".json" class="cg-file-input" onchange="importCategories(event)"/>
         </label>
         <button class="btn btn-ghost btn-sm" onclick="exportCategories()"><i class="ti ti-download"></i> Export JSON</button>
         <button class="btn btn-ghost btn-sm" onclick="resetDefaultCategories()">↩ Reset to Defaults</button>
       </div>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Export saves all categories + subcategories. Import replaces the full list. Reset restores the built-in family categories.</div>
+      <div class="cg-io-note">Export saves all categories + subcategories. Import replaces the full list. Reset restores the built-in family categories.</div>
     </div>
 
     <!-- Category list -->
     <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">All Categories</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" id="cat-filter-expense" onclick="setCatFilter('expense')" style="background:rgba(232,69,122,.15);border-color:var(--primary);color:var(--primary)">Expense</button>
-          <button class="btn btn-ghost btn-sm" id="cat-filter-income" onclick="setCatFilter('income')">Income</button>
-          <button class="btn btn-ghost btn-sm" id="cat-filter-all" onclick="setCatFilter('all')">All</button>
+      <div class="cg-list-hd">
+        <div class="section-label section-label--flush">All Categories</div>
+        <div class="cg-filters">
+          <button class="btn btn-ghost btn-sm cat-filter is-active" id="cat-filter-expense" onclick="setCatFilter('expense')">Expense</button>
+          <button class="btn btn-ghost btn-sm cat-filter" id="cat-filter-income" onclick="setCatFilter('income')">Income</button>
+          <button class="btn btn-ghost btn-sm cat-filter" id="cat-filter-all" onclick="setCatFilter('all')">All</button>
         </div>
       </div>
       <div id="cat-list"></div>
     </div>
 
     <!-- Smart Rules shortcut -->
-    <div class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="go('smartrules')">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(240,83,138,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0"><i class="ti ti-bolt"></i></div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:.9rem;margin-bottom:2px">Smart Rules</div>
-        <div style="font-size:.75rem;color:var(--muted)">Create and manage auto-categorisation rules for your merchants.</div>
+    <div class="card cg-shortcut" onclick="go('smartrules')">
+      <div class="cg-shortcut-ico"><i class="ti ti-bolt"></i></div>
+      <div class="cg-shortcut-body">
+        <div class="cg-shortcut-title">Smart Rules</div>
+        <div class="cg-shortcut-desc">Create and manage auto-categorisation rules for your merchants.</div>
       </div>
-      <span style="color:var(--muted);font-size:1.1rem">›</span>
+      <span class="cg-shortcut-arrow">›</span>
     </div>
 
 
     <!-- Bank Category Comparison -->
     <div class="card mb" id="bank-comparison-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="toggleBankComparison()">
+      <div class="cg-bank-hd" onclick="toggleBankComparison()">
         <div>
-          <div class="section-label" style="margin:0"><i class="ti ti-building-bank"></i> Australian Bank Category Comparison</div>
-          <p style="font-size:.76rem;color:var(--muted);margin:4px 0 0">See how Kelda categories map to CBA, Westpac, NAB, ANZ, Macquarie, Up Bank, Amex &amp; HEM.</p>
+          <div class="section-label section-label--flush"><i class="ti ti-building-bank"></i> Australian Bank Category Comparison</div>
+          <p class="cg-bank-desc">See how Kelda categories map to CBA, Westpac, NAB, ANZ, Macquarie, Up Bank, Amex &amp; HEM.</p>
         </div>
-        <span id="bank-cmp-chevron" style="font-size:1.1rem;color:var(--muted);transition:transform .2s">▼</span>
+        <span id="bank-cmp-chevron" class="cg-bank-chevron">▼</span>
       </div>
-      <div id="bank-comparison-body" style="display:none;margin-top:16px">
+      <div id="bank-comparison-body" class="cg-bank-body" style="display:none">
         <!-- Bank filter pills -->
-        <div id="bank-filter-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+        <div id="bank-filter-pills" class="cg-bank-pills"></div>
         <!-- Table -->
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div class="cg-bank-scroll">
           <div id="bank-cmp-table"></div>
         </div>
-        <p style="font-size:.68rem;color:var(--muted);margin-top:12px">
+        <p class="cg-bank-note">
           <i class="ti ti-sparkles"></i> Kelda categories are a superset — some granular distinctions (e.g. Pets, Tax) don't appear in every bank's taxonomy.<br>
           <i class="ti ti-sparkles"></i> HEM = Australian Bureau of Statistics Household Expenditure Measure (12 primary categories).
         </p>
@@ -2840,19 +2840,19 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Bulk reprocess -->
     <div class="card">
-      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a rule.</p>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="section-label acat-sl"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
+      <p class="acat-desc">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a rule.</p>
+      <div class="acat-row acat-row--gap">
         <button class="btn btn-primary btn-sm" id="acat-reprocess-btn" onclick="acatReprocess()">▶ Run Now</button>
-        <progress id="acat-progress" value="0" max="100" style="display:none;width:160px;height:8px"></progress>
-        <span id="acat-result" style="font-size:.8rem"></span>
+        <progress id="acat-progress" class="acat-progress" value="0" max="100" style="display:none"></progress>
+        <span id="acat-result" class="acat-result"></span>
       </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px"><i class="ti ti-tool"></i> Fix Invalid Category IDs</div>
-        <p style="font-size:.74rem;color:var(--muted);margin-bottom:10px">Repairs transactions with legacy or unrecognised categories (e.g. "groceries", "dining", "Other") and maps them to the correct standard categories or Other.</p>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="cg-fix">
+        <div class="cg-fix-title"><i class="ti ti-tool"></i> Fix Invalid Category IDs</div>
+        <p class="cg-fix-desc">Repairs transactions with legacy or unrecognised categories (e.g. "groceries", "dining", "Other") and maps them to the correct standard categories or Other.</p>
+        <div class="acat-row">
           <button class="btn btn-ghost btn-sm" onclick="runFixOrphaned()"><i class="ti ti-tool"></i> Fix Now</button>
-          <span id="fix-orphan-result" style="font-size:.8rem"></span>
+          <span id="fix-orphan-result" class="acat-result"></span>
         </div>
       </div>
     </div>
@@ -2906,13 +2906,13 @@ window.addEventListener('unhandledrejection',function(e){
 
 
     <!-- Bulk reprocess (also accessible here) -->
-    <div class="card sr-bulk">
-      <div class="section-label sr-sl"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
-      <p class="sr-bulk-desc">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a confirmed rule.</p>
-      <div class="sr-bulk-row">
+    <div class="card acat-card">
+      <div class="section-label acat-sl"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
+      <p class="acat-desc">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a confirmed rule.</p>
+      <div class="acat-row">
         <button class="btn btn-primary btn-sm" id="acat-reprocess-btn2" onclick="acatReprocess2()">▶ Run Now</button>
-        <progress id="acat-progress2" class="sr-progress" value="0" max="100" style="display:none"></progress>
-        <span id="acat-result2" class="sr-result"></span>
+        <progress id="acat-progress2" class="acat-progress" value="0" max="100" style="display:none"></progress>
+        <span id="acat-result2" class="acat-result"></span>
       </div>
     </div>
   </div>
