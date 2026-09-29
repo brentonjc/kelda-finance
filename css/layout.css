@@ -229,6 +229,10 @@
 /* ══ RESPONSIVE GRIDS ══ */
 .g2{display:flex;flex-wrap:wrap;gap:18px;}
 .g2>*{flex:1 1 300px;min-width:0;}
+/* Top-align side-by-side cards. Phones stack .g2 as a wrapping column, whose line is as wide as
+   its widest child, so pin the children to full width or a wide table pushes the page sideways. */
+.g2-top>*{width:100%;}
+@media (min-width:760px) and (pointer:fine), (min-width:760px) and (min-height:501px){ .g2-top{align-items:flex-start;} }
 .g3{display:flex;flex-wrap:wrap;gap:16px;}
 .g3>*{flex:1 1 200px;min-width:0;}
 .g4{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px;}
@@ -353,6 +357,12 @@ body:has(#login-screen:not(.gone)) #fab-menu,
 body:has(#login-screen:not(.gone)) #fab-overlay,
 body:has(#login-screen:not(.gone)) #mob-menu,
 body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
+
+/* …and while an equities sheet is open: they sit above every modal and would cover its buttons */
+body:has(.eq-modal-overlay.open) #bottom-tab-bar,
+body:has(.eq-modal-overlay.open) #fab,
+body:has(.eq-modal-overlay.open) #fab-menu,
+body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
 
 /* ══════════════════════════════════
    RESPONSIVE BREAKPOINTS

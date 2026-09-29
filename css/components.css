@@ -561,10 +561,64 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .eq-sched-past td{opacity:.55;}
 .eq-sales-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--border);font-size:.76rem;}
 .eq-sales-row:last-child{border-bottom:none;}
+.eq-code{font-weight:700;}
+.eq-muted{color:var(--muted);}
+.eq-code-input{text-transform:uppercase;}
 .eq-gain-pos{color:var(--success);font-weight:700;}
 .eq-gain-neg{color:var(--danger);font-weight:700;}
-.eq-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;}
-.eq-modal-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.eq-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1000;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}
+.eq-modal-overlay.open{display:flex;}
+.eq-modal-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;width:100%;max-width:580px;max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.eq-modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.eq-modal-head--tight{margin-bottom:8px;}
+.eq-modal-title{margin:0;}
+.eq-modal-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+.eq-detail-actions{margin-top:14px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;}
+.empty--compact{padding:20px 0;}
+/* 44×44 touch targets on phones and touch devices; desktop keeps the compact buttons.
+   min-width covers the icon-only close buttons. */
+@media (max-width:759px), (pointer:coarse){
+  .eq-modal-box .btn-sm{min-height:44px;min-width:44px;}
+  .eq-detail-actions .btn-sm{min-height:44px;}
+}
+.eq-field-hint{font-size:.68rem;color:var(--muted);margin-top:3px;}
+.eq-stale-note{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:.78rem;color:var(--warn);}
+.eq-px-age--stale{color:var(--warn);}
+
+/* Update prices sheet — rows stack on phones; price box beside the details from 760px */
+.eq-px-help{font-size:.76rem;color:var(--muted);margin:0 0 12px;}
+.eq-px-paste{margin-bottom:12px;}
+.eq-px-paste summary{cursor:pointer;color:var(--primary);font-size:.82rem;font-weight:600;min-height:44px;display:flex;align-items:center;gap:6px;}
+.eq-px-paste textarea{width:100%;box-sizing:border-box;font-family:var(--font-mono);margin-bottom:8px;}
+.eq-px-note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:var(--radius-sm);padding:10px 12px;font-size:.78rem;margin-bottom:10px;}
+.eq-px-row{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--border);}
+.eq-px-row--focus{background:var(--card2);border-radius:var(--radius-sm);padding-left:10px;padding-right:10px;}
+.eq-px-info{min-width:0;}
+.eq-px-name{font-size:.88rem;}
+.eq-px-co{color:var(--muted);font-size:.78rem;}
+.eq-px-sub{font-size:.72rem;color:var(--muted);margin-top:2px;}
+.eq-px-warn{font-size:.72rem;color:var(--warn);margin-top:4px;}
+.eq-px-entry input{width:100%;box-sizing:border-box;min-height:44px;}
+.eq-px-field{display:flex;gap:6px;}
+.eq-px-field input{flex:1;min-width:0;}
+.eq-px-ccy{flex:0 0 76px;min-height:44px;}
+.eq-px-delta{font-size:.72rem;margin-top:4px;min-height:1em;}
+.eq-px-delta--up{color:var(--success);}
+.eq-px-delta--down{color:var(--danger);}
+.eq-px-delta--warn{color:var(--warn);}
+.eq-px-note-text{flex:1;min-width:180px;}
+.eq-px-fx{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;background:var(--card2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;}
+.eq-px-fx[hidden]{display:none;}
+.eq-px-fx label{font-size:.8rem;font-weight:600;}
+.eq-px-fx input{flex:0 0 140px;min-height:44px;box-sizing:border-box;}
+.eq-px-fx .eq-px-sub,.eq-px-fx .eq-px-warn{flex-basis:100%;margin-top:0;}
+@media (min-width:760px) and (pointer:fine), (min-width:760px) and (min-height:501px){
+  .eq-px-row{flex-direction:row;align-items:flex-start;gap:14px;}
+  .eq-px-info{flex:1;}
+  .eq-px-entry{flex:0 0 220px;}
+  .eq-px-delta{text-align:right;}
+}
 
 /* ── GAMIFICATION STYLES ── */
 
