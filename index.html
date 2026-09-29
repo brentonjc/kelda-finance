@@ -2249,8 +2249,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Super Accounts Aggregation -->
     <div class="card mb">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        <div class="section-label" style="margin:0"><i class="ti ti-briefcase"></i> Super Accounts Summary</div>
+      <div class="sp-card-hd">
+        <div class="section-label section-label--flush"><i class="ti ti-briefcase"></i> Super Accounts Summary</div>
       </div>
       <div id="super-agg-table"></div>
     </div>
@@ -2258,28 +2258,28 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="g2 mb">
       <!-- Profile 1 -->
       <div class="card">
-        <div class="super-header" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
-          <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
-          <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Profile 1</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+        <div class="super-header super-header--p1">
+          <span class="sp-hd-ico"><i class="ti ti-briefcase"></i></span>
+          <div><div class="sp-hd-name" data-profile-label="brenton">Profile 1</div><div class="sp-hd-sub">Superannuation</div></div>
         </div>
 
         <!-- Account list -->
-        <div style="padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Accounts</div>
-            <button class="btn btn-ghost btn-sm" onclick="superShowAddForm('b')" style="font-size:.72rem">+ Add</button>
+        <div class="sp-accts">
+          <div class="sp-accts-hd">
+            <div class="sp-accts-lbl">Accounts</div>
+            <button class="btn btn-ghost btn-sm sp-add-btn" onclick="superShowAddForm('b')">+ Add</button>
           </div>
           <div id="super-acct-list-b"></div>
           <!-- Add form -->
-          <div id="super-add-form-b" style="display:none;margin-top:10px;padding:10px;background:var(--card2);border-radius:10px">
-            <div class="form-grid" style="margin-bottom:8px">
-              <div><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-new-fund-b" placeholder="e.g. ART, AustralianSuper" style="font-size:16px;width:100%;box-sizing:border-box"/></div>
-              <div><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-new-bal-b" placeholder="0" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>
+          <div id="super-add-form-b" class="sp-add-form" style="display:none">
+            <div class="form-grid sp-form-row">
+              <div><label class="lbl lbl--sm">Fund Name</label><input type="text" id="super-new-fund-b" placeholder="e.g. ART, AustralianSuper" class="sp-input-16"/></div>
+              <div><label class="lbl lbl--sm">Balance (AUD)</label><input type="number" id="super-new-bal-b" placeholder="0" step="1000" inputmode="decimal"/></div>
             </div>
-            <div class="form-grid" style="margin-bottom:8px">
+            <div class="form-grid sp-form-row">
               <div>
-                <label class="lbl" style="font-size:.7rem">Account Type</label>
-                <select id="super-new-type-b" style="width:100%;box-sizing:border-box">
+                <label class="lbl lbl--sm">Account Type</label>
+                <select id="super-new-type-b">
                   <option value="Accumulation">Accumulation</option>
                   <option value="Defined Benefit">Defined Benefit</option>
                   <option value="SMSF">SMSF</option>
@@ -2287,9 +2287,9 @@ window.addEventListener('unhandledrejection',function(e){
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <div><label class="lbl" style="font-size:.7rem">Balance as of month</label><input type="month" id="super-new-mo-b" style="width:100%;box-sizing:border-box"/></div>
+              <div><label class="lbl lbl--sm">Balance as of month</label><input type="month" id="super-new-mo-b"/></div>
             </div>
-            <div style="display:flex;gap:8px">
+            <div class="sp-form-actions">
               <button class="btn btn-primary btn-sm" onclick="superAddAcct('b')">Add Account</button>
               <button class="btn btn-ghost btn-sm" onclick="superHideAddForm('b')">Cancel</button>
             </div>
@@ -2297,7 +2297,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
 
         <!-- Projection label -->
-        <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
+        <div class="sp-proj-lbl">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
         <div class="super-ass-row"><label>Current Balance (AUD)</label><input type="number" id="sb-balance" placeholder="185000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Current Age</label><input type="number" id="sb-age" placeholder="40" min="18" max="70" oninput="calcSuper()" inputmode="numeric"/></div>
         <div class="super-ass-row"><label>Retirement Age</label><input type="number" id="sb-retire" placeholder="67" min="50" max="80" oninput="calcSuper()" inputmode="numeric"/></div>
@@ -2314,34 +2314,34 @@ window.addEventListener('unhandledrejection',function(e){
             <option value="highgrowth">High Growth (~8.5% net) — ASFA</option>
           </select>
         </div>
-        <div class="super-ass-row"><label>Return Rate (% p.a.) <span style="font-size:.65rem;color:var(--muted)">(auto-set by scenario)</span></label><input type="number" id="sb-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.) <span class="sp-lbl-hint">(auto-set by scenario)</span></label><input type="number" id="sb-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="sb-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
-        <div id="sb-result" style="margin-top:14px"></div>
+        <div id="sb-result" class="sp-result"></div>
       </div>
       <!-- Profile 2 -->
       <div class="card">
-        <div class="super-header" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
-          <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
-          <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Profile 2</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+        <div class="super-header super-header--p2">
+          <span class="sp-hd-ico"><i class="ti ti-briefcase"></i></span>
+          <div><div class="sp-hd-name" data-profile-label="shelley">Profile 2</div><div class="sp-hd-sub">Superannuation</div></div>
         </div>
 
         <!-- Account list -->
-        <div style="padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Accounts</div>
-            <button class="btn btn-ghost btn-sm" onclick="superShowAddForm('s')" style="font-size:.72rem">+ Add</button>
+        <div class="sp-accts">
+          <div class="sp-accts-hd">
+            <div class="sp-accts-lbl">Accounts</div>
+            <button class="btn btn-ghost btn-sm sp-add-btn" onclick="superShowAddForm('s')">+ Add</button>
           </div>
           <div id="super-acct-list-s"></div>
           <!-- Add form -->
-          <div id="super-add-form-s" style="display:none;margin-top:10px;padding:10px;background:var(--card2);border-radius:10px">
-            <div class="form-grid" style="margin-bottom:8px">
-              <div><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-new-fund-s" placeholder="e.g. REST, Hesta, AustralianSuper" style="font-size:16px;width:100%;box-sizing:border-box"/></div>
-              <div><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-new-bal-s" placeholder="0" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>
+          <div id="super-add-form-s" class="sp-add-form" style="display:none">
+            <div class="form-grid sp-form-row">
+              <div><label class="lbl lbl--sm">Fund Name</label><input type="text" id="super-new-fund-s" placeholder="e.g. REST, Hesta, AustralianSuper" class="sp-input-16"/></div>
+              <div><label class="lbl lbl--sm">Balance (AUD)</label><input type="number" id="super-new-bal-s" placeholder="0" step="1000" inputmode="decimal"/></div>
             </div>
-            <div class="form-grid" style="margin-bottom:8px">
+            <div class="form-grid sp-form-row">
               <div>
-                <label class="lbl" style="font-size:.7rem">Account Type</label>
-                <select id="super-new-type-s" style="width:100%;box-sizing:border-box">
+                <label class="lbl lbl--sm">Account Type</label>
+                <select id="super-new-type-s">
                   <option value="Accumulation">Accumulation</option>
                   <option value="Defined Benefit">Defined Benefit</option>
                   <option value="SMSF">SMSF</option>
@@ -2349,9 +2349,9 @@ window.addEventListener('unhandledrejection',function(e){
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <div><label class="lbl" style="font-size:.7rem">Balance as of month</label><input type="month" id="super-new-mo-s" style="width:100%;box-sizing:border-box"/></div>
+              <div><label class="lbl lbl--sm">Balance as of month</label><input type="month" id="super-new-mo-s"/></div>
             </div>
-            <div style="display:flex;gap:8px">
+            <div class="sp-form-actions">
               <button class="btn btn-primary btn-sm" onclick="superAddAcct('s')">Add Account</button>
               <button class="btn btn-ghost btn-sm" onclick="superHideAddForm('s')">Cancel</button>
             </div>
@@ -2359,7 +2359,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
 
         <!-- Projection label -->
-        <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
+        <div class="sp-proj-lbl">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
         <div class="super-ass-row"><label>Current Balance (AUD)</label><input type="number" id="ss-balance" placeholder="120000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Current Age</label><input type="number" id="ss-age" placeholder="38" min="18" max="70" oninput="calcSuper()" inputmode="numeric"/></div>
         <div class="super-ass-row"><label>Retirement Age</label><input type="number" id="ss-retire" placeholder="67" min="50" max="80" oninput="calcSuper()" inputmode="numeric"/></div>
@@ -2375,32 +2375,32 @@ window.addEventListener('unhandledrejection',function(e){
             <option value="highgrowth">High Growth (~8.5% net) — ASFA</option>
           </select>
         </div>
-        <div class="super-ass-row"><label>Return Rate (% p.a.) <span style="font-size:.65rem;color:var(--muted)">(auto-set by scenario)</span></label><input type="number" id="ss-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.) <span class="sp-lbl-hint">(auto-set by scenario)</span></label><input type="number" id="ss-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="ss-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="ss-inflation" value="2.5" step="0.1" oninput="calcSuper()"/></div>
-        <div id="ss-result" style="margin-top:14px"></div>
+        <div id="ss-result" class="sp-result"></div>
       </div>
     </div>
     
 
     <!-- Div 293 Section -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-bolt"></i> Division 293 Tax — Full Breakdown</div>
-      <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">For high earners (income + concessional contributions &gt; $250,000), Div 293 charges an additional 15% tax on contributions — raising the effective rate from 15% to 30%. This section shows the full impact including after-tax benefit and net super growth impact.</div>
+      <div class="section-label sp-sl-tight"><i class="ti ti-bolt"></i> Division 293 Tax — Full Breakdown</div>
+      <div class="sp-desc">For high earners (income + concessional contributions &gt; $250,000), Div 293 charges an additional 15% tax on contributions — raising the effective rate from 15% to 30%. This section shows the full impact including after-tax benefit and net super growth impact.</div>
       <div class="d293-wrap" id="d293-cards"></div>
     </div>
 
     <div class="card">
       <div class="section-label">Combined Super Projection</div>
       <div class="chart-box"><canvas id="super-chart"></canvas></div>
-      <div id="super-combined" style="margin-top:16px"></div>
+      <div id="super-combined" class="sp-combined"></div>
     </div>
-    <div style="margin-top:12px;padding:10px 14px;background:#2a1a25;border-radius:9px;font-size:.72rem;color:var(--muted)">
+    <div class="sp-disclaimer">
       <i class="ti ti-alert-triangle"></i> Projections are illustrative estimates only and do not constitute financial advice.
     </div>
 
     <!-- Monthly super balance history grid -->
-    <div id="super-monthly-grid" style="margin-top:20px"></div>
+    <div id="super-monthly-grid" class="sp-monthly"></div>
   </div>
 
   <!-- ═══ NET ASSETS ═══ -->
