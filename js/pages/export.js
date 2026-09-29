@@ -524,7 +524,7 @@ function restoreBackup(event) {
   const statusEl = document.getElementById('restore-status');
   restoreBackupFile(file, (text, isError) => {
     statusEl.innerHTML = isError
-      ? '<span style="color:var(--danger)">' + ICON('x') + ' ' + esc(text) + '</span>'
+      ? '<span class="tone-danger">' + ICON('x') + ' ' + esc(text) + '</span>'
       : esc(text);
   });
 }

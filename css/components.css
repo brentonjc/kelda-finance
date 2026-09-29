@@ -51,6 +51,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   min-height:44px;white-space:nowrap;letter-spacing:.01em;
 }
 .btn.btn--pill{border-radius:var(--radius-pill);}
+.btn.btn--block{width:100%;}
 .btn-primary{background:var(--primary);color:var(--primary-text);}
 .btn-primary:hover{background:var(--pink-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(232,69,122,.4);}
 .btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted);}
@@ -865,6 +866,17 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .export-section-name{font-weight:600;font-size:.88rem;}
 .export-section-count{font-size:.74rem;color:var(--muted);margin-top:2px;}
 .export-section-btns{display:flex;gap:6px;flex-shrink:0;}
+/* Export page (was inline) */
+.card.ex-quick{text-align:center;cursor:pointer;}
+.ex-quick-ico{font-size:2.2rem;margin-bottom:10px;}
+.ex-quick-title{font-weight:700;font-size:.95rem;margin-bottom:4px;}
+.ex-quick-desc{font-size:.76rem;color:var(--muted);margin-bottom:14px;}
+.ex-restore-desc{font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6;}
+.ex-restore-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.btn.ex-file-btn{cursor:pointer;min-height:44px;}
+.ex-restore-status{font-size:.82rem;color:var(--muted);}
+.ex-clear-desc{font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.ex-clear-btns{display:flex;flex-wrap:wrap;gap:8px;}
 
 /* ══ EQUITIES / RSU ══ */
 .rsu-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border);}

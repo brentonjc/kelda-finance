@@ -2630,38 +2630,38 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Quick export buttons -->
     <div class="g3 mb">
-      <div class="card" style="text-align:center;cursor:pointer" onclick="exportFullBackup()">
-        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-device-floppy"></i></div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Full Backup</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All data as JSON — restore on any device</div>
-        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download Backup</button>
+      <div class="card ex-quick" onclick="exportFullBackup()">
+        <div class="ex-quick-ico"><i class="ti ti-device-floppy"></i></div>
+        <div class="ex-quick-title">Full Backup</div>
+        <div class="ex-quick-desc">All data as JSON — restore on any device</div>
+        <button class="btn btn-primary btn--block"><i class="ti ti-download"></i> Download Backup</button>
       </div>
-      <div class="card" style="text-align:center;cursor:pointer" onclick="exportTransactionsCSV()">
-        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-credit-card"></i></div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Transactions CSV</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All transactions — open in Excel or Sheets</div>
-        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download CSV</button>
+      <div class="card ex-quick" onclick="exportTransactionsCSV()">
+        <div class="ex-quick-ico"><i class="ti ti-credit-card"></i></div>
+        <div class="ex-quick-title">Transactions CSV</div>
+        <div class="ex-quick-desc">All transactions — open in Excel or Sheets</div>
+        <button class="btn btn-primary btn--block"><i class="ti ti-download"></i> Download CSV</button>
       </div>
-      <div class="card" style="text-align:center;cursor:pointer" onclick="exportSummaryCSV()">
-        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-chart-bar"></i></div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Monthly Summary CSV</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Income & expenses by month — for budgeting</div>
-        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download CSV</button>
+      <div class="card ex-quick" onclick="exportSummaryCSV()">
+        <div class="ex-quick-ico"><i class="ti ti-chart-bar"></i></div>
+        <div class="ex-quick-title">Monthly Summary CSV</div>
+        <div class="ex-quick-desc">Income & expenses by month — for budgeting</div>
+        <button class="btn btn-primary btn--block"><i class="ti ti-download"></i> Download CSV</button>
       </div>
     </div>
 
     <!-- Restore / Import backup -->
     <div class="card mb">
       <div class="section-label">↑ Restore from Backup</div>
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6">
+      <p class="ex-restore-desc">
         Upload a previously exported JSON backup file to restore all your data. This will replace your current data — make sure to export a fresh backup first. The app reloads once the restore is done.
       </p>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label class="btn btn-ghost" style="cursor:pointer;min-height:44px">
+      <div class="ex-restore-row">
+        <label class="btn btn-ghost ex-file-btn">
           <i class="ti ti-folder"></i> Choose Backup File
-          <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="restoreBackup(event)"/>
+          <input type="file" id="restore-file-input" class="file-input-hidden" accept=".json" onchange="restoreBackup(event)"/>
         </label>
-        <div id="restore-status" style="font-size:.82rem;color:var(--muted)"></div>
+        <div id="restore-status" class="ex-restore-status"></div>
       </div>
     </div>
 
@@ -2679,10 +2679,10 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="export-data-summary"></div>
         <hr class="div"/>
         <div class="section-label"><i class="ti ti-trash"></i> Clear Data</div>
-        <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        <p class="ex-clear-desc">
           Permanently delete data from a specific section. Always export a backup first.
         </p>
-        <div id="export-clear-btns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <div id="export-clear-btns" class="ex-clear-btns"></div>
       </div>
     </div>
   </div>
