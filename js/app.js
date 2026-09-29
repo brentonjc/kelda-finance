@@ -472,7 +472,6 @@ function activeTX(){
 }
 function getMonthInc(ym=thisMonth()){return activeTX().filter(t=>t.type==='income'&&t.date.startsWith(ym)).reduce((s,t)=>s+Number(t.amount),0);}
 function getMonthExp(ym=thisMonth()){return activeTX().filter(t=>t.type==='expense'&&t.date.startsWith(ym)).reduce((s,t)=>s+Number(t.amount),0);}
-function getCatSpend(cat,ym=thisMonth()){return activeTX().filter(t=>t.type==='expense'&&t.category===cat&&t.date.startsWith(ym)).reduce((s,t)=>s+Number(t.amount),0);}
 function getTotalBal(){return activeTX().reduce((s,t)=>t.type==='income'?s+Number(t.amount):s-Number(t.amount),0);}
 
 // ══════════════════════════════════════════════════════════════
