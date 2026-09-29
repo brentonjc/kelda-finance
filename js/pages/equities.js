@@ -285,6 +285,151 @@ function eqLinkSuggestions(secs) {
     return out;
 }
 
+// ══════════════════════════════════════════════════════════════
+// PARCELS & TRADES — every buy is its own parcel; a sale is matched to parcels
+// A share, ETF or crypto holding is one parcel with its own date and cost. An RSU grant gives one
+// parcel per vest, costed at the grant's vest price. A sale writes one entry per parcel it draws
+// on, all sharing a tradeId, so it shows and deletes as a single trade.
+// ══════════════════════════════════════════════════════════════
+var EQ_OWNERS = ['brenton', 'shelley', 'joint'];
+
+// YYYY-MM-DD in local time (today() in app.js gives the UTC date, a day behind on AU mornings)
+function eqIsoDate(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// What each unit sold is measured against: shares at their cost (price plus brokerage), RSUs at
+// the vest price, options at the strike paid to exercise them
+function eqCostPerUnit(h) {
+    var t = h.type || 'stock';
+    if (t === 'rsu') return parseFloat(h.grantPrice) || 0;
+    if (t === 'option') return parseFloat(h.strikePrice) || 0;
+    return parseFloat(h.cost) || 0;
+}
+
+// Cost base per unit of a purchase: the price paid plus its share of the brokerage
+function eqBuyCost(price, qty, brokerage) {
+    return qty > 0 ? price + (brokerage || 0) / qty : price;
+}
+
+// Owned for at least 12 months before the sale, not counting the day bought or the day sold —
+// so the sale has to fall after the first anniversary
+function eqHeld12Months(acquired, saleDate) {
+    if (!acquired || !saleDate) return false;
+    var a = new Date(acquired + 'T00:00:00');
+    return saleDate > eqIsoDate(new Date(a.getFullYear() + 1, a.getMonth(), a.getDate()));
+}
+
+// The Australian financial year (1 July – 30 June) a date falls in
+function eqFinancialYear(dateStr) {
+    var d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    var y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+    return { start: y + '-07-01', end: (y + 1) + '-06-30', label: y + '–' + String(y + 1).slice(2) };
+}
+
+// The parcels one owner could sell of a security on a date, oldest first. Shares, ETFs and crypto
+// are one parcel per holding; each RSU vest is a parcel. A sale that recorded which vest it came
+// from comes off that vest; older sales come off the earliest vests. Options aren't sold this way,
+// and nothing acquired after the sale date counts.
+function eqSellableLots(holdings, owner, saleDate) {
+    var lots = [];
+    holdings.forEach(function(h) {
+        if ((h.owner || 'brenton') !== owner) return;
+        var t = h.type || 'stock';
+        if (t === 'stock' || t === 'etf' || t === 'crypto') {
+            var held = eqHeldUnits(h);
+            if (held > 0 && (!h.purchaseDate || !saleDate || h.purchaseDate <= saleDate))
+                lots.push({ h:h, acquired:h.purchaseDate || '', available:held, costPerUnit:eqCostPerUnit(h) });
+        } else if (t === 'rsu') {
+            var vests = eqVestCalc(h).schedule.filter(function(s){ return s.isPast; })
+                .map(function(s){ return { date:eqIsoDate(s.date), left:s.units }; });
+            var loose = 0;
+            (h.sales||[]).forEach(function(x) {
+                var qty = parseFloat(x.qty) || 0, vest = x.acquired && vests.find(function(v){ return v.date === x.acquired; });
+                if (vest) { var off = Math.min(qty, vest.left); vest.left -= off; loose += qty - off; }
+                else loose += qty;
+            });
+            vests.forEach(function(v) {
+                var off = Math.min(loose, v.left);
+                v.left -= off; loose -= off;
+                if (v.left > 0 && (!saleDate || v.date <= saleDate))
+                    lots.push({ h:h, acquired:v.date, available:v.left, costPerUnit:eqCostPerUnit(h), vest:true });
+            });
+        }
+    });
+    return lots.sort(function(a, b){ return a.acquired.localeCompare(b.acquired) || a.h.id - b.h.id; });
+}
+
+// Take qty from the oldest parcels first; null when they don't hold that many
+function eqAllocateFifo(lots, qty) {
+    var parts = [], left = qty;
+    for (var i = 0; i < lots.length && left > 1e-9; i++) {
+        var units = Math.min(lots[i].available, left);
+        parts.push({ lot:lots[i], units:units });
+        left -= units;
+    }
+    return left > 1e-9 ? null : parts;
+}
+
+// What a sale comes to: for each parcel, proceeds after its share of the brokerage, cost base and
+// gain; in total, and split by whether the parcel was held 12 months (for the CGT discount)
+function eqSaleSummary(parts, price, brokerage, saleDate) {
+    var qty = parts.reduce(function(t, p){ return t + p.units; }, 0);
+    var s = { qty:qty, proceeds:0, costBase:0, gain:0, gainHeld12:0, gainUnder12:0, parts:[] };
+    parts.forEach(function(p) {
+        var costs    = qty ? (brokerage || 0) * p.units / qty : 0;
+        var proceeds = p.units * price - costs, costBase = p.units * p.lot.costPerUnit, gain = proceeds - costBase;
+        var held12   = eqHeld12Months(p.lot.acquired, saleDate);
+        s.proceeds += proceeds; s.costBase += costBase; s.gain += gain;
+        if (held12) s.gainHeld12 += gain; else s.gainUnder12 += gain;
+        s.parts.push({ lot:p.lot, units:p.units, costs:costs, proceeds:proceeds, costBase:costBase, gain:gain, held12:held12 });
+    });
+    return s;
+}
+
+// Write a sale onto the parcels it draws on. quote keeps the US$ price and rate when sold in US$.
+function eqRecordSale(summary, price, saleDate, quote) {
+    var tradeId = Date.now();
+    summary.parts.forEach(function(p, i) {
+        var sale = { id:tradeId + i, tradeId:tradeId, qty:p.units, price:price, date:saleDate, costs:p.costs, acquired:p.lot.acquired };
+        if (quote) { sale.quotePrice = quote.price; sale.fxRate = quote.rate; }
+        if (!p.lot.h.sales) p.lot.h.sales = [];
+        p.lot.h.sales.push(sale);
+    });
+    return tradeId;
+}
+
+function eqTradeKey(h, sale) { return sale.tradeId ? 't' + sale.tradeId : 's' + h.id + '-' + sale.id; }
+
+// The sales on a set of holdings as trades, newest first: entries sharing a tradeId become one
+// trade (older single entries stand alone), with gains against each holding's cost per unit
+function eqTrades(holdings) {
+    var map = {}, list = [];
+    holdings.forEach(function(h) {
+        (h.sales || []).forEach(function(sale) {
+            var key = eqTradeKey(h, sale), tr = map[key];
+            if (!tr) {
+                tr = map[key] = { key:key, date:sale.date || '', qty:0, price:parseFloat(sale.price) || 0, quotePrice:sale.quotePrice,
+                                  proceeds:0, costBase:0, gain:0, gainHeld12:0 };
+                list.push(tr);
+            }
+            var qty = parseFloat(sale.qty) || 0;
+            var proceeds = qty * (parseFloat(sale.price) || 0) - (parseFloat(sale.costs) || 0), gain = proceeds - qty * eqCostPerUnit(h);
+            var acquired = sale.acquired || ((h.type === 'rsu' || h.type === 'option') ? '' : h.purchaseDate);
+            tr.qty += qty; tr.proceeds += proceeds; tr.costBase += proceeds - gain; tr.gain += gain;
+            if (eqHeld12Months(acquired, sale.date)) tr.gainHeld12 += gain;
+        });
+    });
+    return list.sort(function(a, b){ return b.date.localeCompare(a.date); });
+}
+
+// Gain on everything sold during a financial year
+function eqRealisedGain(fy) {
+    return eqTrades(EQUITIES).reduce(function(t, tr) {
+        return tr.date >= fy.start && tr.date <= fy.end ? t + tr.gain : t;
+    }, 0);
+}
+
 // Save holdings, record this month's portfolio value for net worth, and redraw
 function eqCommit() {
     try { save(K.equities, EQUITIES); } catch(e) {}
@@ -488,6 +633,10 @@ function renderEqHero() {
     var gainPct = cost > 0 ? ((gain / cost) * 100).toFixed(2) : '0.00';
     var gc  = gain >= 0 ? 'var(--success)' : 'var(--danger)';
     var gs  = gain >= 0 ? '+' : '';
+    // Realised gain this financial year, once anything has been sold in it
+    var fy = eqFinancialYear(eqIsoDate(new Date()));
+    var soldThisFy = eqTrades(EQUITIES).some(function(tr){ return tr.date >= fy.start && tr.date <= fy.end; });
+    var realised = soldThisFy ? eqRealisedGain(fy) : 0;
     el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">'
         + '<div>'
         + '<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">Total Portfolio Value</div>'
@@ -495,6 +644,10 @@ function renderEqHero() {
         + '<div style="margin-top:10px;display:flex;gap:20px;flex-wrap:wrap">'
         + '<div><div style="font-size:.7rem;color:var(--muted)">Cost Basis</div><div style="font-family:var(--font-mono);font-weight:600;font-size:.9rem">' + fmt(cost) + '</div></div>'
         + '<div><div style="font-size:.7rem;color:var(--muted)">Unrealised P&amp;L</div><div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:' + gc + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + gainPct + '%)</div></div>'
+        + (soldThisFy
+            ? '<div><div class="eq-hero-lbl">Realised FY ' + fy.label + '</div><div class="eq-hero-val ' + (realised >= 0 ? 'eq-up' : 'eq-down') + '">'
+              + (realised >= 0 ? '+' : '−') + fmt(Math.abs(realised)) + '</div></div>'
+            : '')
         + '</div></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
         + '<button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()">'+ICON('currency-dollar')+' Update Prices</button>'
@@ -622,6 +775,15 @@ function renderEqCharts() {
 // ══════════════════════════════════════════════════════════════
 // HOLDINGS LIST
 // ══════════════════════════════════════════════════════════════
+var eqList = [];        // securities in the holdings list — row buttons refer to them by index
+var eqOpenSecs = {};    // keys of the securities left open, so a redraw keeps them open
+
+function eqFmtUnits(n) { return Number(n || 0).toLocaleString('en-AU', { maximumFractionDigits:4 }); }
+
+function eqFmtDate(iso) {
+    return iso ? new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : 'date unknown';
+}
+
 function renderEquitiesList() {
     var el = document.getElementById('eq-holdings-list');
     if (!el) return;
@@ -631,20 +793,120 @@ function renderEquitiesList() {
         return;
     }
 
-    var html = '';
-
-    // ── Grouped EQUITIES ──────────────────────────────────────
-    var byType = {};
-    EQUITIES.forEach(function(h){ var t=h.type||'stock'; if(!byType[t])byType[t]=[]; byType[t].push(h); });
-    EQ_TYPES.forEach(function(tc) {
-        var group = byType[tc.key];
-        if (!group || !group.length) return;
-        html += '<div class="eq-group-label">' + iconTag(tc.icon) + ' ' + tc.label + 's</div>';
-        group.forEach(function(h){ html += renderEqHoldingRow(h); });
-    });
-
-    el.innerHTML = html;
+    eqList = eqSecurities().sort(function(a, b){ return b.value - a.value; });
+    var bonds = EQUITIES.filter(function(h){ return h.type === 'bond'; });
+    el.innerHTML = eqList.map(renderEqSecurityRow).join('')
+        + (bonds.length ? '<div class="eq-group-label">' + iconTag(eqTypeCfg('bond').icon) + ' Bonds</div>' + bonds.map(renderEqHoldingRow).join('') : '');
 }
+
+// One row per security. Open it for Buy / Sell, its holdings (sold-out ones folded away) and its sales.
+function renderEqSecurityRow(s, i) {
+    var types = {}, cost = 0, gain = 0, active = [], sold = [];
+    s.holdings.forEach(function(h) {
+        types[h.type || 'stock'] = true;
+        cost += eqHoldingCost(h); gain += eqHoldingGain(h);
+        var vesting = (h.type === 'rsu' || h.type === 'option') && eqVestCalc(h).unvested > 0;
+        (eqHeldUnits(h) > 0 || vesting ? active : sold).push(h);
+    });
+    var main = s.holdings.slice().sort(function(a, b){ return eqHoldingValue(b) - eqHoldingValue(a); })[0];
+    var age = eqPriceAge(s.updated), open = !!eqOpenSecs[s.key], n = s.holdings.length;
+    var price = s.price
+        ? '<span class="eq-px-age' + (age.stale ? ' eq-px-age--stale' : '') + '"><span class="mono">' + eqFmtPrice(s.price) + '</span>'
+          + (s.quote ? ' <span class="mono">(US' + eqFmtPrice(s.quote.price) + ')</span>' : '') + ' · ' + age.label + '</span>'
+        : '<span class="eq-px-age eq-px-age--stale">No price yet</span>';
+    var badges = s.exchangeList.map(function(x){ return '<span class="eq-badge eq-badge-exch">' + esc(x) + '</span>'; }).join('')
+        + (Object.keys(types).length > 1 ? Object.keys(types).map(function(t){ return '<span class="eq-badge eq-badge-exch">' + eqTypeCfg(t).label + '</span>'; }).join('') : '');
+    var units = (s.units ? eqFmtUnits(s.units) + ' units' : '') + (s.units && s.options ? ' · ' : '') + (s.options ? eqFmtUnits(s.options) + ' options' : '');
+    var canSell = EQ_OWNERS.some(function(o){ return eqSellableLots(s.holdings, o, eqIsoDate(new Date())).length; });
+    var gs = gain >= 0 ? '+' : '−';
+
+    return '<div class="eq-row eq-sec">'
+        + '<div class="eq-row-main" onclick="eqToggleSec(' + i + ')" aria-expanded="' + open + '">'
+        + '<div class="eq-row-icon">' + iconTag(eqTypeCfg(main.type).icon) + '</div>'
+        + '<div class="eq-row-info">'
+        +   '<div class="eq-row-name"><span class="eq-code">' + esc(eqSecLabel(s)) + '</span> ' + (s.code ? esc(s.name) : '') + ' ' + badges + '</div>'
+        +   '<div class="eq-row-sub">' + n + ' holding' + (n !== 1 ? 's' : '') + (units ? ' · ' + units : '') + ' &nbsp;·&nbsp; ' + price + '</div>'
+        + '</div>'
+        + '<div class="eq-row-values">'
+        +   '<div class="eq-sec-value">' + fmt(s.value) + '</div>'
+        +   (cost > 0 ? '<div class="eq-sec-gain ' + (gain >= 0 ? 'eq-up' : 'eq-down') + '">' + gs + fmt(Math.abs(gain)) + ' (' + gs + Math.abs(gain / cost * 100).toFixed(1) + '%)</div>' : '')
+        + '</div>'
+        + '<div class="eq-sec-chev" aria-hidden="true">' + ICON(open ? 'chevron-up' : 'chevron-down') + '</div>'
+        + '</div>'
+        + '<div class="eq-row-detail eq-sec-body" id="eq-sec-' + i + '"' + (open ? '' : ' hidden') + '>'
+        +   '<div class="eq-sec-actions">'
+        +     '<button class="btn btn-primary btn-sm" onclick="eqOpenBuy(' + i + ')">' + ICON('plus') + ' Buy</button>'
+        +     (canSell ? '<button class="btn btn-ghost btn-sm" onclick="eqOpenSellAt(' + i + ')">' + ICON('cash') + ' Sell</button>' : '')
+        +     '<button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal(eqList[' + i + '].key)">' + ICON('currency-dollar') + ' Update price</button>'
+        +   '</div>'
+        +   active.map(renderEqHoldingRow).join('')
+        +   (sold.length ? '<details class="eq-sec-sold"><summary>Sold parcels (' + sold.length + ')</summary>' + sold.map(renderEqHoldingRow).join('') + '</details>' : '')
+        +   renderEqTrades(s)
+        + '</div></div>';
+}
+
+function eqToggleSec(i) {
+    var s = eqList[i], body = document.getElementById('eq-sec-' + i);
+    if (!s || !body) return;
+    var open = body.hidden;
+    body.hidden = !open;
+    if (open) eqOpenSecs[s.key] = true; else delete eqOpenSecs[s.key];
+    var head = body.previousElementSibling;
+    head.setAttribute('aria-expanded', open);
+    head.querySelector('.eq-sec-chev').innerHTML = ICON(open ? 'chevron-up' : 'chevron-down');
+}
+
+// A security's sales, one line per trade, newest first
+function renderEqTrades(s) {
+    var trades = eqTrades(s.holdings);
+    if (!trades.length) return '';
+    return '<div class="eq-sec-trades"><div class="eq-lbl">Sales</div>'
+        + trades.map(function(tr) {
+            return '<div class="eq-trade">'
+                + '<span class="eq-muted">' + eqFmtDate(tr.date) + '</span>'
+                + '<span>Sold <span class="mono">' + eqFmtUnits(tr.qty) + '</span> @ <span class="mono">' + eqFmtPrice(tr.price) + '</span>'
+                +   (tr.quotePrice ? ' <span class="mono">(US' + eqFmtPrice(tr.quotePrice) + ')</span>' : '') + '</span>'
+                + '<span>Proceeds <span class="mono">' + fmt(tr.proceeds) + '</span></span>'
+                + '<span class="mono ' + (tr.gain >= 0 ? 'eq-gain-pos' : 'eq-gain-neg') + '">' + (tr.gain >= 0 ? '+' : '−') + fmt(Math.abs(tr.gain)) + '</span>'
+                + (tr.gainHeld12 > 0 ? '<span class="eq-badge eq-badge-12m" title="Gain from parcels held 12 months or more">12m+ <span class="mono">' + fmt(tr.gainHeld12) + '</span></span>' : '')
+                + '<button class="del-btn eq-trade-del" aria-label="Delete this sale" onclick="eqDeleteTrade(\'' + tr.key + '\')">' + ICON('trash') + '</button>'
+                + '</div>';
+        }).join('') + '</div>';
+}
+
+// Undo a sale: every entry it wrote, on every parcel
+function eqDeleteTrade(key) {
+    if (!confirm('Delete this sale? The units go back into your holdings.')) return;
+    EQUITIES.forEach(function(h) {
+        if (h.sales) h.sales = h.sales.filter(function(sale){ return eqTradeKey(h, sale) !== key; });
+    });
+    eqCommit();
+    toast('Sale deleted');
+}
+
+// Buy more of a security: the add form filled in from it, saved as a new parcel
+function eqOpenBuy(i) {
+    var s = eqList[i];
+    if (!s) return;
+    var shareTypes = ['stock', 'etf', 'crypto'];
+    var base = s.holdings.find(function(h){ return shareTypes.indexOf(h.type) !== -1; }) || s.holdings[0];
+    openEqModal(null);
+    function set(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
+    set('eq-m-type', shareTypes.indexOf(base.type) !== -1 ? base.type : 'stock');
+    eqModalTypeChange();
+    set('eq-m-owner', base.owner || 'brenton');
+    set('eq-m-ticker', base.ticker || '');
+    set('eq-m-company', base.company || '');
+    if (base.exchange && base.exchange !== 'Crypto') set('eq-m-exchange', base.exchange);
+    set('eq-m-purchasedate', eqIsoDate(new Date()));
+    eqModalSecHint(true);
+    var title = document.getElementById('eq-m-title');
+    if (title) title.textContent = 'Buy ' + eqSecLabel(s);
+    var qty = document.getElementById('eq-m-qty');
+    if (qty) qty.focus();
+}
+
+function eqOpenSellAt(i) { if (eqList[i]) openEqSell(eqList[i].key); }
 
 function renderEqHoldingRow(h) {
     var tc   = eqTypeCfg(h.type);
@@ -732,7 +994,11 @@ function renderEqHoldingDetail(h) {
         var held = Math.max(0,(parseFloat(h.qty)||0)-sold);
         html += '<div class="eq-detail-grid">'
             +'<span class="eq-lbl">Purchase Date</span><span class="eq-val">'+(h.purchaseDate||'—')+'</span>'
-            +'<span class="eq-lbl">Purchase Price</span><span class="eq-val">'+fmt(parseFloat(h.cost)||0)+'/unit</span>'
+            +(h.buyPrice !== undefined
+                ? '<span class="eq-lbl">Price Paid</span><span class="eq-val">'+fmt(parseFloat(h.buyPrice)||0)+'/unit</span>'
+                  +'<span class="eq-lbl">Brokerage</span><span class="eq-val">'+fmt(parseFloat(h.brokerage)||0)+'</span>'
+                  +'<span class="eq-lbl">Cost Base</span><span class="eq-val">'+fmt(parseFloat(h.cost)||0)+'/unit</span>'
+                : '<span class="eq-lbl">Purchase Price</span><span class="eq-val">'+fmt(parseFloat(h.cost)||0)+'/unit</span>')
             +'<span class="eq-lbl">Current Price</span><span class="eq-val">'+fmt(parseFloat(h.currentPrice)||0)+'/unit</span>'
             +'<span class="eq-lbl">Units Held</span><span class="eq-val">'+held+'</span>'
             +'<span class="eq-lbl">Total Cost</span><span class="eq-val">'+fmt(eqHoldingCost(h))+'</span>'
@@ -790,30 +1056,11 @@ function renderEqHoldingDetail(h) {
         }
     }
 
-    // Sales history
-    if (h.sales && h.sales.length) {
-        html += '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">'
-            +'<div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Sales History</div>';
-        h.sales.forEach(function(sale) {
-            var costPer  = parseFloat(h.cost)||parseFloat(h.currentPrice)||0;
-            var proceeds = (sale.qty*sale.price)-(sale.costs||0);
-            var cg       = proceeds-(sale.qty*costPer);
-            html += '<div class="eq-sales-row">'
-                +'<span class="eq-muted">'+esc(sale.date||'—')+'</span>'
-                +'<span>'+(parseFloat(sale.qty)||0)+' units @ '+fmt(sale.price)+'</span>'
-                +'<span style="color:var(--success)">Proceeds: '+fmt(proceeds)+'</span>'
-                +'<span class="'+(cg>=0?'eq-gain-pos':'eq-gain-neg')+'">'+(cg>=0?'+':'')+fmt(Math.abs(cg))+' CG</span>'
-                +'<button class="del-btn" style="margin-left:auto" onclick="deleteSaleEq('+h.id+','+sale.id+')">'+ICON('trash')+'</button>'
-                +'</div>';
-        });
-        html += '</div>';
-    }
-
-    // Price + sell actions
-    if (t !== 'bond') {
+    // Shares, ETFs, crypto and RSUs are sold from their security's Sell button (sales show there);
+    // options are exercised or sold grant by grant
+    if (t === 'option') {
         html += '<div class="eq-detail-actions">'
-            +'<button class="btn btn-ghost btn-sm" onclick="eqOpenPriceFor('+h.id+')">'+ICON('currency-dollar')+' Update price</button>'
-            +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">'+ICON('cash')+' Record Sale</button>'
+            +'<button class="btn btn-ghost btn-sm" onclick="openEqSale('+h.id+')">'+ICON('cash')+' Record exercise or sale</button>'
             +'</div>';
     }
 
@@ -879,7 +1126,7 @@ function openEqModal(id) {
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0">'+title+'</div>'
+        +'<div class="section-label eq-modal-title" id="eq-m-title">'+title+'</div>'
         +'<button class="btn btn-ghost btn-sm" onclick="closeEqModal()" style="padding:6px 10px">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-m-id" value="'+(id||'')+'"/>'
@@ -942,13 +1189,17 @@ function eqModalBuildFields(type, h) {
 
     // Type-specific fields
     if (type==='stock'||type==='etf'||type==='crypto') {
+        var paid = v.buyPrice !== undefined ? v.buyPrice : v.cost;   // older holdings only have the cost base
         html += '<div class="form-grid">'
-            +'<div><label class="lbl">Quantity</label><input type="number" id="eq-m-qty" value="'+(v.qty||'')+'" placeholder="0" min="0" step="any" inputmode="numeric"/></div>'
-            +'<div><label class="lbl">Cost Basis per Unit (AUD)</label><input type="number" id="eq-m-cost" value="'+(v.cost||'')+'" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>'
+            +'<div><label class="lbl">Quantity</label><input type="number" id="eq-m-qty" value="'+(v.qty||'')+'" placeholder="0" min="0" step="any" inputmode="decimal"/></div>'
+            +'<div><label class="lbl">Price Paid per Unit (AUD)</label><input type="number" id="eq-m-cost" value="'+(paid||'')+'" placeholder="0.00" min="0" step="any" inputmode="decimal"/></div>'
+            +'</div>'
+            +'<div class="form-grid">'
+            +'<div><label class="lbl">Brokerage (AUD)</label><input type="number" id="eq-m-brokerage" value="'+(v.brokerage||'')+'" placeholder="0.00" min="0" step="any" inputmode="decimal"/><div class="eq-field-hint">Added to the cost base</div></div>'
+            +'<div><label class="lbl">Purchase Date</label><input type="date" id="eq-m-purchasedate" value="'+(v.purchaseDate||'')+'"/></div>'
             +'</div>'
             +'<div class="form-grid">'
             +'<div><label class="lbl">Current Price (AUD)</label><input type="number" id="eq-m-price" value="'+(v.currentPrice||'')+'" placeholder="0.00" min="0" step="any" inputmode="decimal"/><div id="eq-m-sec-hint" class="eq-field-hint"></div></div>'
-            +'<div><label class="lbl">Purchase Date</label><input type="date" id="eq-m-purchasedate" value="'+(v.purchaseDate||'')+'"/></div>'
             +'</div>';
     }
 
@@ -1051,7 +1302,9 @@ function saveEqModal() {
     var obj = { type:type, company:company, ticker:ticker, exchange:exchange, owner:owner, notes:notes };
 
     if (type==='stock'||type==='etf'||type==='crypto') {
-        obj.qty=fnum('eq-m-qty'); obj.cost=fnum('eq-m-cost'); obj.currentPrice=fnum('eq-m-price'); obj.purchaseDate=fv('eq-m-purchasedate');
+        obj.qty=fnum('eq-m-qty'); obj.buyPrice=fnum('eq-m-cost'); obj.brokerage=fnum('eq-m-brokerage');
+        obj.cost=eqBuyCost(obj.buyPrice, obj.qty, obj.brokerage);   // what sales are measured against
+        obj.currentPrice=fnum('eq-m-price'); obj.purchaseDate=fv('eq-m-purchasedate');
     } else if (type==='bond') {
         obj.faceValue=fnum('eq-m-facevalue'); obj.couponRate=fnum('eq-m-coupon'); obj.maturityDate=fv('eq-m-maturity');
         obj.purchasePrice=fnum('eq-m-purchaseprice'); obj.currentValue=fnum('eq-m-currentvalue');
@@ -1116,7 +1369,170 @@ function deleteEquity(id) {
     toast('Holding removed');
 }
 
-// ── Sale recording ────────────────────────────────────────────
+// ── Sell ──────────────────────────────────────────────────────
+// Sell units of a security for one owner. Parcels go oldest first unless "Choose parcels" is ticked.
+// The summary shows proceeds, cost base and gain, and how much of the gain is from parcels held
+// 12 months or more.
+var eqSell = null;   // { sec, fx, lots } for the open sheet — parcel boxes refer to lots by index
+
+function eqLotUnits(lots) { return lots.reduce(function(t, l){ return t + l.available; }, 0); }
+
+function openEqSell(key) {
+    var s = eqSecurities().find(function(x){ return x.key === key; });
+    var overlay = document.getElementById('eq-sale-overlay');
+    if (!s || !overlay) return;
+    var today = eqIsoDate(new Date());
+    // Whoever holds the most sellable units comes first
+    var owners = EQ_OWNERS.filter(function(o){ return eqSellableLots(s.holdings, o, today).length; })
+        .sort(function(a, b){ return eqLotUnits(eqSellableLots(s.holdings, b, today)) - eqLotUnits(eqSellableLots(s.holdings, a, today)); });
+    if (!owners.length) { toast('Nothing to sell yet: no units held or vested'); return; }
+    eqSell = { sec:s, fx:eqFxRate(), lots:[] };
+    var usd = s.ccy === 'USD', price = usd ? (s.quote ? s.quote.price : '') : (s.price || '');
+    var ownerField = owners.length > 1
+        ? '<div><label class="lbl" for="eq-sell-owner">Sold by</label><select id="eq-sell-owner" onchange="eqSellLots()">'
+          + owners.map(function(o){ return '<option value="' + o + '">' + esc(o === 'joint' ? 'Joint' : getUserName(o)) + '</option>'; }).join('')
+          + '</select></div>'
+        : '<input type="hidden" id="eq-sell-owner" value="' + owners[0] + '"/>';
+
+    overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
+        + '<div class="eq-modal-head">'
+        + '<div class="section-label eq-modal-title">' + ICON('cash') + ' Sell ' + esc(eqSecLabel(s))
+        +   (s.code && s.name ? ' <span class="eq-px-co">' + esc(s.name) + '</span>' : '') + '</div>'
+        + '<button class="btn btn-ghost btn-sm" onclick="closeEqSale()" aria-label="Close">' + ICON('x') + '</button>'
+        + '</div>'
+        + '<div class="form-grid">' + ownerField
+        +   '<div><label class="lbl" for="eq-sell-date">Sale date</label><input type="date" id="eq-sell-date" value="' + today + '" max="' + today + '" onchange="eqSellLots()"/></div>'
+        + '</div>'
+        + '<div class="form-grid">'
+        +   '<div><label class="lbl" for="eq-sell-qty">Units to sell</label><div class="eq-px-field">'
+        +     '<input type="number" id="eq-sell-qty" class="mono" min="0" step="any" inputmode="decimal" placeholder="0" oninput="eqSellUpdate()"/>'
+        +     '<button class="btn btn-ghost btn-sm" onclick="eqSellAll()">All</button></div></div>'
+        +   '<div><label class="lbl" for="eq-sell-price">Sale price per unit</label><div class="eq-px-field">'
+        +     '<select id="eq-sell-ccy" class="eq-px-ccy" aria-label="Currency of the price and brokerage" onchange="eqSellUpdate()">'
+        +       '<option value="AUD"' + (usd ? '' : ' selected') + '>A$</option><option value="USD"' + (usd ? ' selected' : '') + '>US$</option></select>'
+        +     '<input type="number" id="eq-sell-price" class="mono" min="0" step="any" inputmode="decimal" value="' + price + '" placeholder="0.00" oninput="eqSellUpdate()"/></div></div>'
+        + '</div>'
+        + '<div class="form-grid">'
+        +   '<div><label class="lbl" for="eq-sell-costs">Brokerage</label><input type="number" id="eq-sell-costs" class="mono" min="0" step="any" inputmode="decimal" placeholder="0.00" oninput="eqSellUpdate()"/>'
+        +     '<div class="eq-field-hint">In the same currency as the price</div></div>'
+        +   '<div id="eq-sell-fx"' + (usd ? '' : ' hidden') + '><label class="lbl" for="eq-sell-rate">US$1 = A$ on the sale date</label>'
+        +     '<input type="number" id="eq-sell-rate" class="mono" min="0" step="any" inputmode="decimal" value="' + (eqSell.fx ? eqSell.fx.usdAud : '') + '" placeholder="e.g. 1.52" oninput="eqSellUpdate()"/></div>'
+        + '</div>'
+        + '<div class="eq-sell-lots-head"><div class="eq-lbl">Parcels, oldest first</div>'
+        +   '<label class="eq-sell-choose"><input type="checkbox" id="eq-sell-manual" onchange="eqSellLots()"/> Choose parcels</label></div>'
+        + '<div id="eq-sell-lots"></div>'
+        + '<div id="eq-sell-summary" class="eq-sell-summary" role="status"></div>'
+        + '<div class="eq-modal-actions eq-modal-actions--snug">'
+        + '<button class="btn btn-primary" onclick="saveEqSell()">Record sale</button>'
+        + '<button class="btn btn-ghost" onclick="closeEqSale()">Cancel</button>'
+        + '</div></div>';
+    overlay.classList.add('open');
+    overlay.onclick = function(e){ if (e.target === overlay) closeEqSale(); };
+    eqSellLots();
+    document.getElementById('eq-sell-qty').focus();
+}
+
+// Redraw the parcels for the chosen owner and date. With "Choose parcels" each gets a box,
+// filled in with what oldest-first would take.
+function eqSellLots() {
+    if (!eqSell) return;
+    var date = document.getElementById('eq-sell-date').value, manual = document.getElementById('eq-sell-manual').checked;
+    var qtyEl = document.getElementById('eq-sell-qty');
+    eqSell.lots = eqSellableLots(eqSell.sec.holdings, document.getElementById('eq-sell-owner').value, date);
+    var fifo = eqAllocateFifo(eqSell.lots, parseFloat(qtyEl.value) || 0) || [];
+    document.getElementById('eq-sell-lots').innerHTML = eqSell.lots.length
+        ? eqSell.lots.map(function(l, i) {
+            var take = fifo.find(function(p){ return p.lot === l; });
+            return '<div class="eq-lot">'
+                + '<div class="eq-lot-info"><div>' + eqFmtDate(l.acquired) + (l.vest ? ' · RSU vest' : '')
+                +   (eqHeld12Months(l.acquired, date) ? ' <span class="eq-badge eq-badge-12m">12m+</span>' : '') + '</div>'
+                +   '<div class="eq-px-sub"><span class="mono">' + eqFmtUnits(l.available) + '</span> units · cost <span class="mono">' + eqFmtPrice(l.costPerUnit) + '</span></div></div>'
+                + (manual
+                    ? '<input type="number" class="eq-lot-in mono" data-i="' + i + '" min="0" max="' + l.available + '" step="any" inputmode="decimal" placeholder="0"'
+                      + ' value="' + (take ? +take.units.toFixed(8) : '') + '" aria-label="Units from the parcel of ' + eqFmtDate(l.acquired) + '" oninput="eqSellUpdate()"/>'
+                    : '<div class="eq-lot-take mono" id="eq-lot-take-' + i + '"></div>')
+                + '</div>';
+        }).join('')
+        : '<div class="eq-px-sub">No units to sell on this date.</div>';
+    qtyEl.readOnly = manual;
+    eqSellUpdate();
+}
+
+function eqSellAll() {
+    if (!eqSell || document.getElementById('eq-sell-manual').checked) return;
+    document.getElementById('eq-sell-qty').value = +eqLotUnits(eqSell.lots).toFixed(8);
+    eqSellUpdate();
+}
+
+// What the sale would record, or an error to show instead (quiet ones just mean "not filled in yet")
+function eqSellState() {
+    function g(id) { return document.getElementById(id); }
+    var date = g('eq-sell-date').value, usd = g('eq-sell-ccy').value === 'USD';
+    var price = parseFloat(g('eq-sell-price').value) || 0, costs = parseFloat(g('eq-sell-costs').value) || 0;
+    var rate = parseFloat(g('eq-sell-rate').value) || 0, parts, qty;
+    if (g('eq-sell-manual').checked) {
+        parts = [];
+        var over = null;
+        document.querySelectorAll('.eq-lot-in').forEach(function(inp) {
+            var units = parseFloat(inp.value) || 0, lot = eqSell.lots[+inp.dataset.i];
+            if (units > lot.available + 1e-9) over = lot;
+            if (units > 0) parts.push({ lot:lot, units:units });
+        });
+        qty = parts.reduce(function(t, p){ return t + p.units; }, 0);
+        g('eq-sell-qty').value = qty ? +qty.toFixed(8) : '';
+        if (over) return { error:'The parcel from ' + eqFmtDate(over.acquired) + ' only has ' + eqFmtUnits(over.available) + ' units' };
+    } else {
+        qty = parseFloat(g('eq-sell-qty').value) || 0;
+        parts = eqAllocateFifo(eqSell.lots, qty);
+        if (!parts) return { error:'Only ' + eqFmtUnits(eqLotUnits(eqSell.lots)) + ' units can be sold on this date' };
+    }
+    if (!date) return { error:'Choose the sale date' };
+    if (date > eqIsoDate(new Date())) return { error:'The sale date can’t be in the future' };
+    if (!(qty > 0)) return { error:'Enter the units to sell', quiet:true, parts:parts };
+    if (!(price > 0)) return { error:'Enter the sale price', quiet:true, parts:parts };
+    if (usd && !(rate > 0)) return { error:'Enter the exchange rate for the sale date', parts:parts };
+    var audPrice = eqToAud(price, usd ? 'USD' : 'AUD', rate), audCosts = usd ? Math.round(costs * rate * 100) / 100 : costs;
+    return { date:date, qty:qty, parts:parts, usd:usd, price:price, audPrice:audPrice,
+             quote: usd ? { price:price, rate:rate } : null, summary: eqSaleSummary(parts, audPrice, audCosts, date) };
+}
+
+function eqSellUpdate() {
+    if (!eqSell) return;
+    document.getElementById('eq-sell-fx').hidden = document.getElementById('eq-sell-ccy').value !== 'USD';
+    var st = eqSellState();
+    eqSell.lots.forEach(function(l, i) {   // oldest-first: what each parcel gives
+        var el = document.getElementById('eq-lot-take-' + i), p = (st.parts || []).find(function(x){ return x.lot === l; });
+        if (el) el.textContent = p ? 'Sell ' + eqFmtUnits(p.units) : '';
+    });
+    var out = document.getElementById('eq-sell-summary');
+    if (st.error) { out.innerHTML = st.quiet ? '' : '<div class="eq-px-warn">' + esc(st.error) + '</div>'; return; }
+    var s = st.summary;
+    function row(label, amount, cls) {
+        return '<div class="eq-sell-row"><span>' + label + '</span><span class="mono' + (cls ? ' ' + cls : '') + '">' + amount + '</span></div>';
+    }
+    function signed(n) { return (n >= 0 ? '+' : '−') + fmt(Math.abs(n)); }
+    out.innerHTML = (st.usd ? '<div class="eq-px-sub eq-sell-fxline">US' + eqFmtPrice(st.price) + ' is ' + eqFmtPrice(st.audPrice) + ' a unit</div>' : '')
+        + row('Proceeds after brokerage', fmt(s.proceeds))
+        + row('Cost base', fmt(s.costBase))
+        + row('<strong>' + (s.gain >= 0 ? 'Gain' : 'Loss') + '</strong>', '<strong>' + signed(s.gain) + '</strong>', s.gain >= 0 ? 'eq-gain-pos' : 'eq-gain-neg')
+        + (s.parts.some(function(p){ return p.held12; }) && s.parts.some(function(p){ return !p.held12; })
+            ? row('From parcels held 12+ months', signed(s.gainHeld12)) + row('From parcels held under 12 months', signed(s.gainUnder12))
+            : '<div class="eq-px-sub">All from parcels held ' + (s.parts[0].held12 ? '12 months or more' : 'under 12 months') + '</div>');
+}
+
+function saveEqSell() {
+    if (!eqSell) return;
+    var st = eqSellState();
+    if (st.error) { toast(st.error); return; }
+    eqRecordSale(st.summary, st.audPrice, st.date, st.quote);
+    var s = eqSell.sec, g = st.summary.gain;
+    eqOpenSecs[s.key] = true;   // leave it open so the sale shows
+    closeEqSale();
+    eqCommit();
+    toast('Sold ' + eqFmtUnits(st.qty) + ' ' + esc(eqSecLabel(s)) + ': ' + (g >= 0 ? 'gain ' : 'loss ') + fmt(Math.abs(g)));
+}
+
+// ── Options: record an exercise or sale on one grant ─────────
 function openEqSale(id) {
     var h = EQUITIES.find(function(e){ return e.id===id; });
     if (!h) return;
@@ -1124,22 +1540,23 @@ function openEqSale(id) {
     if (!overlay) return;
     var label = h.ticker||h.company||'Holding';
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        +'<div class="section-label" style="margin:0;color:var(--success)">'+ICON('cash')+' Record Sale — '+label+'</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="closeEqSale()">'+ICON('x')+'</button>'
+        +'<div class="eq-modal-head">'
+        +'<div class="section-label eq-modal-title">'+ICON('cash')+' Record exercise or sale — '+esc(label)+'</div>'
+        +'<button class="btn btn-ghost btn-sm" onclick="closeEqSale()" aria-label="Close">'+ICON('x')+'</button>'
         +'</div>'
         +'<input type="hidden" id="eq-sale-id" value="'+id+'"/>'
         +'<div class="form-grid">'
-        +'<div><label class="lbl">Units Sold</label><input type="number" id="eq-sale-qty" placeholder="0" min="0" step="any" inputmode="numeric" oninput="calcEqSalePreview()"/></div>'
-        +'<div><label class="lbl">Sale Price per Unit (AUD)</label><input type="number" id="eq-sale-price" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="calcEqSalePreview()"/></div>'
+        +'<div><label class="lbl">Units</label><input type="number" id="eq-sale-qty" placeholder="0" min="0" step="any" inputmode="decimal" oninput="calcEqSalePreview()"/>'
+        +'<div class="eq-field-hint">'+eqFmtUnits(eqHeldUnits(h))+' vested and not yet sold</div></div>'
+        +'<div><label class="lbl">Sale Price per Share (AUD)</label><input type="number" id="eq-sale-price" placeholder="0.00" min="0" step="any" inputmode="decimal" oninput="calcEqSalePreview()"/></div>'
         +'</div>'
         +'<div class="form-grid">'
-        +'<div><label class="lbl">Sale Date</label><input type="date" id="eq-sale-date" value="'+today()+'"/></div>'
-        +'<div><label class="lbl">Brokerage / Costs (AUD)</label><input type="number" id="eq-sale-costs" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="calcEqSalePreview()"/></div>'
+        +'<div><label class="lbl">Date</label><input type="date" id="eq-sale-date" value="'+eqIsoDate(new Date())+'"/></div>'
+        +'<div><label class="lbl">Brokerage / Costs (AUD)</label><input type="number" id="eq-sale-costs" placeholder="0.00" min="0" step="any" inputmode="decimal" oninput="calcEqSalePreview()"/></div>'
         +'</div>'
-        +'<div id="eq-sale-preview" style="margin-top:10px;font-size:.78rem;color:var(--muted)"></div>'
-        +'<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">'
-        +'<button class="btn btn-primary" onclick="saveEqSale()">Record Sale</button>'
+        +'<div id="eq-sale-preview" class="eq-sale-preview"></div>'
+        +'<div class="eq-modal-actions eq-modal-actions--snug">'
+        +'<button class="btn btn-primary" onclick="saveEqSale()">Record</button>'
         +'<button class="btn btn-ghost" onclick="closeEqSale()">Cancel</button>'
         +'</div></div>';
     overlay.classList.add('open');
@@ -1149,8 +1566,10 @@ function openEqSale(id) {
 function closeEqSale() {
     var overlay = document.getElementById('eq-sale-overlay');
     if (overlay) overlay.classList.remove('open');
+    eqSell = null;
 }
 
+// The cost of each option exercised is its strike price
 function calcEqSalePreview() {
     var id    = (document.getElementById('eq-sale-id')||{}).value;
     var qty   = parseFloat((document.getElementById('eq-sale-qty')||{}).value)||0;
@@ -1160,11 +1579,10 @@ function calcEqSalePreview() {
     if (!prev||!id||!qty||!price){ if(prev) prev.innerHTML=''; return; }
     var h = EQUITIES.find(function(e){ return e.id===Number(id); });
     if (!h) return;
-    var costPer  = parseFloat(h.cost)||parseFloat(h.currentPrice)||0;
-    var proceeds = qty*price-costs, costBase = qty*costPer, gain = proceeds-costBase;
-    prev.innerHTML = '<span style="color:var(--muted)">Proceeds: </span><strong>'+fmt(proceeds)+'</strong>'
-        +' &nbsp;·&nbsp; <span style="color:var(--muted)">Cost base: </span><strong>'+fmt(costBase)+'</strong>'
-        +' &nbsp;·&nbsp; <span style="color:'+(gain>=0?'var(--success)':'var(--danger)')+';font-weight:700">'
+    var proceeds = qty*price-costs, costBase = qty*eqCostPerUnit(h), gain = proceeds-costBase;
+    prev.innerHTML = '<span class="eq-muted">Proceeds: </span><strong>'+fmt(proceeds)+'</strong>'
+        +' &nbsp;·&nbsp; <span class="eq-muted">Cost (strike): </span><strong>'+fmt(costBase)+'</strong>'
+        +' &nbsp;·&nbsp; <span class="'+(gain>=0?'eq-gain-pos':'eq-gain-neg')+'">'
         +(gain>=0?'Gain: +':'Loss: ')+fmt(Math.abs(gain))+'</span>';
 }
 
@@ -1174,30 +1592,18 @@ function saveEqSale() {
     var price = parseFloat((document.getElementById('eq-sale-price')||{}).value)||0;
     var date  = (document.getElementById('eq-sale-date')||{}).value||'';
     var costs = parseFloat((document.getElementById('eq-sale-costs')||{}).value)||0;
-    if (!id||!qty||!price){ toast('Enter quantity and sale price'); return; }
+    if (!id||!qty||!price){ toast('Enter the units and sale price'); return; }
     var h = EQUITIES.find(function(e){ return e.id===Number(id); });
     if (!h) return;
+    var left = eqHeldUnits(h);
+    if (qty > left + 1e-9) { toast('Only ' + eqFmtUnits(left) + ' vested units are left'); return; }
+    var saleId = Date.now();
     if (!h.sales) h.sales=[];
-    h.sales.push({ id:Date.now(), qty:qty, price:price, date:date, costs:costs });
-    try { save(K.equities, EQUITIES); } catch(e) {}
-    try{if(typeof nwRecordEqMonth==="function"&&typeof eqTotalEquitiesValue==="function")nwRecordEqMonth(_nwCurrentMonth(),eqTotalEquitiesValue());}catch(e){}
-    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
+    h.sales.push({ id:saleId, tradeId:saleId, qty:qty, price:price, date:date, costs:costs });
+    eqOpenSecs[eqSecKey(h)] = true;
     closeEqSale();
-    renderEquitiesPage();
-    if (typeof renderAssets==='function') renderAssets();
-    toast('Sale recorded — '+qty+' units at '+fmt(price));
-}
-
-function deleteSaleEq(holdingId, saleId) {
-    var h = EQUITIES.find(function(e){ return e.id===holdingId; });
-    if (!h||!h.sales) return;
-    h.sales = h.sales.filter(function(s){ return s.id!==saleId; });
-    try { save(K.equities, EQUITIES); } catch(e) {}
-    try{if(typeof nwRecordEqMonth==="function"&&typeof eqTotalEquitiesValue==="function")nwRecordEqMonth(_nwCurrentMonth(),eqTotalEquitiesValue());}catch(e){}
-    try{if(typeof recordNetWorthSnapshot==="function")recordNetWorthSnapshot();}catch(e){}
-    renderEquitiesPage();
-    if (typeof renderAssets==='function') renderAssets();
-    toast('Sale removed');
+    eqCommit();
+    toast('Recorded ' + eqFmtUnits(qty) + ' units at ' + fmt(price));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1301,12 +1707,6 @@ function openBatchPriceModal(focusKey) {
         inp.scrollIntoView({ block:'center' });
         inp.focus();
     }
-}
-
-// From a holding's detail panel: open the sheet on that holding's security
-function eqOpenPriceFor(id) {
-    var h = EQUITIES.find(function(e){ return e.id === id; });
-    openBatchPriceModal(h ? eqSecKey(h) : null);
 }
 
 function eqPxCcyOf(inp) {

@@ -256,3 +256,121 @@ test('holdings without a code are offered a link to the coded stock with the sam
   const links = app.eqLinkSuggestions(app.eqSecurities()).map((l) => [l.from.key, l.to.key]);
   assert.deepEqual(plain(links), [['name:example', 'TEAM']]);
 });
+
+// ── Buying and selling: parcels, matching, gains ───────────────
+// Fixed dates in the past, so nothing depends on today.
+function sellFixture() {
+  return [
+    stock({ id: 1, owner: 'brenton', purchaseDate: '2023-03-01', qty: 100, cost: 95 }),
+    stock({ id: 2, owner: 'brenton', purchaseDate: '2026-01-10', qty: 50, cost: 120,
+      sales: [{ id: 1, qty: 10, price: 118, date: '2026-02-01', costs: 0 }] }),
+    stock({ id: 3, owner: 'shelley', purchaseDate: '2022-05-01', qty: 30, cost: 80 }),
+    stock({ id: 4, owner: 'brenton', purchaseDate: '2026-09-01', qty: 20, cost: 130 }),
+    option({ id: 5, owner: 'brenton', ticker: 'CBA' }),
+    // Four annual vests of 100 (2021–2024); 150 already sold, so 50 of the 2022 vest is left
+    rsu({ id: 6, owner: 'brenton', ticker: 'CBA', grantDate: '2021-01-15', totalUnits: 400, vestingYears: 4,
+      grantPrice: 60, sales: [{ id: 2, qty: 150, price: 100, date: '2024-06-01', costs: 0 }] }),
+  ];
+}
+
+test('the 12-month rule: the sale has to fall after the first anniversary', () => {
+  const app = loadApp();
+  assert.equal(app.eqHeld12Months('2024-07-01', '2025-06-30'), false);
+  assert.equal(app.eqHeld12Months('2024-07-01', '2025-07-01'), false, 'the anniversary itself is not enough');
+  assert.equal(app.eqHeld12Months('2024-07-01', '2025-07-02'), true);
+  assert.equal(app.eqHeld12Months('', '2025-07-02'), false, 'an unknown purchase date never qualifies');
+});
+
+test('Australian financial years run 1 July to 30 June', () => {
+  const app = loadApp();
+  assert.deepEqual(plain(app.eqFinancialYear('2026-09-28')), { start: '2026-07-01', end: '2027-06-30', label: '2026–27' });
+  assert.deepEqual(plain(app.eqFinancialYear('2027-06-30')), { start: '2026-07-01', end: '2027-06-30', label: '2026–27' });
+  assert.equal(app.eqFinancialYear('2026-06-30').label, '2025–26');
+});
+
+test('a purchase costs the price paid plus its share of the brokerage', () => {
+  const app = loadApp();
+  assert.equal(app.eqBuyCost(100, 50, 20), 100.4);
+  assert.equal(app.eqBuyCost(100, 50, 0), 100);
+});
+
+test('sales are measured against cost: shares at cost, RSUs at vest price, options at strike', () => {
+  const app = loadApp();
+  assert.equal(app.eqCostPerUnit(stock({ cost: 95 })), 95);
+  assert.equal(app.eqCostPerUnit(rsu({ grantPrice: 60 })), 60);
+  assert.equal(app.eqCostPerUnit(option({ strikePrice: 30 })), 30);
+});
+
+test("an owner's sellable parcels on a date, oldest first, with RSU vests as parcels", () => {
+  const app = loadApp();
+  const lots = app.eqSellableLots(sellFixture(), 'brenton', '2026-08-01')
+    .map((l) => [l.h.id, l.acquired, l.available, l.costPerUnit, !!l.vest]);
+  assert.deepEqual(plain(lots), [
+    [6, '2022-01-15', 50, 60, true],     // the 2021 vest and half the 2022 one were sold earlier
+    [6, '2023-01-15', 100, 60, true],
+    [1, '2023-03-01', 100, 95, false],
+    [6, '2024-01-15', 100, 60, true],
+    [2, '2026-01-10', 40, 120, false],   // 10 of the 50 already sold
+  ]);                                    // not Shelley's parcel, the option, or one bought after the sale date
+});
+
+test('selling takes the oldest parcels first, and fails when there are not enough units', () => {
+  const app = loadApp();
+  const lots = app.eqSellableLots(sellFixture(), 'brenton', '2026-08-01');
+  const parts = app.eqAllocateFifo(lots, 180).map((p) => [p.lot.acquired, p.units]);
+  assert.deepEqual(plain(parts), [['2022-01-15', 50], ['2023-01-15', 100], ['2023-03-01', 30]]);
+  assert.equal(app.eqAllocateFifo(lots, 391), null, 'only 390 units are sellable');
+});
+
+test('a sale summary shares brokerage by units and splits the gain by holding period', () => {
+  const app = loadApp();
+  const lots = app.eqSellableLots(sellFixture(), 'brenton', '2026-08-01');
+  const oldest = lots[2], newest = lots[4];   // the 2023 parcel (cost 95) and the 2026 one (cost 120)
+  const s = plain(app.eqSaleSummary([{ lot: oldest, units: 30 }, { lot: newest, units: 30 }], 130, 12, '2026-08-01'));
+  assert.equal(s.qty, 60);
+  assert.deepEqual(s.parts.map((p) => [p.costs, p.proceeds, p.costBase, p.gain, p.held12]),
+    [[6, 3894, 2850, 1044, true], [6, 3894, 3600, 294, false]]);
+  assert.equal(s.gain, 1338);
+  assert.equal(s.gainHeld12, 1044);
+  assert.equal(s.gainUnder12, 294);
+});
+
+test('a sale across parcels is recorded on each and shows as one trade', () => {
+  const holdings = sellFixture();
+  const app = loadApp(holdings);
+  const lots = app.eqSellableLots(holdings, 'brenton', '2026-08-01');
+  const summary = app.eqSaleSummary(app.eqAllocateFifo(lots, 180), 120, 18, '2026-08-01');
+  const tradeId = app.eqRecordSale(summary, 120, '2026-08-01', null);
+
+  const written = holdings.flatMap((h) => (h.sales || []).filter((s) => s.tradeId === tradeId).map((s) => [h.id, s.qty, s.acquired, s.costs]));
+  assert.deepEqual(plain(written), [[1, 30, '2023-03-01', 3], [6, 50, '2022-01-15', 5], [6, 100, '2023-01-15', 10]]);
+  assert.equal(app.eqHeldUnits(holdings[0]), 70);
+  assert.equal(app.eqHeldUnits(holdings[5]), 100, '400 vested, 300 sold');
+
+  const trades = plain(app.eqTrades(holdings.filter((h) => h.id === 1 || h.id === 6)));
+  assert.equal(trades.length, 2, 'the new trade and the earlier RSU sale');
+  const t = trades[0];
+  assert.deepEqual([t.date, t.qty, t.proceeds, t.costBase, t.gain], ['2026-08-01', 180, 21582, 11850, 9732]);
+  assert.equal(t.gainHeld12, 9732);
+});
+
+test('realised gain counts sales in the financial year only', () => {
+  const holdings = sellFixture();
+  const app = loadApp(holdings);
+  const lots = app.eqSellableLots(holdings, 'brenton', '2026-08-01');
+  app.eqRecordSale(app.eqSaleSummary(app.eqAllocateFifo(lots, 180), 120, 18, '2026-08-01'), 120, '2026-08-01', null);
+  assert.equal(app.eqRealisedGain(app.eqFinancialYear('2026-08-01')), 9732);
+  // FY 2025–26: parcel 2 sold 10 @ 118 against a cost of 120
+  assert.equal(app.eqRealisedGain(app.eqFinancialYear('2026-02-01')), -20);
+});
+
+test('an RSU sale that chose a vest comes off that vest; older sales come off the earliest', () => {
+  const grant = rsu({ id: 7, owner: 'brenton', grantDate: '2021-01-15', totalUnits: 400, vestingYears: 4, grantPrice: 60,
+    sales: [
+      { id: 1, qty: 30, price: 100, date: '2024-06-01', costs: 0, acquired: '2024-01-15' },   // chose the newest vest
+      { id: 2, qty: 120, price: 100, date: '2024-07-01', costs: 0 },                          // older entry, no vest recorded
+    ] });
+  const app = loadApp([grant]);
+  const lots = app.eqSellableLots([grant], 'brenton', '2026-08-01').map((l) => [l.acquired, l.available]);
+  assert.deepEqual(plain(lots), [['2022-01-15', 80], ['2023-01-15', 100], ['2024-01-15', 70]]);
+});

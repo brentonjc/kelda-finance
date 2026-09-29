@@ -14,11 +14,26 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.3.0';
+var APP_VERSION = '2.4.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.4.0',
+    date: '2026-09-28',
+    title: 'Buy and sell shares, with realised gains',
+    notes: [
+      'Investments shows one row per stock; open it to Buy, Sell or update the price',
+      'Buy adds a new parcel with its own date and cost, and brokerage is included in the cost',
+      'Sell uses your oldest parcels first, or lets you choose them, and can be entered in US$',
+      'Before you save, a sale shows proceeds, cost base and gain, and how much is from parcels held 12 months or more',
+      'Vested RSUs are sold vest by vest, costed at the vest price',
+      'Each stock lists its sales; delete one to put the units back',
+      '"Realised" shows the gain on sales this financial year',
+      'Can’t sell more units than you hold, and deleting a sale asks first',
+    ],
+  },
   {
     version: '2.3.0',
     date: '2026-09-28',
