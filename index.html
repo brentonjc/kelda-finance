@@ -1196,27 +1196,27 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- Insurance Edit Modal -->
 <div class="modal-overlay" id="edit-modal-insurance" onclick="if(event.target===this)insHideEditModal()" style="display:none">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <h3 style="margin-bottom:4px"><i class="ti ti-pencil"></i> Edit Policy</h3>
-    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Update policy details and coverage information.</p>
-    <div style="display:grid;gap:12px">
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Type</label>
+  <div class="modal-box modal-box--scroll modal-box--lg" onclick="event.stopPropagation()">
+    <h3 class="ins-modal-title"><i class="ti ti-pencil"></i> Edit Policy</h3>
+    <p class="ins-modal-sub">Update policy details and coverage information.</p>
+    <div class="ins-form">
+      <div class="ins-field"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
+      <div class="ins-field"><label class="lbl">Type</label>
         <select id="ins-edit-type" onchange="insEditTypeChanged()">
           <option>Life</option><option>TPD</option><option>Income Protection</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Provider</label><input type="text" id="ins-edit-prov" placeholder="e.g. TAL, AIA"/></div>
         <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-edit-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Frequency</label>
           <select id="ins-edit-freq"><option value="monthly">Monthly</option><option value="annual" selected>Annual</option><option value="quarterly">Quarterly</option><option value="fortnightly">Fortnightly</option></select>
         </div>
         <div><label class="lbl">Renewal Date</label><input type="date" id="ins-edit-renewal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Covered Person</label>
           <select id="ins-edit-covered"><option value="joint">Both</option><option value="brenton">Profile 1</option><option value="shelley">Profile 2</option></select>
         </div>
@@ -1224,21 +1224,21 @@ window.addEventListener('unhandledrejection',function(e){
           <select id="ins-edit-location"><option value="outside">Outside Super</option><option value="inside">Inside Super</option></select>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Sum Insured (AUD)</label><input type="number" id="ins-edit-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
         <div><label class="lbl">Cover Need (AUD)</label><input type="number" id="ins-edit-need" placeholder="2000000" step="1000" inputmode="decimal"/></div>
       </div>
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Document Link</label><input type="url" id="ins-edit-doclink" placeholder="https://... or file path"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Notes</label><input type="text" id="ins-edit-notes" placeholder="e.g. Excess $500"/></div>
-      <div id="ins-edit-ip-fields" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-field"><label class="lbl">Policy Document Link</label><input type="url" id="ins-edit-doclink" placeholder="https://... or file path"/></div>
+      <div class="ins-field"><label class="lbl">Notes</label><input type="text" id="ins-edit-notes" placeholder="e.g. Excess $500"/></div>
+      <div id="ins-edit-ip-fields" class="ins-row2" style="display:none">
         <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-edit-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
         <div><label class="lbl">Benefit Period</label><select id="ins-edit-ip-period"><option value="age65">To Age 65</option><option value="2yr">2 Years</option><option value="5yr">5 Years</option></select></div>
       </div>
-      <div id="ins-edit-tpd-fields" style="display:none;grid-template-columns:1fr;gap:8px">
+      <div id="ins-edit-tpd-fields" class="ins-row1" style="display:none">
         <div><label class="lbl">TPD Definition</label><select id="ins-edit-tpd-def"><option value="own">Own Occupation</option><option value="any">Any Occupation</option></select></div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn btn-primary" onclick="addInsurance()" style="flex:1">Save Changes</button>
+      <div class="ins-modal-actions">
+        <button class="btn btn-primary ins-btn-grow" onclick="addInsurance()">Save Changes</button>
         <button class="btn btn-ghost" onclick="insHideEditModal()">Cancel</button>
       </div>
     </div>
@@ -1247,21 +1247,21 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- Insurance Add Policy Modal -->
 <div class="modal-overlay" id="add-modal-insurance" onclick="if(event.target===this)insHideAddModal()" style="display:none">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <h3 style="margin-bottom:4px">＋ Add Policy</h3>
-    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Cover Need auto-fills from the Needs Analysis when income is entered there.</p>
-    <div style="display:grid;gap:12px">
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Type</label>
+  <div class="modal-box modal-box--scroll modal-box--lg" onclick="event.stopPropagation()">
+    <h3 class="ins-modal-title">＋ Add Policy</h3>
+    <p class="ins-modal-sub">Cover Need auto-fills from the Needs Analysis when income is entered there.</p>
+    <div class="ins-form">
+      <div class="ins-field"><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div>
+      <div class="ins-field"><label class="lbl">Type</label>
         <select id="ins-type" onchange="insTypeChanged()">
           <option>Life</option><option>TPD</option><option>Income Protection</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Provider</label><input type="text" id="ins-prov" placeholder="e.g. TAL, AIA, Zurich"/></div>
         <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Frequency</label>
           <select id="ins-freq">
             <option value="monthly">Monthly</option><option value="annual" selected>Annual</option>
@@ -1270,7 +1270,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div><label class="lbl">Renewal Date</label><input type="date" id="ins-renewal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Covered Person</label>
           <select id="ins-covered" onchange="insAutoFillNeed()">
             <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Profile 1</option><option value="shelley" data-profile-name="shelley">Profile 2</option>
@@ -1282,19 +1282,19 @@ window.addEventListener('unhandledrejection',function(e){
           </select>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
         <div>
           <label class="lbl">Cover Need (Life/TPD/IP) (AUD)</label>
           <input type="number" id="ins-need" placeholder="Auto-filled from Needs Analysis" step="1000" inputmode="decimal"/>
-          <div id="ins-need-hint" style="font-size:.68rem;color:var(--success);margin-top:3px;min-height:14px"></div>
+          <div id="ins-need-hint" class="ins-need-hint"></div>
         </div>
       </div>
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
+      <div class="ins-field"><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
+      <div class="ins-field"><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
       <!-- IP-specific fields -->
       <div id="ins-ip-fields" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="ins-row2">
           <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
           <div><label class="lbl">Benefit Period</label>
             <select id="ins-ip-period">
@@ -1304,7 +1304,7 @@ window.addEventListener('unhandledrejection',function(e){
             </select>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+        <div class="ins-row1 ins-row1--gap">
           <div><label class="lbl">Waiting Period</label>
             <select id="ins-ip-wait">
               <option value="30">30 days</option>
@@ -1317,7 +1317,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <!-- TPD-specific fields -->
       <div id="ins-tpd-fields" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        <div class="ins-row1">
           <div><label class="lbl">TPD Definition</label>
             <select id="ins-tpd-def">
               <option value="own">Own Occupation</option>
@@ -1327,8 +1327,8 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <button class="btn btn-primary" onclick="addInsurance()" style="flex:1">Add Policy</button>
+    <div class="ins-modal-actions ins-modal-actions--add">
+      <button class="btn btn-primary ins-btn-grow" onclick="addInsurance()">Add Policy</button>
       <button class="btn btn-ghost" onclick="insHideAddModal()">Cancel</button>
     </div>
   </div>
@@ -2132,12 +2132,12 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-insurance">
 
     <!-- Page header -->
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+    <div class="ins-page-hd">
       <div>
         <div class="page-title">Life Insurance</div>
         <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
       </div>
-      <button class="btn btn-primary" onclick="insShowAddModal()" style="flex-shrink:0;margin-top:4px">＋ Add Policy</button>
+      <button class="btn btn-primary ins-add-btn" onclick="insShowAddModal()">＋ Add Policy</button>
     </div>
 
     <div id="how-to-insurance"></div>
@@ -2147,8 +2147,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Coverage Gap Analysis + Coverage Bars (single card) -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px"><i class="ti ti-heart-broken"></i> Coverage Gap Analysis</div>
-      <div style="height:300px;position:relative;margin-bottom:16px">
+      <div class="section-label ins-sl-14"><i class="ti ti-heart-broken"></i> Coverage Gap Analysis</div>
+      <div class="ins-chart-wrap">
         <canvas id="ins-coverage-chart"></canvas>
       </div>
       <div id="ins-coverage"></div>
@@ -2156,18 +2156,18 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- All Policies (with renewals collapsible inside) -->
     <div class="card mb">
-      <details style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px">
-        <summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-calendar"></i> Upcoming Renewals <span style="opacity:.5">▾</span>
+      <details class="ins-renewals-details">
+        <summary class="ins-renewals-sum">
+          <i class="ti ti-calendar"></i> Upcoming Renewals <span class="ins-caret">▾</span>
         </summary>
-        <div id="ins-renewals" style="margin-top:10px"></div>
+        <div id="ins-renewals" class="ins-renewals"></div>
       </details>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">All Policies</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="ins-list-hd">
+        <div class="section-label section-label--flush">All Policies</div>
+        <div class="ins-list-tools">
           <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()"><i class="ti ti-chart-bar"></i> CSV</button>
           <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()"><i class="ti ti-file-text"></i> Report</button>
-          <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto">
+          <select id="ins-filter" class="ins-policy-filter" onchange="renderInsurance()">
             <option value="">All Types</option><option>Life</option><option>TPD</option><option>Income Protection</option>
           </select>
         </div>
@@ -2177,25 +2177,25 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Needs Analysis (moved to bottom) -->
     <div class="card mb" id="li-needs-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div class="ins-needs-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-heart"></i> Life, TPD &amp; Income Protection — Needs Analysis</div>
-          <div style="font-size:.76rem;color:var(--muted)">Enter your existing TPD and IP cover in each card to see your coverage gaps. Life, TPD and IP calculated independently. IP: 75% of income, 90-day wait, to age 65.</div>
+          <div class="section-label ins-sl-2"><i class="ti ti-heart"></i> Life, TPD &amp; Income Protection — Needs Analysis</div>
+          <div class="ins-needs-desc">Enter your existing TPD and IP cover in each card to see your coverage gaps. Life, TPD and IP calculated independently. IP: 75% of income, 90-day wait, to age 65.</div>
         </div>
-        <div style="display:flex;gap:0;background:var(--card2);border:1px solid var(--border);border-radius:9px;overflow:hidden">
-          <button class="li-tab active" id="li-tab-all"    onclick="liSwitchTab('all')"   style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff">All Methods</button>
-          <button class="li-tab"        id="li-tab-dime"   onclick="liSwitchTab('dime')"  style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">DIME</button>
-          <button class="li-tab"        id="li-tab-income" onclick="liSwitchTab('income')" style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">10× Income</button>
-          <button class="li-tab"        id="li-tab-needs"  onclick="liSwitchTab('needs')" style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">Needs PV</button>
+        <div class="li-tabs">
+          <button class="li-tab active" id="li-tab-all"    onclick="liSwitchTab('all')">All Methods</button>
+          <button class="li-tab"        id="li-tab-dime"   onclick="liSwitchTab('dime')">DIME</button>
+          <button class="li-tab"        id="li-tab-income" onclick="liSwitchTab('income')">10× Income</button>
+          <button class="li-tab"        id="li-tab-needs"  onclick="liSwitchTab('needs')">Needs PV</button>
         </div>
       </div>
 
       <div class="li-person-grid">
         <!-- BRENTON -->
         <div class="li-card">
-          <div class="li-card-hd" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
-            <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
-            <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Profile 1</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+          <div class="li-card-hd li-card-hd--p1">
+            <span class="li-hd-ico"><i class="ti ti-briefcase"></i></span>
+            <div><div class="li-hd-name" data-profile-label="brenton">Profile 1</div><div class="li-hd-sub">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
             <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-b-income" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
@@ -2206,18 +2206,18 @@ window.addEventListener('unhandledrejection',function(e){
             <div class="li-ass-row"><label>Funeral / Final Expenses (AUD)</label><input type="number" id="li-b-funeral" value="15000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Super / Savings (AUD)</label><input type="number" id="li-b-assets" placeholder="185000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Life Cover in Super (AUD)</label><input type="number" id="li-b-existing" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px">Existing TPD &amp; Income Protection</div>
+            <div class="li-subhd">Existing TPD &amp; Income Protection</div>
             <div class="li-ass-row"><label>Existing TPD Cover (AUD)</label><input type="number" id="li-b-exist-tpd" placeholder="0" step="10000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing IP Monthly Benefit (AUD/mo)</label><input type="number" id="li-b-exist-ip" placeholder="0" step="500" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Current Age</label><input type="number" id="li-b-age" placeholder="40" min="18" max="70" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
-            <div id="li-b-result" style="margin-top:14px"></div>
+            <div id="li-b-result" class="li-result"></div>
           </div>
         </div>
         <!-- SHELLEY -->
         <div class="li-card">
-          <div class="li-card-hd" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
-            <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
-            <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Profile 2</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+          <div class="li-card-hd li-card-hd--p2">
+            <span class="li-hd-ico"><i class="ti ti-briefcase"></i></span>
+            <div><div class="li-hd-name" data-profile-label="shelley">Profile 2</div><div class="li-hd-sub">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
             <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-s-income" placeholder="95000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
@@ -2228,15 +2228,15 @@ window.addEventListener('unhandledrejection',function(e){
             <div class="li-ass-row"><label>Funeral / Final Expenses (AUD)</label><input type="number" id="li-s-funeral" value="15000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Super / Savings (AUD)</label><input type="number" id="li-s-assets" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Life Cover in Super (AUD)</label><input type="number" id="li-s-existing" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px">Existing TPD &amp; Income Protection</div>
+            <div class="li-subhd">Existing TPD &amp; Income Protection</div>
             <div class="li-ass-row"><label>Existing TPD Cover (AUD)</label><input type="number" id="li-s-exist-tpd" placeholder="0" step="10000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing IP Monthly Benefit (AUD/mo)</label><input type="number" id="li-s-exist-ip" placeholder="0" step="500" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Current Age</label><input type="number" id="li-s-age" placeholder="38" min="18" max="70" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
-            <div id="li-s-result" style="margin-top:14px"></div>
+            <div id="li-s-result" class="li-result"></div>
           </div>
         </div>
       </div>
-      <div style="font-size:.7rem;color:var(--muted)"><i class="ti ti-alert-triangle"></i> Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
+      <div class="li-disclaimer"><i class="ti ti-alert-triangle"></i> Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
     </div>
 
   </div>

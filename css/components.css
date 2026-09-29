@@ -304,6 +304,49 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .ins-flag{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;font-size:.82rem;font-weight:600;}
 .ins-flag-warn{background:#2a2010;border:1px solid #5a4010;color:var(--warn);}
 .ins-flag-ok{background:#1a2a1a;border:1px solid #1a4a1a;color:var(--success);}
+/* Insurance page (was inline) — note .ins-* is shared with the Graphs page's older classes */
+.ins-page-hd{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px;}
+.btn.ins-add-btn{flex-shrink:0;margin-top:4px;}
+.section-label.ins-sl-14{margin-bottom:14px;}
+.section-label.ins-sl-2{margin-bottom:2px;}
+.ins-chart-wrap{height:300px;position:relative;margin-bottom:16px;}
+.empty.ins-chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;}
+.ins-renewals-details{margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px;}
+.ins-renewals-sum{cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;align-items:center;gap:6px;}
+.ins-caret{opacity:.5;}
+.ins-renewals{margin-top:10px;}
+.ins-ren-r{display:flex;gap:12px;align-items:center;}
+.ins-ren-yr{font-size:.76rem;color:var(--muted);}
+.ins-list-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.ins-list-tools{display:flex;gap:8px;flex-wrap:wrap;}
+.ins-policy-filter{padding:7px 10px;font-size:.78rem;width:auto;}
+.ins-tag--card2{background:var(--card2);color:var(--muted);}
+.ins-tag--card3{background:var(--card3);color:var(--muted);}
+.ins-tag--ip{background:var(--card3);color:var(--purple);}
+.ins-tag--tpd{background:var(--warn-bg);color:var(--warn);}
+.ins-tag a{color:inherit;text-decoration:none;}
+.ins-amt-yr{font-size:.68rem;color:var(--muted);text-align:right;margin-top:2px;}
+.ins-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:7px;}
+.ins-status{font-weight:700;}
+.ins-cov-foot{display:flex;justify-content:space-between;margin-top:3px;}
+.ins-cov-pct{font-size:.7rem;color:var(--muted);}
+.empty.empty--pad12{padding:12px 0;}
+.empty.empty--pad10{padding:10px 0;}
+.ins-needs-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.ins-needs-desc{font-size:.76rem;color:var(--muted);}
+/* Add / edit policy modals */
+.modal-box--lg{max-width:600px;}
+.modal-box .ins-modal-title{margin-bottom:4px;}  /* must outrank .modal-box h3 */
+.ins-modal-sub{font-size:.76rem;color:var(--muted);margin-bottom:18px;}
+.ins-form{display:grid;gap:12px;}
+.ins-field{display:grid;gap:8px;}
+.ins-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ins-row1{display:grid;grid-template-columns:1fr;gap:8px;}
+.ins-row1--gap{margin-top:8px;}
+.ins-need-hint{font-size:.68rem;color:var(--success);margin-top:3px;min-height:14px;}
+.ins-modal-actions{display:flex;gap:10px;margin-top:4px;}
+.ins-modal-actions--add{margin-top:16px;}
+.btn.ins-btn-grow{flex:1;}
 
 /* ══ BILL CARD ══ */
 .bill-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
@@ -426,6 +469,29 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .li-gap-ok{color:var(--success);font-weight:700;font-size:.72rem;}
 .li-gap-warn{color:var(--warn);font-weight:700;font-size:.72rem;}
 .li-gap-bad{color:var(--danger);font-weight:700;font-size:.72rem;}
+/* Life-needs analysis (was inline) */
+.li-tabs{display:flex;gap:0;background:var(--card2);border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+.li-tab{padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted);}
+.li-tab.active{background:var(--primary);color:#fff;}
+.li-card-hd.li-card-hd--p1{background:linear-gradient(135deg,#8b1a4a,#e8457a);}
+.li-card-hd.li-card-hd--p2{background:linear-gradient(135deg,#3a2060,#7c5cbf);}
+.li-hd-ico{font-size:1.3rem;}
+.li-hd-name{font-weight:700;color:#fff;}
+.li-hd-sub{font-size:.7rem;color:rgba(255,255,255,.75);}
+.li-subhd{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px;}
+.li-result{margin-top:14px;}
+.li-disclaimer{font-size:.7rem;color:var(--muted);}
+.li-method-detail{font-size:.7rem;color:var(--muted);margin-top:3px;}
+.li-method-gap{margin-top:6px;font-size:.74rem;font-weight:700;}
+.li-method-note{font-size:.7rem;color:var(--muted);margin-top:4px;}
+.li-bd{margin-top:8px;}
+.li-bd--detail{margin-top:10px;}
+.li-bd-sum{font-size:.72rem;color:var(--muted);cursor:pointer;}
+.li-bd-sum--md{font-size:.74rem;}
+.li-bd-body{margin-top:6px;}
+.li-bd-body--8{margin-top:8px;}
+.li-cov-foot{display:flex;justify-content:space-between;margin-top:3px;font-size:.7rem;}
+.li-bars{margin-top:14px;}
 
 /* ══ DIV 293 ══ */
 .d293-wrap{display:flex;flex-wrap:wrap;gap:18px;}
@@ -440,6 +506,18 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .d293-applies{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.7rem;font-weight:700;background:#2a1020;color:var(--danger);}
 .d293-na{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.7rem;font-weight:700;background:#1a2a1a;color:var(--success);}
 .d293-callout{background:#2a1030;border-radius:9px;padding:11px 14px;margin-top:12px;font-size:.78rem;line-height:1.7;}
+.d293-name{font-weight:700;color:#fff;}
+.d293-name--lg{font-size:.92rem;}
+.d293-sal{margin-left:10px;font-size:.72rem;color:rgba(255,255,255,.75);}
+.d293-body.d293-body--empty{color:var(--muted);font-size:.82rem;}
+.d293-cap{color:var(--warn);font-size:.7rem;}
+.d293-sep{height:1px;background:var(--border);margin:10px 0;}
+/* Super projection result (rendered by showSuperResults in insurance.js) */
+.sp-proj{text-align:center;padding:10px;background:var(--primary-bg);border-radius:10px;margin-bottom:10px;}
+.sp-proj-age{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.sp-proj-val{font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--primary);}
+.sp-proj-sub{font-size:.72rem;color:var(--muted);}
+.sp-proj-note{font-size:.68rem;color:var(--purple);margin-top:3px;}
 
 /* ══ RATE SENSITIVITY ══ */
 .rate-table{width:100%;border-collapse:collapse;font-size:.82rem;}
