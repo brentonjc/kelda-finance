@@ -1794,8 +1794,8 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="how-to-mortgage"></div>
 
     <!-- Property tabs -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-      <div id="mortgage-tabs" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
+    <div class="mg-tabs-bar">
+      <div id="mortgage-tabs" class="mg-tabs"></div>
       <button class="btn btn-ghost btn-sm" onclick="mortgageAddProperty()">+ Add Property</button>
     </div>
 
@@ -1826,39 +1826,39 @@ window.addEventListener('unhandledrejection',function(e){
           <div><label class="lbl">Offset Balance (AUD)</label><input type="number" id="m-offset" placeholder="80000" oninput="syncOffsetSlider()" inputmode="decimal"/></div>
           <div><label class="lbl">Account Name</label><input type="text" id="m-offset-name" placeholder="e.g. Everyday Savings"/></div>
         </div>
-        <div id="ct-offset-sync-banner" style="display:none;background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
-          <button class="btn btn-ghost btn-sm" onclick="pullOffsetFromCT()" style="float:right;padding:4px 10px;font-size:.72rem;margin-left:8px">↻ Sync</button>
-          <span style="color:var(--primary);font-weight:700"><i class="ti ti-link"></i> Cash Tracker offset:</span>
-          <span id="ct-offset-sync-text" style="color:var(--muted);margin-left:5px"></span>
+        <div id="ct-offset-sync-banner" class="mg-sync-banner" style="display:none">
+          <button class="btn btn-ghost btn-sm mg-sync-btn" onclick="pullOffsetFromCT()">↻ Sync</button>
+          <span class="mg-sync-lbl"><i class="ti ti-link"></i> Cash Tracker offset:</span>
+          <span id="ct-offset-sync-text" class="mg-sync-text"></span>
         </div>
-        <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
+        <div class="mg-autolink-note">
           <i class="ti ti-link"></i> <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
         </div>
         <div class="form-grid">
-          <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Month this valuation applies to (defaults to current)</div></div>
+          <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div class="field-hint">Month this valuation applies to (defaults to current)</div></div>
         </div>
         <hr class="div"/>
         <div class="section-label"><i class="ti ti-link"></i> Link to Liability</div>
-        <div style="margin-bottom:14px">
+        <div class="mg-liab-block">
           <label class="lbl">Linked Liability Record</label>
-          <select id="m-linked-liability" onchange="mortgageLiabilityLinkBanner()" style="margin-bottom:8px">
+          <select id="m-linked-liability" class="mg-liab-select" onchange="mortgageLiabilityLinkBanner()">
             <option value="__none__">None — show as read-only in Liabilities</option>
           </select>
-          <div id="m-liab-count-hint" style="font-size:.68rem;color:var(--muted);margin-bottom:6px"></div>
-          <div id="m-liab-link-banner" style="display:none;padding:8px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)"></div>
-          <div style="font-size:.68rem;color:var(--muted);margin-top:6px">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
+          <div id="m-liab-count-hint" class="mg-liab-hint"></div>
+          <div id="m-liab-link-banner" class="mg-liab-banner" style="display:none"></div>
+          <div class="mg-liab-note">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
         </div>
         <button class="btn btn-primary" onclick="saveMortgage()"><i class="ti ti-device-floppy"></i> Save Details</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="mg-side">
         <div class="card">
           <div class="section-label">Home Equity</div>
-          <div style="text-align:center;padding:12px 0">
-            <div id="eq-value" style="font-family:var(--font-mono);font-size:2.6rem;font-weight:700;color:var(--primary)">—</div>
-            <div style="font-size:.74rem;color:var(--muted);margin-top:3px">Current home equity</div>
+          <div class="mg-eq-head">
+            <div id="eq-value" class="mg-eq-value">—</div>
+            <div class="mg-eq-cap">Current home equity</div>
           </div>
-          <div class="prog-track" style="height:12px"><div class="prog-fill" id="eq-bar" style="width:0%"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px">
+          <div class="prog-track prog-track--xl"><div class="prog-fill" id="eq-bar" style="width:0%"></div></div>
+          <div class="mg-scale">
             <span id="eq-lbl-l">Balance</span><span id="eq-lbl-r">Value</span>
           </div>
         </div>
@@ -1866,18 +1866,18 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
     <div class="card" id="offset-sim-card" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+      <div class="mg-sim-hd">
         <div>
           <div class="section-label"><i class="ti ti-adjustments"></i> Offset Simulator</div>
-          <div style="font-size:.78rem;color:var(--muted)">Drag to see how different offset balances affect your loan</div>
+          <div class="mg-sim-sub">Drag to see how different offset balances affect your loan</div>
         </div>
-        <div style="background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center">
-          <div style="font-size:.68rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em">Simulating Offset</div>
-          <div id="sim-offset-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">$0</div>
+        <div class="mg-readout">
+          <div class="mg-readout-lbl">Simulating Offset</div>
+          <div id="sim-offset-lbl" class="mg-readout-val">$0</div>
         </div>
       </div>
       <input type="range" id="offset-slider" min="0" max="500000" step="1000" value="0" oninput="runOffsetSim(this.value)"/>
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:5px;margin-bottom:20px">
+      <div class="mg-scale mg-scale--sim">
         <span>$0</span><span id="sim-max-lbl">$500,000</span>
       </div>
       <div class="occ-grid">
@@ -1891,44 +1891,44 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="occ-before" id="occ-trm-b">—</div><div class="occ-arrow">↓</div>
           <div class="occ-after" id="occ-trm-a">—</div><div class="occ-save" id="occ-trm-s"></div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:.82rem;font-weight:600"><i class="ti ti-coin"></i> Total Interest Saved</span>
-        <span id="occ-total-save" style="font-family:var(--font-mono);font-size:1.1rem;color:var(--primary);font-weight:700">—</span>
+      <div class="mg-saved-row">
+        <span class="mg-saved-lbl"><i class="ti ti-coin"></i> Total Interest Saved</span>
+        <span id="occ-total-save" class="mg-saved-val">—</span>
       </div>
-      <div class="prog-track" style="height:12px">
-        <div class="prog-fill" id="occ-save-bar" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--pink-dark))"></div>
+      <div class="prog-track prog-track--xl">
+        <div class="prog-fill mg-save-fill" id="occ-save-bar" style="width:0%"></div>
       </div>
 
     </div><!-- /offset-sim-card -->
     <!-- MORTGAGE PAYDOWN CHART -->
-    <div class="card" id="mortgage-paydown-card" style="margin-top:18px;display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div class="card mg-section" id="mortgage-paydown-card" style="display:none">
+      <div class="mg-pd-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-trending-down"></i> Mortgage Paydown Schedule</div>
-          <div style="font-size:.76rem;color:var(--muted)">Balance reduction over time — with and without your offset account</div>
+          <div class="section-label mg-pd-title"><i class="ti ti-trending-down"></i> Mortgage Paydown Schedule</div>
+          <div class="mg-pd-sub">Balance reduction over time — with and without your offset account</div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div class="mg-pd-tools">
           <button class="btn btn-ghost btn-sm" id="pd-view-btn" onclick="togglePaydownView()">Show Monthly</button>
         </div>
       </div>
-      <div class="chart-box" style="height:300px"><canvas id="paydown-chart"></canvas></div>
-      <div class="g3" id="paydown-stats" style="margin-top:16px"></div>
+      <div class="chart-box mg-pd-chart"><canvas id="paydown-chart"></canvas></div>
+      <div class="g3 mg-pd-stats" id="paydown-stats"></div>
 
     <!-- RATE SENSITIVITY CALCULATOR -->
-    <div class="card" id="rate-sensitivity-card" style="margin-top:18px;display:none">
-      <div style="margin-bottom:16px">
-        <div class="section-label" style="margin-bottom:3px"><i class="ti ti-trending-up"></i> Interest Rate Sensitivity Calculator</div>
-        <div id="rate-linked-info" style="margin-top:6px;font-size:.78rem;line-height:1.5;color:var(--muted)">Repayments calculated on outstanding loan balance (offset shown separately as an interest-saving note).</div>
+    <div class="card mg-section" id="rate-sensitivity-card" style="display:none">
+      <div class="mg-rate-hd">
+        <div class="section-label mg-rate-title"><i class="ti ti-trending-up"></i> Interest Rate Sensitivity Calculator</div>
+        <div id="rate-linked-info" class="mg-rate-info">Repayments calculated on outstanding loan balance (offset shown separately as an interest-saving note).</div>
       </div>
 
       <!-- Live rate slider -->
       <div class="rate-slider-row">
         <label>Simulate Rate:</label>
         <input type="range" id="rate-sim-slider" min="1" max="15" step="0.25" value="6.25"
-          oninput="onRateSlider(this.value)" style="flex:1;min-width:180px"/>
-        <div style="background:#2a1030;border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
-          <div style="font-size:.64rem;color:var(--muted);margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em">Rate</div>
-          <div id="rate-sim-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">6.25%</div>
+          oninput="onRateSlider(this.value)" class="mg-rate-slider"/>
+        <div class="mg-readout mg-readout--sm">
+          <div class="mg-readout-lbl">Rate</div>
+          <div id="rate-sim-lbl" class="mg-readout-val">6.25%</div>
         </div>
       </div>
 
@@ -1936,7 +1936,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="rate-badge-row" id="rate-impact-badges"></div>
 
       <!-- Scenario table -->
-      <div style="overflow-x:auto">
+      <div class="mg-table-scroll">
         <table class="rate-table" id="rate-table">
           <thead>
             <tr>
@@ -1953,7 +1953,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- Budget callout -->
-      <div id="rate-budget-callout" style="margin-top:16px;border-radius:10px;padding:14px 16px;font-size:.82rem;line-height:1.6;display:none"></div>
+      <div id="rate-budget-callout" class="mg-callout" style="display:none"></div>
     </div>
 
     </div>

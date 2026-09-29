@@ -45,12 +45,12 @@ function mortgageRenderTabs() {
   var props = _mortgageEnsureProps();
   el.innerHTML = props.map(function(p, i) {
     var active = i === _mortgagePropIdx;
-    return '<button class="btn btn-sm ' + (active ? 'btn-primary' : 'btn-ghost') + '" '
-      + 'onclick="mortgageSwitchProp(' + i + ')" style="position:relative">'
+    return '<button class="btn btn-sm mg-prop-tab ' + (active ? 'btn-primary' : 'btn-ghost') + '" '
+      + 'onclick="mortgageSwitchProp(' + i + ')">'
       + p.name
       + (props.length > 1 && active
           ? ' <span onclick="event.stopPropagation();mortgageDeleteProp(' + i + ')" '
-            + 'style="margin-left:6px;font-size:.8rem;opacity:.7">×</span>'
+            + 'class="mg-prop-del">×</span>'
           : '')
       + '</button>';
   }).join('');
@@ -145,7 +145,7 @@ function mortgagePopulateLiabilitySelect() {
   if (liabs.length) {
     // Use a disabled <option> as a visual separator — NOT an <optgroup disabled> which
     // causes Safari/iOS to treat subsequent options as children of the disabled group
-    opts += '<option value="" disabled style="color:var(--muted);font-size:.78rem">── Existing Liabilities ──</option>';
+    opts += '<option value="" disabled class="mg-opt-sep">── Existing Liabilities ──</option>';
     liabs.forEach(function(l) {
       var sel = (String(l.id) === String(curId)) ? ' selected' : '';
       var label = (l.lender || l.name || 'Unnamed') + ' — ' + (l.type || 'other');
@@ -181,14 +181,14 @@ function mortgageLiabilityLinkBanner() {
     banner.style.display = 'none';
   } else if (val === '__create__') {
     banner.style.display = 'block';
-    banner.innerHTML = '<span style="color:var(--success)">' + ICON('circle-check-filled') + '</span> A new Mortgage liability will be created and linked when you save.';
+    banner.innerHTML = '<span class="tone-green">' + ICON('circle-check-filled') + '</span> A new Mortgage liability will be created and linked when you save.';
   } else {
     var liabs2 = [];
     try { liabs2 = JSON.parse(localStorage.getItem('cff_liabilities') || '[]') || []; } catch(e) {}
     var liab = liabs2.find(function(l){ return l.id === val; });
     if (liab) {
       banner.style.display = 'block';
-      banner.innerHTML = '<span style="color:var(--success)">' + ICON('link') + '</span> Saving will sync the remaining balance to <strong>' + esc(liab.lender) + '</strong> in Liabilities.';
+      banner.innerHTML = '<span class="tone-green">' + ICON('link') + '</span> Saving will sync the remaining balance to <strong>' + esc(liab.lender) + '</strong> in Liabilities.';
     } else {
       banner.style.display = 'none';
     }
@@ -415,7 +415,7 @@ function renderMortgage(){
   document.getElementById('eq-lbl-r').textContent='Value: '+fmt(m.homeValue);
 
   const sumEl=document.getElementById('m-summary');
-  if(!m.balance||!m.rate||!m.years){sumEl.innerHTML='<div class="empty" style="padding:14px"><p>Save mortgage details to see calculations</p></div>';document.getElementById('offset-sim-card').style.display='none';return;}
+  if(!m.balance||!m.rate||!m.years){sumEl.innerHTML='<div class="empty empty--tight"><p>Save mortgage details to see calculations</p></div>';document.getElementById('offset-sim-card').style.display='none';return;}
 
   const isIO=m.reptype==='io';
   const effBal=Math.max(0,(m.balance||0)-(m.offset||0));
@@ -454,19 +454,19 @@ function renderMortgage(){
       : '';
     return `
     <div class="dr"><span class="dr-k">Purchase Price</span><span class="dr-v">${fmt(m.purchasePrice)}</span></div>
-    <div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v" style="color:${gain>=0?'var(--success)':'var(--danger)'}">${gain>=0?'+':''}${fmt(gain)} (${gain>=0?'+':''}${gainPct}%)</span></div>`
-    + (cagr ? `<div class="dr"><span class="dr-k">Annualised Growth</span><span class="dr-v" style="color:var(--success)">${cagr}</span></div>` : '');
+    <div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v ${gain>=0?'tone-green':'tone-danger'}">${gain>=0?'+':''}${fmt(gain)} (${gain>=0?'+':''}${gainPct}%)</span></div>`
+    + (cagr ? `<div class="dr"><span class="dr-k">Annualised Growth</span><span class="dr-v tone-green">${cagr}</span></div>` : '');
   })() : '';
 
   sumEl.innerHTML=`
     <div class="dr"><span class="dr-k">Rate (p.a.)</span><span class="dr-v">${m.rate}%</span></div>
     <div class="dr"><span class="dr-k">Loan Balance</span><span class="dr-v">${fmt(m.balance)}</span></div>
-    <div class="dr"><span class="dr-k">Offset (${m.offsetName||'Offset'})</span><span class="dr-v" style="color:var(--primary)">${fmt(m.offset||0)}</span></div>
-    <div class="dr"><span class="dr-k">Effective Balance</span><span class="dr-v" style="color:var(--success)">${fmt(effBal)}</span></div>
+    <div class="dr"><span class="dr-k">Offset (${m.offsetName||'Offset'})</span><span class="dr-v tone-pink">${fmt(m.offset||0)}</span></div>
+    <div class="dr"><span class="dr-k">Effective Balance</span><span class="dr-v tone-green">${fmt(effBal)}</span></div>
     <div class="dr"><span class="dr-k">Monthly Repayment</span><span class="dr-v">${fmt(repWithOff)}</span></div>
     <div class="dr"><span class="dr-k">Monthly Interest</span><span class="dr-v">${fmt(intWithOff)}</span></div>
-    <div class="dr"><span class="dr-k">Loan Paid Off</span><span class="dr-v" style="color:var(--primary)">${paidOff.toFixed(1)}%</span></div>
-    <div class="dr"><span class="dr-k">Equity</span><span class="dr-v" style="color:var(--primary)">${eqPct.toFixed(1)}%</span></div>
+    <div class="dr"><span class="dr-k">Loan Paid Off</span><span class="dr-v tone-pink">${paidOff.toFixed(1)}%</span></div>
+    <div class="dr"><span class="dr-k">Equity</span><span class="dr-v tone-pink">${eqPct.toFixed(1)}%</span></div>
     ${acqRows}${capGainRows}`;
 
   const sim=document.getElementById('offset-sim-card');
@@ -638,19 +638,19 @@ function renderPaydownChart(){
   // Stats
   const statsEl=document.getElementById('paydown-stats');
   if(statsEl) statsEl.innerHTML=`
-    <div class="stat stat-pink" style="padding:14px 16px">
+    <div class="stat stat-pink mg-stat">
       <div class="sl">Monthly Repayment</div>
-      <div class="sv" style="font-size:1.35rem">${fmt(repmt)}</div>
+      <div class="sv">${fmt(repmt)}</div>
       <div class="ss">P&I based on current details</div>
     </div>
-    <div class="stat stat-rose" style="padding:14px 16px">
+    <div class="stat stat-rose mg-stat">
       <div class="sl">Interest Saved (offset)</div>
-      <div class="sv" style="font-size:1.35rem">${intSaved>0?fmt(intSaved):'—'}</div>
+      <div class="sv">${intSaved>0?fmt(intSaved):'—'}</div>
       <div class="ss">${mosSaved>0?fmtMonths(mosSaved)+' sooner':'vs no offset'}</div>
     </div>
-    <div class="stat stat-dark" style="padding:14px 16px">
+    <div class="stat stat-dark mg-stat">
       <div class="sl">Loan Paid Off In</div>
-      <div class="sv" style="font-size:1.35rem">${payoffWith>-1?fmtMonths(payoffWith*(paydownYearly?12:1)):fmtMonths(m.years*12)}</div>
+      <div class="sv">${payoffWith>-1?fmtMonths(payoffWith*(paydownYearly?12:1)):fmtMonths(m.years*12)}</div>
       <div class="ss">with current offset</div>
     </div>`;
 }
@@ -707,31 +707,31 @@ function updateRateImpact(simRate){
   const badgesEl = document.getElementById('rate-impact-badges');
   if (badgesEl) {
     const sign = deltaMonthly >= 0 ? '+' : '';
-    const color = deltaMonthly > 0 ? 'var(--danger)' : deltaMonthly < 0 ? 'var(--success)' : 'var(--muted)';
+    const tone = deltaMonthly > 0 ? 'tone-danger' : deltaMonthly < 0 ? 'tone-green' : 'tone-muted';
     const bg    = deltaMonthly > 0 ? '#2a1020'       : deltaMonthly < 0 ? '#1a2a1a'        : '#2a2535';
-    const rateColor = rateChange > 0 ? 'var(--danger)' : rateChange < 0 ? 'var(--success)' : 'var(--muted)';
+    const rateTone = rateChange > 0 ? 'tone-danger' : rateChange < 0 ? 'tone-green' : 'tone-muted';
     const rateBg    = rateChange > 0 ? '#2a1020'       : rateChange < 0 ? '#1a2a1a'        : '#2a2535';
 
     badgesEl.innerHTML = `
       <div class="rate-badge">
         <div class="rb-label">Current Rate</div>
-        <div class="rb-val" style="color:var(--primary)">${m.rate}%</div>
-        <div class="rb-delta" style="color:var(--muted)">your loan rate</div>
+        <div class="rb-val tone-pink">${m.rate}%</div>
+        <div class="rb-delta tone-muted">your loan rate</div>
       </div>
       <div class="rate-badge">
         <div class="rb-label">Simulated Rate</div>
-        <div class="rb-val" style="color:${rateColor}">${simRate.toFixed(2)}%</div>
-        <div class="rb-delta" style="color:${rateColor}">${rateChange>0?'+':''}${rateChange.toFixed(2)}% change</div>
+        <div class="rb-val ${rateTone}">${simRate.toFixed(2)}%</div>
+        <div class="rb-delta ${rateTone}">${rateChange>0?'+':''}${rateChange.toFixed(2)}% change</div>
       </div>
       <div class="rate-badge">
         <div class="rb-label">New Monthly Repayment</div>
-        <div class="rb-val" style="color:${color}">${fmt(simRepmt)}</div>
-        <div class="rb-delta" style="color:${color}">${sign}${fmt(deltaMonthly)} / mo</div>
+        <div class="rb-val ${tone}">${fmt(simRepmt)}</div>
+        <div class="rb-delta ${tone}">${sign}${fmt(deltaMonthly)} / mo</div>
       </div>
       <div class="rate-badge">
         <div class="rb-label">Annual Impact</div>
-        <div class="rb-val" style="color:${color}">${sign}${fmt(Math.abs(deltaAnnual))}</div>
-        <div class="rb-delta" style="color:${color}">${deltaAnnual>0?'extra cost':'annual saving'} per year</div>
+        <div class="rb-val ${tone}">${sign}${fmt(Math.abs(deltaAnnual))}</div>
+        <div class="rb-delta ${tone}">${deltaAnnual>0?'extra cost':'annual saving'} per year</div>
       </div>`;
   }
 
@@ -745,13 +745,11 @@ function updateRateImpact(simRate){
       if (deltaMonthly > 0) {
         // Rate rise — how to absorb it
         const extraPerWeek = deltaAnnual / 52;
-        callout.style.background = 'var(--danger-bg)';
-        callout.style.border = '1px solid var(--danger-border)';
-        callout.style.color = 'var(--text)';
+        callout.className = 'mg-callout mg-callout--rise';
         callout.innerHTML = `
-          <div style="font-weight:700;color:var(--danger);margin-bottom:8px">' + ICON('alert-triangle') + ' Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
+          <div class="mg-callout-title tone-danger">' + ICON('alert-triangle') + ' Rate Rise Impact — ${fmt(deltaMonthly)}/mo increase</div>
           To absorb a rate rise to <strong>${simRate.toFixed(2)}%</strong>, you'd need to find an extra
-          <strong style="color:var(--danger)">${fmt(deltaMonthly)} per month</strong>
+          <strong class="tone-danger">${fmt(deltaMonthly)} per month</strong>
           (${fmt(extraPerWeek)}/week · ${fmt(deltaAnnual)}/year).<br/><br/>
           <strong>Ways to buffer this:</strong><br/>
           • Increase your offset account by <strong>${fmt(deltaMonthly / (m.rate/100/12))}</strong> to offset the extra monthly interest<br/>
@@ -760,13 +758,11 @@ function updateRateImpact(simRate){
       } else {
         // Rate cut — savings opportunity
         const savedPerWeek = Math.abs(deltaAnnual) / 52;
-        callout.style.background = 'var(--success-bg)';
-        callout.style.border = '1px solid var(--success-border)';
-        callout.style.color = 'var(--text)';
+        callout.className = 'mg-callout mg-callout--cut';
         callout.innerHTML = `
-          <div style="font-weight:700;color:var(--success);margin-bottom:8px">' + ICON('circle-check-filled') + ' Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>
+          <div class="mg-callout-title tone-green">' + ICON('circle-check-filled') + ' Rate Cut Opportunity — ${fmt(Math.abs(deltaMonthly))}/mo saving</div>
           At <strong>${simRate.toFixed(2)}%</strong> you'd save
-          <strong style="color:var(--success)">${fmt(Math.abs(deltaMonthly))} per month</strong>
+          <strong class="tone-green">${fmt(Math.abs(deltaMonthly))} per month</strong>
           (${fmt(savedPerWeek)}/week · ${fmt(Math.abs(deltaAnnual))}/year).<br/><br/>
           <strong>Make the most of it:</strong><br/>
           • Keep repayments the same — extra <strong>${fmt(Math.abs(deltaMonthly))}/mo</strong> pays off principal faster<br/>
@@ -813,7 +809,7 @@ function buildRateTable(currentRate){
 
     return `<tr class="${isCurrent ? 'rate-current' : ''}">
       <td><strong>${rate.toFixed(2)}%</strong> <span class="rate-chip ${chipClass}">${chipText}</span></td>
-      <td style="font-weight:${isCurrent?'700':'400'};color:${isCurrent?'var(--primary)':'inherit'}">${fmt(repmt)}</td>
+      <td${isCurrent?' class="mg-td-current"':''}>${fmt(repmt)}</td>
       <td class="${deltaClass}">${deltaText}</td>
       <td>${fmt(intMo)}</td>
       <td>${fmt(annual)}</td>

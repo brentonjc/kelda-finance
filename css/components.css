@@ -25,6 +25,7 @@
 .form-grid>*{flex:1 1 150px;min-width:0;}
 label.lbl{display:block;font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;}
 .lbl-hint{font-size:.7rem;color:var(--muted);}
+.field-hint{font-size:.68rem;color:var(--muted);margin-top:3px;}
 input,select,textarea{
   width:100%;padding:11px 13px;background:var(--input-bg);border:1.5px solid var(--input-border);
   border-radius:9px;color:var(--text);font-family:var(--font-body);font-size:16px;
@@ -81,6 +82,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .prog-fill.danger{background:var(--danger);}
 .prog-fill.over{background:var(--danger);}
 .prog-track--lg{height:10px;}
+.prog-track--xl{height:12px;}
 
 /* ══ TABLE ══ */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -385,6 +387,58 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .rate-badge .rb-label{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px;}
 .rate-badge .rb-val{font-family:var(--font-display);font-size:1.25rem;font-weight:700;}
 .rate-badge .rb-delta{font-size:.72rem;font-weight:700;margin-top:3px;}
+/* Mortgage page (was inline) */
+.mg-tabs-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.mg-tabs{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+.mg-prop-tab{position:relative;}
+.mg-prop-del{margin-left:6px;font-size:.8rem;opacity:.7;}
+.mg-sync-banner{background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto;}
+.btn.mg-sync-btn{float:right;padding:4px 10px;font-size:.72rem;margin-left:8px;}
+.mg-sync-lbl{color:var(--primary);font-weight:700;}
+.mg-sync-text{color:var(--muted);margin-left:5px;}
+.mg-autolink-note{background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px;}
+.mg-liab-block{margin-bottom:14px;}
+.mg-liab-select{margin-bottom:8px;}
+.mg-liab-hint{font-size:.68rem;color:var(--muted);margin-bottom:6px;}
+.mg-liab-banner{padding:8px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted);}
+.mg-liab-note{font-size:.68rem;color:var(--muted);margin-top:6px;}
+.mg-opt-sep{color:var(--muted);font-size:.78rem;}
+.mg-side{display:flex;flex-direction:column;gap:16px;}
+.mg-eq-head{text-align:center;padding:12px 0;}
+.mg-eq-value{font-family:var(--font-mono);font-size:2.6rem;font-weight:700;color:var(--primary);}
+.mg-eq-cap{font-size:.74rem;color:var(--muted);margin-top:3px;}
+.mg-scale{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px;}
+.mg-scale--sim{margin-top:5px;margin-bottom:20px;}
+.mg-sim-hd{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.mg-sim-sub{font-size:.78rem;color:var(--muted);}
+.mg-readout{background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center;}
+.mg-readout--sm{border-radius:9px;padding:8px 16px;min-width:90px;}
+.mg-readout-lbl{font-size:.68rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em;}
+.mg-readout--sm .mg-readout-lbl{font-size:.64rem;margin-bottom:1px;}
+.mg-readout-val{font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary);}
+.mg-saved-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.mg-saved-lbl{font-size:.82rem;font-weight:600;}
+.mg-saved-val{font-family:var(--font-mono);font-size:1.1rem;color:var(--primary);font-weight:700;}
+.prog-fill.mg-save-fill{background:linear-gradient(90deg,var(--primary),var(--pink-dark));}
+.card.mg-section{margin-top:18px;}
+.mg-pd-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.section-label.mg-pd-title{margin-bottom:2px;}
+.mg-pd-sub{font-size:.76rem;color:var(--muted);}
+.mg-pd-tools{display:flex;gap:8px;}
+.chart-box.mg-pd-chart{height:300px;}
+.g3.mg-pd-stats{margin-top:16px;}
+.stat.mg-stat{padding:14px 16px;}
+.stat.mg-stat .sv{font-size:1.35rem;}
+.mg-rate-hd{margin-bottom:16px;}
+.section-label.mg-rate-title{margin-bottom:3px;}
+.mg-rate-info{margin-top:6px;font-size:.78rem;line-height:1.5;color:var(--muted);}
+.mg-rate-slider{flex:1;min-width:180px;}
+.mg-table-scroll{overflow-x:auto;}
+.rate-table td.mg-td-current{font-weight:700;color:var(--primary);}
+.mg-callout{margin-top:16px;border-radius:10px;padding:14px 16px;font-size:.82rem;line-height:1.6;}
+.mg-callout--rise{background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--text);}
+.mg-callout--cut{background:var(--success-bg);border:1px solid var(--success-border);color:var(--text);}
+.mg-callout-title{font-weight:700;margin-bottom:8px;}
 
 /* ══ CSV IMPORT ══ */
 .csv-drop{border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--input-bg);}
