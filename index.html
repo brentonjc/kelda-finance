@@ -2416,7 +2416,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="g2 mb">
 
       <!-- Left: asset & liability breakdowns -->
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="as-col">
         <div class="card"><div class="section-label"><i class="ti ti-building-bank"></i> Bank Balances</div><div id="assets-bank"></div></div>
         <div class="card"><div class="section-label"><i class="ti ti-briefcase"></i> Superannuation</div><div id="assets-super"></div></div>
         <div class="card"><div class="section-label"><i class="ti ti-home-2"></i> Property Equity</div><div id="assets-property"></div></div>
@@ -2424,33 +2424,33 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- Right: three donuts + net position panel -->
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="as-col">
 
         <!-- Net Position hero -->
         <div class="card" id="assets-net-position"></div>
 
         <!-- Assets donut -->
         <div class="card">
-          <div class="section-label" style="margin-bottom:10px">Assets Breakdown</div>
-          <div style="height:220px"><canvas id="assets-chart"></canvas></div>
+          <div class="section-label section-label--mb10">Assets Breakdown</div>
+          <div class="as-donut"><canvas id="assets-chart"></canvas></div>
         </div>
 
         <!-- Liabilities donut -->
         <div class="card">
-          <div class="section-label" style="margin-bottom:10px">Liabilities Breakdown</div>
-          <div style="height:220px"><canvas id="assets-liab-chart"></canvas></div>
+          <div class="section-label section-label--mb10">Liabilities Breakdown</div>
+          <div class="as-donut"><canvas id="assets-liab-chart"></canvas></div>
         </div>
 
-        <div id="assets-note" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px 0"></div>
+        <div id="assets-note" class="as-note"></div>
       </div>
     </div>
 
     <!-- Link to full equities tab -->
-    <div class="card mb" style="padding:14px 18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div class="card mb as-eq-card">
+      <div class="as-eq-row">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-trending-up"></i> Equity Holdings</div>
-          <div style="font-size:.74rem;color:var(--muted)">RSU grants and share portfolio</div>
+          <div class="section-label section-label--mb2"><i class="ti ti-trending-up"></i> Equity Holdings</div>
+          <div class="as-sub">RSU grants and share portfolio</div>
         </div>
         <a href="#" onclick="go('equities');return false;" class="btn btn-ghost btn-sm">View Holdings →</a>
       </div>
@@ -2458,10 +2458,10 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Monthly Net Worth History -->
     <div class="card mb">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div class="as-hist-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-calendar"></i> Monthly Net Worth History</div>
-          <div style="font-size:.74rem;color:var(--muted)">Snapshot recorded automatically each time you save a balance, liability, or asset. Components shown when available.</div>
+          <div class="section-label section-label--mb2"><i class="ti ti-calendar"></i> Monthly Net Worth History</div>
+          <div class="as-sub">Snapshot recorded automatically each time you save a balance, liability, or asset. Components shown when available.</div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="renderNetWorthHistory()">↻ Refresh</button>
       </div>

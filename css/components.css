@@ -84,6 +84,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .prog-fill.over{background:var(--danger);}
 .prog-track--lg{height:10px;}
 .prog-track--xl{height:12px;}
+.prog-track--sm{height:8px;}
 
 /* ══ TABLE ══ */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -98,6 +99,10 @@ tr:hover td{background:#221e2a;}
 .dr:last-child{border-bottom:none;}
 .dr-k{font-size:.82rem;color:var(--muted);flex:1;}
 .dr-v{font-weight:600;font-size:.86rem;text-align:right;}
+.dr.dr--total{border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px;}
+.dr.dr--total.dr--total-6{margin-top:6px;}
+.dr--total .dr-k{font-weight:700;}
+.dr-v.dr-v--bold{font-weight:700;}
 
 /* ══ TILE HEADER (label + nav link) ══ */
 .tile-hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -183,6 +188,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .empty--chart p{font-size:.78rem;}
 .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
 .section-label.section-label--flush{margin:0;}
+.section-label.section-label--mb2{margin-bottom:2px;}
 .section-label.section-label--mb10{margin-bottom:10px;}
 .section-label.section-label--mb14{margin-bottom:14px;}
 
@@ -902,6 +908,34 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .btn.qs-mark{background:var(--card3);color:var(--text);padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.8rem;}
 .qs-reset-wrap{margin-top:20px;text-align:center;}
 .qs-reset{background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.85rem;text-decoration:underline;padding:0;min-height:44px;}
+/* Net Worth (Assets) page (was inline) */
+.as-col{display:flex;flex-direction:column;gap:16px;}
+.as-donut{height:220px;}
+.as-note{font-size:.72rem;color:var(--muted);text-align:center;padding:4px 0;}
+.card.as-eq-card{padding:14px 18px;}
+.as-eq-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.as-sub{font-size:.74rem;color:var(--muted);}
+.as-hist-hd{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.as-prop{margin-bottom:10px;}
+.dr-k.as-prop-name{font-weight:700;margin-bottom:4px;}
+.as-liab-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.as-link-wrap{margin-top:10px;}
+.as-link{font-size:.8rem;color:var(--primary);text-decoration:none;font-weight:600;}
+.as-link-inline{color:var(--primary);}
+.as-np-hero{text-align:center;padding:10px 0 16px;}
+.as-np-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.as-np-val{font-family:var(--font-mono);font-size:2.4rem;font-weight:700;}
+.as-ratio{margin-top:14px;}
+.as-ratio-lbls{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px;}
+.nw-chart{height:240px;position:relative;margin-bottom:24px;}
+.nw-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.nw-tbl{width:100%;border-collapse:collapse;min-width:480px;}
+.nw-tbl .nw-th{padding:8px 12px;text-align:right;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap;}
+.nw-tbl .nw-th--l{text-align:left;}
+.nw-tbl .nw-th--nw{color:var(--primary);}
+.nw-tbl .nw-td{padding:7px 12px;text-align:right;font-family:var(--font-mono);font-size:.8rem;border-bottom:1px solid var(--border);}
+.nw-tbl .nw-td--month{text-align:left;font-weight:600;color:var(--text);}
+.nw-tbl .nw-td--bold{font-weight:700;}
 
 /* ══ EQUITIES / RSU ══ */
 .rsu-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border);}
