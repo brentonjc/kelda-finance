@@ -634,6 +634,33 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .imp-hint{background:#2a1a25;border:1px solid #5a2a40;border-radius:9px;padding:11px 14px;font-size:.76rem;color:var(--pink-light);margin-top:14px;line-height:1.5;}
 .imp-hint strong{display:block;margin-bottom:3px;}
 .imp-hint code{background:#3a1a30;border-radius:4px;padding:1px 5px;font-size:.74rem;}
+/* Upload page / CSV import wizard (was inline) */
+.file-input-hidden{display:none;}
+.up-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.up-hd-tools{display:flex;gap:8px;}
+.up-p2-desc{font-size:.8rem;color:var(--muted);margin-bottom:14px;}
+.up-scroll{overflow-x:auto;}
+.up-tip{background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px;}
+.up-actions{display:flex;gap:10px;justify-content:flex-end;}
+.up-actions--wrap{flex-wrap:wrap;}
+.up-legend-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.up-legend{font-size:.76rem;color:var(--muted);}
+.up-dot--dup{color:#eab308;}
+.up-dot--err{color:#ef4444;}
+.up-skip{display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text);}
+.up-skip input{width:auto;padding:0;border:none;background:none;box-shadow:none;}
+.map-tbl .up-map-col{font-weight:600;}
+.map-tbl .up-map-sample{color:var(--muted);font-size:.76rem;}
+.up-map-sel{min-width:190px;}
+.up-subcat{font-size:.68rem;background:#2a2535;color:var(--muted);border-radius:99px;padding:1px 6px;}
+.prev-tbl .up-td-name{font-size:.8rem;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prev-tbl .up-td-cat{font-size:.8rem;}
+.prev-tbl .up-td-desc{color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;}
+.prev-tbl .up-td-amt{font-weight:600;}
+.imp-stat--total{background:#1a1a2e;}
+.imp-stat--ok{background:#1a2a1a;}
+.imp-stat--dup{background:#2a2010;}
+.imp-stat--err{background:#2a1020;}
 
 /* ══ BUDGET VS ACTUALS ══ */
 .bva-header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px;}

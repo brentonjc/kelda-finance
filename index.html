@@ -2543,9 +2543,9 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Default home of the CSV wizard. openCsvModal() temporarily relocates #csv-wizard into the modal. -->
     <div id="csv-mount">
       <div class="card" id="csv-wizard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <div class="section-label" style="margin:0"><i class="ti ti-folder"></i> Import from CSV</div>
-          <div style="display:flex;gap:8px">
+        <div class="up-hd">
+          <div class="section-label section-label--flush"><i class="ti ti-folder"></i> Import from CSV</div>
+          <div class="up-hd-tools">
             <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()"><i class="ti ti-download"></i> Download Template</button>
             <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none"><i class="ti ti-x"></i> Start over</button>
           </div>
@@ -2569,7 +2569,7 @@ window.addEventListener('unhandledrejection',function(e){
             <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
             <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
           </div>
-          <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
+          <input type="file" id="csv-file-input" class="file-input-hidden" accept=".csv,.txt" onchange="csvFileChosen(event)"/>
           <div class="imp-hint">
             <strong><i class="ti ti-bulb"></i> What format does my CSV need?</strong>
             Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
@@ -2579,20 +2579,20 @@ window.addEventListener('unhandledrejection',function(e){
 
         <!-- STEP 2: Map Columns -->
         <div class="csv-panel" id="csv-p2">
-          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
+          <p class="up-p2-desc">
             We found these columns in your file. Tell us what each one is — then click Preview.
           </p>
-          <div style="overflow-x:auto">
+          <div class="up-scroll">
             <table class="map-tbl">
               <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
               <tbody id="csv-map-body"></tbody>
             </table>
           </div>
-          <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
+          <div class="up-tip">
             <i class="ti ti-bulb"></i> <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
             Negative amounts are treated as expenses automatically.
           </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end">
+          <div class="up-actions">
             <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
             <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
           </div>
@@ -2601,10 +2601,10 @@ window.addEventListener('unhandledrejection',function(e){
         <!-- STEP 3: Preview -->
         <div class="csv-panel" id="csv-p3">
           <div class="imp-stats" id="csv-imp-stats"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-            <div style="font-size:.76rem;color:var(--muted)"><i class="ti ti-circle-filled" style="color:#eab308"></i> Yellow = possible duplicate &nbsp;·&nbsp; <i class="ti ti-circle-filled" style="color:#ef4444"></i> Red = skipped (missing data)</div>
-            <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
-              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+          <div class="up-legend-bar">
+            <div class="up-legend"><i class="ti ti-circle-filled up-dot--dup"></i> Yellow = possible duplicate &nbsp;·&nbsp; <i class="ti ti-circle-filled up-dot--err"></i> Red = skipped (missing data)</div>
+            <label class="up-skip">
+              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()"/>
               Skip duplicates
             </label>
           </div>
@@ -2614,7 +2614,7 @@ window.addEventListener('unhandledrejection',function(e){
               <tbody id="csv-prev-body"></tbody>
             </table>
           </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <div class="up-actions up-actions--wrap">
             <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
             <button class="btn btn-primary" onclick="csvConfirmImport()"><i class="ti ti-circle-check-filled"></i> Import Transactions</button>
           </div>
