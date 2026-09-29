@@ -149,6 +149,7 @@ function renderBVA() {
   if (!rows.length && !uncatAmt) {
     tbody.innerHTML = '';
     if (empty) empty.style.display = 'block';
+    renderBVAInputs();   // limits can be set before any spending is imported
     return;
   }
   if (empty) empty.style.display = 'none';
