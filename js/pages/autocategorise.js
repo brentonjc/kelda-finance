@@ -328,7 +328,7 @@ function resolveAlias(preprocessed) {
 }
 
 // ── Seed rules from real transaction data ─────────────────────
-var SEED_VERSION = '2026-06-28-v1';
+var SEED_VERSION = '2026-09-27-v1';
 
 var SEED_LRULES = {
   // Business Costs
@@ -337,8 +337,8 @@ var SEED_LRULES = {
   'google g suite':               { catId:'business',          subcat:'Website and Digital',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   'google workspace openf sydney':{ catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
   'sqsp* websit':                 { catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  // Capital Gains
-  'from citibank morgan stanley smi':{ catId:'capital_gains',  subcat:'Shares',                 pattern:'contains', source:'manual', confidence:'HIGH' },
+  // Bonus — employee share plan (RSU) sale proceeds are pay arriving as cash, not a capital gain
+  'from citibank morgan stanley smi':{ catId:'bonus',          subcat:'Work Bonus',             pattern:'contains', source:'manual', confidence:'HIGH' },
   // Car & Transport
   '7-eleven':                     { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'},{maxAmount:80,catId:'car_transport',subcat:'Petrol'}] },
   'ampol foodary':                { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
@@ -617,45 +617,43 @@ function levenshtein(a, b) {
 }
 
 // ── Two-pass LRULES matching ──────────────────────────────────
-function matchLRulesNew(canonical) {
+// Pass 1 (exact) then pass 2 (contains — longest key wins, 4+ char guard) for one string
+function lruleHit(text, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    if (LRULES[keys[i]].pattern === 'exact' && text === keys[i]) return { key: keys[i], confidence: 'HIGH' };
+  }
+  var best = null, bestLen = 0;
+  for (var j = 0; j < keys.length; j++) {
+    var key = keys[j];
+    if (LRULES[key].pattern === 'contains' && key.length >= 4 && text.indexOf(key) === 0 && key.length > bestLen) {
+      bestLen = key.length; best = key;
+    }
+  }
+  return best ? { key: best, confidence: 'MEDIUM' } : null;
+}
+
+// context: the pre-alias description. Aliasing shortens "vanguard super" to "vanguard", so a rule
+// on the full text (e.g. the user's own correction) is tried before the built-in keywords, and
+// keyword exclusions are checked against the full text.
+function matchLRulesNew(canonical, context) {
   if (!canonical || canonical.length < 3) return null;
   var keys = Object.keys(LRULES);
-  var matchedKey = null;
-  var confidence = 'LOW';
+  var hit = lruleHit(canonical, keys);
+  if (!hit && context && context !== canonical) hit = lruleHit(context, keys);
 
-  // Pass 1: exact
-  for (var i = 0; i < keys.length; i++) {
-    if (LRULES[keys[i]].pattern === 'exact' && canonical === keys[i]) {
-      matchedKey = keys[i]; confidence = 'HIGH'; break;
-    }
-  }
-
-  // Pass 2: contains (longest key wins, 4+ char guard)
-  if (!matchedKey) {
-    var bestLen = 0;
-    for (var j = 0; j < keys.length; j++) {
-      var key = keys[j];
-      var rule = LRULES[key];
-      if (rule.pattern === 'contains' && key.length >= 4 && canonical.indexOf(key) === 0) {
-        if (key.length < 4) { console.warn('Kelda: contains rule "' + key + '" too short — exact only'); continue; }
-        if (key.length > bestLen) { bestLen = key.length; matchedKey = key; }
-      }
-    }
-    if (matchedKey) confidence = 'MEDIUM';
-  }
-
-  if (matchedKey) {
+  if (hit) {
+    var matchedKey = hit.key;
     LRULES[matchedKey].matchCount = (LRULES[matchedKey].matchCount || 0) + 1;
     LRULES[matchedKey].lastMatchedAt = new Date().toISOString().slice(0, 10);
     scheduleRulesPersist();
     return { catId: LRULES[matchedKey].catId, subcat: LRULES[matchedKey].subcat,
-             matchedKey: matchedKey, confidence: confidence,
+             matchedKey: matchedKey, confidence: hit.confidence,
              amountThresholds: LRULES[matchedKey].amountThresholds || null };
   }
 
   // Pass 3: keyword fallback (existing engine)
   var kwResult = (typeof AutoCat !== 'undefined' && AutoCat.matchKeywords)
-    ? AutoCat.matchKeywords(canonical, false) : null;
+    ? AutoCat.matchKeywords(canonical, false, context) : null;
   if (kwResult) return { catId: kwResult.catId, subcat: kwResult.subcat, matchedKey: null, confidence: 'LOW' };
 
   // Pass 4: fuzzy Levenshtein (exact rules only, >6 chars)
@@ -714,7 +712,7 @@ function categoriseNew(rawDescription, amount, txType) {
   var canonical = resolveAlias(preprocessed);
 
   // Match on canonical
-  var result = matchLRulesNew(canonical);
+  var result = matchLRulesNew(canonical, preprocessed);
   if (!result && canonical !== preprocessed) result = directResult; // fall back to pre-alias result
   if (result) {
     result = applyAmountThresholds(result, amount);
@@ -1096,7 +1094,14 @@ function runCategorizationTests() {
     { input:'purchase at sq *story espresso bar lane cove ns', expected:'food_eating_out' },
     { input:'purchase at blooms chemist crows nest ns',        expected:'health_beauty' },
     { input:'bunnings (artarmon)',                             expected:'home' },
-    { input:'bunnings (chatswood)',                            expected:'home' }
+    { input:'bunnings (chatswood)',                            expected:'home' },
+    // Broker / exchange settlements are transfers; near-miss words and super must not match
+    { input:'COMMSEC SECURITIES LTD SYDNEY',                   expected:'transfers' },
+    { input:'COINSPOT PTY LTD',                                expected:'transfers' },
+    { input:'BPAY VANGUARD PERSONAL INVESTOR',                 expected:'transfers' },
+    { input:'VANGUARD SUPER',                                  expected:null },
+    { input:'THE STAKEHOLDER CAFE',                            expected:'food_eating_out' },
+    { input:'DEFINITELY DELICIOUS BAKERY',                     expected:null }
   ];
 
   var passed = 0; var failed = 0;
@@ -1106,7 +1111,7 @@ function runCategorizationTests() {
     var pre = preprocessMerchantString(tc.input);
     if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
     var can = resolveAlias(pre);
-    var res = matchLRulesNew(can) || matchLRulesNew(pre);
+    var res = matchLRulesNew(can, pre) || matchLRulesNew(pre);
     var actual = res ? res.catId : null;
     var ok = actual === tc.expected;
     if (ok) { passed++; console.log('✅ ' + tc.input); }
@@ -1134,6 +1139,12 @@ var AutoCat = (function() {
     { catId:'transfers', subcat:'Mortgage Offset',   keywords:['offset account','offset transfer'] },
     { catId:'transfers', subcat:'Between Accounts',  keywords:['transfer to','transfer from','trf to','trf from','tfr to','tfr from','int transfer','internal transfer','own account'] },
     { catId:'transfers', subcat:'External Transfer', keywords:['bpay','b-pay'] },
+    // Broker, crypto-exchange and fund-platform settlements only move cash between the bank and an
+    // investment account: a buy isn't spending and sale proceeds aren't income (gains are tracked on
+    // Equity Holdings). Whole-word matching; distributions, dividends and super fall through.
+    { catId:'transfers', subcat:'Investment Transfer', wholeWord:true, exclude:['stake.com','distribution','dividend'], keywords:['commsec','selfwealth','self-wealth','stake','hellostake','interactive brokers','nabtrade','etoro','pearler','moomoo','cmc markets','bell direct','raiz','stock purchase','share purchase'] },
+    { catId:'transfers', subcat:'Investment Transfer', wholeWord:true, keywords:['coinbase','binance','kraken','coinspot','swyftx','btc markets','btcmarkets','independent reserve','coinjar','crypto.com','bitcoin'] },
+    { catId:'transfers', subcat:'Investment Transfer', wholeWord:true, exclude:['super','distribution','dividend'], keywords:['vanguard','etf purchase','index fund','managed fund'] },
     { catId:'salary',  subcat:'Regular Pay',   keywords:['salary','payroll','pay credit','wages','paycheque','paycheck','pay run'], incomeOnly:true },
     { catId:'bonus',   subcat:'Work Bonus',    keywords:['bonus','performance pay','incentive payment'], incomeOnly:true },
     { catId:'interest',subcat:'Savings Interest',keywords:['interest credit','interest earned','savings interest','term deposit interest','offset interest'], incomeOnly:true },
@@ -1185,9 +1196,6 @@ var AutoCat = (function() {
     { catId:'pippen',  subcat:'Dog Grooming', keywords:['dog grooming','pet grooming','dog wash','dog bath','dog salon'] },
     { catId:'pippen',  subcat:'Pet Insurance',keywords:['pet insurance','bow wow meow','petplan','medibank pet','real pet insurance'] },
     { catId:'business',subcat:'Website and Digital', keywords:['adobe','microsoft 365','office 365','dropbox','notion','slack','zoom','google workspace','canva','figma','atlassian','github','aws','azure','digital ocean','cloudflare','godaddy','namecheap','domain registration'] },
-    { catId:'capital_gains', subcat:'Shares', keywords:['commsec','self-wealth','stake','interactive brokers','nabtrade','etoro','stock purchase','share purchase'] },
-    { catId:'capital_gains', subcat:'Crypto', keywords:['coinbase','binance','kraken','btc','ethereum','crypto','bitcoin','nft','defi','blockchain'] },
-    { catId:'capital_gains', subcat:'ETF',    keywords:['vanguard','blackrock','ishares','etf purchase','index fund','managed fund'] },
     { catId:'tax',     subcat:'Income Tax',    keywords:['ato payment','income tax','tax instalment','pay as you go','payg','bas payment','gst payment','business activity'] }
   ];
 
@@ -1226,6 +1234,10 @@ var AutoCat = (function() {
 
   function transferSubcat(raw, cleaned) {
     var test = ((raw || '') + ' ' + (cleaned || '')).toLowerCase();
+    // "Transfer to CommSec" is caught by the transfer words first — still file it as an investment
+    for (var r = 0; r < KEYWORD_RULES.length; r++) {
+      if (KEYWORD_RULES[r].subcat === 'Investment Transfer' && ruleKeyword(KEYWORD_RULES[r], test)) return 'Investment Transfer';
+    }
     for (var i = 0; i < TRANSFER_SUBCAT_MAP.length; i++) {
       var entry = TRANSFER_SUBCAT_MAP[i];
       for (var j = 0; j < entry.words.length; j++) {
@@ -1244,7 +1256,33 @@ var AutoCat = (function() {
     return { catId: result.catId, subcat: result.subcat || '', confidence: result.confidence === 'HIGH' ? CONF_HIGH : CONF_LOW };
   }
 
-  function matchKeywords(cleaned, isCredit) {
+  // wholeWord: the keyword can't sit inside a longer word ('stake' must not fire on 'mistake')
+  function hasKeyword(test, kw, wholeWord) {
+    var i = test.indexOf(kw);
+    if (!wholeWord) return i !== -1;
+    while (i !== -1) {
+      if (!/[a-z0-9]/.test(test.charAt(i - 1)) && !/[a-z0-9]/.test(test.charAt(i + kw.length))) return true;
+      i = test.indexOf(kw, i + 1);
+    }
+    return false;
+  }
+
+  // Returns the rule's first matching keyword, or null (also null when an exclude term appears in
+  // the description — context, if given, is the full pre-alias text)
+  function ruleKeyword(rule, test, context) {
+    if (rule.exclude) {
+      var full = context ? String(context).toLowerCase() : test;
+      for (var x = 0; x < rule.exclude.length; x++) {
+        if (full.indexOf(rule.exclude[x]) !== -1) return null;
+      }
+    }
+    for (var j = 0; j < rule.keywords.length; j++) {
+      if (hasKeyword(test, rule.keywords[j], rule.wholeWord)) return rule.keywords[j];
+    }
+    return null;
+  }
+
+  function matchKeywords(cleaned, isCredit, context) {
     if (!cleaned) return null;
     var test = cleaned.toLowerCase();
     var matches = [];
@@ -1252,12 +1290,8 @@ var AutoCat = (function() {
       var rule = KEYWORD_RULES[i];
       if (rule.incomeOnly && !isCredit) continue;
       if (rule.expenseOnly && isCredit) continue;
-      for (var j = 0; j < rule.keywords.length; j++) {
-        if (test.indexOf(rule.keywords[j]) !== -1) {
-          matches.push({ catId: rule.catId, subcat: rule.subcat, keyword: rule.keywords[j] });
-          break;
-        }
-      }
+      var kw = ruleKeyword(rule, test, context);
+      if (kw) matches.push({ catId: rule.catId, subcat: rule.subcat, keyword: kw });
     }
     if (!matches.length) return null;
     matches.sort(function(a, b) { return b.keyword.length - a.keyword.length; });
@@ -1296,7 +1330,7 @@ var AutoCat = (function() {
     var pre = preprocessMerchantString(raw);
     if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
     var canonical = resolveAlias(pre);
-    var newResult = matchLRulesNew(canonical) || matchLRulesNew(pre);
+    var newResult = matchLRulesNew(canonical, pre) || matchLRulesNew(pre);
     if (newResult) {
       newResult = applyAmountThresholds(newResult, amount);
       return { catId: newResult.catId, subcat: newResult.subcat || '',
@@ -1334,7 +1368,7 @@ var AutoCat = (function() {
         var pre = preprocessMerchantString(raw);
         if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
         var can = resolveAlias(pre);
-        var res = matchLRulesNew(can) || matchLRulesNew(pre);
+        var res = matchLRulesNew(can, pre) || matchLRulesNew(pre);
         if (!res) res = categorise(t.name, t.description, t.amount, t.type);
         if (!res || res.confidence === CONF_NONE || res.catId === 'other') continue;
         var catObj = (typeof LCATS !== 'undefined') ? LCATS.find(function(c) { return c.id === res.catId; }) : null;
