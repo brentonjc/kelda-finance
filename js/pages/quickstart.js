@@ -109,7 +109,7 @@ function qsCheckAndAutoComplete() {
   }
 
   // Step 7: Any budget set
-  if (!tasks['step-7-budget'] && BUDGETS && Object.keys(BUDGETS).length > 0) {
+  if (!tasks['step-7-budget'] && LBUDGETS && Object.keys(LBUDGETS).length > 0) {
     tasks['step-7-budget'] = true;
     changed = true;
   }

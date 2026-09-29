@@ -355,34 +355,5 @@ function populateTxCatSelect() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// BUDGET
-// ══════════════════════════════════════════════════════════════
-function setBudget(){
-  const cat=document.getElementById('bud-cat').value;
-  const lim=parseFloat(document.getElementById('bud-limit').value);
-  if(!lim||lim<=0){toast('⚠️ Enter a limit');return;}
-  BUDGETS[cat]=lim;save(K.budgets,BUDGETS);
-  document.getElementById('bud-limit').value='';
-  renderBudget();toast('✅ Budget saved');
-}
-
-function renderBudget(){
-  const el=document.getElementById('bud-bars');
-  if(!Object.keys(BUDGETS).length){el.innerHTML='<div class="empty"><div class="ei">'+ICON('target')+'</div><p>Set your first budget limit</p></div>';return;}
-  el.innerHTML=Object.entries(BUDGETS).map(([cat,lim])=>{
-    const spent=getCatSpend(cat);
-    const pct=Math.min((spent/lim)*100,100);
-    const cls=pct>=100?'over':pct>=70?'warn':'';
-    return`<div class="prog-wrap">
-      <div class="prog-hd"><span class="prog-lbl">${cat}</span><span class="prog-val">${fmt(spent)} / ${fmt(lim)}</span></div>
-      <div class="prog-track"><div class="prog-fill ${cls}" style="width:${pct.toFixed(0)}%"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px"><span style="font-size:.7rem;color:var(--muted)">${pct.toFixed(0)}%</span>
-      <button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:.68rem" onclick="delBudget('${cat}')">Remove</button></div></div>`;
-  }).join('');
-}
-
-function delBudget(cat){delete BUDGETS[cat];save(K.budgets,BUDGETS);renderBudget();toast('🗑️ Removed');}
-
-// ══════════════════════════════════════════════════════════════
 // BILLS
 // ══════════════════════════════════════════════════════════════
