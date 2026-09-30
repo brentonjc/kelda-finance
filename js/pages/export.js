@@ -182,17 +182,18 @@ function csvProcess(file){
 // ── MAPPING TABLE ────────────────────────────────────────────
 function csvBuildMapTable(){
   const tbody=document.getElementById('csv-map-body');
-  tbody.innerHTML='';
+  const html=[];
   _csvHeaders.forEach(h=>{
     const samples=_csvRaw.slice(0,3).map(r=>r[h]).filter(Boolean).join(', ');
     const guess=csvGuess(h);
     const opts=CSV_FIELDS.map(o=>`<option value="${o.v}"${o.v===guess?' selected':''}>${o.l}</option>`).join('');
-    tbody.innerHTML+=`<tr>
+    html.push(`<tr>
       <td class="up-map-col">${h}</td>
       <td class="up-map-sample">${samples||'(empty)'}</td>
       <td><select data-col="${h}" class="up-map-sel">${opts}</select></td>
-    </tr>`;
+    </tr>`);
   });
+  tbody.innerHTML=html.join('');
 }
 
 // ── PREVIEW ──────────────────────────────────────────────────
@@ -273,7 +274,10 @@ function csvPreview(){
 function csvRefreshPreview(){
   const skip=document.getElementById('csv-skip-dupes')?.checked;
   const tbody=document.getElementById('csv-prev-body');
-  tbody.innerHTML='';
+  // Build the rows as one string: appending with innerHTML+= re-parses the whole
+  // table per row, which is quadratic and runs iOS Safari out of memory on a
+  // typical bank export (~1,000+ rows).
+  const html=[];
   let total=0,dupes=0,errs=0,willImport=0;
 
   _csvParsed.forEach(r=>{
@@ -289,7 +293,7 @@ function csvRefreshPreview(){
 
     const cls=isErr?'row-err':isDup?'row-dup':'';
     const subcatBadge=r.subcat?'<span class="up-subcat">'+r.subcat+'</span>':'—';
-    tbody.innerHTML+='<tr class="'+cls+(skipped?' row-skip':'') + '">'
+    html.push('<tr class="'+cls+(skipped?' row-skip':'') + '">'
       +'<td>'+(r.date||'—')+'</td>'
       +'<td><span class="badge '+(r.type==='income'?'b-income':'b-expense')+'">'+r.type+'</span></td>'
       +'<td class="up-td-name">'+(r.name||'—')+'</td>'
@@ -298,8 +302,9 @@ function csvRefreshPreview(){
       +'<td class="up-td-desc">'+(r.description||'—')+'</td>'
       +'<td class="up-td-amt '+(r.type==='income'?'tone-green':'tone-pink')+'">'+  (r.type==='income'?'+':'-')+fmt(r.amount)+'</td>'
       +'<td>'+status+'</td>'
-      +'</tr>';
+      +'</tr>');
   });
+  tbody.innerHTML=html.join('');
 
   document.getElementById('csv-imp-stats').innerHTML=`
     <div class="imp-stat imp-stat--total"><div class="isn">${total}</div><div class="isl">Total rows</div></div>
