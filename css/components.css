@@ -1603,6 +1603,20 @@ hr.liab-hr{border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0;
 .sett-dp-note-p{font-size:.74rem;color:var(--muted);line-height:1.5;}
 .sett-link{color:var(--primary);cursor:pointer;}
 
+/* Borrowing page (was inline). css/borrowing.css scopes every rule under
+   #page-borrowing and loads after this file, so these repeat that scope and
+   the element's base class to keep winning. */
+#page-borrowing .bc-r,#page-borrowing .bc-dt .bc-r{text-align:right;}
+#page-borrowing .bc-dt.bc-dt--narrow{max-width:420px;}
+#page-borrowing .bc-btn.bc-mt10{margin-top:10px;}
+#page-borrowing .bc-helper.bc-mt8{margin-top:8px;}
+#page-borrowing .bc-chip.bc-mt5{margin-top:5px;}
+#page-borrowing .bc-src-badge.bc-ml6{margin-left:6px;}
+#page-borrowing .bc-btn-row.bc-mb16{margin-bottom:16px;}
+#page-borrowing .bc-mono.bc-fw600{font-weight:600;}
+#page-borrowing .bc-mono.bc-mono--22{font-size:22px;font-weight:500;}
+#page-borrowing .bc-mono.bc-mono--17{font-size:17px;}
+
 /* ── GAMIFICATION STYLES ── */
 
 /* Health Score Ring */
