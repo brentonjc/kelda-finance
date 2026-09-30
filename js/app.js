@@ -419,11 +419,11 @@ function runGlobalSearch(){
     var pos = t.type === 'income';
     var nm = t.merchant || t.description || t.desc || t.category || 'Transaction';
     var amt = (pos ? '+' : '−') + fmt(Math.abs(Number(t.amount)||0)).replace('−','').replace('-','');
-    var col = pos ? 'var(--success)' : 'var(--text)';
+    var tone = pos ? 'tone-green' : 'tone-text';
     return '<div class="search-res" onclick="searchResultGo()">'
       + '<div class="search-res-main"><div class="search-res-name">' + _esc(nm) + '</div>'
       + '<div class="search-res-sub">' + _esc(t.date||'') + ' · ' + _esc(t.category||'—') + '</div></div>'
-      + '<div class="search-res-amt" style="color:' + col + '">' + amt + '</div></div>';
+      + '<div class="search-res-amt ' + tone + '">' + amt + '</div></div>';
   }).join('');
 }
 function searchResultGo(){ closeSearchModal(); if (typeof go === 'function') go('transactions'); }
@@ -451,18 +451,12 @@ function showUndoToast(message,durationMs,onUndo){
   el.id='undo-toast';
   el.setAttribute('role','status');
   el.setAttribute('aria-live','polite');
-  el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
-    +'background:var(--card2);border:1px solid var(--border);border-radius:10px;'
-    +'padding:12px 18px;display:flex;align-items:center;gap:14px;'
-    +'font-size:.82rem;font-family:var(--font-body);color:var(--text);'
-    +'box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9999;white-space:nowrap;';
+  el.className='undo-toast';
   var msg=document.createElement('span');
   msg.textContent=message;
   var btn=document.createElement('button');
   btn.textContent='Undo';
-  btn.style.cssText='background:var(--primary);color:#fff;border:none;border-radius:999px;'
-    +'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:44px;'
-    +'font-family:var(--font-body);';
+  btn.className='undo-toast-btn';
   btn.onclick=function(){el.remove();clearTimeout(timer);onUndo();};
   el.appendChild(msg);
   el.appendChild(btn);
@@ -842,12 +836,12 @@ function renderHowTo(pageId) {
   }).join('');
   return '<div class="card how-to-card mb">'
     + '<div class="how-to-hd" onclick="this.parentNode.querySelector(\'.how-to-body\').style.display=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'grid\':\'none\';this.querySelector(\'.how-to-chev\').style.transform=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'\':\' rotate(180deg)\'">'
-    + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.1rem">' + ICON('books') + '</span>'
-    + '<div><div style="font-weight:700;font-size:.88rem;color:var(--text)">How to use — ' + cfg.title + '</div>'
-    + '<div style="font-size:.72rem;color:var(--muted)">Tap to expand guide</div></div></div>'
-    + '<span class="how-to-chev" style="font-size:.9rem;color:var(--muted);transition:transform .2s">▼</span>'
+    + '<div class="how-to-hd-main"><span class="how-to-book">' + ICON('books') + '</span>'
+    + '<div><div class="how-to-name">How to use — ' + cfg.title + '</div>'
+    + '<div class="how-to-tap">Tap to expand guide</div></div></div>'
+    + '<span class="how-to-chev">▼</span>'
     + '</div>'
-    + '<div class="how-to-body" style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
+    + '<div class="how-to-body" style="display:none">'
     + itemsHtml
     + '</div>'
     + '</div>';

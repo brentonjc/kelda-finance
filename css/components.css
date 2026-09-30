@@ -1674,6 +1674,21 @@ hr.liab-hr{border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0;
 .modal-box.mdl-fc2{max-width:440px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .goal-fld{margin-bottom:14px;}
 
+/* Setup wizard, How-to card, global search and undo toast (was inline).
+   .wz-* rules are in layout.css, which loads after this file. */
+.wz-label.wz-mt14{margin-top:14px;}
+.wz-label.wz-mt18{margin-top:18px;}
+.wz-label.wz-mt22{margin-top:22px;}
+.wz-heading.wz-mt20{margin-top:20px;}
+.how-to-hd-main{display:flex;align-items:center;gap:10px;}
+.how-to-book{font-size:1.1rem;}
+.how-to-name{font-weight:700;font-size:.88rem;color:var(--text);}
+.how-to-tap{font-size:.72rem;color:var(--muted);}
+.how-to-chev{font-size:.9rem;color:var(--muted);transition:transform .2s;}
+.how-to-card .how-to-body{grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.undo-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:14px;font-size:.82rem;font-family:var(--font-body);color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9999;white-space:nowrap;}
+.undo-toast .undo-toast-btn{background:var(--primary);color:#fff;border:none;border-radius:999px;padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:44px;font-family:var(--font-body);}
+
 /* ── GAMIFICATION STYLES ── */
 
 /* Health Score Ring */
