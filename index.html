@@ -76,7 +76,7 @@
 #onboarding-overlay {
   position: fixed; inset: 0; z-index: 9999;
   background: var(--n950);
-  color: var(--white);
+  color: var(--text);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
@@ -97,11 +97,8 @@
   transition: background .5s ease; pointer-events: none;
 }
 .ob-wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; position: relative; }
-.ob-wordmark-icon {
-  width: 32px; height: 32px; border-radius: 8px; background: var(--pink-dim);
-  display: flex; align-items: center; justify-content: center; font-size: 17px;
-}
-.ob-wordmark-text { font-family: var(--font-head); font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: -0.01em; }
+.ob-wordmark-icon { width: 32px; height: 32px; }
+.ob-wordmark-text { font-family: var(--font-head); font-weight: 700; font-size: 17px; color: var(--text); letter-spacing: -0.01em; }
 .ob-tagline {
   font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 40px;
   transition: opacity .3s ease; position: relative; min-height: 20px;
@@ -123,7 +120,7 @@
 .ob-step-line.complete { background: var(--green); }
 .ob-step-content { padding-bottom: 32px; padding-top: 1px; }
 .ob-step-label { font-size: 14px; color: var(--n300); transition: color .25s ease; line-height: 1; margin-top: 1px; }
-.ob-step-label.active { color: var(--white); }
+.ob-step-label.active { color: var(--text); }
 .ob-step-label.complete { color: var(--green); }
 
 /* Preview card */
@@ -164,7 +161,7 @@
   gap: 4px; margin-bottom: 28px; background: none; border: none; font-family: var(--font-body);
   padding: 0; transition: color .15s;
 }
-.ob-back:hover { color: var(--white); }
+.ob-back:hover { color: var(--text); }
 
 .ob-progress-wrap { margin-bottom: 32px; }
 .ob-progress-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -172,15 +169,15 @@
 .ob-progress-track { height: 4px; background: var(--n700); border-radius: 2px; overflow: hidden; }
 .ob-progress-fill { height: 100%; background: var(--pink); border-radius: 2px; transition: width .4s ease; }
 
-.ob-h1 { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--white); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 8px; }
-.ob-h2 { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 8px; }
+.ob-h1 { font-family: var(--font-head); font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 8px; }
+.ob-h2 { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 8px; }
 .ob-sub { font-size: 14px; color: color-mix(in srgb, var(--muted) 85%, var(--text)); line-height: 1.6; margin-bottom: 28px; }
 
 .ob-field { margin-bottom: 20px; }
 .ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--pink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
 .ob-input {
   width: 100%; background: var(--n700); border: 1px solid var(--n600); border-radius: 10px;
-  padding: 13px 14px; font-family: var(--font-body); font-size: 16px; color: var(--white);
+  padding: 13px 14px; font-family: var(--font-body); font-size: 16px; color: var(--text);
   outline: none; transition: border-color .15s; -webkit-appearance: none; appearance: none;
 }
 .ob-input::placeholder { color: var(--n300); }
@@ -206,7 +203,7 @@
   margin-top: 14px; background: none; border: none; font-family: var(--font-body);
   transition: color .15s; text-decoration: underline; text-decoration-color: transparent;
 }
-.ob-link:hover { color: var(--white); }
+.ob-link:hover { color: var(--text); }
 
 /* Profile cards */
 .ob-profile-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
@@ -225,7 +222,7 @@
   font-size: 18px; flex-shrink: 0; background: var(--card-icon-bg, rgba(240,83,138,0.12));
 }
 .ob-profile-text { flex: 1; }
-.ob-profile-headline { font-family: var(--font-head); font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 3px; }
+.ob-profile-headline { font-family: var(--font-head); font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
 .ob-profile-subline { font-size: 13px; color: var(--n300); line-height: 1.5; }
 .ob-profile-check {
   width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--n600); flex-shrink: 0;
@@ -243,8 +240,8 @@
   font-size: 18px; font-weight: 600; color: var(--n300); cursor: pointer; transition: all .15s;
   user-select: none; -webkit-tap-highlight-color: transparent;
 }
-.ob-count-tile:hover { border-color: var(--pink); color: var(--white); }
-.ob-count-tile.selected { border-color: var(--pink); background: var(--pink-dim); color: var(--white); }
+.ob-count-tile:hover { border-color: var(--pink); color: var(--text); }
+.ob-count-tile.selected { border-color: var(--pink); background: var(--pink-dim); color: var(--text); }
 
 /* Account cards */
 .ob-account-card { background: var(--n800); border: 1px solid var(--n600); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
@@ -288,7 +285,7 @@
 .ob-toggle-knob { width: 20px; height: 20px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: left .2s; }
 .ob-toggle.on .ob-toggle-knob { left: 21px; }
 .ob-toggle-label { flex: 1; }
-.ob-toggle-main { font-size: 14px; color: var(--white); font-weight: 500; }
+.ob-toggle-main { font-size: 14px; color: var(--text); font-weight: 500; }
 .ob-toggle-sub { font-size: 12px; color: var(--n300); margin-top: 2px; line-height: 1.4; }
 .ob-toggle-expand { max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s ease; }
 .ob-toggle-expand.open { max-height: 120px; padding: 4px 4px 0; }
@@ -307,8 +304,9 @@
 .ob-welcome-icon {
   width: 72px; height: 72px; border-radius: 20px; background: var(--pink-dim);
   border: 1px solid rgba(240,83,138,0.2); display: flex; align-items: center; justify-content: center;
-  font-size: 34px; margin-bottom: 24px;
+  margin-bottom: 24px;
 }
+.ob-welcome-icon__mark { width: 44px; height: 44px; }
 
 /* Celebration / recap */
 .ob-celebration {
@@ -325,12 +323,12 @@
   width: 52px; height: 52px; border-radius: 15px; background: var(--green-dim); border: 1px solid rgba(0,200,150,0.25);
   display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 18px;
 }
-.ob-recap-title { font-family: var(--font-head); font-size: 23px; font-weight: 700; color: var(--white); letter-spacing: -0.02em; margin-bottom: 5px; }
+.ob-recap-title { font-family: var(--font-head); font-size: 23px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 5px; }
 .ob-recap-sub { font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 22px; }
 .ob-recap-list { display: flex; flex-direction: column; gap: 11px; margin-bottom: 26px; }
 .ob-recap-item { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateY(6px); animation: kfRecapIn .4s ease forwards; }
 .ob-recap-ic { width: 28px; height: 28px; border-radius: 8px; background: var(--green-dim); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
-.ob-recap-item b { display: block; font-size: 14px; font-weight: 600; color: var(--white); }
+.ob-recap-item b { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
 .ob-recap-item span { font-size: 12px; color: var(--n300); }
 @keyframes kfRecapIn { to { opacity: 1; transform: none; } }
 
@@ -384,7 +382,10 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- ═══ LEFT RAIL ═══ -->
     <aside class="ob-left" id="ob-left">
       <div class="ob-wordmark">
-        <div class="ob-wordmark-icon"><i class="ti ti-droplet"></i></div>
+        <svg class="brand-mark ob-wordmark-icon" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+          <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+          <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+        </svg>
         <span class="ob-wordmark-text">Kelda Finance</span>
       </div>
       <p class="ob-tagline" id="ob-tagline">Your finances, clear and in one place.</p>
@@ -479,7 +480,10 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- 1 — Welcome -->
       <div class="ob-panel active" id="panel-welcome">
         <div class="ob-welcome-inner">
-          <div class="ob-welcome-icon"><i class="ti ti-droplet"></i></div>
+          <div class="ob-welcome-icon"><svg class="brand-mark ob-welcome-icon__mark" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+            <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+            <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+          </svg></div>
           <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
           <p class="ob-sub ob-sub--mt10">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
           <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
@@ -1040,7 +1044,10 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- SIDEBAR -->
 <nav id="nav" aria-label="Main navigation">
   <div class="nav-logo">
-    <div class="nav-logo-bug"><i class="ti ti-droplet"></i></div>
+    <svg class="brand-mark nav-logo-bug" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+      <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+      <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+    </svg>
     <h1 data-app-name>Kelda Finance</h1>
   </div>
   <div class="nav-body">

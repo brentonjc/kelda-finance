@@ -2,6 +2,11 @@
    COMPONENTS — Kelda Finance
    ══════════════════════════════════ */
 
+/* ══ BRAND MARK (Tide) — ring + wave, coloured by theme ══ */
+.brand-mark{display:block;flex-shrink:0;}
+.brand-mark__ring{fill:none;stroke:var(--text);stroke-width:7;}
+.brand-mark__wave{fill:var(--primary);}
+
 /* ══ CARDS ══ */
 .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:var(--sp6);transition:box-shadow .2s;}
 .mb{margin-bottom:18px;}
