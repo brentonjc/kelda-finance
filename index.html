@@ -97,10 +97,10 @@
   transition: background .5s ease; pointer-events: none;
 }
 .ob-wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; position: relative; }
-.ob-wordmark-icon {
-  width: 32px; height: 32px; border-radius: 8px; background: var(--pink-dim);
-  display: flex; align-items: center; justify-content: center; font-size: 17px;
-}
+.brand-mark { display: block; flex-shrink: 0; }
+.brand-mark__ring { fill: none; stroke: var(--text); stroke-width: 7; }
+.brand-mark__wave { fill: var(--primary); }
+.ob-wordmark-icon { width: 32px; height: 32px; }
 .ob-wordmark-text { font-family: var(--font-head); font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: -0.01em; }
 .ob-tagline {
   font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 40px;
@@ -307,8 +307,9 @@
 .ob-welcome-icon {
   width: 72px; height: 72px; border-radius: 20px; background: var(--pink-dim);
   border: 1px solid rgba(240,83,138,0.2); display: flex; align-items: center; justify-content: center;
-  font-size: 34px; margin-bottom: 24px;
+  margin-bottom: 24px;
 }
+.ob-welcome-icon__mark { width: 44px; height: 44px; }
 
 /* Celebration / recap */
 .ob-celebration {
@@ -384,7 +385,10 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- ═══ LEFT RAIL ═══ -->
     <aside class="ob-left" id="ob-left">
       <div class="ob-wordmark">
-        <div class="ob-wordmark-icon"><i class="ti ti-droplet"></i></div>
+        <svg class="brand-mark ob-wordmark-icon" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+          <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+          <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+        </svg>
         <span class="ob-wordmark-text">Kelda Finance</span>
       </div>
       <p class="ob-tagline" id="ob-tagline">Your finances, clear and in one place.</p>
@@ -479,7 +483,10 @@ window.addEventListener('unhandledrejection',function(e){
       <!-- 1 — Welcome -->
       <div class="ob-panel active" id="panel-welcome">
         <div class="ob-welcome-inner">
-          <div class="ob-welcome-icon"><i class="ti ti-droplet"></i></div>
+          <div class="ob-welcome-icon"><svg class="brand-mark ob-welcome-icon__mark" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+            <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+            <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+          </svg></div>
           <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
           <p class="ob-sub ob-sub--mt10">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
           <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
