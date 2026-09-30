@@ -1526,6 +1526,83 @@ hr.liab-hr{border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0;
 .tr-iconfirm .tr-ic-btn--ok{background:var(--danger);color:#fff;border:none;}
 .tr-iconfirm .tr-ic-btn--cancel{background:var(--card3);color:var(--text);border:1px solid var(--border);}
 
+/* Settings + Dashboard Layout pages (was inline) */
+.section-label.sett-sl--18{margin-bottom:18px;}
+.section-label.sett-sl--danger{margin-bottom:12px;color:var(--danger);}
+.sett-in16{font-size:16px;}
+.sett-w100{width:100%;}
+.settings-row.sett-row--mt10{margin-top:10px;}
+.btn.sett-save-id{margin-top:14px;}
+.sett-gap12{height:12px;}
+.sett-foot{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.sett-acct-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.sett-desc{font-size:.8rem;color:var(--muted);margin-bottom:14px;}
+.sett-desc--16{margin-bottom:16px;}
+.field-row.sett-theme-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;}
+.sett-theme-pal{flex:1;min-width:180px;}
+.sett-theme-lbl{display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px;}
+.card.sett-danger-card{border:1px solid rgba(239,68,68,.35);}
+.sett-stack{display:flex;flex-direction:column;gap:10px;}
+.sett-danger-title{font-weight:600;font-size:.88rem;margin-bottom:2px;}
+.sett-danger-sub{font-size:.74rem;color:var(--muted);}
+.btn.sett-dz-btn{flex-shrink:0;white-space:nowrap;}
+.btn.sett-dz-btn--warn{background:var(--warn);color:#000;}
+.btn.sett-dz-btn--danger{background:var(--danger);}
+.sett-ver-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;}
+.sett-ver-app{font-weight:600;font-size:.9rem;}
+.sett-ver-num{font-family:var(--font-mono);font-size:.82rem;color:var(--primary);}
+.sett-ver-hint{font-size:.76rem;color:var(--muted);margin-bottom:16px;}
+.sett-ver-none{font-size:.78rem;color:var(--muted);}
+.sett-rel-list{display:flex;flex-direction:column;gap:14px;}
+.sett-rel-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+.sett-rel-ver{font-family:var(--font-mono);font-size:.8rem;font-weight:500;color:var(--primary);}
+.sett-rel-title{font-size:.82rem;font-weight:600;}
+.sett-rel-date{font-size:.72rem;color:var(--muted);margin-left:auto;}
+.sett-rel-notes{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;}
+.sett-rel-note{font-size:.76rem;color:var(--muted);}
+.sett-prof{background:var(--card2);border-radius:12px;padding:14px 16px;}
+.sett-prof-grid{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:start;}
+.lbl.sett-prof-lbl{font-size:.68rem;margin-bottom:4px;}
+.sett-prof-icon{font-size:1.4rem;text-align:center;padding:8px 4px;width:100%;}
+.sett-pin-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+.sett-pin{font-size:.76rem;font-weight:600;}
+.sett-bank-sel{width:100%;box-sizing:border-box;}
+.sett-acct-none{color:var(--muted);font-size:.82rem;}
+.sett-acct-custom{color:var(--muted);font-size:.68rem;}
+.btn.sett-acct-del{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);}
+.sett-ip-prev{width:44px;height:44px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);cursor:default;}
+.sett-ip-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;max-width:220px;}
+.sett-ip-opt{cursor:pointer;font-size:1.05rem;padding:5px;border-radius:5px;background:var(--card2);color:var(--muted);}
+.sett-acct-form-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px;}
+.form-grid.sett-fg-icon{grid-template-columns:56px 1fr;}
+.form-grid.sett-fg-mt8{margin-top:8px;}
+.sett-form-acts{display:flex;gap:8px;margin-top:4px;}
+.sett-acct-form.sett-acct-form--full{width:100%;}
+/* Dashboard Layout profile cards: each profile's accent colour */
+.sett-dp--starter{--sett-acc:var(--success);}
+.sett-dp--household{--sett-acc:var(--primary);}
+.sett-dp--full{--sett-acc:var(--warn);}
+.sett-dp{cursor:pointer;border:1.5px solid var(--border);background:var(--card2);border-radius:12px;padding:14px 16px;transition:border-color .15s,background .15s;}
+.sett-dp.sett-dp--sel{border-color:var(--sett-acc);background:color-mix(in srgb,var(--sett-acc) 8%, var(--card2));}
+.sett-dp-row{display:flex;align-items:flex-start;gap:14px;}
+.sett-dp-ico{width:40px;height:40px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:color-mix(in srgb,var(--sett-acc) 14%, transparent);color:var(--sett-acc);}
+.sett-dp-main{flex:1;min-width:0;}
+.sett-dp-head{font-family:var(--font-head,inherit);font-weight:600;font-size:.95rem;color:var(--text);margin-bottom:2px;}
+.sett-dp-sub{font-size:.78rem;color:var(--muted);line-height:1.45;}
+.sett-dp-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.sett-dp-pill{font-size:.68rem;color:var(--muted);background:var(--card3,var(--card2));border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-weight:500;}
+.sett-dp-check{width:22px;height:22px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;}
+.sett-dp--sel .sett-dp-check{border-color:var(--sett-acc);background:var(--sett-acc);}
+.sett-dp-assets{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.sett-dp-assets-title{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.sett-dp-assets-desc{font-size:.74rem;color:var(--muted);margin-bottom:12px;}
+.sett-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.sett-asset-chip{cursor:pointer;display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--border);background:var(--card2);color:var(--muted);border-radius:9px;padding:8px 12px;font-size:.78rem;font-weight:500;transition:border-color .15s,background .15s;}
+.sett-asset-chip.sett-asset-chip--on{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%, transparent);color:var(--text);}
+.sett-dp-note{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.sett-dp-note-p{font-size:.74rem;color:var(--muted);line-height:1.5;}
+.sett-link{color:var(--primary);cursor:pointer;}
+
 /* ── GAMIFICATION STYLES ── */
 
 /* Health Score Ring */
