@@ -768,8 +768,12 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- Mobile "More" slide-up menu -->
 <div id="mob-menu-overlay" onclick="closeMobMenu()" style="display:none"></div>
-<div id="mob-menu" style="display:none">
-  <div id="mob-menu-handle"></div>
+<div id="mob-menu" style="display:none" role="dialog" aria-modal="true" aria-labelledby="mob-menu-title">
+  <div class="mob-menu-head">
+    <div id="mob-menu-handle"></div>
+    <h2 class="mob-menu-title" id="mob-menu-title">More</h2>
+    <button class="mob-menu-close" onclick="closeMobMenu()" aria-label="Close menu"><i class="ti ti-x"></i></button>
+  </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-credit-card"></i> Spend</div>
     <div class="mob-menu-grid">
