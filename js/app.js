@@ -504,6 +504,12 @@ function closeMobMenu() {
   if (overlay) overlay.style.display = 'none';
 }
 
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  var menu = document.getElementById('mob-menu');
+  if (menu && menu.classList.contains('open')) closeMobMenu();
+});
+
 
 
 // ── USER & ACCOUNT CONFIG ─────────────────────────────────────

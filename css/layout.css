@@ -331,7 +331,20 @@
   overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
 }
 #mob-menu.open{transform:translateY(0);}
-#mob-menu-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 20px;}
+/* Sticky header keeps the close button in reach while the sheet scrolls */
+.mob-menu-head{
+  position:sticky;top:0;z-index:1;background:var(--card);
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 -20px 12px;padding:20px 12px 4px 20px;
+}
+#mob-menu-handle{position:absolute;top:8px;left:50%;width:36px;height:4px;margin-left:-18px;background:var(--border);border-radius:99px;}
+.mob-menu-title{font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--text);margin:0;}
+.mob-menu-close{
+  width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--card2);color:var(--text);font-size:1.25rem;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.mob-menu-close:active{transform:scale(.92);opacity:.8;}
 .mob-menu-section{margin-bottom:20px;}
 .mob-menu-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;}
 .mob-menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
