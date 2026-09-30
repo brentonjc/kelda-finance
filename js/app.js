@@ -135,7 +135,7 @@ function go(id){
     else if(id==='categories')renderCategories();
     else if(id==='smartrules'){if(typeof renderRulesList==='function')renderRulesList();}
     else if(id==='transfers'){if(typeof renderTransfers==='function')renderTransfers();}
-    else if(id==='forecast'){detectRecurring();renderForecast();if(typeof fc2SyncBalance==='function')fc2SyncBalance();}
+    else if(id==='forecast'){if(typeof fc2PullBalance==='function')fc2PullBalance();renderForecast();}
     else if(id==='equities'){if(typeof renderEquitiesPage==='function')renderEquitiesPage();}
     else if(id==='borrowing'){if(typeof renderBorrowing==='function')renderBorrowing();}
     else if(id==='investment'){if(typeof renderInvestment==='function')renderInvestment();}
@@ -461,7 +461,6 @@ function activeTX(){
 }
 function getMonthInc(ym=thisMonth()){return activeTX().filter(t=>t.type==='income'&&t.date.startsWith(ym)).reduce((s,t)=>s+Number(t.amount),0);}
 function getMonthExp(ym=thisMonth()){return activeTX().filter(t=>t.type==='expense'&&t.date.startsWith(ym)).reduce((s,t)=>s+Number(t.amount),0);}
-function getCatSpend(cat,ym=thisMonth()){return activeTX().filter(t=>t.type==='expense'&&t.category===cat&&t.date.startsWith(ym)).reduce((s,t)=>s+Number(t.amount),0);}
 function getTotalBal(){return activeTX().reduce((s,t)=>t.type==='income'?s+Number(t.amount):s-Number(t.amount),0);}
 
 // ══════════════════════════════════════════════════════════════
@@ -750,10 +749,10 @@ var _HOW_TO = {
     {icon:'alert-triangle', h:'Budget alerts', b:'Alerts appear on the Dashboard for any category at 70%+ of its limit. Smart Insights on the dashboard also reference the top overrun.'}
   ]},
   forecast: { title:'Cash Flow Forecast', items:[
-    {icon:'refresh', h:'How it works', b:'The forecast auto-detects recurring income and expense patterns from your last 90 days of transactions and projects them forward.'},
-    {icon:'refresh', h:'Syncing', b:'The balance sync runs automatically when you open this tab, pulling the latest combined balance from your Cash Tracker as the starting point.'},
-    {icon:'pencil', h:'Adjusting entries', b:'Tap the adjustment icon on any forecast row to add a one-off override — useful for planned expenses or income that differ from the pattern.'},
-    {icon:'trending-up', h:'Cumulative view', b:'Toggle between monthly and cumulative chart views to see the overall trajectory of your cash position over time.'}
+    {icon:'calendar', h:'How it works', b:'Each of the next 12 months is based on the same month last year, from the income and spending in your transactions. Months with no data a year ago use your average monthly net, marked "avg proxy".'},
+    {icon:'refresh', h:'Starting balance', b:'Each time you open this tab, your latest combined Cash Tracker balance becomes the starting balance. Sync Balance does the same and shows the amount it used.'},
+    {icon:'pencil', h:'Adjustments', b:'Add known changes, like a bonus or a holiday, with + Add Adjustment: One-off for a single month, or Recurring monthly, quarterly or annually. Income is positive, spending negative. Tap any month to see its breakdown.'},
+    {icon:'trending-up', h:'Cumulative view', b:'Switch from Bar Chart to Cumulative to see your starting balance plus each month\'s net as a running total. It needs a starting balance, and the line turns red below zero.'}
   ]},
   assets: { title:'Net Assets', items:[
     {icon:'building-bank', h:'What is shown', b:'Net Assets = Gross Assets (bank + super + property + equities) minus Total Liabilities (mortgage + other debts). This is your true financial position.'},

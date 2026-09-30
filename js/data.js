@@ -1,6 +1,6 @@
 
 let TX        = load(K.tx)       || [];
-let BUDGETS   = load(K.budgets)  || {};
+let BUDGETS   = load(K.budgets)  || {}; // legacy pre-ledger limits; kept only for backup compatibility — budgets live in LBUDGETS
 let GOALS     = load(K.goals)    || [];
 let BILLS     = load(K.bills)    || [];
 let BILL_ALIASES    = load(K.billAliases)    || {}; // { merchantKey: [rawDescriptionString, ...] }

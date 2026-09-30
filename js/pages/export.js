@@ -644,14 +644,23 @@ const EXPORT_SECTIONS = [
   },
   {
     key: 'budgets', label: 'Budgets', icon: 'target',
-    count: () => Object.keys(BUDGETS).length + ' categories',
-    exportJSON: () => { downloadFile(JSON.stringify({budgets: BUDGETS}, null, 2), exportFilename('budgets', 'json'), 'application/json'); },
+    // Budget limits live in LBUDGETS ({ catId: monthly limit }), the store the Budget page uses.
+    count: () => Object.keys(LBUDGETS).length + ' categories',
+    exportJSON: () => { downloadFile(JSON.stringify({budgets: LBUDGETS}, null, 2), exportFilename('budgets', 'json'), 'application/json'); },
     exportCSV:  () => {
-      const rows = Object.entries(BUDGETS).map(([cat, lim]) => cat + ',' + lim);
+      const rows = Object.entries(LBUDGETS).map(([id, lim]) => '"' + catNameFor(id).replace(/"/g, '""') + '",' + lim);
       downloadFile(['Category,Monthly Limit', ...rows].join('\n'), exportFilename('budgets', 'csv'), 'text/csv');
       toast('✅ Budgets exported');
     },
-    clear: () => { if(confirm('Clear all budget limits?')) { BUDGETS={}; save(K.budgets,BUDGETS); renderBudget(); toast('🗑️ Budgets cleared'); renderExportPage(); } }
+    clear: () => {
+      if(confirm('Clear all budget limits?')) {
+        // Also drop any limits left in the pre-ledger store so nothing lingers.
+        LBUDGETS = {}; save(K.lbudgets, LBUDGETS);
+        BUDGETS = {};  save(K.budgets, BUDGETS);
+        if (typeof renderBVA === 'function') renderBVA();
+        toast('🗑️ Budgets cleared'); renderExportPage();
+      }
+    }
   },
   {
     key: 'goals', label: 'Savings Goals', icon: '⭐',
@@ -772,7 +781,7 @@ function renderExportDataSummary() {
   sumEl.innerHTML = [
     [ICON('credit-card') + ' Transactions',     TX.length + ' records'],
     [ICON('bolt') + ' Auto-Assignment Rules', Object.keys(LRULES).length + ' rules'],
-    [ICON('target') + ' Budget Categories', Object.keys(BUDGETS).length + ' limits'],
+    [ICON('target') + ' Budget Categories', Object.keys(LBUDGETS).length + ' limits'],
     [ICON('star') + ' Savings Goals',     GOALS.length + ' goals'],
     [ICON('calendar') + ' Bills',             BILLS.length + ' bills'],
     [ICON('shield-check') + ' Insurance Policies', INS.length + ' policies'],

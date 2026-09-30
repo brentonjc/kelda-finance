@@ -1352,49 +1352,6 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ DASHBOARD ═══ -->
   <div class="page active" id="page-dashboard">
-
-    <!-- Greeting -->
-    <div id="db-greeting-banner" style="margin-bottom:16px">
-      <div id="db-hero-greeting" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:2px">GOOD MORNING</div>
-      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-        <div id="db-greeting-name" style="font-family:var(--font-display);font-size:1.7rem;font-weight:700;color:var(--text)"></div>
-      </div>
-      <div id="db-greeting-date" style="font-size:.78rem;color:var(--muted);margin-top:2px"></div>
-    </div>
-
-    <!-- ── Zone 1: Hero card ── -->
-    <div class="card db-hero-card" style="margin-bottom:10px">
-      <div class="db-hero-top">
-        <div class="db-hero-nw-block">
-          <div class="db-hero-lbl">NET WORTH</div>
-          <div class="db-hero-val" id="db-hero-nw">—</div>
-          <div class="db-hero-period" id="db-hero-period"></div>
-          <div id="db-hero-trend"></div>
-        </div>
-      </div>
-      <!-- Full-width NW sparkline -->
-      <div id="db-hero-sparkline" style="margin:4px 0 16px"></div>
-      <!-- Income / Expenses / Saved KPIs -->
-      <div class="db-kpi-row" id="db-kpi-row"></div>
-      <!-- Account balance tiles -->
-      <div id="db-acct-tiles" style="margin-top:14px"></div>
-    </div>
-
-    <!-- ── Zone 2: Habit Streaks ── -->
-    <div class="zone-label">Zone 2 — Habit Streaks</div>
-    <div id="db-streaks-row" class="streaks-row" style="margin-bottom:10px"></div>
-
-    <!-- ── Zone 3: Smart Nudge ── -->
-    <div class="zone-label">Zone 3 — Smart Insight</div>
-    <div id="db-nudge-wrap" style="margin-bottom:10px"></div>
-
-    <!-- ── Zone 4: Glanceable Metrics ── -->
-    <div class="zone-label">Zone 4 — Glanceable Metrics</div>
-    <div class="db-glance-row">
-      <div class="card" id="db-glance-budget"></div>
-      <div class="card" id="db-glance-goals"></div>
-    </div>
-
   </div>
 
 
@@ -2513,7 +2470,7 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Vested vs Unvested by Year: pie + table -->
     <div class="card mb" id="eq-vest-by-year" style="display:none">
       <div class="section-label mb-sm">Vested vs Unvested by Year</div>
-      <div class="g2" style="align-items:start">
+      <div class="g2 g2-top">
         <div style="height:260px"><canvas id="eq-vest-donut-chart"></canvas></div>
         <div id="eq-vest-year-table"></div>
       </div>
@@ -2553,10 +2510,10 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="eq-monthly-grid"></div>
 
     <!-- Add/Edit modal overlay -->
-    <div id="eq-modal-overlay" class="eq-modal-overlay" style="display:none"></div>
+    <div id="eq-modal-overlay" class="eq-modal-overlay"></div>
 
     <!-- Sale modal overlay -->
-    <div id="eq-sale-overlay" class="eq-modal-overlay" style="display:none"></div>
+    <div id="eq-sale-overlay" class="eq-modal-overlay"></div>
   </div>
 
   <!-- ═══ UPLOAD TRANSACTIONS ═══ -->
@@ -3921,7 +3878,7 @@ function applyOnboardingToApp() {
     var hr = new Date().getHours();
     var tod = hr < 12 ? 'morning' : (hr < 18 ? 'afternoon' : 'evening');
     var greet = 'Good ' + tod + ', ' + name;
-    var gEls = document.querySelectorAll('#dashboard-greeting, .greeting, #db-hero-greeting');
+    var gEls = document.querySelectorAll('#dashboard-greeting, .greeting');
     for (var j = 0; j < gEls.length; j++) { if (gEls[j]) gEls[j].textContent = greet; }
   }
 }

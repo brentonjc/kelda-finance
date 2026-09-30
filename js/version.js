@@ -14,19 +14,75 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.2.1';
+var APP_VERSION = '2.4.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
-    version: '2.2.1',
-    date: '2026-09-28',
+    version: '2.4.1',
+    date: '2026-09-30',
     title: 'Mobile tab bar fixes',
     notes: [
       'Bottom tab bar labels are no longer cut off on iPhone-sized screens',
       'The Transactions tab now reads "Txns" on phones; screen readers still say "Transactions"',
       'Home Screen app: the tab bar now sits above the iPhone home indicator instead of being squashed',
+    ],
+  },
+  {
+    version: '2.4.0',
+    date: '2026-09-28',
+    title: 'Buy and sell shares, with realised gains',
+    notes: [
+      'Investments shows one row per stock; open it to Buy, Sell or update the price',
+      'Buy adds a new parcel with its own date and cost, and brokerage is included in the cost',
+      'Sell uses your oldest parcels first, or lets you choose them, and can be entered in US$',
+      'Before you save, a sale shows proceeds, cost base and gain, and how much is from parcels held 12 months or more',
+      'Vested RSUs are sold vest by vest, costed at the vest price',
+      'Each stock lists its sales; delete one to put the units back',
+      '"Realised" shows the gain on sales this financial year',
+      'Can’t sell more units than you hold, and deleting a sale asks first',
+    ],
+  },
+  {
+    version: '2.3.0',
+    date: '2026-09-28',
+    title: 'Faster share price updates, US$ prices and correct RSU gains',
+    notes: [
+      'Update Prices shows one row per code: one price updates every holding with that code, including both owners, extra parcels, RSU grants and options',
+      'Enter US-listed prices in US$: set the exchange rate once and they’re converted to A$',
+      'Paste prices from your broker or a spreadsheet, one "code price" per line (add US$ for US prices)',
+      'Unrealised profit now costs RSUs at their vest price instead of $0, so it’s no longer overstated',
+      'Options are valued at the price above their strike everywhere, including the vesting cards',
+      'Each price shows how old it is, and Investments flags prices not updated in over 30 days',
+      'Adding a holding with a code you already hold fills in its current price',
+      'Holdings entered without a code can be linked to the matching stock',
+      'Editing a holding no longer resets its price date or drops details the form doesn’t show',
+      'Phones: the + button and tab bar no longer cover Investments pop-ups, and the RSU vesting table no longer pushes the page sideways',
+    ],
+  },
+  {
+    version: '2.2.2',
+    date: '2026-09-28',
+    title: 'Share and crypto trades no longer counted as spending or income',
+    notes: [
+      'Payments to and from brokers, crypto exchanges and Vanguard are now filed as Transfers › Investment Transfer, not Capital Gains',
+      'Buying shares no longer shows up as spending, and sale proceeds no longer count as income',
+      'More Australian platforms recognised: SelfWealth, Pearler, Stake, CoinSpot, Swyftx, BTC Markets and others',
+      'Employee share plan (RSU) sale proceeds from Morgan Stanley are now filed as Bonus income',
+      'Fewer false matches: Vanguard Super, distributions, Stake.com and words like "mistake" are left alone',
+      'Your own category corrections now take priority over the built-in keyword list, as documented',
+      'Existing transactions are unchanged; use Rescan to apply the new rules to past imports',
+    ],
+  },
+  {
+    version: '2.2.1',
+    date: '2026-09-28',
+    title: 'Cash Flow Forecast fix',
+    notes: [
+      'Cash Flow Forecast now shows its charts, summary figures and month-by-month view instead of an empty page',
+      'Opening Forecast picks up your latest account balances as the starting balance, so the Cumulative view is ready without pressing Sync',
+      'The Forecast how-to guide now explains how the 12-month forecast is worked out',
     ],
   },
   {
