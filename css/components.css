@@ -1617,6 +1617,63 @@ hr.liab-hr{border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0;
 #page-borrowing .bc-mono.bc-mono--22{font-size:22px;font-weight:500;}
 #page-borrowing .bc-mono.bc-mono--17{font-size:17px;}
 
+/* App shell, onboarding and shared modals (was inline). Onboarding rules live in
+   index.html's <style id="ob-css">, which comes after this file, and .mob-menu-item
+   is in layout.css, so those get doubled selectors. */
+.ob-preview-bar-label.ob-pv-lbl--mb3{margin-bottom:3px;}
+.ob-preview-bar-label.ob-pv-lbl--mt4{margin-top:4px;}
+.ob-pv-equity{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--green) 38%,var(--n600) 38%);margin-bottom:10px;}
+.ob-preview-amount.ob-pv-amt--sm{font-size:15px;}
+.ob-pv-ring{width:44px;height:44px;border-radius:50%;border:4px solid var(--amber);margin:8px auto 8px;position:relative;}
+.ob-pv-ring-half{position:absolute;inset:4px;border-radius:50%;border:4px solid var(--green);clip-path:polygon(0 0,50% 0,50% 100%,0 100%);}
+.ob-preview-tx.ob-pv-tx--mt8{margin-top:8px;}
+.ob-sub.ob-sub--mt10{margin-top:10px;}
+.ob-file-input{display:none;}
+.ob-profile-card.ob-pc--starter{--card-accent:#00C896;--card-glow:rgba(0,200,150,0.12);--card-icon-bg:rgba(0,200,150,0.12);}
+.ob-profile-card.ob-pc--household{--card-accent:#F0538A;--card-glow:rgba(240,83,138,0.12);--card-icon-bg:rgba(240,83,138,0.12);}
+.ob-profile-card.ob-pc--full{--card-accent:#F59E0B;--card-glow:rgba(245,158,11,0.12);--card-icon-bg:rgba(245,158,11,0.12);}
+.ob-helper.ob-mb14,.ob-field.ob-mb14{margin-bottom:14px;}
+.ob-field.ob-mb0{margin-bottom:0;}
+.ob-field.ob-mb10{margin-bottom:10px;}
+.ob-field.ob-mt4{margin-top:4px;}
+.ob-link.ob-link--left{text-align:left;}
+.ob-link.ob-mt6{margin-top:6px;}
+.ob-btn-primary.ob-mt0{margin-top:0;}
+.ob-btn-primary.ob-mt16{margin-top:16px;}
+.ob-btn-primary.ob-mt20{margin-top:20px;}
+.ob-asset-grid.ob-asset-grid--5{grid-template-columns:repeat(5,1fr);}
+.ob-divider.ob-divider--tight{margin:20px 0 16px;}
+.mob-menu-themes.mob-themes-wrap{flex-wrap:wrap;gap:10px;}
+.palette-select.mob-pal-sel{flex:1;min-width:140px;}
+.mob-menu-item.mob-menu-item--wide{grid-column:1/-1;width:100%;justify-content:center;gap:8px;}
+.mob-panel{grid-column:1/-1;background:var(--card2);border-radius:14px;padding:16px;margin-top:4px;}
+.mob-panel.mob-panel--14{padding:14px;}
+.mob-p-head{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+.mob-p-head--mb10{margin-bottom:10px;}
+.mob-p-grid{display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:14px;}
+.mob-p-grid--mb18{margin-bottom:18px;}
+.mob-p-lbl{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px;}
+.mob-p-icon{font-size:1.4rem;text-align:center;padding:8px 4px;}
+.mob-in16{font-size:16px;}
+.mob-mb10{margin-bottom:10px;}
+.mob-mb12{margin-bottom:12px;}
+.mob-p-accts{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.mob-p-alb{font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px;}
+.mob-p-acts{display:flex;gap:8px;}
+.btn.mob-flex1{flex:1;}
+.mob-r-lbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;}
+.modal-box.mdl-w720{max-width:720px;width:100%;}
+.mdl-close-row{display:flex;justify-content:flex-end;margin-bottom:2px;}
+.modal-box.mdl-search{max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;}
+.modal-box.mdl-85{max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.modal-box.mdl-w520{max-width:520px;width:100%;}
+.modal-box.mdl-w420{max-width:420px;width:100%;}
+.mdl-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.mdl-hd--mb6{margin-bottom:6px;}
+.mdl-desc{font-size:.78rem;color:var(--muted);margin-bottom:14px;}
+.modal-box.mdl-fc2{max-width:440px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.goal-fld{margin-bottom:14px;}
+
 /* ── GAMIFICATION STYLES ── */
 
 /* Health Score Ring */

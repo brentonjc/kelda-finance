@@ -444,8 +444,8 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="ob-preview-variant" id="preview-household">
             <div class="ob-preview-label">Net Worth</div>
             <div class="ob-preview-amount">$——</div>
-            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:3px">Mortgage equity</div>
-            <div style="height:6px;border-radius:3px;background:linear-gradient(90deg,var(--green) 38%,var(--n600) 38%);margin-bottom:10px"></div>
+            <div class="ob-preview-bar-label ob-pv-lbl--mb3">Mortgage equity</div>
+            <div class="ob-pv-equity"></div>
             <div class="ob-preview-bar-wrap">
               <div class="ob-preview-bar-label">Budget used</div>
               <div class="ob-preview-bar" style="background:var(--pink);width:55%"></div>
@@ -458,15 +458,15 @@ window.addEventListener('unhandledrejection',function(e){
 
           <div class="ob-preview-variant" id="preview-full">
             <div class="ob-preview-label">Net Worth</div>
-            <div class="ob-preview-amount" style="font-size:15px">$——</div>
-            <div style="width:44px;height:44px;border-radius:50%;border:4px solid var(--amber);margin:8px auto 8px;position:relative;">
-              <div style="position:absolute;inset:4px;border-radius:50%;border:4px solid var(--green);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)"></div>
+            <div class="ob-preview-amount ob-pv-amt--sm">$——</div>
+            <div class="ob-pv-ring">
+              <div class="ob-pv-ring-half"></div>
             </div>
-            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:2px">Super</div>
+            <div class="ob-preview-bar-label">Super</div>
             <div class="ob-preview-bar" style="background:var(--amber);width:45%"></div>
-            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:2px;margin-top:4px">Investments</div>
+            <div class="ob-preview-bar-label ob-pv-lbl--mt4">Investments</div>
             <div class="ob-preview-bar" style="background:var(--green);width:62%"></div>
-            <div class="ob-preview-tx" style="margin-top:8px"><div class="ob-preview-dot" style="background:var(--amber)"></div><div class="ob-preview-line" style="width:55%"></div></div>
+            <div class="ob-preview-tx ob-pv-tx--mt8"><div class="ob-preview-dot" style="background:var(--amber)"></div><div class="ob-preview-line" style="width:55%"></div></div>
           </div>
 
         </div>
@@ -481,10 +481,10 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="ob-welcome-inner">
           <div class="ob-welcome-icon"><i class="ti ti-droplet"></i></div>
           <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
-          <p class="ob-sub" style="margin-top:10px">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
+          <p class="ob-sub ob-sub--mt10">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
           <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
           <button class="ob-link" id="ob-restore-link" onclick="document.getElementById('ob-restore-file').click()">Already set up? Restore from backup</button>
-          <input type="file" id="ob-restore-file" accept=".json,application/json" style="display:none" onchange="obRestoreBackup(event)"/>
+          <input type="file" id="ob-restore-file" accept=".json,application/json" class="ob-file-input" onchange="obRestoreBackup(event)"/>
         </div>
       </div>
 
@@ -516,8 +516,7 @@ window.addEventListener('unhandledrejection',function(e){
         <p class="ob-sub">Pick the one that fits — you can always add more later.</p>
 
         <div class="ob-profile-group" role="radiogroup" aria-label="Choose your profile">
-          <div class="ob-profile-card" id="card-starter" role="radio" aria-checked="false" tabindex="0"
-               style="--card-accent:#00C896;--card-glow:rgba(0,200,150,0.12);--card-icon-bg:rgba(0,200,150,0.12)"
+          <div class="ob-profile-card ob-pc--starter" id="card-starter" role="radio" aria-checked="false" tabindex="0"
                onclick="obSelectProfile('starter')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('starter')}">
             <div class="ob-profile-card-top">
               <div class="ob-profile-icon"><i class="ti ti-seedling"></i></div>
@@ -533,8 +532,7 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
 
-          <div class="ob-profile-card" id="card-household" role="radio" aria-checked="false" tabindex="-1"
-               style="--card-accent:#F0538A;--card-glow:rgba(240,83,138,0.12);--card-icon-bg:rgba(240,83,138,0.12)"
+          <div class="ob-profile-card ob-pc--household" id="card-household" role="radio" aria-checked="false" tabindex="-1"
                onclick="obSelectProfile('household')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('household')}">
             <div class="ob-profile-card-top">
               <div class="ob-profile-icon"><i class="ti ti-home"></i></div>
@@ -550,8 +548,7 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
 
-          <div class="ob-profile-card" id="card-full" role="radio" aria-checked="false" tabindex="-1"
-               style="--card-accent:#F59E0B;--card-glow:rgba(245,158,11,0.12);--card-icon-bg:rgba(245,158,11,0.12)"
+          <div class="ob-profile-card ob-pc--full" id="card-full" role="radio" aria-checked="false" tabindex="-1"
                onclick="obSelectProfile('full')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('full')}">
             <div class="ob-profile-card-top">
               <div class="ob-profile-icon"><i class="ti ti-chart-bar"></i></div>
@@ -614,28 +611,28 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="account-cards-household"></div>
         <div class="ob-divider">
           <div class="ob-divider-line"></div>
-          <span class="ob-divider-label" style="color:var(--pink)">Your mortgage</span>
+          <span class="ob-divider-label tone-pink">Your mortgage</span>
           <div class="ob-divider-line"></div>
         </div>
-        <p class="ob-helper" style="margin-bottom:14px">Optional — rough figures are fine. You can edit this any time.</p>
+        <p class="ob-helper ob-mb14">Optional — rough figures are fine. You can edit this any time.</p>
         <div class="ob-mortgage-card">
-          <div class="ob-field" style="margin-bottom:14px">
+          <div class="ob-field ob-mb14">
             <label class="ob-label" for="mtg-lender">Lender</label>
             <input class="ob-input" id="mtg-lender" type="text" maxlength="30" placeholder="e.g. ANZ Home Loan">
           </div>
           <div class="ob-two-col">
-            <div class="ob-field" style="margin-bottom:0">
+            <div class="ob-field ob-mb0">
               <label class="ob-label" for="mtg-balance">Approx. balance (AUD)</label>
               <input class="ob-input mono" id="mtg-balance" type="number" inputmode="decimal" placeholder="0.00">
             </div>
-            <div class="ob-field" style="margin-bottom:0">
+            <div class="ob-field ob-mb0">
               <label class="ob-label" for="mtg-payment">Monthly payment (AUD)</label>
               <input class="ob-input mono" id="mtg-payment" type="number" inputmode="decimal" placeholder="0.00">
             </div>
           </div>
         </div>
-        <button class="ob-link" style="text-align:left;margin-top:6px" onclick="obSubmitAccounts('household')">I'll skip the mortgage for now</button>
-        <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('household')">Continue →</button>
+        <button class="ob-link ob-link--left ob-mt6" onclick="obSubmitAccounts('household')">I'll skip the mortgage for now</button>
+        <button class="ob-btn-primary ob-mt16" onclick="obSubmitAccounts('household')">Continue →</button>
       </div>
 
       <!-- 4c — Accounts + Assets (full) -->
@@ -659,19 +656,19 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="account-cards-full"></div>
         <div class="ob-divider">
           <div class="ob-divider-line"></div>
-          <span class="ob-divider-label" style="color:var(--amber)">What do you have?</span>
+          <span class="ob-divider-label tone-amber">What do you have?</span>
           <div class="ob-divider-line"></div>
         </div>
-        <p class="ob-helper" style="margin-bottom:14px">Select all that apply — we'll set these up inside the app, no details needed now.</p>
-        <div class="ob-asset-grid" style="grid-template-columns:repeat(5,1fr)">
+        <p class="ob-helper ob-mb14">Select all that apply — we'll set these up inside the app, no details needed now.</p>
+        <div class="ob-asset-grid ob-asset-grid--5">
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'property')"><span class="ob-asset-emoji"><i class="ti ti-home"></i></span><span class="ob-asset-label">Property</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'equities')"><span class="ob-asset-emoji"><i class="ti ti-trending-up"></i></span><span class="ob-asset-label">Investments</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'super')"><span class="ob-asset-emoji"><i class="ti ti-building-bank"></i></span><span class="ob-asset-label">Superannuation</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'liabilities')"><span class="ob-asset-emoji"><i class="ti ti-credit-card"></i></span><span class="ob-asset-label">Liabilities</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'investment-property')"><span class="ob-asset-emoji"><i class="ti ti-building"></i></span><span class="ob-asset-label">Investment property</span></div>
         </div>
-        <button class="ob-link" style="text-align:left" onclick="obGoTo('panel-security')">I'll set this up later</button>
-        <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('full')">Continue →</button>
+        <button class="ob-link ob-link--left" onclick="obGoTo('panel-security')">I'll set this up later</button>
+        <button class="ob-btn-primary ob-mt16" onclick="obSubmitAccounts('full')">Continue →</button>
       </div>
 
       <!-- 5 — Security -->
@@ -686,7 +683,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="ob-pin-section">
           <label class="ob-label">Your PIN</label>
           <div class="ob-pin-fields">
-            <div class="ob-field" style="margin-bottom:10px">
+            <div class="ob-field ob-mb10">
               <input class="ob-input" id="inp-pin" type="password" maxlength="4" inputmode="numeric" placeholder="4-digit PIN" autocomplete="new-password">
             </div>
             <div class="ob-field">
@@ -695,9 +692,9 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
         </div>
-        <div class="ob-divider" style="margin:20px 0 16px">
+        <div class="ob-divider ob-divider--tight">
           <div class="ob-divider-line"></div>
-          <span class="ob-divider-label" style="color:var(--pink)">Second user</span>
+          <span class="ob-divider-label tone-pink">Second user</span>
           <div class="ob-divider-line"></div>
         </div>
         <div class="ob-toggle-row" onclick="obToggleUser2()">
@@ -708,13 +705,13 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
         </div>
         <div class="ob-toggle-expand" id="user2-expand">
-          <div class="ob-field" style="margin-top:4px">
+          <div class="ob-field ob-mt4">
             <label class="ob-label" for="inp-user2">Their name</label>
             <input class="ob-input" id="inp-user2" type="text" maxlength="40" placeholder="First name">
             <span class="ob-error" id="err-user2"></span>
           </div>
         </div>
-        <button class="ob-btn-primary" style="margin-top:20px" onclick="obSubmitSecurity()">Let's go →</button>
+        <button class="ob-btn-primary ob-mt20" onclick="obSubmitSecurity()">Let's go →</button>
       </div>
 
     </main>
@@ -826,8 +823,8 @@ window.addEventListener('unhandledrejection',function(e){
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label">Appearance</div>
-    <div class="mob-menu-themes" style="flex-wrap:wrap;gap:10px">
-      <select class="input palette-select" style="flex:1;min-width:140px" onchange="setPalette(this.value)" aria-label="Colour palette">
+    <div class="mob-menu-themes mob-themes-wrap">
+      <select class="input palette-select mob-pal-sel" onchange="setPalette(this.value)" aria-label="Colour palette">
         <option value="kelda">Kelda</option>
         <option value="fintech">Fintech</option>
         <option value="emerald">Emerald</option>
@@ -843,50 +840,50 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- User & Account Settings -->
   <div class="mob-menu-section">
     <div class="mob-menu-label">Profiles &amp; Accounts</div>
-    <button class="mob-menu-item" onclick="openUserSettings()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
+    <button class="mob-menu-item mob-menu-item--wide" onclick="openUserSettings()">
       <span><i class="ti ti-user"></i></span>Edit Names &amp; Accounts
     </button>
-    <div id="user-settings-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:16px;margin-top:4px">
+    <div id="user-settings-panel" class="mob-panel" style="display:none">
 
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px">Profile 1</div>
-      <div style="display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:14px">
+      <div class="mob-p-head tone-pink">Profile 1</div>
+      <div class="mob-p-grid">
         <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Icon</label>
-          <input type="text" id="usc-p1icon" placeholder="👔" style="font-size:1.4rem;text-align:center;padding:8px 4px"/>
+          <label class="mob-p-lbl">Icon</label>
+          <input type="text" id="usc-p1icon" placeholder="👔" class="mob-p-icon"/>
         </div>
         <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
-          <input type="text" id="usc-p1name" placeholder="Profile 1" style="font-size:16px"/>
-        </div>
-      </div>
-
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--purple);margin-bottom:12px">Profile 2</div>
-      <div style="display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:18px">
-        <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Icon</label>
-          <input type="text" id="usc-p2icon" placeholder="👩" style="font-size:1.4rem;text-align:center;padding:8px 4px"/>
-        </div>
-        <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
-          <input type="text" id="usc-p2name" placeholder="Profile 2" style="font-size:16px"/>
+          <label class="mob-p-lbl">Name</label>
+          <input type="text" id="usc-p1name" placeholder="Profile 1" class="mob-in16"/>
         </div>
       </div>
 
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Account Names</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-building-bank"></i> Offset / Main Account</label>
-          <input type="text" id="usc-acct-offset" placeholder="Offset Account" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-home"></i> Joint Transaction Account</label>
-          <input type="text" id="usc-acct-home" placeholder="Home Transaction" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-coin"></i> Savings Account 1 (Profile 1)</label>
-          <input type="text" id="usc-acct-sav1" placeholder="Savings Account 1" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-diamond"></i> Savings Account 2 (Profile 2)</label>
-          <input type="text" id="usc-acct-sav2" placeholder="Savings Account 2" style="font-size:16px"/></div>
+      <div class="mob-p-head tone-purple">Profile 2</div>
+      <div class="mob-p-grid mob-p-grid--mb18">
+        <div>
+          <label class="mob-p-lbl">Icon</label>
+          <input type="text" id="usc-p2icon" placeholder="👩" class="mob-p-icon"/>
+        </div>
+        <div>
+          <label class="mob-p-lbl">Name</label>
+          <input type="text" id="usc-p2name" placeholder="Profile 2" class="mob-in16"/>
+        </div>
       </div>
 
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="saveUserSettings()" style="flex:1">Save</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('user-settings-panel').style.display='none'" style="flex:1">Cancel</button>
+      <div class="mob-p-head mob-p-head--mb10 tone-muted">Account Names</div>
+      <div class="mob-p-accts">
+        <div><label class="mob-p-alb"><i class="ti ti-building-bank"></i> Offset / Main Account</label>
+          <input type="text" id="usc-acct-offset" placeholder="Offset Account" class="mob-in16"/></div>
+        <div><label class="mob-p-alb"><i class="ti ti-home"></i> Joint Transaction Account</label>
+          <input type="text" id="usc-acct-home" placeholder="Home Transaction" class="mob-in16"/></div>
+        <div><label class="mob-p-alb"><i class="ti ti-coin"></i> Savings Account 1 (Profile 1)</label>
+          <input type="text" id="usc-acct-sav1" placeholder="Savings Account 1" class="mob-in16"/></div>
+        <div><label class="mob-p-alb"><i class="ti ti-diamond"></i> Savings Account 2 (Profile 2)</label>
+          <input type="text" id="usc-acct-sav2" placeholder="Savings Account 2" class="mob-in16"/></div>
+      </div>
+
+      <div class="mob-p-acts">
+        <button class="btn btn-primary btn-sm mob-flex1" onclick="saveUserSettings()">Save</button>
+        <button class="btn btn-ghost btn-sm mob-flex1" onclick="document.getElementById('user-settings-panel').style.display='none'">Cancel</button>
       </div>
     </div>
   </div>
@@ -894,17 +891,17 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- App name editor -->
   <div class="mob-menu-section">
     <div class="mob-menu-label">App Settings</div>
-    <button class="mob-menu-item" onclick="openRenameApp()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
+    <button class="mob-menu-item mob-menu-item--wide" onclick="openRenameApp()">
       <span><i class="ti ti-pencil"></i></span>Rename App
     </button>
-    <div id="rename-app-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:14px;margin-top:4px">
-      <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">App Name</label>
-      <input type="text" id="rename-app-name" placeholder="Kelda Finance" style="margin-bottom:10px;font-size:16px"/>
-      <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Subtitle</label>
-      <input type="text" id="rename-app-sub" placeholder="Family Finance Tracker · AUD" style="margin-bottom:12px;font-size:16px"/>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="saveAppName()" style="flex:1">Save</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rename-app-panel').style.display='none'" style="flex:1">Cancel</button>
+    <div id="rename-app-panel" class="mob-panel mob-panel--14" style="display:none">
+      <label class="mob-r-lbl">App Name</label>
+      <input type="text" id="rename-app-name" placeholder="Kelda Finance" class="mob-in16 mob-mb10"/>
+      <label class="mob-r-lbl">Subtitle</label>
+      <input type="text" id="rename-app-sub" placeholder="Family Finance Tracker · AUD" class="mob-in16 mob-mb12"/>
+      <div class="mob-p-acts">
+        <button class="btn btn-primary btn-sm mob-flex1" onclick="saveAppName()">Save</button>
+        <button class="btn btn-ghost btn-sm mob-flex1" onclick="document.getElementById('rename-app-panel').style.display='none'">Cancel</button>
       </div>
     </div>
   </div>
@@ -3067,8 +3064,8 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- CSV IMPORT MODAL — thin wrapper. The wizard (#csv-wizard) lives on the
      Upload Transactions page and is relocated in here when opened as a modal. -->
 <div class="modal-overlay" id="csv-modal" onclick="if(event.target===this)closeCsvModal()">
-  <div class="modal-box" id="csv-modal-box" onclick="event.stopPropagation()" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:2px">
+  <div class="modal-box modal-box--scroll mdl-w720" id="csv-modal-box" onclick="event.stopPropagation()">
+    <div class="mdl-close-row">
       <button class="modal-close" onclick="closeCsvModal()" aria-label="Close"><i class="ti ti-x"></i></button>
     </div>
   </div>
@@ -3076,7 +3073,7 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- GLOBAL SEARCH MODAL — opened from the top-nav search icon (works on any page) -->
 <div class="modal-overlay" id="search-modal" onclick="if(event.target===this)closeSearchModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+  <div class="modal-box mdl-search" onclick="event.stopPropagation()">
     <div class="search-modal-bar">
       <i class="ti ti-search search-modal-ic"></i>
       <input id="search-modal-input" type="text" placeholder="Search transactions by merchant, category or amount…" autocomplete="off" oninput="runGlobalSearch()" onkeydown="if(event.key==='Escape')closeSearchModal()"/>
@@ -3088,9 +3085,9 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- NOTIFICATIONS / INSIGHTS MODAL — opened from the top-nav bell icon -->
 <div class="modal-overlay" id="notif-modal" onclick="if(event.target===this)closeNotifModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div class="section-label" style="margin:0"><i class="ti ti-bell"></i> Recommended for you</div>
+  <div class="modal-box mdl-85 mdl-w520" onclick="event.stopPropagation()">
+    <div class="mdl-hd">
+      <div class="section-label section-label--flush"><i class="ti ti-bell"></i> Recommended for you</div>
       <button class="btn btn-ghost btn-sm" onclick="closeNotifModal()"><i class="ti ti-x"></i> Close</button>
     </div>
     <div id="notif-modal-body"></div>
@@ -3099,19 +3096,19 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- BANK ACCOUNTS VISIBILITY MODAL — opened from the Dashboard Bank Accounts tile -->
 <div class="modal-overlay" id="acct-vis-modal" onclick="if(event.target===this)closeAcctVisModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div class="section-label" style="margin:0"><i class="ti ti-eye"></i> Show / hide accounts</div>
+  <div class="modal-box mdl-85 mdl-w420" onclick="event.stopPropagation()">
+    <div class="mdl-hd mdl-hd--mb6">
+      <div class="section-label section-label--flush"><i class="ti ti-eye"></i> Show / hide accounts</div>
       <button class="btn btn-ghost btn-sm" onclick="closeAcctVisModal()"><i class="ti ti-x"></i> Close</button>
     </div>
-    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">Hide accounts with no active balance so they don't clutter your dashboard. This only affects what's shown here — nothing is deleted.</div>
+    <div class="mdl-desc">Hide accounts with no active balance so they don't clutter your dashboard. This only affects what's shown here — nothing is deleted.</div>
     <div id="acct-vis-modal-body"></div>
   </div>
 </div>
 
 <!-- FORECAST MONTH DETAIL MODAL -->
 <div class="modal-overlay" id="fc2-month-overlay" onclick="fc2CloseMonthModal()">
-  <div class="modal-box" id="fc2-month-box" onclick="event.stopPropagation()" style="max-width:440px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+  <div class="modal-box mdl-fc2" id="fc2-month-box" onclick="event.stopPropagation()"></div>
 </div>
 
 <!-- GOAL UPDATE MODAL -->
@@ -3221,7 +3218,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="modal-box">
     <h3>Update Goal Progress</h3>
     <input type="hidden" id="modal-goal-idx"/>
-    <div style="margin-bottom:14px"><label class="lbl">Current Amount Saved (AUD)</label>
+    <div class="goal-fld"><label class="lbl">Current Amount Saved (AUD)</label>
       <input type="number" id="modal-goal-amt" placeholder="0.00" min="0" step="0.01"/></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -3702,7 +3699,7 @@ function obBuildRecap() {
           + '<div class="ob-recap-ic">' + it.ic + '</div>'
           + '<div><b>' + obEsc(it.label) + '</b><span>' + obEsc(it.sub) + '</span></div></div>';
   });
-  html += '</div><button class="ob-btn-primary" style="margin-top:0" onclick="obFinish()">Open my dashboard →</button>';
+  html += '</div><button class="ob-btn-primary ob-mt0" onclick="obFinish()">Open my dashboard →</button>';
   document.getElementById('recap-card').innerHTML = html;
 }
 
