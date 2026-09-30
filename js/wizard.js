@@ -456,6 +456,7 @@ function wzFinish() {
   applyLoginProfileVis();
 
   // Skip welcome — go straight to PIN login
+  if (typeof loginSkipIntro === 'function') loginSkipIntro();
   document.getElementById('login-screen').style.display = '';
   if (typeof showPinScreen === 'function') showPinScreen();
   if (typeof selProfile    === 'function') selProfile('brenton');

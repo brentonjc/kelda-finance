@@ -17,13 +17,66 @@
   position:absolute;
   left:calc(16px + env(safe-area-inset-left));
   bottom:calc(14px + env(safe-area-inset-bottom));
-  z-index:3;
+  z-index:3; /* same as .kl-intro; later in DOM, so it paints on top */
   font-family:var(--font-mono);
   font-size:.72rem;
   letter-spacing:.02em;
   color:rgba(232,237,245,.4);
   pointer-events:none;
   user-select:none;
+}
+
+/* ── Screen 0: welcome splash (app load only) ──
+   Full-bleed over both panels; same brand gradient as .kl-brand. */
+.kl-intro {
+  position:absolute; inset:0; z-index:3; overflow-y:auto; /* over .kl-brand children (z 2) */
+  display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  padding:calc(48px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-right))
+          calc(48px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+  background:linear-gradient(160deg,#5a1030 0%,#3a1240 45%,#141a3a 100%);
+  text-align:center;
+}
+.kl-intro[hidden] { display:none; }
+.kl-intro::before {
+  content:''; position:absolute; width:420px; height:420px; border-radius:50%;
+  background:rgba(255,255,255,.06); top:-160px; right:-140px; pointer-events:none;
+}
+.kl-intro::after {
+  content:''; position:absolute; width:280px; height:280px; border-radius:50%;
+  background:rgba(129,140,248,.10); bottom:-100px; left:-80px; pointer-events:none;
+}
+.kl-intro-body, .kl-intro-foot { position:relative; z-index:1; width:100%; max-width:400px; }
+.kl-intro-body {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  animation:klIntroIn .5s ease both;
+}
+/* App-icon tile around the shared Tide .brand-mark (components.css). */
+.kl-intro-mark {
+  width:112px; height:112px; border-radius:26px; background:var(--n900);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 18px 48px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08);
+}
+.kl-intro-mark__svg { width:72px; height:72px; }
+.kl-intro-name {
+  font-family:var(--font-display); font-weight:700; font-size:1.3rem;
+  color:var(--text); margin-top:20px;
+}
+.kl-intro-title {
+  font-family:var(--font-display); font-weight:700; font-size:2.15rem;
+  line-height:1.2; letter-spacing:-.02em; color:var(--text); margin-top:32px;
+}
+.kl-intro-sub { color:rgba(232,237,245,.78); font-size:.92rem; margin-top:12px; line-height:1.5; }
+.kl-intro-foot { padding-top:32px; animation:klIntroIn .5s .15s ease both; }
+.kl-intro-signin { width:100%; min-height:52px; font-size:1.05rem; }
+.kl-intro-note {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:16px; font-size:.75rem; color:rgba(232,237,245,.6);
+}
+.kl-intro.leaving { animation:klIntroOut .25s ease forwards; pointer-events:none; }
+@keyframes klIntroIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+@keyframes klIntroOut { to { opacity:0; } }
+@media (prefers-reduced-motion:reduce) {
+  .kl-intro-body, .kl-intro-foot, .kl-intro.leaving { animation:none; }
 }
 
 /* ── Left brand panel (desktop only) ── */
@@ -45,10 +98,7 @@
   display:flex; align-items:center; gap:10px; position:relative; z-index:2;
   font-family:var(--font-display); font-weight:700; font-size:1.3rem; color:var(--text);
 }
-.kl-brand-logo .kl-dot {
-  width:10px; height:10px; border-radius:50%; background:var(--primary);
-  box-shadow:0 0 0 5px rgba(240,83,138,.25);
-}
+.kl-brand-mark { width:32px; height:32px; }
 .kl-brand-copy { position:relative; z-index:2; margin-top:40px; }
 .kl-brand-copy h1 {
   font-family:var(--font-display); font-weight:700; font-size:2.15rem;
