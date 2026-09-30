@@ -920,11 +920,32 @@ window.addEventListener('unhandledrejection',function(e){
 <div id="nav-overlay" onclick="closeNav()" style="display:none"></div>
 
 <div id="login-screen" aria-label="Sign in">
+
+  <!-- Screen 0: welcome splash on app load (login.js hides it on "Sign in") -->
+  <div class="kl-intro" id="kl-intro" hidden>
+    <div class="kl-intro-body">
+      <div class="kl-intro-mark"><svg class="brand-mark kl-intro-mark__svg" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+        <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+        <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+      </svg></div>
+      <div class="kl-intro-name" data-app-name>Kelda</div>
+      <h1 class="kl-intro-title">Your money,<br>one clear view.</h1>
+      <p class="kl-intro-sub">Net worth, budgets, bills and goals for your whole household.</p>
+    </div>
+    <div class="kl-intro-foot">
+      <button class="btn btn-primary kl-intro-signin" id="kl-signin" type="button">Sign in</button>
+      <div class="kl-intro-note"><i class="ti ti-lock" aria-hidden="true"></i> Stored only on this device</div>
+    </div>
+  </div>
+
   <div class="kl-shell">
 
     <!-- ── Left brand panel (desktop ≥760px) ── -->
     <div class="kl-brand">
-      <div class="kl-brand-logo"><span class="kl-dot"></span> <span data-app-name>Kelda</span></div>
+      <div class="kl-brand-logo"><svg class="brand-mark kl-brand-mark" viewBox="16 16 68 68" aria-hidden="true" focusable="false">
+        <circle class="brand-mark__ring" cx="50" cy="50" r="25"/>
+        <path class="brand-mark__wave" d="M34 54 C40 47 44 47 50 54 C56 61 60 61 66 54 A16.5 16.5 0 0 1 34 54 Z"/>
+      </svg> <span data-app-name>Kelda</span></div>
       <div class="kl-brand-copy">
         <h1>Your money,<br>one clear view.</h1>
         <p>Net worth, budgets, bills and goals for your whole household — all in one private, local-first app.</p>

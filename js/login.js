@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// LOGIN UI — 3-screen entry flow (picker → PIN → data-health welcome)
+// LOGIN UI — entry flow (welcome splash → picker → PIN → data-health welcome)
 //   Verification/crypto/unlock live in auth.js; this file owns the DOM.
 //   Built to kelda-login-wireframe.html (WCAG 2.1 AA + Nielsen audited).
 //   House style: string concatenation, no template literals; try/catch
@@ -14,6 +14,7 @@ var _lgPending  = '';     // first entry while confirming a new PIN
 var _lgFail     = 0;      // consecutive wrong attempts
 var _lgLockTimer = null;
 var _lgNote     = '';     // one-shot message to show on next PIN screen (e.g. session expired)
+var _lgIntroDone = false; // welcome splash shows once per app load, not on every lock
 var _LG_LOCK_KEY = 'kf_pin_lock_until';  // sessionStorage — survives reload, not PWA close
 
 var PIN_LEN = 4;
@@ -50,12 +51,44 @@ function loginInit() {
   _lgProfiles = _lgBuildProfiles();
   _lgPin = ''; _lgSetup = null; _lgPending = '';
   _lgRenderPicker();
+  if (!_lgIntroDone) { _lgShowIntro(); return; }
   // Single-profile household → skip the picker entirely.
   if (_lgProfiles.length === 1) {
     _lgSelectProfile(_lgProfiles[0].id, true);
   } else {
     _lgShow('profiles');
   }
+}
+
+// ── Screen 0: welcome splash ──────────────────────────────────
+function _lgShowIntro() {
+  _lgShow(null);
+  var intro = document.getElementById('kl-intro');
+  if (!intro) { _lgIntroDone = true; loginInit(); return; }
+  intro.hidden = false;
+  intro.classList.remove('leaving');
+  var btn = document.getElementById('kl-signin');
+  if (btn) btn.focus({ preventScroll:true });
+}
+
+function _lgSignIn() {
+  if (_lgIntroDone) return;
+  _lgIntroDone = true;
+  var intro = document.getElementById('kl-intro');
+  loginInit();
+  if (!intro) return;
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e) {}
+  if (reduce) { intro.hidden = true; return; }
+  intro.classList.add('leaving');
+  setTimeout(function() { intro.hidden = true; intro.classList.remove('leaving'); }, 250);
+}
+
+// Straight to PIN, e.g. right after onboarding (the user has just seen the brand).
+function loginSkipIntro() {
+  _lgIntroDone = true;
+  var intro = document.getElementById('kl-intro');
+  if (intro) intro.hidden = true;
 }
 
 // Show the semantic version in the bottom-left badge.
@@ -385,6 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btn.dataset.k !== undefined) _lgKey(btn.dataset.k);
     else if (btn.id === 'kl-del') _lgDel();
   });
+  var signin = document.getElementById('kl-signin');   if (signin) signin.addEventListener('click', _lgSignIn);
   var back = document.getElementById('kl-back');       if (back) back.addEventListener('click', _lgBack);
   var forgot = document.getElementById('kl-forgot');   if (forgot) forgot.addEventListener('click', _lgToggleForgot);
   var cont = document.getElementById('kl-continue');   if (cont) cont.addEventListener('click', function(){ _lgEnter('dashboard'); });
