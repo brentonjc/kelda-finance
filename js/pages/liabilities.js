@@ -191,12 +191,15 @@ function liabDebtFreeDate(l) {
   return sched.negAmort ? '' : (sched.payoffDate || '');
 }
 
-function liabRateColor(rate) {
-  if (rate === 0) return 'var(--success)';
-  if (rate < 5) return 'var(--success)';
-  if (rate <= 15) return 'var(--warn)';
-  return 'var(--danger)';
+function liabRateTone(rate) {
+  if (rate === 0) return 'tone-green';
+  if (rate < 5) return 'tone-green';
+  if (rate <= 15) return 'tone-amber';
+  return 'tone-danger';
 }
+
+// Type colour -> tone suffix (card border modifier) and text tone class
+var LIAB_TONES = { 'var(--n300)': 'slate', 'var(--warn)': 'amber', 'var(--success)': 'green', 'var(--danger)': 'danger', 'var(--purple)': 'purple' };
 
 function liabTypeInfo(type) {
   var map = {
@@ -261,12 +264,12 @@ function liabRenderSummary() {
 
   var dtiHtml = '';
   if (dti !== null) {
-    var dtiColor = dti <= 36 ? 'var(--success)' : dti <= 50 ? 'var(--warn)' : 'var(--danger)';
+    var dtiTone = dti <= 36 ? 'tone-green' : dti <= 50 ? 'tone-amber' : 'tone-danger';
     var dtiLabel = dti <= 36 ? 'Healthy' : dti <= 50 ? 'Elevated' : 'High risk';
-    dtiHtml = '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;background:var(--card2);border-radius:10px;flex-wrap:wrap">'
-      + '<span style="font-size:.78rem;color:var(--muted)">Debt-to-Income Ratio</span>'
-      + '<span style="font-family:var(--font-mono);font-weight:700;color:' + dtiColor + ';margin-left:auto">' + dti.toFixed(1) + '%</span>'
-      + '<span style="font-size:.72rem;padding:2px 8px;background:' + dtiColor + '22;color:' + dtiColor + ';border-radius:12px">' + dtiLabel + '</span>'
+    dtiHtml = '<div class="liab-dti">'
+      + '<span class="liab-sum-lbl">Debt-to-Income Ratio</span>'
+      + '<span class="liab-dti-val ' + dtiTone + '">' + dti.toFixed(1) + '%</span>'
+      + '<span class="liab-dti-badge ' + dtiTone + '">' + dtiLabel + '</span>'
       + '</div>';
   }
 
@@ -282,49 +285,49 @@ function liabRenderSummary() {
     var val = groups[g.key];
     if (!val) return;
     var pct = total ? (val / total * 100).toFixed(1) : 0;
-    groupHtml += '<div style="margin-bottom:10px">'
-      + '<div style="display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:4px">'
-      + '<span style="color:var(--muted)">' + g.label + '</span>'
-      + '<span style="font-family:var(--font-mono);color:var(--danger)">' + fmt(val) + ' <span style="color:var(--muted)">(' + pct + '%)</span></span>'
+    groupHtml += '<div class="liab-grp">'
+      + '<div class="liab-grp-hd">'
+      + '<span class="tone-muted">' + g.label + '</span>'
+      + '<span class="liab-mono tone-danger">' + fmt(val) + ' <span class="tone-muted">(' + pct + '%)</span></span>'
       + '</div>'
-      + '<div class="prog-track" style="height:6px"><div class="prog-fill" style="width:' + pct + '%;background:var(--danger)"></div></div>'
+      + '<div class="prog-track liab-track-6"><div class="prog-fill danger" style="width:' + pct + '%"></div></div>'
       + '</div>';
   });
 
   var highestRateHtml = '';
   if (highest && Number(highest.rate) > 0) {
-    var rColor = liabRateColor(Number(highest.rate));
-    highestRateHtml = '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;margin-top:10px;flex-wrap:wrap">'
-      + '<span style="font-size:1rem">' + ICON('alert-triangle') + '</span>'
-      + '<span style="font-size:.78rem;color:var(--muted)">Highest rate:</span>'
-      + '<strong style="font-family:var(--font-mono);color:' + rColor + '">' + highest.rate + '% p.a.</strong>'
-      + '<span style="font-size:.78rem;color:var(--text)">' + esc(highest.lender) + '</span>'
+    var rTone = liabRateTone(Number(highest.rate));
+    highestRateHtml = '<div class="liab-hi">'
+      + '<span class="liab-hi-ico">' + ICON('alert-triangle') + '</span>'
+      + '<span class="liab-sum-lbl">Highest rate:</span>'
+      + '<strong class="liab-mono ' + rTone + '">' + highest.rate + '% p.a.</strong>'
+      + '<span class="liab-hi-lender">' + esc(highest.lender) + '</span>'
       + '</div>';
   }
 
   var totalIntHtml = '';
   if (totalInt > 0) {
-    totalIntHtml = '<div style="font-size:.76rem;color:var(--muted);margin-top:6px">Total interest payable (manual): <span style="font-family:var(--font-mono);color:var(--danger)">' + fmt(totalInt) + '</span></div>';
+    totalIntHtml = '<div class="liab-tot-int">Total interest payable (manual): <span class="liab-mono tone-danger">' + fmt(totalInt) + '</span></div>';
   }
 
   var hintHtml = '';
   if (hint) {
-    hintHtml = '<div style="margin-top:12px;padding:10px 14px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.2);border-radius:10px;font-size:.78rem;color:var(--muted)">' + hint + '</div>';
+    hintHtml = '<div class="liab-hint">' + hint + '</div>';
   }
 
-  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px">'
+  el.innerHTML = '<div class="liab-kpis">'
     + '<div>'
-    + '<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Total Liabilities</div>'
-    + '<div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;color:var(--danger)">' + fmt(total) + '</div>'
+    + '<div class="liab-kpi-lbl">Total Liabilities</div>'
+    + '<div class="liab-kpi-val tone-danger">' + fmt(total) + '</div>'
     + '</div>'
     + '<div>'
-    + '<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Monthly Payments</div>'
-    + '<div style="font-family:var(--font-mono);font-size:2rem;font-weight:700">' + fmt(monthly) + '<span style="font-size:1rem;color:var(--muted)">/mo</span></div>'
+    + '<div class="liab-kpi-lbl">Monthly Payments</div>'
+    + '<div class="liab-kpi-val">' + fmt(monthly) + '<span class="liab-kpi-unit">/mo</span></div>'
     + '</div>'
     + '</div>'
     + totalIntHtml
     + dtiHtml
-    + '<hr style="border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0"/>'
+    + '<hr class="liab-hr"/>'
     + groupHtml
     + highestRateHtml
     + hintHtml;
@@ -337,31 +340,31 @@ function liabRenderMortgages() {
   if (!el) return;
   var mortgages = liabAllMortgages();
   if (!mortgages.length) {
-    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">' + ICON('home-2') + '</div><p>No mortgage data. Add details in the <a href="#" onclick="go(\'mortgage\');return false;">Mortgage tab</a>.</p></div>';
+    el.innerHTML = '<div class="empty empty--pad12"><div class="ei">' + ICON('home-2') + '</div><p>No mortgage data. Add details in the <a href="#" onclick="go(\'mortgage\');return false;">Mortgage tab</a>.</p></div>';
     return;
   }
   var html = '';
   mortgages.forEach(function(m) {
-    var rColor = liabRateColor(m.rate);
+    var rTone = liabRateTone(m.rate);
     var progHtml = '';
     if (m.originalBalance && m.originalBalance > m.balance) {
       var paidPct = ((m.originalBalance - m.balance) / m.originalBalance * 100).toFixed(1);
-      progHtml = '<div style="margin-top:12px">'
-        + '<div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:4px"><span>Principal repaid</span><span>' + paidPct + '%</span></div>'
-        + '<div class="prog-track" style="height:6px"><div class="prog-fill" style="width:' + paidPct + '%;background:var(--success)"></div></div>'
+      progHtml = '<div class="liab-prog liab-prog--12">'
+        + '<div class="liab-prog-hd"><span>Principal repaid</span><span>' + paidPct + '%</span></div>'
+        + '<div class="prog-track liab-track-6"><div class="prog-fill" style="width:' + paidPct + '%"></div></div>'
         + '</div>';
     }
-    html += '<div class="card" style="margin-bottom:12px;border-left:3px solid var(--n300)">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">'
-      + '<span style="background:rgba(98,120,160,.15);color:var(--n300);padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700">' + ICON('home') + ' Mortgage</span>'
-      + '<span style="font-size:.7rem;color:var(--muted);margin-left:auto">Read-only &middot; <a href="#" onclick="go(\'mortgage\');return false;" style="color:var(--primary)">Edit in Mortgage tab →</a></span>'
+    html += '<div class="card liab-card">'
+      + '<div class="liab-mg-hd">'
+      + '<span class="liab-pill liab-pill--mg">' + ICON('home') + ' Mortgage</span>'
+      + '<span class="liab-ro">Read-only &middot; <a href="#" onclick="go(\'mortgage\');return false;" class="tone-pink">Edit in Mortgage tab →</a></span>'
       + '</div>'
-      + '<div style="font-size:1rem;font-weight:600;margin-bottom:12px">' + esc(m.lender) + '</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">Balance</div><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:var(--danger)">' + fmt(m.balance) + '</div></div>'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">Interest Rate</div><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:' + rColor + '">' + m.rate + '% p.a.</div></div>'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">Monthly Payment</div><div style="font-family:var(--font-mono);font-size:1rem;font-weight:600">' + fmt(m.payment) + '</div></div>'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">Payoff</div><div style="font-size:.9rem;font-weight:600">' + (m.payoffDate || 'Interest Only') + '</div></div>'
+      + '<div class="liab-lender liab-lender--12">' + esc(m.lender) + '</div>'
+      + '<div class="liab-stats">'
+      + '<div><div class="liab-stat-lbl">Balance</div><div class="liab-stat-val tone-danger">' + fmt(m.balance) + '</div></div>'
+      + '<div><div class="liab-stat-lbl">Interest Rate</div><div class="liab-stat-val ' + rTone + '">' + m.rate + '% p.a.</div></div>'
+      + '<div><div class="liab-stat-lbl">Monthly Payment</div><div class="liab-stat-pay">' + fmt(m.payment) + '</div></div>'
+      + '<div><div class="liab-stat-lbl">Payoff</div><div class="liab-stat-txt">' + (m.payoffDate || 'Interest Only') + '</div></div>'
       + '</div>'
       + progHtml
       + '</div>';
@@ -376,23 +379,24 @@ function liabRenderList() {
   if (!el) return;
   var list = liabSorted();
   if (!list.length) {
-    el.innerHTML = '<div class="empty" style="padding:32px 0;text-align:center"><div class="ei">' + ICON('scale') + '</div><p style="color:var(--muted)">No other liabilities added.</p></div>';
+    el.innerHTML = '<div class="empty liab-empty"><div class="ei">' + ICON('scale') + '</div><p class="liab-empty-p">No other liabilities added.</p></div>';
     return;
   }
   var html = '';
   list.forEach(function(l) {
     var realIdx = LIABILITIES.findIndex(function(x) { return x.id === l.id; });
     var info = liabTypeInfo(l.type);
-    var rColor = liabRateColor(Number(l.rate));
+    var rTone = liabRateTone(Number(l.rate));
+    var toneKey = LIAB_TONES[info.color] || 'slate';
     var isHecs = l.type === 'hecs';
 
     // Progress bar
     var progHtml = '';
     if (l.originalBalance && Number(l.originalBalance) > Number(l.balance)) {
       var paidPct = ((Number(l.originalBalance) - Number(l.balance)) / Number(l.originalBalance) * 100).toFixed(1);
-      progHtml = '<div style="margin-top:10px">'
-        + '<div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:4px"><span>Principal repaid</span><span>' + paidPct + '%</span></div>'
-        + '<div class="prog-track" style="height:6px"><div class="prog-fill" style="width:' + paidPct + '%;background:var(--success)"></div></div>'
+      progHtml = '<div class="liab-prog">'
+        + '<div class="liab-prog-hd"><span>Principal repaid</span><span>' + paidPct + '%</span></div>'
+        + '<div class="prog-track liab-track-6"><div class="prog-fill" style="width:' + paidPct + '%"></div></div>'
         + '</div>';
     }
 
@@ -401,13 +405,14 @@ function liabRenderList() {
     if ((l.type === 'credit_card' || l.type === 'bnpl') && l.creditLimit && Number(l.creditLimit) > 0) {
       var util = (Number(l.balance) / Number(l.creditLimit) * 100).toFixed(0);
       var utilColor = util <= 30 ? 'var(--success)' : util <= 70 ? 'var(--warn)' : 'var(--danger)';
-      utilHtml = '<div style="margin-top:10px;padding:8px 12px;background:var(--card2);border-radius:8px">'
-        + '<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px">'
-        + '<span style="color:var(--muted)">Credit utilisation</span>'
-        + '<span style="font-family:var(--font-mono);color:' + utilColor + '">' + util + '%' + (util > 70 ? ' — High' : '') + '</span>'
+      var utilTone = util <= 30 ? 'tone-green' : util <= 70 ? 'tone-amber' : 'tone-danger';
+      utilHtml = '<div class="liab-util">'
+        + '<div class="liab-util-hd">'
+        + '<span class="tone-muted">Credit utilisation</span>'
+        + '<span class="liab-mono ' + utilTone + '">' + util + '%' + (util > 70 ? ' — High' : '') + '</span>'
         + '</div>'
-        + '<div class="prog-track" style="height:5px"><div style="height:100%;width:' + Math.min(util,100) + '%;background:' + utilColor + ';border-radius:3px"></div></div>'
-        + '<div style="font-size:.68rem;color:var(--muted);margin-top:3px">Limit: ' + fmt(Number(l.creditLimit)) + '</div>'
+        + '<div class="prog-track liab-track-5"><div class="liab-util-fill" style="width:' + Math.min(util,100) + '%;background:' + utilColor + '"></div></div>'
+        + '<div class="field-hint">Limit: ' + fmt(Number(l.creditLimit)) + '</div>'
         + '</div>';
     }
 
@@ -418,11 +423,11 @@ function liabRenderList() {
         var expDate = new Date(l.fixedExpiry);
         var daysUntil = Math.round((expDate - new Date()) / (1000 * 60 * 60 * 24));
         if (daysUntil >= 0 && daysUntil <= 90) {
-          fixedHtml = '<div style="margin-top:8px;padding:7px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:.74rem;color:var(--warn)">'
+          fixedHtml = '<div class="liab-fixed-warn">'
             + ICON('alert-triangle') + ' Fixed rate expires ' + expDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + ' (' + daysUntil + ' days)'
             + '</div>';
         } else if (daysUntil > 90) {
-          fixedHtml = '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">Fixed until ' + expDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + '</div>';
+          fixedHtml = '<div class="liab-note">Fixed until ' + expDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + '</div>';
         }
       } catch(e) {}
     }
@@ -431,13 +436,13 @@ function liabRenderList() {
     var payoffHtml = '';
     var payoffDate = liabDebtFreeDate(l);
     if (payoffDate) {
-      payoffHtml = '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">Payoff: <span style="color:var(--success);font-weight:600">' + payoffDate + '</span></div>';
+      payoffHtml = '<div class="liab-note">Payoff: <span class="liab-strong tone-green">' + payoffDate + '</span></div>';
     }
 
     // HECS note
     var hecsHtml = '';
     if (isHecs) {
-      hecsHtml = '<div style="margin-top:8px;padding:8px 12px;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:8px;font-size:.74rem;color:var(--muted)">'
+      hecsHtml = '<div class="liab-hecs">'
         + ICON('school') + ' HECS repayments are made via ATO payroll deduction above the income threshold. No standard amortisation schedule applies.'
         + '</div>';
     }
@@ -449,45 +454,45 @@ function liabRenderList() {
       var schedId = 'liab-sched-' + l.id;
       var schedSummary = '';
       if (sched.negAmort) {
-        schedSummary = '<div style="color:var(--danger);font-size:.76rem;font-weight:600">' + sched.warning + '</div>';
+        schedSummary = '<div class="liab-sched-warn liab-sched-warn--neg tone-danger">' + sched.warning + '</div>';
       } else if (sched.warning) {
-        schedSummary = '<div style="color:var(--warn);font-size:.76rem">' + sched.warning + '</div>';
+        schedSummary = '<div class="liab-sched-warn tone-amber">' + sched.warning + '</div>';
       } else if (sched.rows.length) {
-        schedSummary = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.75rem">'
-          + '<span style="color:var(--muted)">Total interest: <span style="font-family:var(--font-mono);color:var(--danger)">' + fmt(sched.totalInterest) + '</span></span>'
-          + '<span style="color:var(--muted)">Total cost: <span style="font-family:var(--font-mono)">' + fmt(sched.totalCost) + '</span></span>'
-          + '<span style="color:var(--muted)">Payoff: <span style="color:var(--success);font-weight:600">' + sched.payoffDate + '</span></span>'
+        schedSummary = '<div class="liab-sched-sum">'
+          + '<span class="tone-muted">Total interest: <span class="liab-mono tone-danger">' + fmt(sched.totalInterest) + '</span></span>'
+          + '<span class="tone-muted">Total cost: <span class="liab-mono">' + fmt(sched.totalCost) + '</span></span>'
+          + '<span class="tone-muted">Payoff: <span class="liab-strong tone-green">' + sched.payoffDate + '</span></span>'
           + '</div>';
       }
 
       var tableHtml = '';
       if (sched.rows.length && !sched.negAmort) {
-        tableHtml = '<div id="' + schedId + '" style="display:none;overflow-x:auto;margin-top:10px;max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch">'
-          + '<table style="width:100%;font-size:.72rem;border-collapse:collapse;min-width:380px">'
-          + '<thead><tr style="background:var(--card2)">'
-          + '<th style="padding:6px 8px;text-align:left;font-weight:600;color:var(--muted);white-space:nowrap">Month</th>'
-          + '<th style="padding:6px 8px;text-align:right;font-family:var(--font-mono);font-weight:600;color:var(--muted)">Payment</th>'
-          + '<th style="padding:6px 8px;text-align:right;font-family:var(--font-mono);font-weight:600;color:var(--muted)">Principal</th>'
-          + '<th style="padding:6px 8px;text-align:right;font-family:var(--font-mono);font-weight:600;color:var(--muted)">Interest</th>'
-          + '<th style="padding:6px 8px;text-align:right;font-family:var(--font-mono);font-weight:600;color:var(--muted)">Balance</th>'
+        tableHtml = '<div id="' + schedId + '" class="liab-sch-wrap" style="display:none">'
+          + '<table class="liab-sch-tbl">'
+          + '<thead><tr class="liab-sch-hrow">'
+          + '<th class="liab-sch-th liab-sch-th--mo">Month</th>'
+          + '<th class="liab-sch-th liab-sch-num">Payment</th>'
+          + '<th class="liab-sch-th liab-sch-num">Principal</th>'
+          + '<th class="liab-sch-th liab-sch-num">Interest</th>'
+          + '<th class="liab-sch-th liab-sch-num">Balance</th>'
           + '</tr></thead><tbody>';
         sched.rows.forEach(function(row, idx) {
-          var bg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
-          tableHtml += '<tr style="background:' + bg + '">'
-            + '<td style="padding:5px 8px;color:var(--muted);white-space:nowrap">' + row.label + '</td>'
-            + '<td style="padding:5px 8px;text-align:right;font-family:var(--font-mono)">' + fmt(row.payment) + '</td>'
-            + '<td style="padding:5px 8px;text-align:right;font-family:var(--font-mono);color:var(--success)">' + fmt(row.principal) + '</td>'
-            + '<td style="padding:5px 8px;text-align:right;font-family:var(--font-mono);color:var(--danger)">' + fmt(row.interest) + '</td>'
-            + '<td style="padding:5px 8px;text-align:right;font-family:var(--font-mono)">' + fmt(row.balance) + '</td>'
+          var rowCls = idx % 2 === 0 ? '' : ' class="liab-sch-alt"';
+          tableHtml += '<tr' + rowCls + '>'
+            + '<td class="liab-sch-td liab-sch-mo">' + row.label + '</td>'
+            + '<td class="liab-sch-td liab-sch-num">' + fmt(row.payment) + '</td>'
+            + '<td class="liab-sch-td liab-sch-num tone-green">' + fmt(row.principal) + '</td>'
+            + '<td class="liab-sch-td liab-sch-num tone-danger">' + fmt(row.interest) + '</td>'
+            + '<td class="liab-sch-td liab-sch-num">' + fmt(row.balance) + '</td>'
             + '</tr>';
         });
         tableHtml += '</tbody></table></div>';
       }
 
-      scheduleHtml = '<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px">'
+      scheduleHtml = '<div class="liab-sched">'
         + schedSummary
         + (tableHtml
-          ? '<button onclick="liabToggleSched(\'' + l.id + '\')" id="btn-sched-' + l.id + '" style="margin-top:8px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--muted);font-size:.74rem;padding:5px 14px;cursor:pointer;min-height:36px">View Schedule ▾</button>'
+          ? '<button onclick="liabToggleSched(\'' + l.id + '\')" id="btn-sched-' + l.id + '" class="liab-sched-btn">View Schedule ▾</button>'
           : '')
         + tableHtml
         + '</div>';
@@ -495,8 +500,8 @@ function liabRenderList() {
 
     // Rate type badge
     var rateBadge = l.rateType === 'fixed'
-      ? '<span style="background:rgba(240,83,138,.12);color:var(--primary);padding:2px 8px;border-radius:12px;font-size:.68rem">Fixed</span>'
-      : '<span style="background:rgba(98,120,160,.12);color:var(--n300);padding:2px 8px;border-radius:12px;font-size:.68rem">Variable</span>';
+      ? '<span class="liab-badge liab-badge--fixed">Fixed</span>'
+      : '<span class="liab-badge liab-badge--var">Variable</span>';
 
     // Due day label
     var dueSuffix = l.dueDay == 1 ? 'st' : l.dueDay == 2 ? 'nd' : l.dueDay == 3 ? 'rd' : 'th';
@@ -504,33 +509,33 @@ function liabRenderList() {
     // Mortgage link detection
     var linkedProp = _liabLinkedMortgageProp(l.id);
     var mortgageLinkBadge = linkedProp
-      ? '<span style="background:rgba(0,200,150,.12);color:var(--success);padding:2px 8px;border-radius:12px;font-size:.68rem;display:inline-flex;align-items:center;gap:4px">' + ICON('link') + ' Mortgage Linked</span>'
+      ? '<span class="liab-badge liab-badge--link">' + ICON('link') + ' Mortgage Linked</span>'
       : '';
     var mortgageSyncNote = linkedProp
-      ? '<div style="margin-top:8px;padding:8px 12px;background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)">'
-        + ICON('link') + ' Balance auto-syncs from the <a href="#" onclick="go(\'mortgage\');return false;" style="color:var(--success)">Mortgage tab</a>'
+      ? '<div class="liab-sync">'
+        + ICON('link') + ' Balance auto-syncs from the <a href="#" onclick="go(\'mortgage\');return false;" class="tone-green">Mortgage tab</a>'
         + ' · <strong>' + esc(linkedProp.name || 'Primary Property') + '</strong>'
         + '</div>'
       : '';
 
-    html += '<div class="card" style="margin-bottom:12px;border-left:3px solid ' + info.color + '">'
-      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px">'
-      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-      + '<span style="background:' + info.color + '22;color:' + info.color + ';padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700">' + info.emoji + ' ' + info.label + '</span>'
+    html += '<div class="card liab-card liab-card--' + toneKey + '">'
+      + '<div class="liab-card-hd">'
+      + '<div class="liab-badges">'
+      + '<span class="liab-pill ' + (toneKey === 'slate' ? 'liab-tone-slate' : 'tone-' + toneKey) + '">' + info.emoji + ' ' + info.label + '</span>'
       + rateBadge
       + mortgageLinkBadge
       + '</div>'
-      + '<div style="display:flex;gap:4px;flex-shrink:0">'
-      + '<button onclick="liabOpenModal(' + realIdx + ')" style="background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">' + ICON('pencil') + '</button>'
-      + '<button onclick="liabConfirmDelete(\'' + l.id + '\')" style="background:none;border:none;color:var(--danger);font-size:.8rem;cursor:pointer;padding:6px 8px;min-height:44px;min-width:44px;border-radius:8px">' + ICON('trash') + '</button>'
+      + '<div class="liab-acts">'
+      + '<button onclick="liabOpenModal(' + realIdx + ')" class="liab-act tone-pink">' + ICON('pencil') + '</button>'
+      + '<button onclick="liabConfirmDelete(\'' + l.id + '\')" class="liab-act tone-danger">' + ICON('trash') + '</button>'
       + '</div>'
       + '</div>'
-      + '<div style="font-size:1rem;font-weight:600;margin-bottom:10px">' + esc(l.lender) + '</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">Balance</div><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:var(--danger)">' + fmt(Number(l.balance)) + '</div></div>'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">' + (isHecs ? 'CPI Indexation' : 'Interest Rate') + '</div><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:' + rColor + '">' + l.rate + (isHecs ? '% CPI est.' : '% p.a.') + '</div></div>'
-      + '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">' + (isHecs ? 'Annual Repayment' : 'Monthly Payment') + '</div><div style="font-family:var(--font-mono);font-size:1rem;font-weight:600">' + fmt(Number(l.payment)) + (isHecs ? '/yr' : '/mo') + '</div></div>'
-      + (!isHecs ? '<div><div style="font-size:.68rem;color:var(--muted);margin-bottom:2px">Due Date</div><div style="font-size:.9rem;font-weight:600">' + (l.dueDay ? l.dueDay + dueSuffix + ' of month' : '—') + '</div></div>' : '<div></div>')
+      + '<div class="liab-lender">' + esc(l.lender) + '</div>'
+      + '<div class="liab-stats">'
+      + '<div><div class="liab-stat-lbl">Balance</div><div class="liab-stat-val tone-danger">' + fmt(Number(l.balance)) + '</div></div>'
+      + '<div><div class="liab-stat-lbl">' + (isHecs ? 'CPI Indexation' : 'Interest Rate') + '</div><div class="liab-stat-val ' + rTone + '">' + l.rate + (isHecs ? '% CPI est.' : '% p.a.') + '</div></div>'
+      + '<div><div class="liab-stat-lbl">' + (isHecs ? 'Annual Repayment' : 'Monthly Payment') + '</div><div class="liab-stat-pay">' + fmt(Number(l.payment)) + (isHecs ? '/yr' : '/mo') + '</div></div>'
+      + (!isHecs ? '<div><div class="liab-stat-lbl">Due Date</div><div class="liab-stat-txt">' + (l.dueDay ? l.dueDay + dueSuffix + ' of month' : '—') + '</div></div>' : '<div></div>')
       + '</div>'
       + progHtml
       + utilHtml
@@ -539,7 +544,7 @@ function liabRenderList() {
       + hecsHtml
       + scheduleHtml
       + mortgageSyncNote
-      + (l.notes ? '<div style="margin-top:10px;font-size:.75rem;color:var(--muted);border-top:1px solid rgba(255,255,255,.06);padding-top:8px">' + esc(l.notes) + '</div>' : '')
+      + (l.notes ? '<div class="liab-notes">' + esc(l.notes) + '</div>' : '')
       + '</div>';
   });
   el.innerHTML = html;
@@ -821,20 +826,20 @@ function renderLiabMonthlyGrid() {
 
   var items = _liabMonthlyAllItems();
   if (!items.length) {
-    el.innerHTML = '<div class="card mb" style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Add mortgage or liabilities above to start tracking monthly balances.</div>';
+    el.innerHTML = '<div class="card mb sp-mo-empty">Add mortgage or liabilities above to start tracking monthly balances.</div>';
     return;
   }
 
   var curMo = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
-  var html = '<div class="section-label" style="margin-bottom:12px">' + ICON('calendar') + ' Monthly Liability Balances</div>'
-    + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record each liability\'s closing balance by month — tracks debt reduction over time and links to Net Worth history.</div>';
+  var html = '<div class="section-label liab-mo-title">' + ICON('calendar') + ' Monthly Liability Balances</div>'
+    + '<div class="sp-mo-desc">Record each liability\'s closing balance by month — tracks debt reduction over time and links to Net Worth history.</div>';
 
   items.forEach(function(item) {
     var data = LIAB_MONTHLY[item.id] || {};
     var months = Object.keys(data).sort();
     var rows = '';
     if (!months.length) {
-      rows = '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No entries yet.</div>';
+      rows = '<div class="sp-mo-none">No entries yet.</div>';
     } else {
       months.forEach(function(m, i) {
         var bal = data[m];
@@ -842,35 +847,35 @@ function renderLiabMonthlyGrid() {
         var diff = prev !== null ? bal - prev : null;
         var diffStr = diff === null ? '' : (diff >= 0 ? '+' : '') + fmt(diff);
         // For liabilities: going down = green (good), up = red (bad)
-        var diffColor = diff === null ? '' : diff <= 0 ? 'var(--success)' : 'var(--danger)';
+        var diffTone = diff === null ? '' : diff <= 0 ? 'tone-green' : 'tone-danger';
         var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
-        rows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
-          + '<div style="min-width:80px;font-size:.78rem;color:var(--muted)">' + ml + '</div>'
+        rows += '<div class="sp-mo-row">'
+          + '<div class="sp-mo-month">' + ml + '</div>'
           + '<input type="number" step="1000" value="' + bal + '" inputmode="decimal"'
           + ' onchange="liabMonthUpdate(\'' + item.id + '\',\'' + m + '\',this.value)"'
-          + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
-          + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
-          + '<button onclick="liabMonthDel(\'' + item.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">' + ICON('trash') + '</button>'
+          + ' class="sp-mo-input"/>'
+          + (diffStr ? '<div class="sp-mo-diff ' + diffTone + '">' + diffStr + '</div>' : '<div class="sp-mo-diff-empty"></div>')
+          + '<button onclick="liabMonthDel(\'' + item.id + '\',\'' + m + '\')" class="sp-mo-del">' + ICON('trash') + '</button>'
           + '</div>';
       });
     }
 
-    html += '<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">'
-      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
-      + '<span style="font-size:1.1rem">' + item.icon + '</span>'
-      + '<div style="flex:1;min-width:0">'
-      + '<div style="font-weight:700;font-size:.88rem">' + esc(item.label) + '</div>'
-      + (item.note ? '<div style="font-size:.68rem;color:var(--muted);margin-top:1px">' + item.note + '</div>' : '')
+    html += '<div class="sp-mo-card">'
+      + '<div class="sp-mo-hd">'
+      + '<span class="liab-mo-ico">' + item.icon + '</span>'
+      + '<div class="sp-mo-main">'
+      + '<div class="sp-mo-fund">' + esc(item.label) + '</div>'
+      + (item.note ? '<div class="liab-mo-note">' + item.note + '</div>' : '')
       + '</div>'
-      + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:var(--danger);font-weight:700">' + fmt(item.currentBalance) + '</span></div>'
+      + '<div class="sp-mo-cur">Current: <span class="sp-mo-cur-val tone-danger">' + fmt(item.currentBalance) + '</span></div>'
       + '</div>'
       + rows
-      + '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">'
-      + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Month</label>'
-      + '<select id="liab-mo-inp-' + item.id + '" style="width:100%;font-size:.82rem">' + _liabMonthlyMonthOpts(curMo) + '</select></div>'
-      + '<div style="flex:1;min-width:120px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Closing Balance (AUD)</label>'
-      + '<input type="number" id="liab-mo-bal-' + item.id + '" placeholder="0" step="1000" inputmode="decimal" style="width:100%;font-size:16px;box-sizing:border-box"/></div>'
-      + '<button class="btn btn-primary btn-sm" onclick="liabMonthSave(\'' + item.id + '\')" style="flex-shrink:0;min-height:44px">Save</button>'
+      + '<div class="sp-mo-add">'
+      + '<div class="sp-field"><label class="sp-mo-lbl">Month</label>'
+      + '<select id="liab-mo-inp-' + item.id + '" class="sp-mo-sel">' + _liabMonthlyMonthOpts(curMo) + '</select></div>'
+      + '<div class="sp-field sp-field--sm"><label class="sp-mo-lbl">Closing Balance (AUD)</label>'
+      + '<input type="number" id="liab-mo-bal-' + item.id + '" placeholder="0" step="1000" inputmode="decimal" class="sp-input-16"/></div>'
+      + '<button class="btn btn-primary btn-sm sp-mo-save" onclick="liabMonthSave(\'' + item.id + '\')">Save</button>'
       + '</div>'
       + '</div>';
   });

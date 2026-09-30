@@ -316,8 +316,9 @@ function bcRenderBadges(){
   };
   Object.keys(map).forEach(function(field){
     var el=document.getElementById(map[field]); if(!el) return;
-    if(imported[field]){ el.textContent='from '+imported[field].src; el.className='bc-src-badge'; }
-    else { el.textContent='enter manually'; el.className='bc-src-badge bc-src-manual'; }
+    // classList (not className) so layout classes on a badge, e.g. bc-ml6, survive
+    el.textContent = imported[field] ? 'from '+imported[field].src : 'enter manually';
+    el.classList.toggle('bc-src-manual', !imported[field]);
   });
 }
 
@@ -357,10 +358,10 @@ function bcRenderReview(){
     var im  = r.field==='_homeValue'?imported['mortgage'] : r.field==='_mortBal'?imported['mortgage'] : imported[r.field];
     var badge = im ? '<span class="bc-src-badge">from '+bcEsc(im.src)+'</span>' : '<span class="bc-src-badge bc-src-manual">not found — enter manually</span>';
     var dv = val>0 ? '<span class="bc-green bc-mono">'+bcFmt(val)+'</span>' : '<span class="bc-muted">—</span>';
-    return '<tr><td>'+bcEsc(r.label)+'</td><td>'+badge+'</td><td style="text-align:right">'+dv+'</td></tr>';
+    return '<tr><td>'+bcEsc(r.label)+'</td><td>'+badge+'</td><td class="bc-r">'+dv+'</td></tr>';
   }).join('');
   contentEl.innerHTML = '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-clipboard-list"></i> Imported data — review before proceeding</div>'+
-    '<table class="bc-dt"><tr><th>Field</th><th>Source</th><th style="text-align:right">Value</th></tr>'+tr+'</table>'+
+    '<table class="bc-dt"><tr><th>Field</th><th>Source</th><th class="bc-r">Value</th></tr>'+tr+'</table>'+
     '<div class="bc-note"><strong>How to use this:</strong> synced values are pulled live from your app. Items marked "not found" need entering in the relevant step. Every figure is editable.</div></div>';
 }
 
@@ -444,7 +445,7 @@ function bcCalcHEM(){
     var d=bcV(c.id); var used=Math.max(d,c.bv);
     var badge=d<c.bv?'<span class="bc-chip bc-c-amber">HEM floor</span>':(d>0?'<span class="bc-chip bc-c-green">Your figure</span>':'');
     return '<div class="bc-hem-row"><div class="bc-hem-lbl"><span>'+c.lbl+'</span>'+badge+'</div>'+
-      '<div style="text-align:right"><div class="bc-mono">'+bcFmt(used)+'</div><div class="bc-hem-bm">Benchmark: '+bcFmt(c.bv)+'</div></div></div>';
+      '<div class="bc-r"><div class="bc-mono">'+bcFmt(used)+'</div><div class="bc-hem-bm">Benchmark: '+bcFmt(c.bv)+'</div></div></div>';
   }).join('');
   var el=document.getElementById('bc-hem-content'); if(!el)return;
   el.innerHTML=rows+'<div class="bc-divider"></div><div class="bc-g3">'+
@@ -624,10 +625,10 @@ function bcGenerateReport(){
   var empL=function(x){return{paye:'PAYG / Salaried',self:'Self-Employed',contractor:'Contractor',casual:'Casual',part:'Part-Time',none:'N/A'}[x]||x;};
   var locL=function(x){return{major:'Major City',other_city:'Other Capital City',regional:'Regional',rural:'Rural'}[x]||x;};
   var b2bit=bcS('bc_b2_name')&&bcS('bc_b2_emp')!=='none'?'<br>Borrower 2: <strong>'+bcEsc(bcS('bc_b2_name'))+'</strong> — '+empL(bcS('bc_b2_emp')):'';
-  var ccRows=''; bcCC.forEach(function(c){ if(c)ccRows+='<tr><td>'+bcEsc(c.name)+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(parseFloat(c.limit)||0)+'</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt((parseFloat(c.limit)||0)*.03)+'/mo</td></tr>'; });
-  var lRows=''; bcLoans.forEach(function(l){ if(l)lRows+='<tr><td>'+bcEsc(l.name)+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(parseFloat(l.balance)||0)+'</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(parseFloat(l.repayment)||0)+'/mo</td></tr>'; });
-  var mRows=''; bcMorts.forEach(function(m){ if(m)mRows+='<tr><td>'+bcEsc(m.property)+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(parseFloat(m.balance)||0)+'</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(parseFloat(m.repayment)||0)+'/mo</td></tr>'; });
-  var pRows=''; bcProps.forEach(function(p){ if(p)pRows+='<tr><td>'+bcEsc(p.address)+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(parseFloat(p.value)||0)+'</td><td class="bc-mono bc-muted" style="text-align:right">'+bcFmt(parseFloat(p.mortgage)||0)+'</td></tr>'; });
+  var ccRows=''; bcCC.forEach(function(c){ if(c)ccRows+='<tr><td>'+bcEsc(c.name)+'</td><td class="bc-mono bc-r">'+bcFmt(parseFloat(c.limit)||0)+'</td><td class="bc-mono bc-amber bc-r">'+bcFmt((parseFloat(c.limit)||0)*.03)+'/mo</td></tr>'; });
+  var lRows=''; bcLoans.forEach(function(l){ if(l)lRows+='<tr><td>'+bcEsc(l.name)+'</td><td class="bc-mono bc-r">'+bcFmt(parseFloat(l.balance)||0)+'</td><td class="bc-mono bc-amber bc-r">'+bcFmt(parseFloat(l.repayment)||0)+'/mo</td></tr>'; });
+  var mRows=''; bcMorts.forEach(function(m){ if(m)mRows+='<tr><td>'+bcEsc(m.property)+'</td><td class="bc-mono bc-r">'+bcFmt(parseFloat(m.balance)||0)+'</td><td class="bc-mono bc-amber bc-r">'+bcFmt(parseFloat(m.repayment)||0)+'/mo</td></tr>'; });
+  var pRows=''; bcProps.forEach(function(p){ if(p)pRows+='<tr><td>'+bcEsc(p.address)+'</td><td class="bc-mono bc-r">'+bcFmt(parseFloat(p.value)||0)+'</td><td class="bc-mono bc-muted bc-r">'+bcFmt(parseFloat(p.mortgage)||0)+'</td></tr>'; });
 
   var importSummary='';
   if(bcImportLog.length){
@@ -641,9 +642,9 @@ function bcGenerateReport(){
         '<div><div class="bc-res-label">ESTIMATED MAXIMUM BORROWING CAPACITY</div>'+
         '<div class="bc-res-amt">'+bcFmt(r.maxLoan)+'</div>'+
         '<div class="bc-res-sub">APRA 3% buffer at '+r.buf.toFixed(2)+'% assessment rate'+(r.cappedDTI?' · DTI cap (6× income) applied':'')+' · '+r.term+'-year loan</div></div>'+
-        '<div style="text-align:right"><div class="bc-res-label">REQUESTED LOAN</div>'+
-          '<div class="bc-mono" style="font-size:22px;font-weight:500">'+bcFmt(r.la)+'</div>'+
-          '<span class="bc-chip '+affCls+'" style="margin-top:5px">'+affLbl+'</span></div>'+
+        '<div class="bc-r"><div class="bc-res-label">REQUESTED LOAN</div>'+
+          '<div class="bc-mono bc-mono--22">'+bcFmt(r.la)+'</div>'+
+          '<span class="bc-chip bc-mt5 '+affCls+'">'+affLbl+'</span></div>'+
       '</div>'+
       '<div class="bc-chips">'+
         '<span class="bc-chip bc-c-blue">📅 '+dateStr+'</span>'+
@@ -657,7 +658,7 @@ function bcGenerateReport(){
 
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-target"></i> Affordability Position</div>'+
       '<div class="bc-gauge-head"><span>Requested loan vs. estimated maximum capacity</span>'+
-        '<span class="'+(affPct<=100?'bc-green':'bc-red')+' bc-mono" style="font-weight:600">'+affPct.toFixed(0)+'%</span></div>'+
+        '<span class="'+(affPct<=100?'bc-green':'bc-red')+' bc-mono bc-fw600">'+affPct.toFixed(0)+'%</span></div>'+
       '<div class="bc-gauge-bar"><div class="bc-gauge-ptr" style="left:'+gPos+'%"></div></div>'+
       '<div class="bc-gauge-lbl"><span>Conservative (&lt;60%)</span><span>Moderate (60–85%)</span><span>Near limit (&gt;85%)</span></div>'+
       '<div class="bc-metric-row">'+
@@ -675,25 +676,25 @@ function bcGenerateReport(){
 
     '<div class="bc-g2">'+
       '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-cash"></i> Income Summary</div>'+
-        '<table class="bc-dt"><tr><th>Source</th><th style="text-align:right">Annual</th><th style="text-align:right">Assessed</th></tr>'+
-        '<tr><td>B1 Base Salary</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_b1_salary'))+'</td><td class="bc-mono bc-green" style="text-align:right">'+bcFmt(bcV('bc_b1_salary'))+'</td></tr>'+
-        (bcV('bc_b1_overtime')>0?'<tr><td>B1 Overtime</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_b1_overtime'))+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_b1_overtime')*.8)+' <span class="bc-muted">(80%)</span></td></tr>':'')+
-        (bcV('bc_b1_bonus')>0?'<tr><td>B1 Bonus</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_b1_bonus'))+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_b1_bonus')*.8)+' <span class="bc-muted">(80%)</span></td></tr>':'')+
-        (bcV('bc_b2_salary')>0?'<tr><td>B2 Base Salary</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_b2_salary'))+'</td><td class="bc-mono bc-green" style="text-align:right">'+bcFmt(bcV('bc_b2_salary'))+'</td></tr>':'')+
-        (bcV('bc_rental_income')>0?'<tr><td>Rental Income</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_rental_income'))+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_rental_income')*.8)+' <span class="bc-muted">(80%)</span></td></tr>':'')+
-        (bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income')>0?'<tr><td>Other Income</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income'))+'</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income'))+'</td></tr>':'')+
-        '<tr class="bc-tr"><td><strong>Total Assessed (p.a.)</strong></td><td></td><td class="bc-mono bc-green" style="text-align:right"><strong>'+bcFmt(r.totalInc)+'</strong></td></tr>'+
-        '<tr class="bc-tr"><td><strong>Monthly Gross</strong></td><td></td><td class="bc-mono bc-green" style="text-align:right"><strong>'+bcFmt(r.mthInc)+'</strong></td></tr></table></div>'+
+        '<table class="bc-dt"><tr><th>Source</th><th class="bc-r">Annual</th><th class="bc-r">Assessed</th></tr>'+
+        '<tr><td>B1 Base Salary</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_b1_salary'))+'</td><td class="bc-mono bc-green bc-r">'+bcFmt(bcV('bc_b1_salary'))+'</td></tr>'+
+        (bcV('bc_b1_overtime')>0?'<tr><td>B1 Overtime</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_b1_overtime'))+'</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_b1_overtime')*.8)+' <span class="bc-muted">(80%)</span></td></tr>':'')+
+        (bcV('bc_b1_bonus')>0?'<tr><td>B1 Bonus</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_b1_bonus'))+'</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_b1_bonus')*.8)+' <span class="bc-muted">(80%)</span></td></tr>':'')+
+        (bcV('bc_b2_salary')>0?'<tr><td>B2 Base Salary</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_b2_salary'))+'</td><td class="bc-mono bc-green bc-r">'+bcFmt(bcV('bc_b2_salary'))+'</td></tr>':'')+
+        (bcV('bc_rental_income')>0?'<tr><td>Rental Income</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_rental_income'))+'</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_rental_income')*.8)+' <span class="bc-muted">(80%)</span></td></tr>':'')+
+        (bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income')>0?'<tr><td>Other Income</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income'))+'</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_invest_income')+bcV('bc_gov_income')+bcV('bc_other_income'))+'</td></tr>':'')+
+        '<tr class="bc-tr"><td><strong>Total Assessed (p.a.)</strong></td><td></td><td class="bc-mono bc-green bc-r"><strong>'+bcFmt(r.totalInc)+'</strong></td></tr>'+
+        '<tr class="bc-tr"><td><strong>Monthly Gross</strong></td><td></td><td class="bc-mono bc-green bc-r"><strong>'+bcFmt(r.mthInc)+'</strong></td></tr></table></div>'+
 
       '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-receipt"></i> Monthly Commitments</div>'+
-        '<table class="bc-dt"><tr><th>Item</th><th style="text-align:right">Monthly</th></tr>'+
-        '<tr><td>Living Expenses (HEM-adjusted)</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(r.totalExp)+'</td></tr>'+
-        '<tr><td>Credit Card Assessment (3% of limits)</td><td class="bc-mono bc-red" style="text-align:right">'+bcFmt(r.ccM)+'</td></tr>'+
-        '<tr><td>Personal Loan Repayments</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(r.lR)+'</td></tr>'+
-        '<tr><td>Existing Mortgage Repayments</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(r.mR)+'</td></tr>'+
-        '<tr><td>HECS-HELP (estimated)</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(r.hm)+'</td></tr>'+
-        '<tr class="bc-tr"><td><strong>Total Commitments</strong></td><td class="bc-mono bc-red" style="text-align:right"><strong>'+bcFmt(r.totalCommit)+'</strong></td></tr>'+
-        '<tr class="bc-tr"><td><strong>Available for New Mortgage</strong></td><td class="bc-mono bc-green" style="text-align:right"><strong>'+bcFmt(r.available)+'</strong></td></tr></table></div>'+
+        '<table class="bc-dt"><tr><th>Item</th><th class="bc-r">Monthly</th></tr>'+
+        '<tr><td>Living Expenses (HEM-adjusted)</td><td class="bc-mono bc-amber bc-r">'+bcFmt(r.totalExp)+'</td></tr>'+
+        '<tr><td>Credit Card Assessment (3% of limits)</td><td class="bc-mono bc-red bc-r">'+bcFmt(r.ccM)+'</td></tr>'+
+        '<tr><td>Personal Loan Repayments</td><td class="bc-mono bc-amber bc-r">'+bcFmt(r.lR)+'</td></tr>'+
+        '<tr><td>Existing Mortgage Repayments</td><td class="bc-mono bc-amber bc-r">'+bcFmt(r.mR)+'</td></tr>'+
+        '<tr><td>HECS-HELP (estimated)</td><td class="bc-mono bc-amber bc-r">'+bcFmt(r.hm)+'</td></tr>'+
+        '<tr class="bc-tr"><td><strong>Total Commitments</strong></td><td class="bc-mono bc-red bc-r"><strong>'+bcFmt(r.totalCommit)+'</strong></td></tr>'+
+        '<tr class="bc-tr"><td><strong>Available for New Mortgage</strong></td><td class="bc-mono bc-green bc-r"><strong>'+bcFmt(r.available)+'</strong></td></tr></table></div>'+
     '</div>'+
 
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-home"></i> Proposed Loan Snapshot</div>'+
@@ -710,32 +711,32 @@ function bcGenerateReport(){
 
     '<div class="bc-g2">'+
       '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-building-bank"></i> Assets</div>'+
-        '<table class="bc-dt"><tr><th>Asset</th><th style="text-align:right">Value</th></tr>'+
-        '<tr><td>Cash & Savings</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_a_cash'))+'</td></tr>'+
-        '<tr><td>Term Deposits</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_a_term'))+'</td></tr>'+
-        '<tr><td>Shares / ETFs</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_a_shares'))+'</td></tr>'+
+        '<table class="bc-dt"><tr><th>Asset</th><th class="bc-r">Value</th></tr>'+
+        '<tr><td>Cash & Savings</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_a_cash'))+'</td></tr>'+
+        '<tr><td>Term Deposits</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_a_term'))+'</td></tr>'+
+        '<tr><td>Shares / ETFs</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_a_shares'))+'</td></tr>'+
         (pRows?'<tr><td colspan="2" class="bc-sub-hd">PROPERTY</td></tr>'+pRows:'')+
-        '<tr><td>Motor Vehicles</td><td class="bc-mono" style="text-align:right">'+bcFmt(bcV('bc_a_vehicles'))+'</td></tr>'+
-        '<tr><td>Superannuation</td><td class="bc-mono bc-muted" style="text-align:right">'+bcFmt(bcV('bc_a_super'))+' (excl.)</td></tr>'+
-        '<tr class="bc-tr"><td><strong>Total Assets (excl. Super)</strong></td><td class="bc-mono bc-green" style="text-align:right"><strong>'+bcFmt(r.totalAssets)+'</strong></td></tr></table></div>'+
+        '<tr><td>Motor Vehicles</td><td class="bc-mono bc-r">'+bcFmt(bcV('bc_a_vehicles'))+'</td></tr>'+
+        '<tr><td>Superannuation</td><td class="bc-mono bc-muted bc-r">'+bcFmt(bcV('bc_a_super'))+' (excl.)</td></tr>'+
+        '<tr class="bc-tr"><td><strong>Total Assets (excl. Super)</strong></td><td class="bc-mono bc-green bc-r"><strong>'+bcFmt(r.totalAssets)+'</strong></td></tr></table></div>'+
 
       '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-clipboard-list"></i> Liabilities</div>'+
-        '<table class="bc-dt"><tr><th>Liability</th><th style="text-align:right">Balance</th><th style="text-align:right">Commitment</th></tr>'+
+        '<table class="bc-dt"><tr><th>Liability</th><th class="bc-r">Balance</th><th class="bc-r">Commitment</th></tr>'+
         (ccRows?ccRows:'<tr><td colspan="3" class="bc-muted">No credit cards entered</td></tr>')+(lRows||'')+(mRows||'')+
-        '<tr class="bc-tr"><td><strong>Total Liabilities</strong></td><td class="bc-mono bc-red" style="text-align:right"><strong>'+bcFmt(r.totalLiabs)+'</strong></td><td></td></tr></table>'+
+        '<tr class="bc-tr"><td><strong>Total Liabilities</strong></td><td class="bc-mono bc-red bc-r"><strong>'+bcFmt(r.totalLiabs)+'</strong></td><td></td></tr></table>'+
         '<div class="bc-divider"></div><div class="bc-nw-row"><span>Net Worth</span>'+
-          '<span class="bc-mono '+(r.netWorth>=0?'bc-green':'bc-red')+'" style="font-size:17px">'+bcFmt(r.netWorth)+'</span></div></div>'+
+          '<span class="bc-mono '+(r.netWorth>=0?'bc-green':'bc-red')+' bc-mono--17">'+bcFmt(r.netWorth)+'</span></div></div>'+
     '</div>'+
 
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-calculator"></i> Estimated Purchase Costs</div>'+
-      '<table class="bc-dt" style="max-width:420px">'+
-        '<tr><td>Property Price</td><td class="bc-mono" style="text-align:right">'+bcFmt(r.pv)+'</td></tr>'+
-        '<tr><td>Stamp Duty ('+bcS('bc_state')+(bcS('bc_fhb')==='yes'?' — FHB':'')+')</td><td class="bc-mono bc-amber" style="text-align:right">'+bcFmt(sd)+'</td></tr>'+
-        '<tr><td>Legal / Conveyancing</td><td class="bc-mono" style="text-align:right">$2,500</td></tr>'+
-        '<tr><td>Building & Pest Inspection</td><td class="bc-mono" style="text-align:right">$800</td></tr>'+
-        '<tr><td>Lender / Application Fees</td><td class="bc-mono" style="text-align:right">$1,000</td></tr>'+
-        (lmi?'<tr><td>LMI (LVR '+lvr.toFixed(0)+'%)</td><td class="bc-mono bc-red" style="text-align:right">~'+bcFmt(r.la*.02)+'</td></tr>':'')+
-        '<tr class="bc-tr"><td><strong>Total Cash Required</strong></td><td class="bc-mono bc-pink" style="text-align:right"><strong>'+bcFmt(totalCash)+'</strong></td></tr></table></div>'+
+      '<table class="bc-dt bc-dt--narrow">'+
+        '<tr><td>Property Price</td><td class="bc-mono bc-r">'+bcFmt(r.pv)+'</td></tr>'+
+        '<tr><td>Stamp Duty ('+bcS('bc_state')+(bcS('bc_fhb')==='yes'?' — FHB':'')+')</td><td class="bc-mono bc-amber bc-r">'+bcFmt(sd)+'</td></tr>'+
+        '<tr><td>Legal / Conveyancing</td><td class="bc-mono bc-r">$2,500</td></tr>'+
+        '<tr><td>Building & Pest Inspection</td><td class="bc-mono bc-r">$800</td></tr>'+
+        '<tr><td>Lender / Application Fees</td><td class="bc-mono bc-r">$1,000</td></tr>'+
+        (lmi?'<tr><td>LMI (LVR '+lvr.toFixed(0)+'%)</td><td class="bc-mono bc-red bc-r">~'+bcFmt(r.la*.02)+'</td></tr>':'')+
+        '<tr class="bc-tr"><td><strong>Total Cash Required</strong></td><td class="bc-mono bc-pink bc-r"><strong>'+bcFmt(totalCash)+'</strong></td></tr></table></div>'+
 
     '<div class="bc-card bc-disclaimer">'+
       '<div class="bc-disc-title">⚠️ Important Disclaimer</div>'+
@@ -909,7 +910,7 @@ function bcMarkup(){
       '<div class="bc-field"><label>Superannuation (total) <span class="bc-src-badge" id="bc_super-src">manual</span></label><div class="bc-pfx"><span>$</span><input type="number" id="bc_a_super" class="bc-mono" placeholder="0" min="0" oninput="bcSave();bcCalcAssets()"></div><div class="bc-helper">Not used in borrowing calc — shown for net worth</div></div>'+
     '</div></div>'+
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-home"></i> Property Assets</div><div id="bc-property-list"></div>'+
-      '<button class="bc-btn bc-btn-secondary bc-btn-sm" onclick="bcAddProperty()" style="margin-top:10px">+ Add Property</button></div>'+
+      '<button class="bc-btn bc-btn-secondary bc-btn-sm bc-mt10" onclick="bcAddProperty()">+ Add Property</button></div>'+
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-car"></i> Other Assets</div><div class="bc-g3">'+
       '<div class="bc-field"><label>Motor Vehicles</label><div class="bc-pfx"><span>$</span><input type="number" id="bc_a_vehicles" class="bc-mono" placeholder="0" min="0" oninput="bcSave();bcCalcAssets()"></div></div>'+
       '<div class="bc-field"><label>Household Contents</label><div class="bc-pfx"><span>$</span><input type="number" id="bc_a_contents" class="bc-mono" placeholder="0" min="0" oninput="bcSave();bcCalcAssets()"></div></div>'+
@@ -922,12 +923,12 @@ function bcMarkup(){
   '<div class="bc-section" id="bc-sec-liabilities">'+
     '<div class="bc-page-header"><div class="bc-eyebrow">Step 5 of 6</div><h2>Liabilities</h2><p>Imported from your Liabilities and Mortgages. Credit card <em>limits</em> (not balances) are assessed at 3% per month.</p></div>'+
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-credit-card"></i> Credit Cards</div><div id="bc-cc-list"></div>'+
-      '<button class="bc-btn bc-btn-secondary bc-btn-sm" onclick="bcAddCC()" style="margin-top:10px">+ Add Credit Card</button>'+
-      '<div class="bc-helper" style="margin-top:8px">⚠️ Banks assess 3% of total credit limit monthly — regardless of balance owed.</div></div>'+
+      '<button class="bc-btn bc-btn-secondary bc-btn-sm bc-mt10" onclick="bcAddCC()">+ Add Credit Card</button>'+
+      '<div class="bc-helper bc-mt8">⚠️ Banks assess 3% of total credit limit monthly — regardless of balance owed.</div></div>'+
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-car"></i> Personal &amp; Vehicle Loans</div><div id="bc-loan-list"></div>'+
-      '<button class="bc-btn bc-btn-secondary bc-btn-sm" onclick="bcAddLoan()" style="margin-top:10px">+ Add Loan</button></div>'+
-    '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-home"></i> Existing Mortgages <span class="bc-src-badge" id="bc_mort-src" style="margin-left:6px">manual</span></div><div id="bc-mortgage-list"></div>'+
-      '<button class="bc-btn bc-btn-secondary bc-btn-sm" onclick="bcAddMortgage()" style="margin-top:10px">+ Add Existing Mortgage</button></div>'+
+      '<button class="bc-btn bc-btn-secondary bc-btn-sm bc-mt10" onclick="bcAddLoan()">+ Add Loan</button></div>'+
+    '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-home"></i> Existing Mortgages <span class="bc-src-badge bc-ml6" id="bc_mort-src">manual</span></div><div id="bc-mortgage-list"></div>'+
+      '<button class="bc-btn bc-btn-secondary bc-btn-sm bc-mt10" onclick="bcAddMortgage()">+ Add Existing Mortgage</button></div>'+
     '<div class="bc-card"><div class="bc-card-title"><i class="ti ti-chart-bar"></i> Liabilities Summary</div><div id="bc-liab-summary"><p class="bc-muted">Add liabilities above.</p></div></div>'+
     '<div class="bc-btn-row"><button class="bc-btn bc-btn-secondary" onclick="bcGo(\'assets\')">← Back</button><button class="bc-btn bc-btn-primary" onclick="bcGo(\'loandetails\')">Next: Loan Details →</button></div>'+
   '</div>'+
@@ -953,7 +954,7 @@ function bcMarkup(){
   // RESULTS
   '<div class="bc-section" id="bc-sec-results">'+
     '<div class="bc-page-header bc-no-print"><div class="bc-eyebrow">Affordability Report</div><h2>Borrowing Snapshot</h2><p>Based on the APRA 3% buffer, HEM benchmarks, and your app data.</p></div>'+
-    '<div class="bc-btn-row bc-no-print" style="margin-bottom:16px">'+
+    '<div class="bc-btn-row bc-no-print bc-mb16">'+
       '<button class="bc-btn bc-btn-success" onclick="bcExportPDF()"><i class="ti ti-printer"></i> Export PDF</button>'+
       '<button class="bc-btn bc-btn-amber" onclick="bcExportCSV()"><i class="ti ti-file-spreadsheet"></i> Export CSV</button>'+
       '<button class="bc-btn bc-btn-secondary" onclick="bcGenerateReport()"><i class="ti ti-refresh"></i> Recalculate</button>'+

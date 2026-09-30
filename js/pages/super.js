@@ -47,7 +47,7 @@ function renderSuperAggTable() {
   var combined = bTotal + sTotal;
 
   if (!bAccts.length && !sAccts.length) {
-    el.innerHTML = '<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:12px 0">No super accounts added yet. Use the + Add Super Account button in each profile below.</div>';
+    el.innerHTML = '<div class="sp-agg-empty">No super accounts added yet. Use the + Add Super Account button in each profile below.</div>';
     return;
   }
 
@@ -59,16 +59,16 @@ function renderSuperAggTable() {
     var r = '';
     accts.forEach(function(a, i) {
       r += '<tr>'
-        + (i === 0 ? '<td rowspan="' + (accts.length+1) + '" style="font-weight:700;color:' + (colorKey==='brenton'?profileColor.brenton:profileColor.shelley) + ';vertical-align:top;padding:8px 12px 8px 0;border-bottom:1px solid var(--border);white-space:nowrap">' + esc(name) + '</td>' : '')
-        + '<td style="padding:6px 12px;font-size:.83rem;color:var(--text)">' + esc(a.fund||'—') + '</td>'
-        + '<td style="padding:6px 12px;font-size:.83rem;color:var(--muted)">' + esc(a.type||'—') + '</td>'
-        + '<td style="padding:6px 12px;font-family:var(--font-mono);font-size:.83rem;text-align:right;color:var(--text)">' + fmt(a.balance||0) + '</td>'
+        + (i === 0 ? '<td rowspan="' + (accts.length+1) + '" class="sp-agg-profile" style="color:' + (colorKey==='brenton'?profileColor.brenton:profileColor.shelley) + '">' + esc(name) + '</td>' : '')
+        + '<td class="sp-agg-td">' + esc(a.fund||'—') + '</td>'
+        + '<td class="sp-agg-td sp-agg-td--muted">' + esc(a.type||'—') + '</td>'
+        + '<td class="sp-agg-td sp-agg-td--num">' + fmt(a.balance||0) + '</td>'
         + '</tr>';
     });
     // Subtotal row
-    r += '<tr style="border-top:1px solid var(--border)">'
-      + '<td colspan="2" style="padding:6px 12px;font-size:.78rem;font-weight:700;color:var(--muted)">Total — ' + esc(name) + '</td>'
-      + '<td style="padding:6px 12px;font-family:var(--font-mono);font-weight:700;font-size:.88rem;text-align:right;color:' + (colorKey==='brenton'?profileColor.brenton:profileColor.shelley) + ';border-bottom:2px solid var(--border)">' + fmt(total) + '</td>'
+    r += '<tr class="sp-agg-sub">'
+      + '<td colspan="2" class="sp-agg-sublbl">Total — ' + esc(name) + '</td>'
+      + '<td class="sp-agg-subtotal" style="color:' + (colorKey==='brenton'?profileColor.brenton:profileColor.shelley) + '">' + fmt(total) + '</td>'
       + '</tr>';
     return r;
   }
@@ -77,19 +77,19 @@ function renderSuperAggTable() {
   rows += profileRows(sAccts, sName, sTotal, 'shelley');
 
   // Combined row
-  rows += '<tr style="background:rgba(240,83,138,.06)">'
-    + '<td style="padding:8px 12px 8px 0;font-weight:700;font-size:.88rem;color:var(--text)">Combined</td>'
-    + '<td colspan="2" style="padding:8px 12px;font-size:.78rem;color:var(--muted)">' + (bAccts.length + sAccts.length) + ' account' + (bAccts.length+sAccts.length!==1?'s':'') + '</td>'
-    + '<td style="padding:8px 12px;font-family:var(--font-mono);font-weight:700;font-size:1rem;text-align:right;color:var(--success)">' + fmt(combined) + '</td>'
+  rows += '<tr class="sp-agg-combined">'
+    + '<td class="sp-agg-comb-lbl">Combined</td>'
+    + '<td colspan="2" class="sp-agg-comb-count">' + (bAccts.length + sAccts.length) + ' account' + (bAccts.length+sAccts.length!==1?'s':'') + '</td>'
+    + '<td class="sp-agg-comb-val">' + fmt(combined) + '</td>'
     + '</tr>';
 
-  el.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'
-    + '<table style="width:100%;border-collapse:collapse;min-width:360px">'
-    + '<thead><tr style="border-bottom:2px solid var(--border)">'
-    + '<th style="text-align:left;padding:6px 12px 8px 0;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile</th>'
-    + '<th style="text-align:left;padding:6px 12px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Fund</th>'
-    + '<th style="text-align:left;padding:6px 12px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Type</th>'
-    + '<th style="text-align:right;padding:6px 12px;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Balance</th>'
+  el.innerHTML = '<div class="sp-agg-scroll">'
+    + '<table class="sp-agg-table">'
+    + '<thead><tr class="sp-agg-head">'
+    + '<th class="sp-agg-th sp-agg-th--first">Profile</th>'
+    + '<th class="sp-agg-th">Fund</th>'
+    + '<th class="sp-agg-th">Type</th>'
+    + '<th class="sp-agg-th sp-agg-th--num">Balance</th>'
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table></div>';
@@ -103,17 +103,17 @@ function renderSuperAcctList(pfx) {
   var accts = SUPER_ACCTS[key] || [];
 
   if (!accts.length) {
-    el.innerHTML = '<div style="font-size:.78rem;color:var(--muted);padding:6px 0">No accounts added yet.</div>';
+    el.innerHTML = '<div class="sp-list-empty">No accounts added yet.</div>';
     return;
   }
   el.innerHTML = accts.map(function(a) {
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap" id="super-acct-row-' + pfx + '-' + a.id + '">'
-      + '<div style="flex:1;min-width:120px">'
-      + '<div style="font-weight:700;font-size:.85rem">' + esc(a.fund||'Unknown Fund') + '</div>'
-      + '<div style="font-size:.72rem;color:var(--muted)">' + esc(a.type||'Accumulation') + '</div>'
+    return '<div class="sp-acct-row" id="super-acct-row-' + pfx + '-' + a.id + '">'
+      + '<div class="sp-acct-main">'
+      + '<div class="sp-acct-fund">' + esc(a.fund||'Unknown Fund') + '</div>'
+      + '<div class="sp-acct-type">' + esc(a.type||'Accumulation') + '</div>'
       + '</div>'
-      + '<div style="font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:var(--primary)">' + fmt(a.balance||0) + '</div>'
-      + '<div style="display:flex;gap:4px;flex-shrink:0">'
+      + '<div class="sp-acct-bal">' + fmt(a.balance||0) + '</div>'
+      + '<div class="sp-acct-actions">'
       + '<button class="btn btn-ghost btn-sm" onclick="superEditAcct(\'' + pfx + '\',\'' + a.id + '\')">Edit</button>'
       + '<button class="del-btn" onclick="superDeleteAcct(\'' + pfx + '\',\'' + a.id + '\')">' + ICON('trash') + '</button>'
       + '</div>'
@@ -166,14 +166,14 @@ function superEditAcct(pfx, id) {
   var rowEl = document.getElementById('super-acct-row-' + pfx + '-' + id);
   if (!rowEl) return;
   var curMo = _nwCurrentMonth ? _nwCurrentMonth() : '';
-  rowEl.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;width:100%;padding:4px 0">'
-    + '<div style="flex:1;min-width:140px"><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-edit-fund-' + pfx + '-' + id + '" value="' + esc(a.fund||'') + '" style="font-size:16px;width:100%;box-sizing:border-box"/></div>'
-    + '<div style="flex:1;min-width:120px"><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-edit-bal-' + pfx + '-' + id + '" value="' + (a.balance||0) + '" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>'
-    + '<div style="flex:1;min-width:140px"><label class="lbl" style="font-size:.7rem">Type</label><select id="super-edit-type-' + pfx + '-' + id + '" style="width:100%;box-sizing:border-box">'
+  rowEl.innerHTML = '<div class="sp-edit">'
+    + '<div class="sp-field"><label class="lbl lbl--sm">Fund Name</label><input type="text" id="super-edit-fund-' + pfx + '-' + id + '" value="' + esc(a.fund||'') + '" class="sp-input-16"/></div>'
+    + '<div class="sp-field sp-field--sm"><label class="lbl lbl--sm">Balance (AUD)</label><input type="number" id="super-edit-bal-' + pfx + '-' + id + '" value="' + (a.balance||0) + '" step="1000" inputmode="decimal"/></div>'
+    + '<div class="sp-field"><label class="lbl lbl--sm">Type</label><select id="super-edit-type-' + pfx + '-' + id + '">'
     + _SUPER_TYPES.map(function(t){ return '<option value="' + t + '"' + (t===a.type?' selected':'') + '>' + t + '</option>'; }).join('')
     + '</select></div>'
-    + '<div style="flex:1;min-width:120px"><label class="lbl" style="font-size:.7rem">Balance as of</label><input type="month" id="super-edit-mo-' + pfx + '-' + id + '" value="' + curMo + '" style="width:100%;box-sizing:border-box"/></div>'
-    + '<div style="display:flex;gap:6px;flex-shrink:0">'
+    + '<div class="sp-field sp-field--sm"><label class="lbl lbl--sm">Balance as of</label><input type="month" id="super-edit-mo-' + pfx + '-' + id + '" value="' + curMo + '"/></div>'
+    + '<div class="sp-edit-actions">'
     + '<button class="btn btn-primary btn-sm" onclick="superSaveEdit(\'' + pfx + '\',\'' + id + '\')">Save</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="renderSuperAcctList(\'' + pfx + '\')">Cancel</button>'
     + '</div></div>';
@@ -292,13 +292,13 @@ function renderSuperMonthlyGrid() {
   sAccts.forEach(function(a) { allAccts.push({ acct: a, profileLabel: sName, color: '#818CF8' }); });
 
   if (!allAccts.length) {
-    el.innerHTML = '<div class="card mb" style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Add super accounts above to start tracking monthly balances.</div>';
+    el.innerHTML = '<div class="card mb sp-mo-empty">Add super accounts above to start tracking monthly balances.</div>';
     return;
   }
 
   var curMo = typeof _nwCurrentMonth === 'function' ? _nwCurrentMonth() : new Date().toISOString().slice(0, 7);
-  var html = '<div class="section-label" style="margin-bottom:12px">' + ICON('calendar') + ' Monthly Super Balances</div>'
-    + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:14px">Record each account\'s closing balance by month — tracks changes in super over time and links to Net Worth history.</div>';
+  var html = '<div class="section-label sp-sl-12">' + ICON('calendar') + ' Monthly Super Balances</div>'
+    + '<div class="sp-mo-desc">Record each account\'s closing balance by month — tracks changes in super over time and links to Net Worth history.</div>';
 
   allAccts.forEach(function(item) {
     var a = item.acct;
@@ -306,42 +306,42 @@ function renderSuperMonthlyGrid() {
     var months = Object.keys(data).sort();
     var rows = '';
     if (!months.length) {
-      rows = '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">No entries yet.</div>';
+      rows = '<div class="sp-mo-none">No entries yet.</div>';
     } else {
       months.forEach(function(m, i) {
         var bal = data[m];
         var prev = i > 0 ? data[months[i - 1]] : null;
         var diff = prev !== null ? bal - prev : null;
         var diffStr = diff === null ? '' : (diff >= 0 ? '+' : '') + fmt(diff);
-        var diffColor = diff === null ? '' : diff >= 0 ? 'var(--success)' : 'var(--danger)';
+        var diffTone = diff === null ? '' : diff >= 0 ? 'tone-green' : 'tone-danger';
         var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
-        rows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
-          + '<div style="min-width:80px;font-size:.78rem;color:var(--muted)">' + ml + '</div>'
+        rows += '<div class="sp-mo-row">'
+          + '<div class="sp-mo-month">' + ml + '</div>'
           + '<input type="number" step="1000" value="' + bal + '" inputmode="decimal"'
           + ' onchange="superMonthUpdate(\'' + a.id + '\',\'' + m + '\',this.value)"'
-          + ' style="flex:1;min-width:100px;font-family:var(--font-mono);font-size:.85rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text)"/>'
-          + (diffStr ? '<div style="font-size:.72rem;font-weight:700;color:' + diffColor + ';white-space:nowrap;min-width:70px;text-align:right">' + diffStr + '</div>' : '<div style="min-width:70px"></div>')
-          + '<button onclick="superMonthDel(\'' + a.id + '\',\'' + m + '\')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;min-height:36px;font-size:.85rem">' + ICON('trash') + '</button>'
+          + ' class="sp-mo-input"/>'
+          + (diffStr ? '<div class="sp-mo-diff ' + diffTone + '">' + diffStr + '</div>' : '<div class="sp-mo-diff-empty"></div>')
+          + '<button onclick="superMonthDel(\'' + a.id + '\',\'' + m + '\')" class="sp-mo-del">' + ICON('trash') + '</button>'
           + '</div>';
       });
     }
 
-    html += '<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">'
-      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">'
-      + '<div style="width:10px;height:10px;border-radius:50%;background:' + item.color + ';flex-shrink:0"></div>'
-      + '<div style="flex:1;min-width:0">'
-      + '<div style="font-weight:700;font-size:.88rem">' + esc(a.fund || 'Unknown Fund') + '</div>'
-      + '<div style="font-size:.7rem;color:var(--muted)">' + item.profileLabel + ' · ' + esc(a.type || 'Accumulation') + '</div>'
+    html += '<div class="sp-mo-card">'
+      + '<div class="sp-mo-hd">'
+      + '<div class="sp-mo-dot" style="background:' + item.color + '"></div>'
+      + '<div class="sp-mo-main">'
+      + '<div class="sp-mo-fund">' + esc(a.fund || 'Unknown Fund') + '</div>'
+      + '<div class="sp-mo-type">' + item.profileLabel + ' · ' + esc(a.type || 'Accumulation') + '</div>'
       + '</div>'
-      + '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--muted)">Current: <span style="color:' + item.color + ';font-weight:700">' + fmt(parseFloat(a.balance) || 0) + '</span></div>'
+      + '<div class="sp-mo-cur">Current: <span class="sp-mo-cur-val" style="color:' + item.color + '">' + fmt(parseFloat(a.balance) || 0) + '</span></div>'
       + '</div>'
       + rows
-      + '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">'
-      + '<div style="flex:1;min-width:140px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Month</label>'
-      + '<select id="super-mo-inp-' + a.id + '" style="width:100%;font-size:.82rem">' + _superMonthlyMonthOpts(curMo) + '</select></div>'
-      + '<div style="flex:1;min-width:120px"><label style="font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px">Closing Balance (AUD)</label>'
-      + '<input type="number" id="super-mo-bal-' + a.id + '" placeholder="0" step="1000" inputmode="decimal" style="width:100%;font-size:16px;box-sizing:border-box"/></div>'
-      + '<button class="btn btn-primary btn-sm" onclick="superMonthSave(\'' + a.id + '\')" style="flex-shrink:0;min-height:44px">Save</button>'
+      + '<div class="sp-mo-add">'
+      + '<div class="sp-field"><label class="sp-mo-lbl">Month</label>'
+      + '<select id="super-mo-inp-' + a.id + '" class="sp-mo-sel">' + _superMonthlyMonthOpts(curMo) + '</select></div>'
+      + '<div class="sp-field sp-field--sm"><label class="sp-mo-lbl">Closing Balance (AUD)</label>'
+      + '<input type="number" id="super-mo-bal-' + a.id + '" placeholder="0" step="1000" inputmode="decimal" class="sp-input-16"/></div>'
+      + '<button class="btn btn-primary btn-sm sp-mo-save" onclick="superMonthSave(\'' + a.id + '\')">Save</button>'
       + '</div>'
       + '</div>';
   });

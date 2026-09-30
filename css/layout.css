@@ -5,7 +5,7 @@
 
 /* ══ SIDEBAR (desktop) — collapsible icon rail, 56px → 200px on hover ══ */
 #nav{
-  width:var(--nav-w);min-width:var(--nav-w);height:100vh;background:var(--nav-bg);
+  width:var(--nav-w);min-width:var(--nav-w);height:100vh;height:100dvh;background:var(--nav-bg);
   display:flex;flex-direction:column;align-items:flex-start;
   position:fixed;top:0;left:0;z-index:300;
   border-right:1px solid var(--border);
@@ -143,20 +143,12 @@
 #nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:290;backdrop-filter:blur(2px);}
 #nav-overlay.show{display:block;}
 
-/* ══ MOBILE TOPBAR ══ */
-#mob-bar{
-  display:none;position:fixed;top:0;left:0;right:0;height:var(--topbar-h);
-  background:var(--nav-bg);border-bottom:1px solid var(--border);
-  align-items:center;justify-content:space-between;padding:0 16px;z-index:250;
-}
-#mob-bar .mob-logo{font-family:var(--font-display);font-size:.95rem;color:var(--primary);}
-#mob-bar .mob-logo span{color:#fff;}
-#hamburger{background:none;border:none;cursor:pointer;padding:8px;display:flex;flex-direction:column;gap:5px;-webkit-tap-highlight-color:transparent;}
-#hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s;}
-#hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
-#hamburger.open span:nth-child(2){opacity:0;}
-#hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
-#mob-user{font-size:.78rem;font-weight:600;color:var(--primary);}
+/* Mobile page title in the top bar — hidden on desktop, see mobile block below */
+.mob-title{display:none;}
+/* Mobile-only controls (e.g. Transactions Filter/Select) — shown in the mobile block */
+.mob-only{display:none;}
+/* Month dividers in the transactions list are a mobile card-layout feature */
+.tx-month-row{display:none;}
 
 /* ══ DESKTOP TOPBAR — static across every page (items 5–8, 10, 11) ══ */
 #topbar{
@@ -197,8 +189,6 @@
 .tb-lock{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;transition:all .15s;}
 .tb-lock:hover{background:rgba(239,68,68,.15);color:var(--danger);border-color:var(--danger);}
 
-/* Dashboard's in-page action cluster is redundant on desktop — the top bar owns it now */
-@media(min-width:681px){ .kd-top-r{display:none!important;} }
 
 /* Global search modal */
 .search-modal-bar{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);}
@@ -217,7 +207,7 @@
 /* ══ MAIN LAYOUT ══ */
 /* #main is a fixed-height flex column: the top bar is a static header and the
    page content scrolls beneath it, so the top nav never scrolls away (item 2). */
-#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;margin-left:var(--nav-w);}
+#main{flex:1;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;margin-left:var(--nav-w);}
 .page-content{padding:28px;flex:1;min-height:0;width:100%;box-sizing:border-box;max-width:1200px;margin-left:auto;margin-right:auto;overflow-y:auto;}
 
 /* ══ PAGE VISIBILITY ══ */
@@ -251,6 +241,8 @@
 
 /* Chart area that fills available card height via flex */
 .db-chart-fill{flex:1;min-height:180px;position:relative;}
+.db-chart-fill.db-chart-fill--md{min-height:200px;}
+.db-chart-fill.db-chart-fill--lg{min-height:260px;}
 
 /* Category/subcat chart wraps — height set by JS, position:relative for Chart.js */
 #db-cat-chart-wrap,#db-subcat-chart-wrap{width:100%;position:relative;overflow:hidden;}
@@ -259,7 +251,8 @@
 #bottom-tab-bar{
   display:none; /* shown via media query */
   position:fixed;bottom:0;left:0;right:0;z-index:9999;
-  height:60px;background:var(--nav-bg);
+  /* border-box is global, so the safe-area padding must be added on top of the bar height */
+  height:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));background:var(--nav-bg);
   border-top:1px solid var(--border);
   box-shadow:0 -2px 12px rgba(0,0,0,.18);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -273,15 +266,18 @@
 }
 .tab-btn.active{color:var(--nav-active);}
 .tab-btn:focus{outline:none;}
+.tab-btn:focus-visible .tab-icon{box-shadow:0 0 0 2px var(--primary);}
 .tab-icon{font-size:1.3rem;line-height:1;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;transition:background .15s;}
 .tab-btn.active .tab-icon{background:rgba(240,83,138,.12);}
-.tab-lbl{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;line-height:1;}
+.tab-lbl{font-size:.7rem;font-weight:600;white-space:nowrap;line-height:1;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* Centre slot the FAB sits over */
+.tab-fab-slot{flex:1;}
 
-/* ══ FLOATING ACTION BUTTON ══ */
+/* ══ FLOATING ACTION BUTTON — sits in the tab bar's centre slot ══ */
 #fab{
   display:none; /* shown via media query */
   position:fixed;
-  bottom:calc(62px + env(safe-area-inset-bottom,0px));
+  bottom:calc((var(--tabbar-h) - 54px) / 2 + env(safe-area-inset-bottom,0px));
   left:50%;transform:translateX(-50%);
   width:54px;height:54px;border-radius:50%;
   background:var(--primary);
@@ -297,8 +293,9 @@
 #fab:active{transform:translateX(-50%) scale(.92);box-shadow:0 2px 10px rgba(240,83,138,.4);}
 
 /* ══ FAB ARC MENU ══ */
-#fab-menu{display:none;position:fixed;z-index:400;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);}
-#fab-overlay{display:none;position:fixed;inset:0;z-index:398;}
+#fab-menu{display:none;position:fixed;z-index:400;bottom:calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);}
+/* Dim + blur the page so the menu items stand apart from content behind them */
+#fab-overlay{display:none;position:fixed;inset:0;z-index:398;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .fab-arc{display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:8px;}
 .fab-arc-item{
   display:flex;align-items:center;gap:10px;
@@ -328,6 +325,9 @@
   padding:0 20px calc(20px + env(safe-area-inset-bottom,0px));
   box-shadow:0 -8px 40px rgba(0,0,0,.3);
   transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.67,0);
+  /* Scroll inside the sheet on short screens rather than running off the top */
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px));
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
 }
 #mob-menu.open{transform:translateY(0);}
 #mob-menu-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 20px;}
@@ -339,6 +339,7 @@
   padding:12px 6px;border-radius:14px;border:none;cursor:pointer;
   background:var(--card2);color:var(--text);font-size:.72rem;font-weight:600;
   transition:all .15s;min-height:64px;justify-content:center;
+  text-align:center;line-height:1.2;min-width:0;
 }
 .mob-menu-item span{font-size:1.4rem;}
 .mob-menu-item:active{transform:scale(.95);opacity:.8;}
@@ -358,6 +359,19 @@ body:has(#login-screen:not(.gone)) #fab-overlay,
 body:has(#login-screen:not(.gone)) #mob-menu,
 body:has(#login-screen:not(.gone)) #mob-menu-overlay{display:none!important;}
 
+/* ══ Hide bottom nav & FAB while a modal or the More sheet is open ══
+   They sit above modals (z 9999/10001 vs 1000), so would otherwise cover modal
+   buttons. Modals open via .open or an inline display set from JS — match both.
+   Modals stay below the login screen (z 9000), so nothing can draw over the lock. */
+body:has(.modal-overlay.open) #bottom-tab-bar,
+body:has(.modal-overlay[style*="display: flex"]) #bottom-tab-bar,
+body:has(.modal-overlay[style*="display:flex"]) #bottom-tab-bar,
+body:has(.modal-overlay[style*="display: block"]) #bottom-tab-bar,
+body:has(.modal-overlay.open) #fab,
+body:has(.modal-overlay[style*="display: flex"]) #fab,
+body:has(.modal-overlay[style*="display:flex"]) #fab,
+body:has(.modal-overlay[style*="display: block"]) #fab,
+body:has(#mob-menu.open) #fab{display:none!important;}
 /* …and while an equities sheet is open: they sit above every modal and would cover its buttons */
 body:has(.eq-modal-overlay.open) #bottom-tab-bar,
 body:has(.eq-modal-overlay.open) #fab,
@@ -375,19 +389,40 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
   .rate-table th:nth-child(n+4),.rate-table td:nth-child(n+4){display:none;}
 }
 
+/* Mobile layout = narrower than 760px, OR a touch device in landscape (short
+   viewport) — a phone on its side is wider than 760px but must not get the
+   hover-driven sidebar. The desktop query below is the exact inverse. */
+
 /* ── Desktop: hide all mobile-only elements ── */
-@media(min-width:681px){
+@media (min-width:760px) and (pointer:fine), (min-width:760px) and (min-height:501px){
   #bottom-tab-bar,#fab,#fab-menu,#fab-overlay{display:none!important;}
 }
 
-/* ── Mobile ≤680px ── */
-@media(max-width:680px){
+/* ── Mobile ── */
+@media (max-width:759px), (pointer:coarse) and (max-height:500px){
   /* Hide desktop nav */
   #nav{display:none!important;}
-  #topbar{display:none!important;}
 
-  /* Show mobile topbar */
-  #mob-bar{display:flex;}
+  /* Compact fixed header: back · title/greeting · search · alerts · lock.
+     Padded for the notch/status bar (the app runs black-translucent in standalone). */
+  #topbar{
+    position:fixed;top:0;left:0;right:0;z-index:250;
+    height:calc(var(--topbar-h) + env(safe-area-inset-top,0px));
+    padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));
+    gap:8px;
+  }
+  .topbar-left{flex:1;gap:8px;}
+  .topbar-actions{gap:4px;flex-shrink:0;}
+  .topbar-greet-hi{font-size:.95rem;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-greet-date,.tb-mode-toggle,.tb-addbtn,.user-pill{display:none;}
+  .tb-back,.tb-ibtn,.tb-lock{width:44px;height:44px;border-color:transparent;background:none;}
+  .mob-title{
+    display:block;margin:0;min-width:0;font-family:var(--font-display);font-size:1rem;font-weight:700;
+    color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .mob-title:empty{display:none;}
+  /* Non-dashboard pages show the page title in place of the greeting */
+  .topbar-left:has(.mob-title:not(:empty)) .topbar-greeting{display:none;}
 
   /* Layout: vertical, full width */
   body{flex-direction:column!important;}
@@ -395,8 +430,8 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
     margin-left:0!important;
     width:100%!important;
     height:auto!important;overflow:visible!important;
-    padding-top:var(--topbar-h);
-    padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))!important;
+    padding-top:calc(var(--topbar-h) + env(safe-area-inset-top,0px));
+    padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))!important;
     min-height:100svh;
   }
   .page-content{overflow-y:visible!important;}
@@ -433,27 +468,103 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
 
   /* Buttons */
   .btn{min-height:48px;font-size:.88rem;border-radius:12px;}
-  .btn-sm{min-height:38px;font-size:.78rem;border-radius:10px;}
+  .btn-sm{min-height:44px;font-size:.78rem;border-radius:10px;}
 
-  /* Hide hamburger — bottom tab bar handles all navigation */
-  #hamburger{display:none!important;}
 
-  /* Tables: show first 3 cols only (for non-transaction tables) */
-  .tbl-wrap th:nth-child(n+4),.tbl-wrap td:nth-child(n+4){display:none;}
-  .tbl-wrap{border-radius:14px;overflow:hidden;}
+  /* Wide tables scroll sideways inside their card (Transactions + Budget use cards instead) */
+  .tbl-wrap{border-radius:14px;}
+  .mob-only{display:inline-flex;}
 
-  /* Transaction table: show checkbox(1), date(2), merchant(4), amount(9), delete(10) */
-  .tx-table th:nth-child(n+3),.tx-table td:nth-child(n+3){display:none;}
-  .tx-table th:nth-child(4),.tx-table td:nth-child(4){display:table-cell;}   /* merchant */
-  .tx-table th:nth-child(9),.tx-table td:nth-child(9){display:table-cell;}   /* amount */
-  .tx-table th:nth-child(10),.tx-table td:nth-child(10){display:table-cell;} /* delete */
+  /* ── Transactions: each row becomes a card ──
+     Columns: 1 check · 2 date · 3 type · 4 merchant · 5 category · 6 subcat · 7 desc · 8 account · 9 amount · 10 delete
+       [check] merchant ........ amount
+       [check] category ........ date
+     Tap a card to edit (delete lives in the edit sheet); Select mode reveals the checkboxes. */
+  .tx-table,.tx-table tbody{display:block;}
+  /* Cards don't scroll sideways; an overflow container would also break the sticky month headers */
+  .tbl-wrap:has(.tx-table){overflow:visible;}
+  .tx-table thead{display:none;}
+  .tx-table tbody tr{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"check name amt" "check cat date";
+    align-items:center;column-gap:10px;row-gap:2px;
+    padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tx-table tbody tr:active{background:var(--card2);}
+  .tx-table tbody td{display:none;padding:0;border:none;}
+  .tx-table tbody td:nth-child(4){display:block;grid-area:name;font-size:.92rem;}
+  .tx-table tbody td:nth-child(5){display:block;grid-area:cat;min-width:0;}
+  .tx-table tbody td:nth-child(9){display:block;grid-area:amt;text-align:right;font-family:var(--font-mono);font-weight:500;}
+  .tx-table tbody td:nth-child(2){display:block;grid-area:date;text-align:right;font-size:.74rem;color:var(--muted);white-space:nowrap;}
+  .tx-table .tx-cat-sel{
+    font-size:.78rem!important;padding:4px 26px 4px 10px;min-height:36px;max-width:100%;width:auto;
+    border-radius:99px;background-color:var(--card2);margin:4px 0 0;
+  }
+  /* Select mode: checkbox column appears; taps toggle selection instead of editing */
+  .tx-table.tx-selecting tbody tr:not(.tx-month-row) td:nth-child(1){display:flex;grid-area:check;align-items:center;justify-content:center;min-width:44px;min-height:44px;}
+  .tx-table.tx-selecting .tx-check{width:22px;height:22px;}
+  .tx-table tbody tr.tx-month-row{
+    display:block;position:sticky;top:calc(var(--topbar-h) + env(safe-area-inset-top,0px));z-index:1;
+    padding:14px 4px 6px;background:var(--card);cursor:default;
+  }
+  .tx-table tbody tr.tx-month-row td{
+    display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  }
+  #tx-sentinel,#tx-sentinel td{display:block;}
+
+  /* ── Budget vs Actuals: each category row becomes a card with a traffic-light bar ──
+     Columns: 1 category · 2 budget · 3 actual · 4 remaining · 5 % used · 6 progress bar
+       category ................. actual
+       [============ bar ============]
+       Budget $600 ·  82% ·  $110 left */
+  .tbl-wrap:has(.bva-table){overflow:visible;}
+  .bva-table,.bva-table tbody{display:block;}
+  .bva-table thead{display:none;}
+  .bva-table tbody tr{
+    display:grid;grid-template-columns:minmax(0,1fr) auto auto;
+    grid-template-areas:"cat cat actual" "bar bar bar" "budget pct remain";
+    align-items:center;column-gap:12px;row-gap:6px;padding:12px 2px;border-bottom:1px solid var(--border);
+  }
+  .bva-table tbody tr:last-child{border-bottom:none;}
+  .bva-table tbody td{padding:0;border:none;background:none!important;}
+  .bva-table tbody td:nth-child(1){grid-area:cat;min-width:0;font-weight:600;}
+  .bva-table tbody td:nth-child(2){grid-area:budget;text-align:left;font-size:.74rem;font-weight:500;color:var(--muted);}
+  .bva-table tbody td:nth-child(2)::before{content:'Budget ';}
+  .bva-table tbody td:nth-child(3){grid-area:actual;font-family:var(--font-mono);font-weight:500;font-size:.95rem;}
+  .bva-table tbody td:nth-child(4){grid-area:remain;font-family:var(--font-mono);font-size:.78rem;}
+  .bva-table tbody td:nth-child(5){grid-area:pct;font-size:.74rem;font-weight:500;color:var(--muted);}
+  .bva-table tbody td:nth-child(6){grid-area:bar;min-width:0;}
+  .bva-table .bva-bar{height:8px;margin-top:0;}
+  /* Unbudgeted categories: just the name, the spend and a "No budget" note */
+  .bva-table tbody tr:has(td:nth-child(2) .bva-no-budget){grid-template-areas:"cat cat actual" "budget budget budget";}
+  .bva-table tbody tr:has(td:nth-child(2) .bva-no-budget) td:nth-child(2)::before{content:none;}
+  .bva-table tbody tr:has(td:nth-child(2) .bva-no-budget) td:nth-child(n+4){display:none;}
+  .bva-table tbody tr.bva-total{
+    background:var(--card2);border-radius:12px;padding:12px;margin-top:8px;border:none;
+    grid-template-areas:"cat cat actual" "budget pct remain";
+  }
+  .bva-table tbody tr.bva-total td:nth-child(6){display:none;}
+
+  /* Filters collapse behind the Filter button; search stays visible */
+  .tx-filters:not(.tx-filters--open) select{display:none;}
+  .tx-filters input{max-width:none;flex:1 1 100%;}
+  .tx-filters select{flex:1 1 calc(50% - 6px);}
+  .tx-filter-count{
+    min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--primary);color:#fff;
+    font-size:.68rem;display:inline-flex;align-items:center;justify-content:center;
+  }
+  /* The FAB is the add action on mobile; Upload lives in the + menu and More */
+  .tx-actions{display:none;}
+  .tx-bulk-bar{position:sticky;top:calc(var(--topbar-h) + env(safe-area-inset-top,0px));z-index:2;}
+  .tx-bulk-bar select{flex:1 1 100%;}
 
   /* Charts */
   .chart-box{border-radius:14px;}
   .db-charts-row{flex-direction:column!important;}
 
   /* Toast above tab bar */
-  #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px));left:14px;right:14px;border-radius:14px;}
+  #toast{bottom:calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom,0px));left:14px;right:14px;border-radius:14px;}
 
   /* Filters */
   .tx-filter-bar{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:none;}
@@ -484,9 +595,65 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
   .eq-card,.rule-card{border-radius:14px;}
 
   /* Modals */
-  .modal-box{border-radius:24px;padding:24px 20px;margin:16px;}
+  /* Modals become bottom sheets: anchored to the bottom edge, clear of the notch,
+     padded above the home indicator (the tab bar is hidden while one is open) */
+  .modal-overlay{align-items:flex-end;padding:calc(12px + env(safe-area-inset-top,0px)) 0 0;}
+  .modal-box{
+    border-radius:24px 24px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));
+    max-height:calc(100dvh - 12px - env(safe-area-inset-top,0px));overflow-y:auto;overscroll-behavior:contain;
+    animation:sheetUp .26s cubic-bezier(.32,.72,0,1);
+  }
+  .modal-close{min-width:44px;min-height:44px;}
   .modal-actions{flex-direction:column-reverse;gap:8px;}
   .modal-actions .btn{width:100%;}
+}
+
+/* ── Touch targets: 44×44 minimum (Apple HIG) on phones and any touch device ──
+   Visual size stays compact where it can; min-height only grows short controls. */
+@media (max-width:759px), (pointer:coarse){
+  .btn,.btn-sm,.btn-danger-ghost{min-height:44px;}
+  select,textarea,
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]){min-height:44px;}
+  .kd-pill,.bva-view-btn,.dash-today-btn,.dash-mode-btn,.fc-range-btn,.li-tab,.bc-tab,.mode-toggle-btn,
+  .how-to-hd,.ct-exp-hd,.ob-back,.ob-link,.sett-asset-chip{min-height:44px;}
+  .ob-pill{min-height:44px;display:inline-flex;align-items:center;padding:0 14px;}
+  .subcat-chip{min-height:36px;line-height:32px;}
+  /* Icon-only buttons / pickers need the width too */
+  .del-btn,.modal-close,.dash-nav-btn,.bl-duesoon-x,.sw-update-dismiss,
+  .g-icon-opt,#cat-icon-picker>div{min-width:44px;min-height:44px;}
+  .g-icon-opt{display:inline-flex;align-items:center;justify-content:center;}
+  .tx-check{width:22px;height:22px;}
+  /* Inline text links ("Details", "View …", "Add →") get a 44px hit area without
+     changing the layout: grow the box, pull it back with negative margin */
+  .kdt-act,.tile-link{display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;margin:-14px 0;}
+  /* Links inside running text: vertical padding on an inline box widens the
+     hit area without moving the line */
+  .page-content p a:not(.btn),.page-content .card a:not(.btn):not(.tile-link){padding-block:12px;}
+}
+
+/* ── Touch tablet (iPad): keep the sidebar, but make it work by tap ──
+   The rail normally reveals labels on :hover, which touch doesn't have (and iOS
+   "sticks" hover after a tap, leaving the rail expanded over the content).
+   So it stays expanded with labels always visible; flyouts open on tap and
+   close after a pick or a tap outside (initNavFlyouts). */
+@media (pointer:coarse) and (min-width:760px) and (min-height:501px){
+  #nav{width:var(--nav-w-open);}
+  #main{margin-left:var(--nav-w-open);}
+  #nav .nav-logo h1,#nav .nav-glabel,#nav .nav-item .nav-lbl,#nav .nav-soon,
+  #nav .nav-settings-btn .nav-lbl,#nav .nav-lock-btn .nav-lbl,#nav .kd-uname,
+  #nav #nav-pinned .nav-item .nav-lbl{opacity:1;}
+  #nav .ni{filter:none;}
+  #nav .nav-cat-arr{opacity:.55;}
+  #nav .nav-item,#nav .nav-settings-btn,#nav .nav-lock-btn,.nav-fly-item{min-height:44px;}
+}
+
+/* ── Top bar between tablet and small desktop: icon-only Upload, drop the user pill ── */
+@media (min-width:760px) and (max-width:1080px){
+  .tb-addbtn{padding:0;width:34px;justify-content:center;}
+  .tb-addbtn-lbl{display:none;}
+}
+@media (min-width:760px) and (max-width:900px){
+  .user-pill{display:none;}
 }
 
 /* ── Small mobile ≤380px ── */
@@ -495,6 +662,8 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
   .stat .sv{font-size:1.1rem;}
   .occ-grid>*{flex:1 1 100%;}
   .rate-badge{flex:1 1 100%;}
+  .fc2-kpi{padding:12px;}
+  .fc2-kpi-val{font-size:.95rem;}
 }
 
 /* ══════════════════════════════════

@@ -55,7 +55,7 @@
   --font-mono:'DM Mono',monospace;
   --font-head:var(--font-display);
   /* ── Layout ── */
-  --nav-w:56px; --nav-w-open:200px; --topbar-h:52px;
+  --nav-w:56px; --nav-w-open:200px; --topbar-h:52px; --tabbar-h:60px;
 }
 
 /* ── Shadows depend on MODE only (dark needs heavier depth than light) ── */
@@ -163,9 +163,12 @@
 /* ── CSS RESET ── */
 *{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-text-size-adjust:100%;}
+/* A canvas with no chart drawn yet (empty page) keeps its 300px default width,
+   which overflows narrow phones and stretches its card. Charts size themselves. */
+canvas{max-width:100%;}
 body{
   font-family:var(--font-body);background:var(--bg);color:var(--text);
-  min-height:100vh;font-size:15px;line-height:1.5;
+  min-height:100vh;min-height:100dvh;font-size:15px;line-height:1.5;
   display:flex;flex-direction:row;overflow-x:hidden;
 }
 ::selection{background:#e8457a44;}
@@ -180,3 +183,4 @@ h1,h2,h3,.heading{font-family:var(--font-display);}
 /* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}

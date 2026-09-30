@@ -102,12 +102,12 @@ function insRenderNWChart() {
         var prev  = moMap[moKeys[idx]].netWorth;
         var delta = last - prev;
         var pct   = prev !== 0 ? ((delta / Math.abs(prev)) * 100).toFixed(1) : null;
-        var col   = delta >= 0 ? 'var(--success)' : 'var(--danger)';
+        var tone  = delta >= 0 ? 'tone-green' : 'tone-danger';
         var sign  = delta >= 0 ? '+' : '';
-        return '<div style="background:var(--card2);border-radius:9px;padding:8px 13px;text-align:center;flex:1;min-width:80px">'
-          + '<div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">' + d.label + '</div>'
-          + '<div style="font-family:var(--font-mono);font-size:.88rem;font-weight:700;color:' + col + '">' + sign + fmt(delta) + '</div>'
-          + (pct ? '<div style="font-size:.66rem;color:' + col + '">' + sign + pct + '%</div>' : '')
+        return '<div class="ins-delta">'
+          + '<div class="ins-delta-lbl">' + d.label + '</div>'
+          + '<div class="ins-delta-val ' + tone + '">' + sign + fmt(delta) + '</div>'
+          + (pct ? '<div class="ins-delta-pct ' + tone + '">' + sign + pct + '%</div>' : '')
           + '</div>';
       }).join('');
     } else {
@@ -243,7 +243,7 @@ function _insDrawSankey(el) {
   const savings = Math.max(0, totalIncome - totalExpense);
 
   if (!totalIncome) {
-    el.innerHTML = '<div class="empty" style="min-height:180px"><div class="ei">' + ICON('cash-off') + '</div><p>No income data for this period.</p></div>';
+    el.innerHTML = '<div class="empty empty--sankey"><div class="ei">' + ICON('cash-off') + '</div><p>No income data for this period.</p></div>';
     return;
   }
 
@@ -288,7 +288,7 @@ function _insDrawSankey(el) {
   const colX2    = W - rightPad - nodeW;
 
   if (colX2 <= colX1 + 40) {
-    el.innerHTML = '<div class="empty" style="min-height:80px"><p style="font-size:.75rem;color:var(--muted);text-align:center">Container too narrow to render</p></div>';
+    el.innerHTML = '<div class="empty empty--narrow"><p>Container too narrow to render</p></div>';
     return;
   }
 
@@ -332,14 +332,13 @@ function _insDrawSankey(el) {
            + ' C' + cx + ',' + tgtY2 + ' ' + cx + ',' + srcY2 + ' ' + (colX1 + nodeW) + ',' + srcY2 + ' Z"'
            + ' fill="' + node.color + '" opacity="0.28"'
            + ' class="ins-sankey-path" data-node="' + nodeIdx + '"'
-           + ' style="cursor:pointer;transition:opacity .15s"'
            + ' onmouseover="this.style.opacity=\'0.65\';insSankeyTipIdx(event,' + nodeIdx + ')"'
            + ' onmouseout="this.style.opacity=\'0.28\';insSankeyHide()"'
            + ' ontouchstart="this.style.opacity=\'0.65\';insSankeyTipIdx(event,' + nodeIdx + ')"'
            + ' ontouchend="this.style.opacity=\'0.28\';insSankeyHide()"/>';
 
     rects += '<rect x="' + colX2 + '" y="' + node.y + '" width="' + nodeW + '" height="' + node.h + '"'
-           + ' rx="5" fill="' + node.color + '" style="cursor:pointer"'
+           + ' rx="5" fill="' + node.color + '" class="ins-sankey-node"'
            + ' onmouseover="insSankeyTipIdx(event,' + nodeIdx + ')"'
            + ' onmouseout="insSankeyHide()"/>';
 
@@ -370,10 +369,10 @@ function _insDrawSankey(el) {
   el.innerHTML = '<svg'
     + ' width="' + W + '" height="' + H + '"'
     + ' viewBox="0 0 ' + W + ' ' + H + '"'
-    + ' style="width:100%;height:auto;display:block;overflow:visible">'
+    + ' class="ins-sankey-svg">'
     + paths + rects + incSVG + incLabel + labels
     + '</svg>'
-    + '<div style="font-size:.7rem;color:var(--muted);margin-top:8px;text-align:center">'
+    + '<div class="ins-sankey-note">'
     + insPeriodLabel() + ' · Hover/tap flows to explore</div>';
 }
 
@@ -495,20 +494,20 @@ function insRenderCompareChart() {
       { label: 'Expenses', cur: curExp,  prev: prevExp, color: '#e8457a' },
       { label: 'Net',      cur: curNet,  prev: prevNet, color: '#a29bfe' },
     ];
-    deltasEl.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:10px">'
+    deltasEl.innerHTML = '<div class="ins-cmp-row">'
       + chips.map(c => {
           const delta = c.cur - c.prev;
           const pct   = c.prev !== 0 ? (delta / Math.abs(c.prev) * 100).toFixed(1) : null;
           const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
-          const dColor = delta === 0 ? 'var(--muted)'
-                       : (c.label === 'Expenses') ? (delta > 0 ? 'var(--danger)' : 'var(--success)')
-                       : (delta > 0 ? 'var(--success)' : 'var(--danger)');
-          return '<div style="flex:1 1 120px;background:var(--card2);border-radius:10px;padding:10px 14px">'
-            + '<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px">' + c.label + '</div>'
-            + '<div style="font-family:var(--font-mono);font-size:1.05rem;font-weight:700;color:' + c.color + '">' + fmt(c.cur) + '</div>'
-            + '<div style="font-size:.74rem;color:' + dColor + ';margin-top:3px;font-weight:600">'
+          const dTone = delta === 0 ? 'tone-muted'
+                      : (c.label === 'Expenses') ? (delta > 0 ? 'tone-danger' : 'tone-green')
+                      : (delta > 0 ? 'tone-green' : 'tone-danger');
+          return '<div class="ins-cmp">'
+            + '<div class="ins-cmp-lbl">' + c.label + '</div>'
+            + '<div class="ins-cmp-val" style="color:' + c.color + '">' + fmt(c.cur) + '</div>'
+            + '<div class="ins-cmp-delta ' + dTone + '">'
             + arrow + ' ' + fmt(Math.abs(delta)) + (pct !== null ? ' (' + pct + '%)' : '')
-            + ' <span style="color:var(--muted);font-weight:400">vs ' + prevLabel + '</span></div>'
+            + ' <span class="ins-cmp-vs">vs ' + prevLabel + '</span></div>'
             + '</div>';
         }).join('')
       + '</div>';
@@ -583,20 +582,20 @@ function insRenderCatChart() {
 
   if (breakdownEl) {
     const barMax = sorted[0] ? sorted[0].amt : 1;
-    breakdownEl.innerHTML = '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Full Breakdown — ' + fmt(total) + ' total</div>'
+    breakdownEl.innerHTML = '<div class="ins-bd-hd">Full Breakdown — ' + fmt(total) + ' total</div>'
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div class="ins-tx-link" data-type="expense" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
-            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-            + '<span style="width:22px;text-align:center">' + iconTag(r.icon || 'clipboard-list') + '</span>'
-            + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
-            + '<span style="font-size:.78rem;color:var(--muted)">' + pct + '%</span>'
-            + '<span style="font-weight:700;font-size:.86rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
-            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
+          return '<div class="ins-tx-link ins-bd-row" data-type="expense" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" title="View transactions">'
+            + '<div class="ins-bd-top">'
+            + '<span class="ins-bd-ico">' + iconTag(r.icon || 'clipboard-list') + '</span>'
+            + '<span class="ins-bd-name">' + r.name + '</span>'
+            + '<span class="ins-bd-pct">' + pct + '%</span>'
+            + '<span class="ins-bd-amt" style="color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span class="ins-bd-arrow">→</span>'
             + '</div>'
-            + '<div style="height:4px;background:var(--card3);border-radius:99px;overflow:hidden;margin-left:30px">'
-            + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
+            + '<div class="ins-bd-track">'
+            + '<div class="ins-bd-fill" style="width:' + barW + '%;background:' + r.color + '"></div>'
             + '</div></div>';
         }).join('');
     insBindTxLinks(breakdownEl);
@@ -711,19 +710,19 @@ function insRenderSubcatChart() {
 
   if (breakdown) {
     const barMax = sorted[0] ? sorted[0].amt : 1;
-    breakdown.innerHTML = '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Full Breakdown — ' + fmt(total) + ' total</div>'
+    breakdown.innerHTML = '<div class="ins-bd-hd">Full Breakdown — ' + fmt(total) + ' total</div>'
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div class="ins-tx-link" data-type="expense" data-cat="' + insAttr(r.catId) + '" data-subcat="' + insAttr(r.subcat) + '" data-period="' + insAttr(pfx) + '" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
-            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
-            + '<span style="flex:1;font-size:.8rem;font-weight:600">' + r.label + '</span>'
-            + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
-            + '<span style="font-weight:700;font-size:.84rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
-            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
+          return '<div class="ins-tx-link ins-bd-row ins-bd-row--sub" data-type="expense" data-cat="' + insAttr(r.catId) + '" data-subcat="' + insAttr(r.subcat) + '" data-period="' + insAttr(pfx) + '" title="View transactions">'
+            + '<div class="ins-bd-top">'
+            + '<span class="ins-bd-name">' + r.label + '</span>'
+            + '<span class="ins-bd-pct">' + pct + '%</span>'
+            + '<span class="ins-bd-amt" style="color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span class="ins-bd-arrow">→</span>'
             + '</div>'
-            + '<div style="height:3px;background:var(--card3);border-radius:99px;overflow:hidden">'
-            + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
+            + '<div class="ins-bd-track">'
+            + '<div class="ins-bd-fill" style="width:' + barW + '%;background:' + r.color + '"></div>'
             + '</div></div>';
         }).join('');
     insBindTxLinks(breakdown);
@@ -831,20 +830,20 @@ function insRenderIncCatChart() {
 
   if (breakdownEl) {
     const barMax = sorted[0] ? sorted[0].amt : 1;
-    breakdownEl.innerHTML = '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Full Breakdown — ' + fmt(total) + ' total</div>'
+    breakdownEl.innerHTML = '<div class="ins-bd-hd">Full Breakdown — ' + fmt(total) + ' total</div>'
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div class="ins-tx-link" data-type="income" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" style="padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
-            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-            + '<span style="width:22px;text-align:center">' + iconTag(r.icon || 'coin') + '</span>'
-            + '<span style="flex:1;font-size:.82rem;font-weight:600">' + r.name + '</span>'
-            + '<span style="font-size:.78rem;color:var(--muted)">' + pct + '%</span>'
-            + '<span style="font-weight:700;font-size:.86rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
-            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
+          return '<div class="ins-tx-link ins-bd-row" data-type="income" data-cat="' + insAttr(r.id) + '" data-subcat="" data-period="' + insAttr(pfx) + '" title="View transactions">'
+            + '<div class="ins-bd-top">'
+            + '<span class="ins-bd-ico">' + iconTag(r.icon || 'coin') + '</span>'
+            + '<span class="ins-bd-name">' + r.name + '</span>'
+            + '<span class="ins-bd-pct">' + pct + '%</span>'
+            + '<span class="ins-bd-amt" style="color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span class="ins-bd-arrow">→</span>'
             + '</div>'
-            + '<div style="height:4px;background:var(--card3);border-radius:99px;overflow:hidden;margin-left:30px">'
-            + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
+            + '<div class="ins-bd-track">'
+            + '<div class="ins-bd-fill" style="width:' + barW + '%;background:' + r.color + '"></div>'
             + '</div></div>';
         }).join('');
     insBindTxLinks(breakdownEl);
@@ -959,19 +958,19 @@ function insRenderIncSubcatChart() {
 
   if (breakdown) {
     const barMax = sorted[0] ? sorted[0].amt : 1;
-    breakdown.innerHTML = '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Full Breakdown — ' + fmt(total) + ' total</div>'
+    breakdown.innerHTML = '<div class="ins-bd-hd">Full Breakdown — ' + fmt(total) + ' total</div>'
       + sorted.map(r => {
           const pct  = (r.amt / total * 100).toFixed(1);
           const barW = Math.round(r.amt / barMax * 100);
-          return '<div class="ins-tx-link" data-type="income" data-cat="' + insAttr(r.catId) + '" data-subcat="' + insAttr(r.subcat) + '" data-period="' + insAttr(pfx) + '" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" title="View transactions">'
-            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
-            + '<span style="flex:1;font-size:.8rem;font-weight:600">' + r.label + '</span>'
-            + '<span style="font-size:.74rem;color:var(--muted)">' + pct + '%</span>'
-            + '<span style="font-weight:700;font-size:.84rem;color:' + r.color + '">' + fmt(r.amt) + '</span>'
-            + '<span style="font-size:.7rem;color:var(--muted)">→</span>'
+          return '<div class="ins-tx-link ins-bd-row ins-bd-row--sub" data-type="income" data-cat="' + insAttr(r.catId) + '" data-subcat="' + insAttr(r.subcat) + '" data-period="' + insAttr(pfx) + '" title="View transactions">'
+            + '<div class="ins-bd-top">'
+            + '<span class="ins-bd-name">' + r.label + '</span>'
+            + '<span class="ins-bd-pct">' + pct + '%</span>'
+            + '<span class="ins-bd-amt" style="color:' + r.color + '">' + fmt(r.amt) + '</span>'
+            + '<span class="ins-bd-arrow">→</span>'
             + '</div>'
-            + '<div style="height:3px;background:var(--card3);border-radius:99px;overflow:hidden">'
-            + '<div style="height:100%;width:' + barW + '%;background:' + r.color + ';border-radius:99px;transition:width .4s ease"></div>'
+            + '<div class="ins-bd-track">'
+            + '<div class="ins-bd-fill" style="width:' + barW + '%;background:' + r.color + '"></div>'
             + '</div></div>';
         }).join('');
     insBindTxLinks(breakdown);

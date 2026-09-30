@@ -54,6 +54,7 @@
 <link rel="stylesheet" href="css/dashboard.css"/>
 <link rel="stylesheet" href="css/borrowing.css"/>
 <link rel="stylesheet" href="css/login.css"/>
+<link rel="stylesheet" href="css/utilities.css"/>
 
 <!-- Chart.js -->
 <script defer src="assets/vendor/chart.umd.min.js" onerror="window._chartJsError=true"></script>
@@ -443,8 +444,8 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="ob-preview-variant" id="preview-household">
             <div class="ob-preview-label">Net Worth</div>
             <div class="ob-preview-amount">$——</div>
-            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:3px">Mortgage equity</div>
-            <div style="height:6px;border-radius:3px;background:linear-gradient(90deg,var(--green) 38%,var(--n600) 38%);margin-bottom:10px"></div>
+            <div class="ob-preview-bar-label ob-pv-lbl--mb3">Mortgage equity</div>
+            <div class="ob-pv-equity"></div>
             <div class="ob-preview-bar-wrap">
               <div class="ob-preview-bar-label">Budget used</div>
               <div class="ob-preview-bar" style="background:var(--pink);width:55%"></div>
@@ -457,15 +458,15 @@ window.addEventListener('unhandledrejection',function(e){
 
           <div class="ob-preview-variant" id="preview-full">
             <div class="ob-preview-label">Net Worth</div>
-            <div class="ob-preview-amount" style="font-size:15px">$——</div>
-            <div style="width:44px;height:44px;border-radius:50%;border:4px solid var(--amber);margin:8px auto 8px;position:relative;">
-              <div style="position:absolute;inset:4px;border-radius:50%;border:4px solid var(--green);clip-path:polygon(0 0,50% 0,50% 100%,0 100%)"></div>
+            <div class="ob-preview-amount ob-pv-amt--sm">$——</div>
+            <div class="ob-pv-ring">
+              <div class="ob-pv-ring-half"></div>
             </div>
-            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:2px">Super</div>
+            <div class="ob-preview-bar-label">Super</div>
             <div class="ob-preview-bar" style="background:var(--amber);width:45%"></div>
-            <div class="ob-preview-bar-label" style="font-size:7px;color:var(--n300);margin-bottom:2px;margin-top:4px">Investments</div>
+            <div class="ob-preview-bar-label ob-pv-lbl--mt4">Investments</div>
             <div class="ob-preview-bar" style="background:var(--green);width:62%"></div>
-            <div class="ob-preview-tx" style="margin-top:8px"><div class="ob-preview-dot" style="background:var(--amber)"></div><div class="ob-preview-line" style="width:55%"></div></div>
+            <div class="ob-preview-tx ob-pv-tx--mt8"><div class="ob-preview-dot" style="background:var(--amber)"></div><div class="ob-preview-line" style="width:55%"></div></div>
           </div>
 
         </div>
@@ -480,10 +481,10 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="ob-welcome-inner">
           <div class="ob-welcome-icon"><i class="ti ti-droplet"></i></div>
           <h1 class="ob-h1" tabindex="-1">Welcome to<br>Kelda Finance</h1>
-          <p class="ob-sub" style="margin-top:10px">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
+          <p class="ob-sub ob-sub--mt10">Your finances, clear and in one place. Takes about 90 seconds to set up.</p>
           <button class="ob-btn-primary" onclick="obGoTo('panel-name')">Get started →</button>
           <button class="ob-link" id="ob-restore-link" onclick="document.getElementById('ob-restore-file').click()">Already set up? Restore from backup</button>
-          <input type="file" id="ob-restore-file" accept=".json,application/json" style="display:none" onchange="obRestoreBackup(event)"/>
+          <input type="file" id="ob-restore-file" accept=".json,application/json" class="ob-file-input" onchange="obRestoreBackup(event)"/>
         </div>
       </div>
 
@@ -515,8 +516,7 @@ window.addEventListener('unhandledrejection',function(e){
         <p class="ob-sub">Pick the one that fits — you can always add more later.</p>
 
         <div class="ob-profile-group" role="radiogroup" aria-label="Choose your profile">
-          <div class="ob-profile-card" id="card-starter" role="radio" aria-checked="false" tabindex="0"
-               style="--card-accent:#00C896;--card-glow:rgba(0,200,150,0.12);--card-icon-bg:rgba(0,200,150,0.12)"
+          <div class="ob-profile-card ob-pc--starter" id="card-starter" role="radio" aria-checked="false" tabindex="0"
                onclick="obSelectProfile('starter')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('starter')}">
             <div class="ob-profile-card-top">
               <div class="ob-profile-icon"><i class="ti ti-seedling"></i></div>
@@ -532,8 +532,7 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
 
-          <div class="ob-profile-card" id="card-household" role="radio" aria-checked="false" tabindex="-1"
-               style="--card-accent:#F0538A;--card-glow:rgba(240,83,138,0.12);--card-icon-bg:rgba(240,83,138,0.12)"
+          <div class="ob-profile-card ob-pc--household" id="card-household" role="radio" aria-checked="false" tabindex="-1"
                onclick="obSelectProfile('household')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('household')}">
             <div class="ob-profile-card-top">
               <div class="ob-profile-icon"><i class="ti ti-home"></i></div>
@@ -549,8 +548,7 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
 
-          <div class="ob-profile-card" id="card-full" role="radio" aria-checked="false" tabindex="-1"
-               style="--card-accent:#F59E0B;--card-glow:rgba(245,158,11,0.12);--card-icon-bg:rgba(245,158,11,0.12)"
+          <div class="ob-profile-card ob-pc--full" id="card-full" role="radio" aria-checked="false" tabindex="-1"
                onclick="obSelectProfile('full')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();obSelectProfile('full')}">
             <div class="ob-profile-card-top">
               <div class="ob-profile-icon"><i class="ti ti-chart-bar"></i></div>
@@ -613,28 +611,28 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="account-cards-household"></div>
         <div class="ob-divider">
           <div class="ob-divider-line"></div>
-          <span class="ob-divider-label" style="color:var(--pink)">Your mortgage</span>
+          <span class="ob-divider-label tone-pink">Your mortgage</span>
           <div class="ob-divider-line"></div>
         </div>
-        <p class="ob-helper" style="margin-bottom:14px">Optional — rough figures are fine. You can edit this any time.</p>
+        <p class="ob-helper ob-mb14">Optional — rough figures are fine. You can edit this any time.</p>
         <div class="ob-mortgage-card">
-          <div class="ob-field" style="margin-bottom:14px">
+          <div class="ob-field ob-mb14">
             <label class="ob-label" for="mtg-lender">Lender</label>
             <input class="ob-input" id="mtg-lender" type="text" maxlength="30" placeholder="e.g. ANZ Home Loan">
           </div>
           <div class="ob-two-col">
-            <div class="ob-field" style="margin-bottom:0">
+            <div class="ob-field ob-mb0">
               <label class="ob-label" for="mtg-balance">Approx. balance (AUD)</label>
               <input class="ob-input mono" id="mtg-balance" type="number" inputmode="decimal" placeholder="0.00">
             </div>
-            <div class="ob-field" style="margin-bottom:0">
+            <div class="ob-field ob-mb0">
               <label class="ob-label" for="mtg-payment">Monthly payment (AUD)</label>
               <input class="ob-input mono" id="mtg-payment" type="number" inputmode="decimal" placeholder="0.00">
             </div>
           </div>
         </div>
-        <button class="ob-link" style="text-align:left;margin-top:6px" onclick="obSubmitAccounts('household')">I'll skip the mortgage for now</button>
-        <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('household')">Continue →</button>
+        <button class="ob-link ob-link--left ob-mt6" onclick="obSubmitAccounts('household')">I'll skip the mortgage for now</button>
+        <button class="ob-btn-primary ob-mt16" onclick="obSubmitAccounts('household')">Continue →</button>
       </div>
 
       <!-- 4c — Accounts + Assets (full) -->
@@ -658,19 +656,19 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="account-cards-full"></div>
         <div class="ob-divider">
           <div class="ob-divider-line"></div>
-          <span class="ob-divider-label" style="color:var(--amber)">What do you have?</span>
+          <span class="ob-divider-label tone-amber">What do you have?</span>
           <div class="ob-divider-line"></div>
         </div>
-        <p class="ob-helper" style="margin-bottom:14px">Select all that apply — we'll set these up inside the app, no details needed now.</p>
-        <div class="ob-asset-grid" style="grid-template-columns:repeat(5,1fr)">
+        <p class="ob-helper ob-mb14">Select all that apply — we'll set these up inside the app, no details needed now.</p>
+        <div class="ob-asset-grid ob-asset-grid--5">
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'property')"><span class="ob-asset-emoji"><i class="ti ti-home"></i></span><span class="ob-asset-label">Property</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'equities')"><span class="ob-asset-emoji"><i class="ti ti-trending-up"></i></span><span class="ob-asset-label">Investments</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'super')"><span class="ob-asset-emoji"><i class="ti ti-building-bank"></i></span><span class="ob-asset-label">Superannuation</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'liabilities')"><span class="ob-asset-emoji"><i class="ti ti-credit-card"></i></span><span class="ob-asset-label">Liabilities</span></div>
           <div class="ob-asset-tile" onclick="obToggleAsset(this,'investment-property')"><span class="ob-asset-emoji"><i class="ti ti-building"></i></span><span class="ob-asset-label">Investment property</span></div>
         </div>
-        <button class="ob-link" style="text-align:left" onclick="obGoTo('panel-security')">I'll set this up later</button>
-        <button class="ob-btn-primary" style="margin-top:16px" onclick="obSubmitAccounts('full')">Continue →</button>
+        <button class="ob-link ob-link--left" onclick="obGoTo('panel-security')">I'll set this up later</button>
+        <button class="ob-btn-primary ob-mt16" onclick="obSubmitAccounts('full')">Continue →</button>
       </div>
 
       <!-- 5 — Security -->
@@ -685,7 +683,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="ob-pin-section">
           <label class="ob-label">Your PIN</label>
           <div class="ob-pin-fields">
-            <div class="ob-field" style="margin-bottom:10px">
+            <div class="ob-field ob-mb10">
               <input class="ob-input" id="inp-pin" type="password" maxlength="4" inputmode="numeric" placeholder="4-digit PIN" autocomplete="new-password">
             </div>
             <div class="ob-field">
@@ -694,9 +692,9 @@ window.addEventListener('unhandledrejection',function(e){
             </div>
           </div>
         </div>
-        <div class="ob-divider" style="margin:20px 0 16px">
+        <div class="ob-divider ob-divider--tight">
           <div class="ob-divider-line"></div>
-          <span class="ob-divider-label" style="color:var(--pink)">Second user</span>
+          <span class="ob-divider-label tone-pink">Second user</span>
           <div class="ob-divider-line"></div>
         </div>
         <div class="ob-toggle-row" onclick="obToggleUser2()">
@@ -707,13 +705,13 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
         </div>
         <div class="ob-toggle-expand" id="user2-expand">
-          <div class="ob-field" style="margin-top:4px">
+          <div class="ob-field ob-mt4">
             <label class="ob-label" for="inp-user2">Their name</label>
             <input class="ob-input" id="inp-user2" type="text" maxlength="40" placeholder="First name">
             <span class="ob-error" id="err-user2"></span>
           </div>
         </div>
-        <button class="ob-btn-primary" style="margin-top:20px" onclick="obSubmitSecurity()">Let's go →</button>
+        <button class="ob-btn-primary ob-mt20" onclick="obSubmitSecurity()">Let's go →</button>
       </div>
 
     </main>
@@ -728,8 +726,8 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- LOGIN -->
 <!-- Mobile top bar -->
 <!-- Floating Action Button (mobile only) -->
-<div id="fab-overlay" onclick="closeFabMenu()" style="display:none;position:fixed;inset:0;z-index:398;"></div>
-<div id="fab-menu" style="display:none;position:fixed;z-index:400;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);">
+<div id="fab-overlay" onclick="closeFabMenu()" style="display:none"></div>
+<div id="fab-menu" style="display:none">
   <div class="fab-arc">
     <button class="fab-arc-item" onclick="fabAction('transaction')" style="--i:0">
       <span class="fab-arc-icon"><i class="ti ti-credit-card"></i></span><span class="fab-arc-lbl">Transaction</span>
@@ -751,21 +749,20 @@ window.addEventListener('unhandledrejection',function(e){
 <button id="fab" onclick="toggleFabMenu()" aria-label="Quick actions" style="display:none">+</button>
 
 <!-- iOS Bottom Tab Bar (mobile only) -->
-<nav id="bottom-tab-bar" style="display:none">
+<!-- Home · Spending · [+ FAB slot] · Budget · More — the FAB is fixed-positioned over the centre slot -->
+<nav id="bottom-tab-bar" style="display:none" aria-label="Main">
   <button class="tab-btn active" id="tb-dashboard"    onclick="goMob('dashboard')">
-    <span class="tab-icon"><i class="ti ti-home"></i></span><span class="tab-lbl">Dashboard</span>
-  </button>
-  <button class="tab-btn" id="tb-bills"               onclick="goMob('bills')">
-    <span class="tab-icon"><i class="ti ti-calendar"></i></span><span class="tab-lbl">Bills</span>
+    <span class="tab-icon"><i class="ti ti-home"></i></span><span class="tab-lbl">Home</span>
   </button>
   <button class="tab-btn" id="tb-transactions"        onclick="goMob('transactions')">
-    <span class="tab-icon"><i class="ti ti-credit-card"></i></span><span class="tab-lbl">Transactions</span>
+    <span class="tab-icon"><i class="ti ti-credit-card"></i></span><span class="tab-lbl">Spending</span>
   </button>
-  <button class="tab-btn" id="tb-cash"                onclick="goMob('cash')">
-    <span class="tab-icon"><i class="ti ti-building-bank"></i></span><span class="tab-lbl">Cash</span>
+  <span class="tab-fab-slot" aria-hidden="true"></span>
+  <button class="tab-btn" id="tb-bva"                 onclick="goMob('bva')">
+    <span class="tab-icon"><i class="ti ti-chart-bar"></i></span><span class="tab-lbl">Budget</span>
   </button>
   <button class="tab-btn" id="tb-settings"            onclick="openMobMenu()">
-    <span class="tab-icon">⋯</span><span class="tab-lbl">More</span>
+    <span class="tab-icon"><i class="ti ti-dots"></i></span><span class="tab-lbl">More</span>
   </button>
 </nav>
 
@@ -776,7 +773,10 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-credit-card"></i> Spend</div>
     <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('bills')"><span><i class="ti ti-calendar"></i></span>Bills</button>
+      <button class="mob-menu-item" onclick="goMob('cash')"><span><i class="ti ti-building-bank"></i></span>Cash</button>
       <button class="mob-menu-item" onclick="goMob('transfers')"><span><i class="ti ti-refresh"></i></span>Transfers</button>
+      <button class="mob-menu-item" onclick="goMob('insights')"><span><i class="ti ti-chart-histogram"></i></span>Graphs</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -799,13 +799,16 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('super')"><span><i class="ti ti-briefcase"></i></span>Super</button>
       <button class="mob-menu-item" onclick="goMob('insurance')"><span><i class="ti ti-shield-check"></i></span>Insurance</button>
       <button class="mob-menu-item" onclick="goMob('equities')"><span><i class="ti ti-trending-up"></i></span>Equities</button>
-      <button class="mob-menu-item" onclick="goMob('bva')"><span><i class="ti ti-chart-bar"></i></span>Budget</button>
       <button class="mob-menu-item" onclick="goMob('forecast')"><span><i class="ti ti-sparkles"></i></span>Forecast</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-tools"></i> Tools</div>
     <div class="mob-menu-grid">
+      <button class="mob-menu-item" onclick="goMob('upload')"><span><i class="ti ti-upload"></i></span>Upload</button>
+      <button class="mob-menu-item" onclick="goMob('smartrules')"><span><i class="ti ti-bolt"></i></span>Smart Rules</button>
+      <button class="mob-menu-item" onclick="goMob('borrowing')"><span><i class="ti ti-home-dollar"></i></span>Borrowing (Beta)</button>
+      <button class="mob-menu-item" onclick="goMob('investment')"><span><i class="ti ti-building-community"></i></span>Investment (Beta)</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -814,12 +817,14 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('categories')"><span><i class="ti ti-tag"></i></span>Categories</button>
       <button class="mob-menu-item" onclick="goMob('export')"><span><i class="ti ti-download"></i></span>Export</button>
       <button class="mob-menu-item" onclick="goMob('settings')"><span><i class="ti ti-settings"></i></span>Settings</button>
+      <button class="mob-menu-item" onclick="goMob('dashboard-layout')"><span><i class="ti ti-layout-dashboard"></i></span>Layout</button>
+      <button class="mob-menu-item" onclick="goMob('quickstart')"><span><i class="ti ti-rocket"></i></span>Quick Start</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label">Appearance</div>
-    <div class="mob-menu-themes" style="flex-wrap:wrap;gap:10px">
-      <select class="input palette-select" style="flex:1;min-width:140px" onchange="setPalette(this.value)" aria-label="Colour palette">
+    <div class="mob-menu-themes mob-themes-wrap">
+      <select class="input palette-select mob-pal-sel" onchange="setPalette(this.value)" aria-label="Colour palette">
         <option value="kelda">Kelda</option>
         <option value="fintech">Fintech</option>
         <option value="emerald">Emerald</option>
@@ -835,50 +840,50 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- User & Account Settings -->
   <div class="mob-menu-section">
     <div class="mob-menu-label">Profiles &amp; Accounts</div>
-    <button class="mob-menu-item" onclick="openUserSettings()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
+    <button class="mob-menu-item mob-menu-item--wide" onclick="openUserSettings()">
       <span><i class="ti ti-user"></i></span>Edit Names &amp; Accounts
     </button>
-    <div id="user-settings-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:16px;margin-top:4px">
+    <div id="user-settings-panel" class="mob-panel" style="display:none">
 
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px">Profile 1</div>
-      <div style="display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:14px">
+      <div class="mob-p-head tone-pink">Profile 1</div>
+      <div class="mob-p-grid">
         <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Icon</label>
-          <input type="text" id="usc-p1icon" placeholder="👔" style="font-size:1.4rem;text-align:center;padding:8px 4px"/>
+          <label class="mob-p-lbl">Icon</label>
+          <input type="text" id="usc-p1icon" placeholder="👔" class="mob-p-icon"/>
         </div>
         <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
-          <input type="text" id="usc-p1name" placeholder="Profile 1" style="font-size:16px"/>
-        </div>
-      </div>
-
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--purple);margin-bottom:12px">Profile 2</div>
-      <div style="display:grid;grid-template-columns:56px 1fr;gap:8px;margin-bottom:18px">
-        <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Icon</label>
-          <input type="text" id="usc-p2icon" placeholder="👩" style="font-size:1.4rem;text-align:center;padding:8px 4px"/>
-        </div>
-        <div>
-          <label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:4px">Name</label>
-          <input type="text" id="usc-p2name" placeholder="Profile 2" style="font-size:16px"/>
+          <label class="mob-p-lbl">Name</label>
+          <input type="text" id="usc-p1name" placeholder="Profile 1" class="mob-in16"/>
         </div>
       </div>
 
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Account Names</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-building-bank"></i> Offset / Main Account</label>
-          <input type="text" id="usc-acct-offset" placeholder="Offset Account" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-home"></i> Joint Transaction Account</label>
-          <input type="text" id="usc-acct-home" placeholder="Home Transaction" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-coin"></i> Savings Account 1 (Profile 1)</label>
-          <input type="text" id="usc-acct-sav1" placeholder="Savings Account 1" style="font-size:16px"/></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px"><i class="ti ti-diamond"></i> Savings Account 2 (Profile 2)</label>
-          <input type="text" id="usc-acct-sav2" placeholder="Savings Account 2" style="font-size:16px"/></div>
+      <div class="mob-p-head tone-purple">Profile 2</div>
+      <div class="mob-p-grid mob-p-grid--mb18">
+        <div>
+          <label class="mob-p-lbl">Icon</label>
+          <input type="text" id="usc-p2icon" placeholder="👩" class="mob-p-icon"/>
+        </div>
+        <div>
+          <label class="mob-p-lbl">Name</label>
+          <input type="text" id="usc-p2name" placeholder="Profile 2" class="mob-in16"/>
+        </div>
       </div>
 
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="saveUserSettings()" style="flex:1">Save</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('user-settings-panel').style.display='none'" style="flex:1">Cancel</button>
+      <div class="mob-p-head mob-p-head--mb10 tone-muted">Account Names</div>
+      <div class="mob-p-accts">
+        <div><label class="mob-p-alb"><i class="ti ti-building-bank"></i> Offset / Main Account</label>
+          <input type="text" id="usc-acct-offset" placeholder="Offset Account" class="mob-in16"/></div>
+        <div><label class="mob-p-alb"><i class="ti ti-home"></i> Joint Transaction Account</label>
+          <input type="text" id="usc-acct-home" placeholder="Home Transaction" class="mob-in16"/></div>
+        <div><label class="mob-p-alb"><i class="ti ti-coin"></i> Savings Account 1 (Profile 1)</label>
+          <input type="text" id="usc-acct-sav1" placeholder="Savings Account 1" class="mob-in16"/></div>
+        <div><label class="mob-p-alb"><i class="ti ti-diamond"></i> Savings Account 2 (Profile 2)</label>
+          <input type="text" id="usc-acct-sav2" placeholder="Savings Account 2" class="mob-in16"/></div>
+      </div>
+
+      <div class="mob-p-acts">
+        <button class="btn btn-primary btn-sm mob-flex1" onclick="saveUserSettings()">Save</button>
+        <button class="btn btn-ghost btn-sm mob-flex1" onclick="document.getElementById('user-settings-panel').style.display='none'">Cancel</button>
       </div>
     </div>
   </div>
@@ -886,17 +891,17 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- App name editor -->
   <div class="mob-menu-section">
     <div class="mob-menu-label">App Settings</div>
-    <button class="mob-menu-item" onclick="openRenameApp()" style="grid-column:1/-1;width:100%;justify-content:center;gap:8px">
+    <button class="mob-menu-item mob-menu-item--wide" onclick="openRenameApp()">
       <span><i class="ti ti-pencil"></i></span>Rename App
     </button>
-    <div id="rename-app-panel" style="display:none;grid-column:1/-1;background:var(--card2);border-radius:14px;padding:14px;margin-top:4px">
-      <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">App Name</label>
-      <input type="text" id="rename-app-name" placeholder="Kelda Finance" style="margin-bottom:10px;font-size:16px"/>
-      <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Subtitle</label>
-      <input type="text" id="rename-app-sub" placeholder="Family Finance Tracker · AUD" style="margin-bottom:12px;font-size:16px"/>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="saveAppName()" style="flex:1">Save</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rename-app-panel').style.display='none'" style="flex:1">Cancel</button>
+    <div id="rename-app-panel" class="mob-panel mob-panel--14" style="display:none">
+      <label class="mob-r-lbl">App Name</label>
+      <input type="text" id="rename-app-name" placeholder="Kelda Finance" class="mob-in16 mob-mb10"/>
+      <label class="mob-r-lbl">Subtitle</label>
+      <input type="text" id="rename-app-sub" placeholder="Family Finance Tracker · AUD" class="mob-in16 mob-mb12"/>
+      <div class="mob-p-acts">
+        <button class="btn btn-primary btn-sm mob-flex1" onclick="saveAppName()">Save</button>
+        <button class="btn btn-ghost btn-sm mob-flex1" onclick="document.getElementById('rename-app-panel').style.display='none'">Cancel</button>
       </div>
     </div>
   </div>
@@ -1129,57 +1134,57 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- ═══ CREATE RULE MODAL (global — accessible from any page) ═══ -->
 <div class="modal-overlay" id="create-rule-modal" onclick="if(event.target===this)closeRuleModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:500px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div class="modal-box modal-box--scroll modal-box--500" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title" id="create-rule-title"><i class="ti ti-bolt"></i> Create Rule</div>
       <button class="modal-close" onclick="closeRuleModal()" aria-label="Close"><i class="ti ti-x"></i></button>
     </div>
     <p class="modal-sub" id="create-rule-sub">Auto-assign a category whenever a transaction matches this rule.</p>
-    <div style="display:grid;gap:14px">
+    <div class="cr-form">
       <div>
-        <label class="lbl">Rule text <span style="font-weight:400;color:var(--muted)">(merchant / keyword)</span></label>
-        <input type="text" id="create-rule-merchant" placeholder='e.g. "Woolworths"' oninput="ruleModalScan()" style="width:100%;box-sizing:border-box"/>
+        <label class="lbl">Rule text <span class="cr-hint">(merchant / keyword)</span></label>
+        <input type="text" id="create-rule-merchant" placeholder='e.g. "Woolworths"' oninput="ruleModalScan()"/>
       </div>
       <div>
         <label class="lbl">Match Type</label>
-        <div style="display:grid;gap:8px;margin-top:4px">
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:11px 14px;border:2px solid var(--primary);border-radius:10px;background:rgba(240,83,138,.1);overflow:hidden;transition:all .15s" id="pattern-exact-label" onclick="updatePatternLabels()">
-            <input type="radio" name="create-rule-pattern" value="exact" checked style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)" onchange="ruleModalScan()"/>
-            <div style="min-width:0">
-              <div style="font-weight:700;font-size:.85rem;color:var(--primary)">=&nbsp;Exact Match</div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Name must match exactly — case-insensitive</div>
+        <div class="cr-opts">
+          <label class="rule-pattern-opt is-active" id="pattern-exact-label" onclick="updatePatternLabels()">
+            <input type="radio" name="create-rule-pattern" value="exact" checked class="cr-radio" onchange="ruleModalScan()"/>
+            <div class="cr-opt-body">
+              <div class="rule-pattern-title">=&nbsp;Exact Match</div>
+              <div class="cr-opt-desc">Name must match exactly — case-insensitive</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:11px 14px;border:2px solid var(--border);border-radius:10px;background:var(--card2);overflow:hidden;transition:all .15s" id="pattern-contains-label" onclick="updatePatternLabels()">
-            <input type="radio" name="create-rule-pattern" value="contains" style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--primary)" onchange="ruleModalScan()"/>
-            <div style="min-width:0">
-              <div style="font-weight:700;font-size:.85rem;color:var(--muted)">◡&nbsp;Contains</div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Name only needs to include the keyword — good for chains like "Coles Metro"</div>
+          <label class="rule-pattern-opt" id="pattern-contains-label" onclick="updatePatternLabels()">
+            <input type="radio" name="create-rule-pattern" value="contains" class="cr-radio" onchange="ruleModalScan()"/>
+            <div class="cr-opt-body">
+              <div class="rule-pattern-title">◡&nbsp;Contains</div>
+              <div class="cr-opt-desc">Name only needs to include the keyword — good for chains like "Coles Metro"</div>
             </div>
           </label>
         </div>
       </div>
       <div>
         <label class="lbl">Category</label>
-        <select id="create-rule-category" onchange="createRuleCategoryChanged();ruleModalScan()" style="width:100%;box-sizing:border-box">
+        <select id="create-rule-category" onchange="createRuleCategoryChanged();ruleModalScan()">
           <option value="">— Select Category —</option>
         </select>
       </div>
       <div>
-        <label class="lbl">Subcategory <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-        <select id="create-rule-subcat" onchange="ruleModalScan()" style="width:100%;box-sizing:border-box">
+        <label class="lbl">Subcategory <span class="cr-hint">(optional)</span></label>
+        <select id="create-rule-subcat" onchange="ruleModalScan()">
           <option value="">— None —</option>
         </select>
       </div>
       <!-- Live conflict / match preview panel -->
       <div id="create-rule-conflicts"></div>
       <!-- Run the rule against every existing transaction -->
-      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:.82rem;line-height:1.3;padding:2px 0">
-        <input type="checkbox" id="create-rule-apply-all" checked style="width:auto;flex-shrink:0;accent-color:var(--primary)"/>
+      <label class="cr-apply">
+        <input type="checkbox" id="create-rule-apply-all" class="cr-check" checked/>
         <span id="create-rule-apply-lbl">Run this rule against all existing transactions</span>
       </label>
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn btn-primary" onclick="createRuleSave()" style="flex:1">Save Rule</button>
+      <div class="cr-actions">
+        <button class="btn btn-primary btn--grow" onclick="createRuleSave()">Save Rule</button>
         <button class="btn btn-ghost" onclick="closeRuleModal()">Cancel</button>
       </div>
     </div>
@@ -1188,27 +1193,27 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- Insurance Edit Modal -->
 <div class="modal-overlay" id="edit-modal-insurance" onclick="if(event.target===this)insHideEditModal()" style="display:none">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <h3 style="margin-bottom:4px"><i class="ti ti-pencil"></i> Edit Policy</h3>
-    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Update policy details and coverage information.</p>
-    <div style="display:grid;gap:12px">
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Type</label>
+  <div class="modal-box modal-box--scroll modal-box--lg" onclick="event.stopPropagation()">
+    <h3 class="ins-modal-title"><i class="ti ti-pencil"></i> Edit Policy</h3>
+    <p class="ins-modal-sub">Update policy details and coverage information.</p>
+    <div class="ins-form">
+      <div class="ins-field"><label class="lbl">Policy Name</label><input type="text" id="ins-edit-name" placeholder="e.g. TAL Life Cover"/></div>
+      <div class="ins-field"><label class="lbl">Type</label>
         <select id="ins-edit-type" onchange="insEditTypeChanged()">
           <option>Life</option><option>TPD</option><option>Income Protection</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Provider</label><input type="text" id="ins-edit-prov" placeholder="e.g. TAL, AIA"/></div>
         <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-edit-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Frequency</label>
           <select id="ins-edit-freq"><option value="monthly">Monthly</option><option value="annual" selected>Annual</option><option value="quarterly">Quarterly</option><option value="fortnightly">Fortnightly</option></select>
         </div>
         <div><label class="lbl">Renewal Date</label><input type="date" id="ins-edit-renewal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Covered Person</label>
           <select id="ins-edit-covered"><option value="joint">Both</option><option value="brenton">Profile 1</option><option value="shelley">Profile 2</option></select>
         </div>
@@ -1216,21 +1221,21 @@ window.addEventListener('unhandledrejection',function(e){
           <select id="ins-edit-location"><option value="outside">Outside Super</option><option value="inside">Inside Super</option></select>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Sum Insured (AUD)</label><input type="number" id="ins-edit-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
         <div><label class="lbl">Cover Need (AUD)</label><input type="number" id="ins-edit-need" placeholder="2000000" step="1000" inputmode="decimal"/></div>
       </div>
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Document Link</label><input type="url" id="ins-edit-doclink" placeholder="https://... or file path"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Notes</label><input type="text" id="ins-edit-notes" placeholder="e.g. Excess $500"/></div>
-      <div id="ins-edit-ip-fields" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-field"><label class="lbl">Policy Document Link</label><input type="url" id="ins-edit-doclink" placeholder="https://... or file path"/></div>
+      <div class="ins-field"><label class="lbl">Notes</label><input type="text" id="ins-edit-notes" placeholder="e.g. Excess $500"/></div>
+      <div id="ins-edit-ip-fields" class="ins-row2" style="display:none">
         <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-edit-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
         <div><label class="lbl">Benefit Period</label><select id="ins-edit-ip-period"><option value="age65">To Age 65</option><option value="2yr">2 Years</option><option value="5yr">5 Years</option></select></div>
       </div>
-      <div id="ins-edit-tpd-fields" style="display:none;grid-template-columns:1fr;gap:8px">
+      <div id="ins-edit-tpd-fields" class="ins-row1" style="display:none">
         <div><label class="lbl">TPD Definition</label><select id="ins-edit-tpd-def"><option value="own">Own Occupation</option><option value="any">Any Occupation</option></select></div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn btn-primary" onclick="addInsurance()" style="flex:1">Save Changes</button>
+      <div class="ins-modal-actions">
+        <button class="btn btn-primary ins-btn-grow" onclick="addInsurance()">Save Changes</button>
         <button class="btn btn-ghost" onclick="insHideEditModal()">Cancel</button>
       </div>
     </div>
@@ -1239,21 +1244,21 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- Insurance Add Policy Modal -->
 <div class="modal-overlay" id="add-modal-insurance" onclick="if(event.target===this)insHideAddModal()" style="display:none">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <h3 style="margin-bottom:4px">＋ Add Policy</h3>
-    <p style="font-size:.76rem;color:var(--muted);margin-bottom:18px">Cover Need auto-fills from the Needs Analysis when income is entered there.</p>
-    <div style="display:grid;gap:12px">
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Type</label>
+  <div class="modal-box modal-box--scroll modal-box--lg" onclick="event.stopPropagation()">
+    <h3 class="ins-modal-title">＋ Add Policy</h3>
+    <p class="ins-modal-sub">Cover Need auto-fills from the Needs Analysis when income is entered there.</p>
+    <div class="ins-form">
+      <div class="ins-field"><label class="lbl">Policy Name</label><input type="text" id="ins-name" placeholder="e.g. TAL Life Cover"/></div>
+      <div class="ins-field"><label class="lbl">Type</label>
         <select id="ins-type" onchange="insTypeChanged()">
           <option>Life</option><option>TPD</option><option>Income Protection</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Provider</label><input type="text" id="ins-prov" placeholder="e.g. TAL, AIA, Zurich"/></div>
         <div><label class="lbl">Premium (AUD)</label><input type="number" id="ins-prem" placeholder="1200" step="0.01" inputmode="decimal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Frequency</label>
           <select id="ins-freq">
             <option value="monthly">Monthly</option><option value="annual" selected>Annual</option>
@@ -1262,7 +1267,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div><label class="lbl">Renewal Date</label><input type="date" id="ins-renewal"/></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Covered Person</label>
           <select id="ins-covered" onchange="insAutoFillNeed()">
             <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Profile 1</option><option value="shelley" data-profile-name="shelley">Profile 2</option>
@@ -1274,19 +1279,19 @@ window.addEventListener('unhandledrejection',function(e){
           </select>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ins-row2">
         <div><label class="lbl">Sum Insured / Benefit (AUD)</label><input type="number" id="ins-cover" placeholder="1500000" step="1000" inputmode="decimal"/></div>
         <div>
           <label class="lbl">Cover Need (Life/TPD/IP) (AUD)</label>
           <input type="number" id="ins-need" placeholder="Auto-filled from Needs Analysis" step="1000" inputmode="decimal"/>
-          <div id="ins-need-hint" style="font-size:.68rem;color:var(--success);margin-top:3px;min-height:14px"></div>
+          <div id="ins-need-hint" class="ins-need-hint"></div>
         </div>
       </div>
-      <div style="display:grid;gap:8px"><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
-      <div style="display:grid;gap:8px"><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
+      <div class="ins-field"><label class="lbl">Policy Document Link</label><input type="url" id="ins-doclink" placeholder="https://... or file path"/></div>
+      <div class="ins-field"><label class="lbl">Notes</label><input type="text" id="ins-notes" placeholder="e.g. Excess $500, waiting period"/></div>
       <!-- IP-specific fields -->
       <div id="ins-ip-fields" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="ins-row2">
           <div><label class="lbl">Monthly Benefit (AUD)</label><input type="number" id="ins-ip-benefit" placeholder="8000" step="100" inputmode="decimal"/></div>
           <div><label class="lbl">Benefit Period</label>
             <select id="ins-ip-period">
@@ -1296,7 +1301,7 @@ window.addEventListener('unhandledrejection',function(e){
             </select>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+        <div class="ins-row1 ins-row1--gap">
           <div><label class="lbl">Waiting Period</label>
             <select id="ins-ip-wait">
               <option value="30">30 days</option>
@@ -1309,7 +1314,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <!-- TPD-specific fields -->
       <div id="ins-tpd-fields" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        <div class="ins-row1">
           <div><label class="lbl">TPD Definition</label>
             <select id="ins-tpd-def">
               <option value="own">Own Occupation</option>
@@ -1319,8 +1324,8 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <button class="btn btn-primary" onclick="addInsurance()" style="flex:1">Add Policy</button>
+    <div class="ins-modal-actions ins-modal-actions--add">
+      <button class="btn btn-primary ins-btn-grow" onclick="addInsurance()">Add Policy</button>
       <button class="btn btn-ghost" onclick="insHideAddModal()">Cancel</button>
     </div>
   </div>
@@ -1335,12 +1340,13 @@ window.addEventListener('unhandledrejection',function(e){
         <span class="topbar-greet-hi" id="tb-greeting">Welcome back</span>
         <span class="topbar-greet-date" id="tb-greetdate"></span>
       </div>
+      <h1 class="mob-title" id="mob-title"></h1>
     </div>
     <div class="topbar-actions">
       <button class="tb-ibtn tb-mode-toggle" aria-label="Switch mode" title="Switch mode" onclick="toggleMode()"><i class="ti ti-sun"></i></button>
       <button class="tb-ibtn" aria-label="Search" title="Search" onclick="openSearchModal()"><i class="ti ti-search"></i></button>
       <button class="tb-ibtn" aria-label="Notifications" title="Notifications" onclick="openNotifModal()"><i class="ti ti-bell"></i><span class="tb-ndot" id="tb-ndot" style="display:none"></span></button>
-      <button class="tb-addbtn" onclick="go('upload')"><i class="ti ti-upload"></i><span class="tb-addbtn-lbl">Upload Transactions</span></button>
+      <button class="tb-addbtn" onclick="go('upload')" aria-label="Upload Transactions" title="Upload Transactions"><i class="ti ti-upload"></i><span class="tb-addbtn-lbl">Upload Transactions</span></button>
       <div class="topbar-user">
         <div class="user-pill"><div class="user-dot"></div><span id="topbar-user">—</span></div>
         <button class="tb-lock" onclick="lockApp()" aria-label="Lock app" title="Lock app"><i class="ti ti-lock"></i></button>
@@ -1352,6 +1358,7 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ DASHBOARD ═══ -->
   <div class="page active" id="page-dashboard">
+    <!-- Rendered by renderDashboard() (js/pages/dashboard.js), which replaces this element's contents -->
   </div>
 
 
@@ -1379,8 +1386,8 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- Cash Flow Trend -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Cash Flow — Last 12 Months</div>
+        <div class="tile-hd ins-tile-hd ins-tile-hd--tight">
+          <div class="section-label section-label--flush"><i class="ti ti-trending-up"></i> Cash Flow — Last 12 Months</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div class="db-chart-fill"><canvas id="ins-cashflow-chart"></canvas></div>
@@ -1388,90 +1395,90 @@ window.addEventListener('unhandledrejection',function(e){
 
       <!-- Period Comparison -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Income vs Expenses — Period Comparison</div>
+        <div class="tile-hd ins-tile-hd ins-tile-hd--mid">
+          <div class="section-label section-label--flush"><i class="ti ti-chart-bar"></i> Income vs Expenses — Period Comparison</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
-        <div class="db-chart-fill" style="min-height:200px"><canvas id="ins-compare-chart"></canvas></div>
-        <div id="ins-compare-deltas" style="margin-top:14px"></div>
+        <div class="db-chart-fill db-chart-fill--md"><canvas id="ins-compare-chart"></canvas></div>
+        <div id="ins-compare-deltas" class="ins-compare-deltas"></div>
       </div>
 
       <!-- Net Worth Over Time -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:10px">
-          <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Net Worth Over Time</div>
+        <div class="tile-hd ins-tile-hd ins-tile-hd--tight">
+          <div class="section-label section-label--flush"><i class="ti ti-trending-up"></i> Net Worth Over Time</div>
           <a href="#" onclick="go('assets');return false;" class="tile-link">View net worth →</a>
         </div>
-        <div id="ins-nw-deltas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
-        <div class="db-chart-fill" style="min-height:260px"><canvas id="ins-nw-chart"></canvas></div>
+        <div id="ins-nw-deltas" class="ins-nw-deltas"></div>
+        <div class="db-chart-fill db-chart-fill--lg"><canvas id="ins-nw-chart"></canvas></div>
       </div>
 
       <!-- Income Flow Sankey -->
-      <div class="card" id="ins-sankey-row" style="position:relative;overflow:hidden">
-        <div class="tile-hd" style="margin-bottom:12px">
-          <div class="section-label" style="margin:0"><i class="ti ti-cash-off"></i> Income Flow</div>
+      <div class="card ins-sankey-card" id="ins-sankey-row">
+        <div class="tile-hd ins-tile-hd ins-tile-hd--mid">
+          <div class="section-label section-label--flush"><i class="ti ti-cash-off"></i> Income Flow</div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-sankey-container"></div>
-        <div id="ins-sankey-tip" style="display:none;position:absolute;background:#1f1c25;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem;pointer-events:none;z-index:10;min-width:160px"></div>
+        <div id="ins-sankey-tip" class="ins-sankey-tip" style="display:none"></div>
       </div>
 
       <!-- Spending by Category -->
-      <div class="card" id="ins-expense-section" style="scroll-margin-top:16px">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="section-label" style="margin:0"><i class="ti ti-chart-bar"></i> Spending by Category</div>
-            <div id="ins-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+      <div class="card ins-anchor" id="ins-expense-section">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l">
+            <div class="section-label section-label--flush"><i class="ti ti-chart-bar"></i> Spending by Category</div>
+            <div id="ins-cat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-cat-chart-wrap"><canvas id="ins-cat-chart"></canvas></div>
-        <div id="ins-cat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-cat-breakdown" class="ins-breakdown"></div>
       </div>
 
       <!-- Spending by Subcategory -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <div class="section-label" style="margin:0"><i class="ti ti-search"></i> Spending by Subcategory</div>
-            <select id="ins-subcat-filter-cat" onchange="insRenderSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l ins-hd-l--wrap">
+            <div class="section-label section-label--flush"><i class="ti ti-search"></i> Spending by Subcategory</div>
+            <select id="ins-subcat-filter-cat" onchange="insRenderSubcatChart()" class="ins-filter-sel">
               <option value="">All Categories</option>
             </select>
-            <div id="ins-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+            <div id="ins-subcat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="go('transactions');return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-subcat-chart-wrap"><canvas id="ins-subcat-chart"></canvas></div>
-        <div id="ins-subcat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-subcat-breakdown" class="ins-breakdown"></div>
       </div>
 
       <!-- Income by Category -->
-      <div class="card" id="ins-income-section" style="scroll-margin-top:16px">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="section-label" style="margin:0"><i class="ti ti-coin"></i> Income by Category</div>
-            <div id="ins-inc-cat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+      <div class="card ins-anchor" id="ins-income-section">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l">
+            <div class="section-label section-label--flush"><i class="ti ti-coin"></i> Income by Category</div>
+            <div id="ins-inc-cat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="insGoToTxFiltered('income','','',insPeriodStr());return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-inc-cat-chart-wrap"><canvas id="ins-inc-cat-chart"></canvas></div>
-        <div id="ins-inc-cat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-inc-cat-breakdown" class="ins-breakdown"></div>
       </div>
 
       <!-- Income by Subcategory -->
       <div class="card">
-        <div class="tile-hd" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <div class="section-label" style="margin:0"><i class="ti ti-search"></i> Income by Subcategory</div>
-            <select id="ins-inc-subcat-filter-cat" onchange="insRenderIncSubcatChart()" style="padding:5px 10px;font-size:.76rem;width:auto">
+        <div class="tile-hd ins-tile-hd">
+          <div class="ins-hd-l ins-hd-l--wrap">
+            <div class="section-label section-label--flush"><i class="ti ti-search"></i> Income by Subcategory</div>
+            <select id="ins-inc-subcat-filter-cat" onchange="insRenderIncSubcatChart()" class="ins-filter-sel">
               <option value="">All Categories</option>
             </select>
-            <div id="ins-inc-subcat-period-lbl" style="font-size:.74rem;color:var(--muted)"></div>
+            <div id="ins-inc-subcat-period-lbl"  class="ins-period-lbl"></div>
           </div>
           <a href="#" onclick="insIncSubcatViewAll();return false;" class="tile-link">View transactions →</a>
         </div>
         <div id="ins-inc-subcat-chart-wrap"><canvas id="ins-inc-subcat-chart"></canvas></div>
-        <div id="ins-inc-subcat-breakdown" style="margin-top:16px"></div>
+        <div id="ins-inc-subcat-breakdown" class="ins-breakdown"></div>
       </div>
 
     </div><!-- /db-layout -->
@@ -1482,34 +1489,36 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="page-title">Income & Expenses</div>
     <div class="page-sub" id="tx-page-sub">Log transactions for both profiles</div>
     <div id="how-to-transactions"></div>
-    <div class="tx-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <div class="tx-actions">
       <button class="btn btn-primary" onclick="openTxModal()"><i class="ti ti-plus"></i> Add Transaction</button>
       <button class="btn btn-ghost" onclick="go('upload')"><i class="ti ti-upload"></i> Upload Transactions</button>
     </div>
 
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">Transaction History</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <div class="tx-hist-hd">
+        <div class="section-label">Transaction History</div>
+        <div class="tx-hist-tools">
+          <button class="btn btn-ghost btn-sm mob-only" id="tx-filter-toggle" onclick="txToggleFilters()" aria-expanded="false" aria-controls="tx-filters"><i class="ti ti-adjustments-horizontal"></i> Filter <span class="tx-filter-count" id="tx-filter-count" style="display:none"></span></button>
+          <button class="btn btn-ghost btn-sm mob-only" id="tx-select-toggle" onclick="txToggleSelectMode()" aria-pressed="false"><i class="ti ti-checkbox"></i> Select</button>
           <button class="btn btn-ghost btn-sm" onclick="txClearFilters()" id="tx-clear-filters" style="display:none"><i class="ti ti-x"></i> Clear filters</button>
           <button class="btn btn-ghost btn-sm" id="tx-rescan-btn" onclick="txRescanCategories()" title="Re-run auto-categorisation on all transactions"><i class="ti ti-robot"></i> Re-categorise transactions</button>
-          <span id="tx-rescan-result" style="font-size:.76rem;display:none"></span>
+          <span id="tx-rescan-result" class="tx-rescan-result" style="display:none"></span>
         </div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-        <select id="tx-filter-month" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;"></select>
-        <select id="tx-filter-type" onchange="txFilterCatChanged();renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+      <div class="tx-filters" id="tx-filters">
+        <select id="tx-filter-month" onchange="renderTx()"></select>
+        <select id="tx-filter-type" onchange="txFilterCatChanged();renderTx()">
           <option value="">All Types</option>
           <option value="income">Income</option>
           <option value="expense">Expenses</option>
         </select>
-        <select id="tx-filter-cat" onchange="txFilterCatChanged();renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+        <select id="tx-filter-cat" onchange="txFilterCatChanged();renderTx()">
           <option value="">All Categories</option>
         </select>
-        <select id="tx-filter-subcat" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+        <select id="tx-filter-subcat" onchange="renderTx()">
           <option value="">All Subcategories</option>
         </select>
-        <select id="tx-filter-account" onchange="renderTx()" style="padding:6px 10px;font-size:.78rem;width:auto;">
+        <select id="tx-filter-account" onchange="renderTx()">
           <option value="">All Accounts</option>
           <option value="offset">Offset Account</option>
           <option value="home">Home Transaction</option>
@@ -1518,18 +1527,18 @@ window.addEventListener('unhandledrejection',function(e){
           <option value="joint">Joint</option>
         </select>
         <input type="text" id="tx-filter-search" placeholder="Search merchant / description..."
-          oninput="txSearchInput()" style="padding:6px 10px;font-size:.78rem;flex:1;min-width:160px;max-width:240px"/>
+          oninput="txSearchInput()"/>
       </div>
       <!-- Bulk action bar (shown when items selected) -->
       <div class="tx-bulk-bar" id="tx-bulk-bar" style="display:none">
         <span class="tx-bulk-count" id="tx-bulk-count">0 selected</span>
-        <select id="tx-bulk-cat" style="padding:7px 10px;font-size:.82rem;width:auto;"></select>
+        <select id="tx-bulk-cat"></select>
         <button class="btn btn-primary btn-sm" onclick="bulkAssignCategory()">Assign Category</button>
         <button class="btn btn-ghost btn-sm" onclick="clearTxSelection()"><i class="ti ti-x"></i> Cancel</button>
       </div>
       <div class="tbl-wrap">
         <table class="tx-table"><thead><tr>
-          <th style="width:32px"><input type="checkbox" id="tx-select-all" class="tx-check" onchange="toggleSelectAll(this)" title="Select all"/></th>
+          <th class="tx-th-check"><input type="checkbox" id="tx-select-all" class="tx-check" onchange="toggleSelectAll(this)" title="Select all"/></th>
           <th>Date</th><th>Type</th><th>Merchant</th><th>Category</th><th>Subcategory</th><th>Description</th><th>Account</th><th>Amount</th><th></th>
         </tr></thead>
         <tbody id="tx-tbody"></tbody></table>
@@ -1540,12 +1549,12 @@ window.addEventListener('unhandledrejection',function(e){
 
   <!-- ═══ ADD TRANSACTION MODAL ═══ -->
   <div class="modal-overlay" id="tx-add-modal" onclick="if(event.target===this)closeTxModal()">
-    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:560px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="modal-box modal-box--scroll modal-box--md" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-title">＋ Add Transaction</div>
+        <div class="modal-title" id="tx-modal-title">＋ Add Transaction</div>
         <button class="modal-close" onclick="closeTxModal()" aria-label="Close"><i class="ti ti-x"></i></button>
       </div>
-      <div class="modal-sub">Manually log an income or expense for either profile</div>
+      <div class="modal-sub" id="tx-modal-sub">Manually log an income or expense for either profile</div>
       <div class="form-grid">
         <div><label class="lbl">Date</label><input type="date" id="tx-date"/></div>
         <div><label class="lbl">Type</label>
@@ -1559,9 +1568,15 @@ window.addEventListener('unhandledrejection',function(e){
         <div>
           <label class="lbl">Name</label>
           <input type="text" id="tx-name" placeholder="e.g. Woolworths" oninput="AutoCat.onNameInput(this.value)"/>
-          <div id="tx-autocat-pill" style="display:none;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap"></div>
+          <div id="tx-autocat-pill" class="tx-autocat-pill" style="display:none"></div>
         </div>
-        <div><label class="lbl">Amount (AUD)</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+        <div><label class="lbl">Amount (AUD)</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
+          <div class="amt-chips" aria-label="Quick amounts">
+            <button type="button" class="amt-chip" onclick="txQuickAmount(50)">$50</button>
+            <button type="button" class="amt-chip" onclick="txQuickAmount(100)">$100</button>
+            <button type="button" class="amt-chip" onclick="txQuickAmount(200)">$200</button>
+          </div>
+        </div>
       </div>
       <div class="form-grid">
         <div><label class="lbl">Category</label><select id="tx-cat" onchange="refreshSubcatSelect()"></select></div>
@@ -1588,8 +1603,9 @@ window.addEventListener('unhandledrejection',function(e){
         <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
       </div>
       <div class="modal-actions">
+        <button class="btn btn-danger tx-del-btn" id="tx-del-btn" onclick="txDeleteFromModal()" style="display:none"><i class="ti ti-trash"></i> Delete</button>
         <button class="btn btn-ghost" onclick="closeTxModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="addTx()">＋ Add Transaction</button>
+        <button class="btn btn-primary" id="tx-save-btn" onclick="addTx()">＋ Add Transaction</button>
       </div>
     </div>
   </div>
@@ -1607,7 +1623,7 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="notif-dot" id="bl-review-dot">0</div>
         </button>
         <button class="bl-icon-action" id="bl-remind-btn" title="Reminder settings" aria-label="Bill reminder settings" onclick="blOpenRemindersModal()"><i class="ti ti-bell"></i></button>
-        <button class="btn btn-primary btn-sm" style="border-radius:var(--radius-pill)" onclick="blOpenAddModal()">＋ Add Bill</button>
+        <button class="btn btn-primary btn-sm btn--pill" onclick="blOpenAddModal()">＋ Add Bill</button>
       </div>
     </div>
     <div id="how-to-bills"></div>
@@ -1634,10 +1650,10 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="kpi-row kpi-row-4" id="bl-kpis"></div>
 
         <!-- Trends — period-scoped charts -->
-        <div class="card" id="bl-trends" style="padding:16px 16px 18px">
+        <div class="card bl-trends" id="bl-trends">
           <div class="bl-trends-hd">
-            <div class="section-label" style="margin:0">Trends</div>
-            <div class="filters" style="margin:0">
+            <div class="section-label section-label--flush">Trends</div>
+            <div class="filters filters--flush">
               <span class="filter-caption">Period</span>
               <div class="filter-group">
                 <button class="filter-btn" id="bl-p-30" onclick="blSetRolling(30)">30 days</button>
@@ -1649,34 +1665,34 @@ window.addEventListener('unhandledrejection',function(e){
               <button class="filter-btn bl-clear-period" id="bl-clear-period" onclick="blClearPeriod()" style="display:none"><i class="ti ti-x"></i> Clear</button>
             </div>
           </div>
-          <div class="bl-muted" style="font-size:.68rem;margin:2px 0 14px">Charts below reflect the selected period. The stat cards above always show your position right now.</div>
+          <div class="bl-muted bl-trends-note">Charts below reflect the selected period. The stat cards above always show your position right now.</div>
 
           <!-- Cash demand chart -->
           <div class="chart-card bl-trend-card" id="bl-chart-card" style="display:none">
             <div class="chart-header">
-              <div class="section-label" style="margin:0">Cash Demand</div>
-              <span style="font-size:.66rem;color:var(--muted)" id="bl-cash-sub">projected</span>
+              <div class="section-label section-label--flush">Cash Demand</div>
+              <span class="bl-chart-sub" id="bl-cash-sub">projected</span>
             </div>
-            <div style="height:170px"><canvas id="bl-cash-chart" role="img" aria-label="Projected bill cash demand by period"></canvas></div>
+            <div class="bl-cash-chart-box"><canvas id="bl-cash-chart" role="img" aria-label="Projected bill cash demand by period"></canvas></div>
             <div class="chart-legend" id="bl-chart-legend"></div>
           </div>
 
           <!-- Bill category flow -->
-          <div class="tile bl-flow-tile bl-trend-card" style="margin-bottom:12px">
-            <div class="tile-hd" style="margin-bottom:8px">
-              <div class="tile-label" style="margin-bottom:0">Bill Category Flow</div>
-              <span style="font-size:.66rem;color:var(--muted)" id="bl-sankey-sub">confirmed bills</span>
+          <div class="tile bl-flow-tile bl-trend-card">
+            <div class="tile-hd">
+              <div class="tile-label">Bill Category Flow</div>
+              <span class="bl-chart-sub" id="bl-sankey-sub">confirmed bills</span>
             </div>
             <div id="bl-sankey"></div>
           </div>
 
           <!-- Year on year -->
-          <div class="tile bl-trend-card" id="bl-yoy-card" style="display:none;margin-bottom:0">
-            <div class="tile-hd" style="margin-bottom:10px">
-              <div class="tile-label" style="margin-bottom:0">Bills — Year on Year</div>
-              <span style="font-size:.66rem;color:var(--muted)" id="bl-yoy-sub">by category</span>
+          <div class="tile bl-trend-card bl-yoy-card" id="bl-yoy-card" style="display:none">
+            <div class="tile-hd">
+              <div class="tile-label">Bills — Year on Year</div>
+              <span class="bl-chart-sub" id="bl-yoy-sub">by category</span>
             </div>
-            <div style="height:260px"><canvas id="bl-yoy-chart" role="img" aria-label="Bill spend this year versus last year, by category"></canvas></div>
+            <div class="bl-yoy-chart-box"><canvas id="bl-yoy-chart" role="img" aria-label="Bill spend this year versus last year, by category"></canvas></div>
             <div class="yoy-deltas" id="bl-yoy-deltas"></div>
           </div>
         </div>
@@ -1684,7 +1700,7 @@ window.addEventListener('unhandledrejection',function(e){
         <!-- Annual bills spotlight -->
         <div class="card" id="bl-annual-card" style="display:none">
           <div class="bl-card-hd">
-            <div class="section-label" style="margin:0">Annual Bills — set aside now</div>
+            <div class="section-label section-label--flush">Annual Bills — set aside now</div>
             <button class="btn btn-ghost btn-sm" id="bl-setaside-btn" onclick="blCreateBufferGoal()"><i class="ti ti-target"></i> Create savings goal</button>
           </div>
           <div id="bl-annual-list"></div>
@@ -1703,17 +1719,17 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
       </div>
 
-      <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+      <div class="card bl-table-card">
         <div class="bl-table-hd">
           <div>
-            <div class="section-label" style="margin:0 0 2px">All Recurring Payments</div>
-            <div style="font-size:.7rem;color:var(--muted)" id="bl-table-meta"></div>
+            <div class="section-label bl-table-title">All Recurring Payments</div>
+            <div class="bl-table-meta" id="bl-table-meta"></div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="bl-table-tools">
             <input type="text" placeholder="Search billers…" id="bl-search" aria-label="Search billers" oninput="blTableSearch(this.value)" class="bl-search-input"/>
           </div>
         </div>
-        <div style="overflow-x:auto">
+        <div class="bl-table-scroll">
           <table class="bl-table">
             <thead>
               <tr>
@@ -1744,7 +1760,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="bl-card-hd">
           <div class="bl-cal-nav">
             <button class="bl-icon-btn" id="bl-cal-prev" aria-label="Previous month" onclick="blCalShift(-1)"><i class="ti ti-chevron-left"></i></button>
-            <div class="section-label" id="bl-cal-title" style="margin:0;min-width:150px;text-align:center"></div>
+            <div class="section-label bl-cal-title" id="bl-cal-title"></div>
             <button class="bl-icon-btn" id="bl-cal-next" aria-label="Next month" onclick="blCalShift(1)"><i class="ti ti-chevron-right"></i></button>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="blExportIcs()"><i class="ti ti-calendar-plus"></i> Export .ics</button>
@@ -1775,8 +1791,8 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="how-to-mortgage"></div>
 
     <!-- Property tabs -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-      <div id="mortgage-tabs" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
+    <div class="mg-tabs-bar">
+      <div id="mortgage-tabs" class="mg-tabs"></div>
       <button class="btn btn-ghost btn-sm" onclick="mortgageAddProperty()">+ Add Property</button>
     </div>
 
@@ -1807,39 +1823,39 @@ window.addEventListener('unhandledrejection',function(e){
           <div><label class="lbl">Offset Balance (AUD)</label><input type="number" id="m-offset" placeholder="80000" oninput="syncOffsetSlider()" inputmode="decimal"/></div>
           <div><label class="lbl">Account Name</label><input type="text" id="m-offset-name" placeholder="e.g. Everyday Savings"/></div>
         </div>
-        <div id="ct-offset-sync-banner" style="display:none;background:#1a1020;border:1px solid #5a2a50;border-radius:9px;padding:10px 14px;font-size:.78rem;margin-bottom:14px;overflow:auto">
-          <button class="btn btn-ghost btn-sm" onclick="pullOffsetFromCT()" style="float:right;padding:4px 10px;font-size:.72rem;margin-left:8px">↻ Sync</button>
-          <span style="color:var(--primary);font-weight:700"><i class="ti ti-link"></i> Cash Tracker offset:</span>
-          <span id="ct-offset-sync-text" style="color:var(--muted);margin-left:5px"></span>
+        <div id="ct-offset-sync-banner" class="mg-sync-banner" style="display:none">
+          <button class="btn btn-ghost btn-sm mg-sync-btn" onclick="pullOffsetFromCT()">↻ Sync</button>
+          <span class="mg-sync-lbl"><i class="ti ti-link"></i> Cash Tracker offset:</span>
+          <span id="ct-offset-sync-text" class="mg-sync-text"></span>
         </div>
-        <div style="background:#1a1020;border:1px solid #4a2040;border-radius:9px;padding:10px 14px;font-size:.76rem;color:var(--pink-light);margin-bottom:14px">
+        <div class="mg-autolink-note">
           <i class="ti ti-link"></i> <strong>Auto-linked to Cash Tracker:</strong> The offset balance here automatically uses the latest Offset Account balance from your Cash Tracker. Save your mortgage to sync it.
         </div>
         <div class="form-grid">
-          <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div style="font-size:.68rem;color:var(--muted);margin-top:3px">Month this valuation applies to (defaults to current)</div></div>
+          <div><label class="lbl">Valuation Month</label><input type="month" id="m-valuation-month"/><div class="field-hint">Month this valuation applies to (defaults to current)</div></div>
         </div>
         <hr class="div"/>
         <div class="section-label"><i class="ti ti-link"></i> Link to Liability</div>
-        <div style="margin-bottom:14px">
+        <div class="mg-liab-block">
           <label class="lbl">Linked Liability Record</label>
-          <select id="m-linked-liability" onchange="mortgageLiabilityLinkBanner()" style="margin-bottom:8px">
+          <select id="m-linked-liability" class="mg-liab-select" onchange="mortgageLiabilityLinkBanner()">
             <option value="__none__">None — show as read-only in Liabilities</option>
           </select>
-          <div id="m-liab-count-hint" style="font-size:.68rem;color:var(--muted);margin-bottom:6px"></div>
-          <div id="m-liab-link-banner" style="display:none;padding:8px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;font-size:.74rem;color:var(--muted)"></div>
-          <div style="font-size:.68rem;color:var(--muted);margin-top:6px">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
+          <div id="m-liab-count-hint" class="mg-liab-hint"></div>
+          <div id="m-liab-link-banner" class="mg-liab-banner" style="display:none"></div>
+          <div class="mg-liab-note">Link this property's remaining balance to a Liabilities entry — balance auto-syncs every time you save. Choose "＋ Create new" to set it up in one step.</div>
         </div>
         <button class="btn btn-primary" onclick="saveMortgage()"><i class="ti ti-device-floppy"></i> Save Details</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="mg-side">
         <div class="card">
           <div class="section-label">Home Equity</div>
-          <div style="text-align:center;padding:12px 0">
-            <div id="eq-value" style="font-family:var(--font-mono);font-size:2.6rem;font-weight:700;color:var(--primary)">—</div>
-            <div style="font-size:.74rem;color:var(--muted);margin-top:3px">Current home equity</div>
+          <div class="mg-eq-head">
+            <div id="eq-value" class="mg-eq-value">—</div>
+            <div class="mg-eq-cap">Current home equity</div>
           </div>
-          <div class="prog-track" style="height:12px"><div class="prog-fill" id="eq-bar" style="width:0%"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px">
+          <div class="prog-track prog-track--xl"><div class="prog-fill" id="eq-bar" style="width:0%"></div></div>
+          <div class="mg-scale">
             <span id="eq-lbl-l">Balance</span><span id="eq-lbl-r">Value</span>
           </div>
         </div>
@@ -1847,18 +1863,18 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
     <div class="card" id="offset-sim-card" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+      <div class="mg-sim-hd">
         <div>
           <div class="section-label"><i class="ti ti-adjustments"></i> Offset Simulator</div>
-          <div style="font-size:.78rem;color:var(--muted)">Drag to see how different offset balances affect your loan</div>
+          <div class="mg-sim-sub">Drag to see how different offset balances affect your loan</div>
         </div>
-        <div style="background:#2a1030;border-radius:10px;padding:9px 16px;text-align:center">
-          <div style="font-size:.68rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em">Simulating Offset</div>
-          <div id="sim-offset-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">$0</div>
+        <div class="mg-readout">
+          <div class="mg-readout-lbl">Simulating Offset</div>
+          <div id="sim-offset-lbl" class="mg-readout-val">$0</div>
         </div>
       </div>
       <input type="range" id="offset-slider" min="0" max="500000" step="1000" value="0" oninput="runOffsetSim(this.value)"/>
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:5px;margin-bottom:20px">
+      <div class="mg-scale mg-scale--sim">
         <span>$0</span><span id="sim-max-lbl">$500,000</span>
       </div>
       <div class="occ-grid">
@@ -1872,44 +1888,44 @@ window.addEventListener('unhandledrejection',function(e){
           <div class="occ-before" id="occ-trm-b">—</div><div class="occ-arrow">↓</div>
           <div class="occ-after" id="occ-trm-a">—</div><div class="occ-save" id="occ-trm-s"></div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:.82rem;font-weight:600"><i class="ti ti-coin"></i> Total Interest Saved</span>
-        <span id="occ-total-save" style="font-family:var(--font-mono);font-size:1.1rem;color:var(--primary);font-weight:700">—</span>
+      <div class="mg-saved-row">
+        <span class="mg-saved-lbl"><i class="ti ti-coin"></i> Total Interest Saved</span>
+        <span id="occ-total-save" class="mg-saved-val">—</span>
       </div>
-      <div class="prog-track" style="height:12px">
-        <div class="prog-fill" id="occ-save-bar" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--pink-dark))"></div>
+      <div class="prog-track prog-track--xl">
+        <div class="prog-fill mg-save-fill" id="occ-save-bar" style="width:0%"></div>
       </div>
 
     </div><!-- /offset-sim-card -->
     <!-- MORTGAGE PAYDOWN CHART -->
-    <div class="card" id="mortgage-paydown-card" style="margin-top:18px;display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div class="card mg-section" id="mortgage-paydown-card" style="display:none">
+      <div class="mg-pd-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-trending-down"></i> Mortgage Paydown Schedule</div>
-          <div style="font-size:.76rem;color:var(--muted)">Balance reduction over time — with and without your offset account</div>
+          <div class="section-label mg-pd-title"><i class="ti ti-trending-down"></i> Mortgage Paydown Schedule</div>
+          <div class="mg-pd-sub">Balance reduction over time — with and without your offset account</div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div class="mg-pd-tools">
           <button class="btn btn-ghost btn-sm" id="pd-view-btn" onclick="togglePaydownView()">Show Monthly</button>
         </div>
       </div>
-      <div class="chart-box" style="height:300px"><canvas id="paydown-chart"></canvas></div>
-      <div class="g3" id="paydown-stats" style="margin-top:16px"></div>
+      <div class="chart-box mg-pd-chart"><canvas id="paydown-chart"></canvas></div>
+      <div class="g3 mg-pd-stats" id="paydown-stats"></div>
 
     <!-- RATE SENSITIVITY CALCULATOR -->
-    <div class="card" id="rate-sensitivity-card" style="margin-top:18px;display:none">
-      <div style="margin-bottom:16px">
-        <div class="section-label" style="margin-bottom:3px"><i class="ti ti-trending-up"></i> Interest Rate Sensitivity Calculator</div>
-        <div id="rate-linked-info" style="margin-top:6px;font-size:.78rem;line-height:1.5;color:var(--muted)">Repayments calculated on outstanding loan balance (offset shown separately as an interest-saving note).</div>
+    <div class="card mg-section" id="rate-sensitivity-card" style="display:none">
+      <div class="mg-rate-hd">
+        <div class="section-label mg-rate-title"><i class="ti ti-trending-up"></i> Interest Rate Sensitivity Calculator</div>
+        <div id="rate-linked-info" class="mg-rate-info">Repayments calculated on outstanding loan balance (offset shown separately as an interest-saving note).</div>
       </div>
 
       <!-- Live rate slider -->
       <div class="rate-slider-row">
         <label>Simulate Rate:</label>
         <input type="range" id="rate-sim-slider" min="1" max="15" step="0.25" value="6.25"
-          oninput="onRateSlider(this.value)" style="flex:1;min-width:180px"/>
-        <div style="background:#2a1030;border-radius:9px;padding:8px 16px;text-align:center;min-width:90px">
-          <div style="font-size:.64rem;color:var(--muted);margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em">Rate</div>
-          <div id="rate-sim-lbl" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--primary)">6.25%</div>
+          oninput="onRateSlider(this.value)" class="mg-rate-slider"/>
+        <div class="mg-readout mg-readout--sm">
+          <div class="mg-readout-lbl">Rate</div>
+          <div id="rate-sim-lbl" class="mg-readout-val">6.25%</div>
         </div>
       </div>
 
@@ -1917,7 +1933,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="rate-badge-row" id="rate-impact-badges"></div>
 
       <!-- Scenario table -->
-      <div style="overflow-x:auto">
+      <div class="mg-table-scroll">
         <table class="rate-table" id="rate-table">
           <thead>
             <tr>
@@ -1934,7 +1950,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- Budget callout -->
-      <div id="rate-budget-callout" style="margin-top:16px;border-radius:10px;padding:14px 16px;font-size:.82rem;line-height:1.6;display:none"></div>
+      <div id="rate-budget-callout" class="mg-callout" style="display:none"></div>
     </div>
 
     </div>
@@ -1951,18 +1967,18 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card" id="liab-summary"></div>
 
     <!-- Mortgage section -->
-    <div style="margin-top:20px">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px"><i class="ti ti-home"></i> Mortgage</div>
+    <div class="liab-sec">
+      <div class="liab-sec-lbl liab-sec-lbl--mb"><i class="ti ti-home"></i> Mortgage</div>
       <div id="liab-mortgages"></div>
     </div>
 
     <!-- Manual liabilities -->
-    <div style="margin-top:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap">
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Other Liabilities</div>
-        <button class="btn btn-primary" onclick="liabOpenModal()" style="border-radius:9999px;padding:10px 20px;min-height:48px;font-size:.82rem">+ Add Liability</button>
+    <div class="liab-sec">
+      <div class="liab-sec-hd">
+        <div class="liab-sec-lbl">Other Liabilities</div>
+        <button class="btn btn-primary liab-add-btn" onclick="liabOpenModal()">+ Add Liability</button>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="liab-sort">
         <button id="liab-sort-rate"    onclick="liabSetSort('rate')"    class="fc-range-btn active">Rate ↓</button>
         <button id="liab-sort-balance" onclick="liabSetSort('balance')" class="fc-range-btn">Balance ↓</button>
         <button id="liab-sort-due"     onclick="liabSetSort('due')"     class="fc-range-btn">Due Date</button>
@@ -1981,16 +1997,16 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- How to use explainer -->
     <div class="card mb ct-explainer" id="ct-explainer">
       <div class="ct-exp-hd" onclick="ctToggleExplainer()">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.2rem"><i class="ti ti-book"></i></span>
+        <div class="ct-exp-title-row">
+          <span class="ct-exp-book"><i class="ti ti-book"></i></span>
           <div>
-            <div style="font-weight:700;font-size:.9rem;color:var(--text)">How to use Cash Tracker</div>
-            <div style="font-size:.74rem;color:var(--muted)">Manual monthly balance snapshots — tap to expand</div>
+            <div class="ct-exp-hd-title">How to use Cash Tracker</div>
+            <div class="ct-exp-sub">Manual monthly balance snapshots — tap to expand</div>
           </div>
         </div>
-        <span id="ct-exp-chevron" style="font-size:1rem;color:var(--muted);transition:transform .2s">▼</span>
+        <span id="ct-exp-chevron" class="ct-exp-chevron">▼</span>
       </div>
-      <div id="ct-exp-body" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+      <div id="ct-exp-body" class="ct-exp-body" style="display:none">
         <div class="ct-exp-grid">
           <div class="ct-exp-item">
             <div class="ct-exp-icon"><i class="ti ti-calendar"></i></div>
@@ -2026,22 +2042,22 @@ window.addEventListener('unhandledrejection',function(e){
 
 
     <!-- Add Account / manage bar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-      <div id="ct-account-count" style="font-size:.78rem;color:var(--muted)"></div>
+    <div class="ct-manage-bar">
+      <div id="ct-account-count" class="ct-account-count"></div>
       <button class="btn btn-primary btn-sm" onclick="ctShowAddAccountForm()" id="ct-add-acct-btn">+ Add Account</button>
     </div>
 
     <!-- Inline add-account form (hidden by default) -->
     <div id="ct-add-acct-form" class="card mb" style="display:none">
-      <div class="section-label" style="margin-bottom:14px">New Account</div>
-      <div class="form-grid" style="grid-template-columns:56px 1fr;margin-bottom:10px">
+      <div class="section-label ct-new-hd">New Account</div>
+      <div class="form-grid ct-form-row ct-form-row--icon">
         <div><label class="lbl">Icon</label><div id="ct-new-icon-wrap"></div></div>
-        <div><label class="lbl">Nickname</label><input type="text" id="ct-new-name" placeholder="e.g. Everyday Account" style="font-size:16px"/></div>
+        <div><label class="lbl">Nickname</label><input type="text" id="ct-new-name" placeholder="e.g. Everyday Account" class="ct-nickname"/></div>
       </div>
-      <div class="form-grid" style="margin-bottom:10px">
+      <div class="form-grid ct-form-row">
         <div>
           <label class="lbl">Bank</label>
-          <select id="ct-new-bank" style="width:100%;box-sizing:border-box">
+          <select id="ct-new-bank">
             <option value="">— Select Bank —</option>
             <option value="CBA">Commonwealth Bank (CBA)</option>
             <option value="Westpac">Westpac</option>
@@ -2068,7 +2084,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div>
           <label class="lbl">Account Type</label>
-          <select id="ct-new-acct-type" style="width:100%;box-sizing:border-box">
+          <select id="ct-new-acct-type">
             <option value="">— Select Type —</option>
             <option value="Everyday">Everyday / Transaction</option>
             <option value="Savings">Savings</option>
@@ -2080,7 +2096,7 @@ window.addEventListener('unhandledrejection',function(e){
           </select>
         </div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:4px">
+      <div class="ct-form-actions">
         <button class="btn btn-primary btn-sm" onclick="ctAddAccount()">Add Account</button>
         <button class="btn btn-ghost btn-sm" onclick="ctHideAddAccountForm()">Cancel</button>
       </div>
@@ -2091,21 +2107,21 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Account cards — built dynamically by renderCashTracker() -->
     <div id="ct-accts-container"></div>
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-        <div class="section-label" style="margin:0"><i class="ti ti-trending-up"></i> Combined Balances Over Time</div>
+      <div class="ct-chart-hd">
+        <div class="section-label"><i class="ti ti-trending-up"></i> Combined Balances Over Time</div>
         <button class="btn btn-ghost btn-sm" onclick="ctExportCSV()"><i class="ti ti-download"></i> Export CSV</button>
       </div>
       <div class="goal-bar">
         <label><i class="ti ti-target"></i> Goal:</label>
-        <select id="ct-goal-freq" onchange="saveCTGoal()" style="width:110px">
+        <select id="ct-goal-freq" onchange="saveCTGoal()">
           <option value="monthly">Monthly</option><option value="annual">Annual</option>
         </select>
-        <input type="number" id="ct-goal-amt" placeholder="Target amount" step="1000" onchange="saveCTGoal()" style="width:160px" inputmode="decimal"/>
-        <input type="month" id="ct-goal-start" onchange="saveCTGoal()" style="width:145px"/>
-        <div id="ct-goal-status" style="flex:1;text-align:right;font-size:.78rem;color:var(--muted)"></div>
+        <input type="number" id="ct-goal-amt" placeholder="Target amount" step="1000" onchange="saveCTGoal()" inputmode="decimal"/>
+        <input type="month" id="ct-goal-start" onchange="saveCTGoal()"/>
+        <div id="ct-goal-status"></div>
       </div>
       <div class="chart-box"><canvas id="ct-chart"></canvas></div>
-      <div style="margin-top:18px"><div class="section-label">Latest Month Net Position</div><div id="ct-net"></div></div>
+      <div class="ct-net-wrap"><div class="section-label">Latest Month Net Position</div><div id="ct-net"></div></div>
     </div>
   </div>
 
@@ -2113,12 +2129,12 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-insurance">
 
     <!-- Page header -->
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+    <div class="ins-page-hd">
       <div>
         <div class="page-title">Life Insurance</div>
         <div class="page-sub">Policies, premiums, renewal dates and life insurance needs analysis</div>
       </div>
-      <button class="btn btn-primary" onclick="insShowAddModal()" style="flex-shrink:0;margin-top:4px">＋ Add Policy</button>
+      <button class="btn btn-primary ins-add-btn" onclick="insShowAddModal()">＋ Add Policy</button>
     </div>
 
     <div id="how-to-insurance"></div>
@@ -2128,8 +2144,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Coverage Gap Analysis + Coverage Bars (single card) -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px"><i class="ti ti-heart-broken"></i> Coverage Gap Analysis</div>
-      <div style="height:300px;position:relative;margin-bottom:16px">
+      <div class="section-label ins-sl-14"><i class="ti ti-heart-broken"></i> Coverage Gap Analysis</div>
+      <div class="ins-chart-wrap">
         <canvas id="ins-coverage-chart"></canvas>
       </div>
       <div id="ins-coverage"></div>
@@ -2137,18 +2153,18 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- All Policies (with renewals collapsible inside) -->
     <div class="card mb">
-      <details style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px">
-        <summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-calendar"></i> Upcoming Renewals <span style="opacity:.5">▾</span>
+      <details class="ins-renewals-details">
+        <summary class="ins-renewals-sum">
+          <i class="ti ti-calendar"></i> Upcoming Renewals <span class="ins-caret">▾</span>
         </summary>
-        <div id="ins-renewals" style="margin-top:10px"></div>
+        <div id="ins-renewals" class="ins-renewals"></div>
       </details>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">All Policies</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="ins-list-hd">
+        <div class="section-label section-label--flush">All Policies</div>
+        <div class="ins-list-tools">
           <button class="btn btn-ghost btn-sm" onclick="exportInsuranceCSV()"><i class="ti ti-chart-bar"></i> CSV</button>
           <button class="btn btn-ghost btn-sm" onclick="exportInsurancePDF()"><i class="ti ti-file-text"></i> Report</button>
-          <select id="ins-filter" onchange="renderInsurance()" style="padding:7px 10px;font-size:.78rem;width:auto">
+          <select id="ins-filter" class="ins-policy-filter" onchange="renderInsurance()">
             <option value="">All Types</option><option>Life</option><option>TPD</option><option>Income Protection</option>
           </select>
         </div>
@@ -2158,25 +2174,25 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Needs Analysis (moved to bottom) -->
     <div class="card mb" id="li-needs-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div class="ins-needs-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-heart"></i> Life, TPD &amp; Income Protection — Needs Analysis</div>
-          <div style="font-size:.76rem;color:var(--muted)">Enter your existing TPD and IP cover in each card to see your coverage gaps. Life, TPD and IP calculated independently. IP: 75% of income, 90-day wait, to age 65.</div>
+          <div class="section-label ins-sl-2"><i class="ti ti-heart"></i> Life, TPD &amp; Income Protection — Needs Analysis</div>
+          <div class="ins-needs-desc">Enter your existing TPD and IP cover in each card to see your coverage gaps. Life, TPD and IP calculated independently. IP: 75% of income, 90-day wait, to age 65.</div>
         </div>
-        <div style="display:flex;gap:0;background:var(--card2);border:1px solid var(--border);border-radius:9px;overflow:hidden">
-          <button class="li-tab active" id="li-tab-all"    onclick="liSwitchTab('all')"   style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff">All Methods</button>
-          <button class="li-tab"        id="li-tab-dime"   onclick="liSwitchTab('dime')"  style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">DIME</button>
-          <button class="li-tab"        id="li-tab-income" onclick="liSwitchTab('income')" style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">10× Income</button>
-          <button class="li-tab"        id="li-tab-needs"  onclick="liSwitchTab('needs')" style="padding:7px 14px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted)">Needs PV</button>
+        <div class="li-tabs">
+          <button class="li-tab active" id="li-tab-all"    onclick="liSwitchTab('all')">All Methods</button>
+          <button class="li-tab"        id="li-tab-dime"   onclick="liSwitchTab('dime')">DIME</button>
+          <button class="li-tab"        id="li-tab-income" onclick="liSwitchTab('income')">10× Income</button>
+          <button class="li-tab"        id="li-tab-needs"  onclick="liSwitchTab('needs')">Needs PV</button>
         </div>
       </div>
 
       <div class="li-person-grid">
         <!-- BRENTON -->
         <div class="li-card">
-          <div class="li-card-hd" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
-            <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
-            <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Profile 1</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+          <div class="li-card-hd li-card-hd--p1">
+            <span class="li-hd-ico"><i class="ti ti-briefcase"></i></span>
+            <div><div class="li-hd-name" data-profile-label="brenton">Profile 1</div><div class="li-hd-sub">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
             <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-b-income" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
@@ -2187,18 +2203,18 @@ window.addEventListener('unhandledrejection',function(e){
             <div class="li-ass-row"><label>Funeral / Final Expenses (AUD)</label><input type="number" id="li-b-funeral" value="15000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Super / Savings (AUD)</label><input type="number" id="li-b-assets" placeholder="185000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Life Cover in Super (AUD)</label><input type="number" id="li-b-existing" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px">Existing TPD &amp; Income Protection</div>
+            <div class="li-subhd">Existing TPD &amp; Income Protection</div>
             <div class="li-ass-row"><label>Existing TPD Cover (AUD)</label><input type="number" id="li-b-exist-tpd" placeholder="0" step="10000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing IP Monthly Benefit (AUD/mo)</label><input type="number" id="li-b-exist-ip" placeholder="0" step="500" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Current Age</label><input type="number" id="li-b-age" placeholder="40" min="18" max="70" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
-            <div id="li-b-result" style="margin-top:14px"></div>
+            <div id="li-b-result" class="li-result"></div>
           </div>
         </div>
         <!-- SHELLEY -->
         <div class="li-card">
-          <div class="li-card-hd" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
-            <span style="font-size:1.3rem"><i class="ti ti-briefcase"></i></span>
-            <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Profile 2</div><div style="font-size:.7rem;color:rgba(255,255,255,.75)">Life Insurance Needs</div></div>
+          <div class="li-card-hd li-card-hd--p2">
+            <span class="li-hd-ico"><i class="ti ti-briefcase"></i></span>
+            <div><div class="li-hd-name" data-profile-label="shelley">Profile 2</div><div class="li-hd-sub">Life Insurance Needs</div></div>
           </div>
           <div class="li-card-body">
             <div class="li-ass-row"><label>Annual Income (AUD)</label><input type="number" id="li-s-income" placeholder="95000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
@@ -2209,15 +2225,15 @@ window.addEventListener('unhandledrejection',function(e){
             <div class="li-ass-row"><label>Funeral / Final Expenses (AUD)</label><input type="number" id="li-s-funeral" value="15000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Super / Savings (AUD)</label><input type="number" id="li-s-assets" placeholder="120000" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing Life Cover in Super (AUD)</label><input type="number" id="li-s-existing" placeholder="0" step="1000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:8px">Existing TPD &amp; Income Protection</div>
+            <div class="li-subhd">Existing TPD &amp; Income Protection</div>
             <div class="li-ass-row"><label>Existing TPD Cover (AUD)</label><input type="number" id="li-s-exist-tpd" placeholder="0" step="10000" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Existing IP Monthly Benefit (AUD/mo)</label><input type="number" id="li-s-exist-ip" placeholder="0" step="500" oninput="calcLifeNeeds()" inputmode="decimal"/></div>
             <div class="li-ass-row"><label>Current Age</label><input type="number" id="li-s-age" placeholder="38" min="18" max="70" oninput="calcLifeNeeds()" inputmode="numeric"/></div>
-            <div id="li-s-result" style="margin-top:14px"></div>
+            <div id="li-s-result" class="li-result"></div>
           </div>
         </div>
       </div>
-      <div style="font-size:.7rem;color:var(--muted)"><i class="ti ti-alert-triangle"></i> Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
+      <div class="li-disclaimer"><i class="ti ti-alert-triangle"></i> Estimates for budgeting purposes only. Not financial advice. Consult a licensed adviser for personalised recommendations. IP: 90-day wait, benefit to age 65.</div>
     </div>
 
   </div>
@@ -2230,8 +2246,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Super Accounts Aggregation -->
     <div class="card mb">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-        <div class="section-label" style="margin:0"><i class="ti ti-briefcase"></i> Super Accounts Summary</div>
+      <div class="sp-card-hd">
+        <div class="section-label section-label--flush"><i class="ti ti-briefcase"></i> Super Accounts Summary</div>
       </div>
       <div id="super-agg-table"></div>
     </div>
@@ -2239,28 +2255,28 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="g2 mb">
       <!-- Profile 1 -->
       <div class="card">
-        <div class="super-header" style="background:linear-gradient(135deg,#8b1a4a,#e8457a)">
-          <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
-          <div><div style="font-weight:700;color:#fff" data-profile-label="brenton">Profile 1</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+        <div class="super-header super-header--p1">
+          <span class="sp-hd-ico"><i class="ti ti-briefcase"></i></span>
+          <div><div class="sp-hd-name" data-profile-label="brenton">Profile 1</div><div class="sp-hd-sub">Superannuation</div></div>
         </div>
 
         <!-- Account list -->
-        <div style="padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Accounts</div>
-            <button class="btn btn-ghost btn-sm" onclick="superShowAddForm('b')" style="font-size:.72rem">+ Add</button>
+        <div class="sp-accts">
+          <div class="sp-accts-hd">
+            <div class="sp-accts-lbl">Accounts</div>
+            <button class="btn btn-ghost btn-sm sp-add-btn" onclick="superShowAddForm('b')">+ Add</button>
           </div>
           <div id="super-acct-list-b"></div>
           <!-- Add form -->
-          <div id="super-add-form-b" style="display:none;margin-top:10px;padding:10px;background:var(--card2);border-radius:10px">
-            <div class="form-grid" style="margin-bottom:8px">
-              <div><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-new-fund-b" placeholder="e.g. ART, AustralianSuper" style="font-size:16px;width:100%;box-sizing:border-box"/></div>
-              <div><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-new-bal-b" placeholder="0" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>
+          <div id="super-add-form-b" class="sp-add-form" style="display:none">
+            <div class="form-grid sp-form-row">
+              <div><label class="lbl lbl--sm">Fund Name</label><input type="text" id="super-new-fund-b" placeholder="e.g. ART, AustralianSuper" class="sp-input-16"/></div>
+              <div><label class="lbl lbl--sm">Balance (AUD)</label><input type="number" id="super-new-bal-b" placeholder="0" step="1000" inputmode="decimal"/></div>
             </div>
-            <div class="form-grid" style="margin-bottom:8px">
+            <div class="form-grid sp-form-row">
               <div>
-                <label class="lbl" style="font-size:.7rem">Account Type</label>
-                <select id="super-new-type-b" style="width:100%;box-sizing:border-box">
+                <label class="lbl lbl--sm">Account Type</label>
+                <select id="super-new-type-b">
                   <option value="Accumulation">Accumulation</option>
                   <option value="Defined Benefit">Defined Benefit</option>
                   <option value="SMSF">SMSF</option>
@@ -2268,9 +2284,9 @@ window.addEventListener('unhandledrejection',function(e){
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <div><label class="lbl" style="font-size:.7rem">Balance as of month</label><input type="month" id="super-new-mo-b" style="width:100%;box-sizing:border-box"/></div>
+              <div><label class="lbl lbl--sm">Balance as of month</label><input type="month" id="super-new-mo-b"/></div>
             </div>
-            <div style="display:flex;gap:8px">
+            <div class="sp-form-actions">
               <button class="btn btn-primary btn-sm" onclick="superAddAcct('b')">Add Account</button>
               <button class="btn btn-ghost btn-sm" onclick="superHideAddForm('b')">Cancel</button>
             </div>
@@ -2278,7 +2294,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
 
         <!-- Projection label -->
-        <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
+        <div class="sp-proj-lbl">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
         <div class="super-ass-row"><label>Current Balance (AUD)</label><input type="number" id="sb-balance" placeholder="185000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Current Age</label><input type="number" id="sb-age" placeholder="40" min="18" max="70" oninput="calcSuper()" inputmode="numeric"/></div>
         <div class="super-ass-row"><label>Retirement Age</label><input type="number" id="sb-retire" placeholder="67" min="50" max="80" oninput="calcSuper()" inputmode="numeric"/></div>
@@ -2295,34 +2311,34 @@ window.addEventListener('unhandledrejection',function(e){
             <option value="highgrowth">High Growth (~8.5% net) — ASFA</option>
           </select>
         </div>
-        <div class="super-ass-row"><label>Return Rate (% p.a.) <span style="font-size:.65rem;color:var(--muted)">(auto-set by scenario)</span></label><input type="number" id="sb-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.) <span class="sp-lbl-hint">(auto-set by scenario)</span></label><input type="number" id="sb-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="sb-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
-        <div id="sb-result" style="margin-top:14px"></div>
+        <div id="sb-result" class="sp-result"></div>
       </div>
       <!-- Profile 2 -->
       <div class="card">
-        <div class="super-header" style="background:linear-gradient(135deg,#3a2060,#7c5cbf)">
-          <span style="font-size:1.6rem"><i class="ti ti-briefcase"></i></span>
-          <div><div style="font-weight:700;color:#fff" data-profile-label="shelley">Profile 2</div><div style="font-size:.72rem;color:rgba(255,255,255,.75)">Superannuation</div></div>
+        <div class="super-header super-header--p2">
+          <span class="sp-hd-ico"><i class="ti ti-briefcase"></i></span>
+          <div><div class="sp-hd-name" data-profile-label="shelley">Profile 2</div><div class="sp-hd-sub">Superannuation</div></div>
         </div>
 
         <!-- Account list -->
-        <div style="padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Accounts</div>
-            <button class="btn btn-ghost btn-sm" onclick="superShowAddForm('s')" style="font-size:.72rem">+ Add</button>
+        <div class="sp-accts">
+          <div class="sp-accts-hd">
+            <div class="sp-accts-lbl">Accounts</div>
+            <button class="btn btn-ghost btn-sm sp-add-btn" onclick="superShowAddForm('s')">+ Add</button>
           </div>
           <div id="super-acct-list-s"></div>
           <!-- Add form -->
-          <div id="super-add-form-s" style="display:none;margin-top:10px;padding:10px;background:var(--card2);border-radius:10px">
-            <div class="form-grid" style="margin-bottom:8px">
-              <div><label class="lbl" style="font-size:.7rem">Fund Name</label><input type="text" id="super-new-fund-s" placeholder="e.g. REST, Hesta, AustralianSuper" style="font-size:16px;width:100%;box-sizing:border-box"/></div>
-              <div><label class="lbl" style="font-size:.7rem">Balance (AUD)</label><input type="number" id="super-new-bal-s" placeholder="0" step="1000" inputmode="decimal" style="width:100%;box-sizing:border-box"/></div>
+          <div id="super-add-form-s" class="sp-add-form" style="display:none">
+            <div class="form-grid sp-form-row">
+              <div><label class="lbl lbl--sm">Fund Name</label><input type="text" id="super-new-fund-s" placeholder="e.g. REST, Hesta, AustralianSuper" class="sp-input-16"/></div>
+              <div><label class="lbl lbl--sm">Balance (AUD)</label><input type="number" id="super-new-bal-s" placeholder="0" step="1000" inputmode="decimal"/></div>
             </div>
-            <div class="form-grid" style="margin-bottom:8px">
+            <div class="form-grid sp-form-row">
               <div>
-                <label class="lbl" style="font-size:.7rem">Account Type</label>
-                <select id="super-new-type-s" style="width:100%;box-sizing:border-box">
+                <label class="lbl lbl--sm">Account Type</label>
+                <select id="super-new-type-s">
                   <option value="Accumulation">Accumulation</option>
                   <option value="Defined Benefit">Defined Benefit</option>
                   <option value="SMSF">SMSF</option>
@@ -2330,9 +2346,9 @@ window.addEventListener('unhandledrejection',function(e){
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <div><label class="lbl" style="font-size:.7rem">Balance as of month</label><input type="month" id="super-new-mo-s" style="width:100%;box-sizing:border-box"/></div>
+              <div><label class="lbl lbl--sm">Balance as of month</label><input type="month" id="super-new-mo-s"/></div>
             </div>
-            <div style="display:flex;gap:8px">
+            <div class="sp-form-actions">
               <button class="btn btn-primary btn-sm" onclick="superAddAcct('s')">Add Account</button>
               <button class="btn btn-ghost btn-sm" onclick="superHideAddForm('s')">Cancel</button>
             </div>
@@ -2340,7 +2356,7 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
 
         <!-- Projection label -->
-        <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
+        <div class="sp-proj-lbl">Projection Settings — balance auto-filled from accounts above when accounts are added</div>
         <div class="super-ass-row"><label>Current Balance (AUD)</label><input type="number" id="ss-balance" placeholder="120000" step="1000" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Current Age</label><input type="number" id="ss-age" placeholder="38" min="18" max="70" oninput="calcSuper()" inputmode="numeric"/></div>
         <div class="super-ass-row"><label>Retirement Age</label><input type="number" id="ss-retire" placeholder="67" min="50" max="80" oninput="calcSuper()" inputmode="numeric"/></div>
@@ -2356,32 +2372,32 @@ window.addEventListener('unhandledrejection',function(e){
             <option value="highgrowth">High Growth (~8.5% net) — ASFA</option>
           </select>
         </div>
-        <div class="super-ass-row"><label>Return Rate (% p.a.) <span style="font-size:.65rem;color:var(--muted)">(auto-set by scenario)</span></label><input type="number" id="ss-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
+        <div class="super-ass-row"><label>Return Rate (% p.a.) <span class="sp-lbl-hint">(auto-set by scenario)</span></label><input type="number" id="ss-return" value="7.7" step="0.5" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Fees (% p.a.)</label><input type="number" id="ss-fees" value="0.7" step="0.1" oninput="calcSuper()" inputmode="decimal"/></div>
         <div class="super-ass-row"><label>Inflation (% p.a.)</label><input type="number" id="ss-inflation" value="2.5" step="0.1" oninput="calcSuper()"/></div>
-        <div id="ss-result" style="margin-top:14px"></div>
+        <div id="ss-result" class="sp-result"></div>
       </div>
     </div>
     
 
     <!-- Div 293 Section -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-bolt"></i> Division 293 Tax — Full Breakdown</div>
-      <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">For high earners (income + concessional contributions &gt; $250,000), Div 293 charges an additional 15% tax on contributions — raising the effective rate from 15% to 30%. This section shows the full impact including after-tax benefit and net super growth impact.</div>
+      <div class="section-label sp-sl-tight"><i class="ti ti-bolt"></i> Division 293 Tax — Full Breakdown</div>
+      <div class="sp-desc">For high earners (income + concessional contributions &gt; $250,000), Div 293 charges an additional 15% tax on contributions — raising the effective rate from 15% to 30%. This section shows the full impact including after-tax benefit and net super growth impact.</div>
       <div class="d293-wrap" id="d293-cards"></div>
     </div>
 
     <div class="card">
       <div class="section-label">Combined Super Projection</div>
       <div class="chart-box"><canvas id="super-chart"></canvas></div>
-      <div id="super-combined" style="margin-top:16px"></div>
+      <div id="super-combined" class="sp-combined"></div>
     </div>
-    <div style="margin-top:12px;padding:10px 14px;background:#2a1a25;border-radius:9px;font-size:.72rem;color:var(--muted)">
+    <div class="sp-disclaimer">
       <i class="ti ti-alert-triangle"></i> Projections are illustrative estimates only and do not constitute financial advice.
     </div>
 
     <!-- Monthly super balance history grid -->
-    <div id="super-monthly-grid" style="margin-top:20px"></div>
+    <div id="super-monthly-grid" class="sp-monthly"></div>
   </div>
 
   <!-- ═══ NET ASSETS ═══ -->
@@ -2397,7 +2413,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="g2 mb">
 
       <!-- Left: asset & liability breakdowns -->
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="as-col">
         <div class="card"><div class="section-label"><i class="ti ti-building-bank"></i> Bank Balances</div><div id="assets-bank"></div></div>
         <div class="card"><div class="section-label"><i class="ti ti-briefcase"></i> Superannuation</div><div id="assets-super"></div></div>
         <div class="card"><div class="section-label"><i class="ti ti-home-2"></i> Property Equity</div><div id="assets-property"></div></div>
@@ -2405,33 +2421,33 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
 
       <!-- Right: three donuts + net position panel -->
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="as-col">
 
         <!-- Net Position hero -->
         <div class="card" id="assets-net-position"></div>
 
         <!-- Assets donut -->
         <div class="card">
-          <div class="section-label" style="margin-bottom:10px">Assets Breakdown</div>
-          <div style="height:220px"><canvas id="assets-chart"></canvas></div>
+          <div class="section-label section-label--mb10">Assets Breakdown</div>
+          <div class="as-donut"><canvas id="assets-chart"></canvas></div>
         </div>
 
         <!-- Liabilities donut -->
         <div class="card">
-          <div class="section-label" style="margin-bottom:10px">Liabilities Breakdown</div>
-          <div style="height:220px"><canvas id="assets-liab-chart"></canvas></div>
+          <div class="section-label section-label--mb10">Liabilities Breakdown</div>
+          <div class="as-donut"><canvas id="assets-liab-chart"></canvas></div>
         </div>
 
-        <div id="assets-note" style="font-size:.72rem;color:var(--muted);text-align:center;padding:4px 0"></div>
+        <div id="assets-note" class="as-note"></div>
       </div>
     </div>
 
     <!-- Link to full equities tab -->
-    <div class="card mb" style="padding:14px 18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div class="card mb as-eq-card">
+      <div class="as-eq-row">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-trending-up"></i> Equity Holdings</div>
-          <div style="font-size:.74rem;color:var(--muted)">RSU grants and share portfolio</div>
+          <div class="section-label section-label--mb2"><i class="ti ti-trending-up"></i> Equity Holdings</div>
+          <div class="as-sub">RSU grants and share portfolio</div>
         </div>
         <a href="#" onclick="go('equities');return false;" class="btn btn-ghost btn-sm">View Holdings →</a>
       </div>
@@ -2439,10 +2455,10 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Monthly Net Worth History -->
     <div class="card mb">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div class="as-hist-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px"><i class="ti ti-calendar"></i> Monthly Net Worth History</div>
-          <div style="font-size:.74rem;color:var(--muted)">Snapshot recorded automatically each time you save a balance, liability, or asset. Components shown when available.</div>
+          <div class="section-label section-label--mb2"><i class="ti ti-calendar"></i> Monthly Net Worth History</div>
+          <div class="as-sub">Snapshot recorded automatically each time you save a balance, liability, or asset. Components shown when available.</div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="renderNetWorthHistory()">↻ Refresh</button>
       </div>
@@ -2471,7 +2487,7 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="card mb" id="eq-vest-by-year" style="display:none">
       <div class="section-label mb-sm">Vested vs Unvested by Year</div>
       <div class="g2 g2-top">
-        <div style="height:260px"><canvas id="eq-vest-donut-chart"></canvas></div>
+        <div class="eq-chart eq-chart--260"><canvas id="eq-vest-donut-chart"></canvas></div>
         <div id="eq-vest-year-table"></div>
       </div>
     </div>
@@ -2480,25 +2496,25 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="g2 mb">
       <div class="card">
         <div class="section-label mb-sm">Portfolio Allocation</div>
-        <div style="height:220px"><canvas id="eq-alloc-chart"></canvas></div>
+        <div class="eq-chart eq-chart--220"><canvas id="eq-alloc-chart"></canvas></div>
       </div>
       <div class="card">
         <div class="section-label mb-sm">Top Holdings by Value</div>
-        <div style="height:220px"><canvas id="eq-bar-chart"></canvas></div>
+        <div class="eq-chart eq-chart--220"><canvas id="eq-bar-chart"></canvas></div>
       </div>
     </div>
 
     <!-- Vesting timeline -->
     <div class="card mb">
       <div class="section-label mb-sm">Vesting Timeline — Next 3 Years</div>
-      <div style="height:200px"><canvas id="eq-vest-chart"></canvas></div>
+      <div class="eq-chart eq-chart--200"><canvas id="eq-vest-chart"></canvas></div>
     </div>
 
     <!-- Holdings list (grouped by type) -->
     <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
-        <div class="section-label" style="margin:0">Holdings</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="eq-hold-hd">
+        <div class="section-label section-label--flush">Holdings</div>
+        <div class="eq-hold-btns">
           <button class="btn btn-ghost btn-sm" onclick="openBatchPriceModal()"><i class="ti ti-currency-dollar"></i> Update Prices</button>
           <button class="btn btn-primary btn-sm" onclick="openEqModal(null)">+ Add Holding</button>
         </div>
@@ -2524,9 +2540,9 @@ window.addEventListener('unhandledrejection',function(e){
     <!-- Default home of the CSV wizard. openCsvModal() temporarily relocates #csv-wizard into the modal. -->
     <div id="csv-mount">
       <div class="card" id="csv-wizard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <div class="section-label" style="margin:0"><i class="ti ti-folder"></i> Import from CSV</div>
-          <div style="display:flex;gap:8px">
+        <div class="up-hd">
+          <div class="section-label section-label--flush"><i class="ti ti-folder"></i> Import from CSV</div>
+          <div class="up-hd-tools">
             <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()"><i class="ti ti-download"></i> Download Template</button>
             <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none"><i class="ti ti-x"></i> Start over</button>
           </div>
@@ -2550,7 +2566,7 @@ window.addEventListener('unhandledrejection',function(e){
             <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
             <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
           </div>
-          <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="csvFileChosen(event)"/>
+          <input type="file" id="csv-file-input" class="file-input-hidden" accept=".csv,.txt" onchange="csvFileChosen(event)"/>
           <div class="imp-hint">
             <strong><i class="ti ti-bulb"></i> What format does my CSV need?</strong>
             Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
@@ -2560,20 +2576,20 @@ window.addEventListener('unhandledrejection',function(e){
 
         <!-- STEP 2: Map Columns -->
         <div class="csv-panel" id="csv-p2">
-          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">
+          <p class="up-p2-desc">
             We found these columns in your file. Tell us what each one is — then click Preview.
           </p>
-          <div style="overflow-x:auto">
+          <div class="up-scroll">
             <table class="map-tbl">
               <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
               <tbody id="csv-map-body"></tbody>
             </table>
           </div>
-          <div style="background:#1a2010;border-radius:9px;padding:10px 14px;font-size:.78rem;color:#7ed87e;margin-bottom:14px">
+          <div class="up-tip">
             <i class="ti ti-bulb"></i> <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
             Negative amounts are treated as expenses automatically.
           </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end">
+          <div class="up-actions">
             <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
             <button class="btn btn-primary" onclick="csvPreview()">Preview Rows →</button>
           </div>
@@ -2582,10 +2598,10 @@ window.addEventListener('unhandledrejection',function(e){
         <!-- STEP 3: Preview -->
         <div class="csv-panel" id="csv-p3">
           <div class="imp-stats" id="csv-imp-stats"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-            <div style="font-size:.76rem;color:var(--muted)"><i class="ti ti-circle-filled" style="color:#eab308"></i> Yellow = possible duplicate &nbsp;·&nbsp; <i class="ti ti-circle-filled" style="color:#ef4444"></i> Red = skipped (missing data)</div>
-            <label style="display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text)">
-              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()" style="width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+          <div class="up-legend-bar">
+            <div class="up-legend"><i class="ti ti-circle-filled up-dot--dup"></i> Yellow = possible duplicate &nbsp;·&nbsp; <i class="ti ti-circle-filled up-dot--err"></i> Red = skipped (missing data)</div>
+            <label class="up-skip">
+              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()"/>
               Skip duplicates
             </label>
           </div>
@@ -2595,7 +2611,7 @@ window.addEventListener('unhandledrejection',function(e){
               <tbody id="csv-prev-body"></tbody>
             </table>
           </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <div class="up-actions up-actions--wrap">
             <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
             <button class="btn btn-primary" onclick="csvConfirmImport()"><i class="ti ti-circle-check-filled"></i> Import Transactions</button>
           </div>
@@ -2611,38 +2627,38 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Quick export buttons -->
     <div class="g3 mb">
-      <div class="card" style="text-align:center;cursor:pointer" onclick="exportFullBackup()">
-        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-device-floppy"></i></div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Full Backup</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All data as JSON — restore on any device</div>
-        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download Backup</button>
+      <div class="card ex-quick" onclick="exportFullBackup()">
+        <div class="ex-quick-ico"><i class="ti ti-device-floppy"></i></div>
+        <div class="ex-quick-title">Full Backup</div>
+        <div class="ex-quick-desc">All data as JSON — restore on any device</div>
+        <button class="btn btn-primary btn--block"><i class="ti ti-download"></i> Download Backup</button>
       </div>
-      <div class="card" style="text-align:center;cursor:pointer" onclick="exportTransactionsCSV()">
-        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-credit-card"></i></div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Transactions CSV</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">All transactions — open in Excel or Sheets</div>
-        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download CSV</button>
+      <div class="card ex-quick" onclick="exportTransactionsCSV()">
+        <div class="ex-quick-ico"><i class="ti ti-credit-card"></i></div>
+        <div class="ex-quick-title">Transactions CSV</div>
+        <div class="ex-quick-desc">All transactions — open in Excel or Sheets</div>
+        <button class="btn btn-primary btn--block"><i class="ti ti-download"></i> Download CSV</button>
       </div>
-      <div class="card" style="text-align:center;cursor:pointer" onclick="exportSummaryCSV()">
-        <div style="font-size:2.2rem;margin-bottom:10px"><i class="ti ti-chart-bar"></i></div>
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">Monthly Summary CSV</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Income & expenses by month — for budgeting</div>
-        <button class="btn btn-primary" style="width:100%"><i class="ti ti-download"></i> Download CSV</button>
+      <div class="card ex-quick" onclick="exportSummaryCSV()">
+        <div class="ex-quick-ico"><i class="ti ti-chart-bar"></i></div>
+        <div class="ex-quick-title">Monthly Summary CSV</div>
+        <div class="ex-quick-desc">Income & expenses by month — for budgeting</div>
+        <button class="btn btn-primary btn--block"><i class="ti ti-download"></i> Download CSV</button>
       </div>
     </div>
 
     <!-- Restore / Import backup -->
     <div class="card mb">
       <div class="section-label">↑ Restore from Backup</div>
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6">
+      <p class="ex-restore-desc">
         Upload a previously exported JSON backup file to restore all your data. This will replace your current data — make sure to export a fresh backup first. The app reloads once the restore is done.
       </p>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label class="btn btn-ghost" style="cursor:pointer;min-height:44px">
+      <div class="ex-restore-row">
+        <label class="btn btn-ghost ex-file-btn">
           <i class="ti ti-folder"></i> Choose Backup File
-          <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="restoreBackup(event)"/>
+          <input type="file" id="restore-file-input" class="file-input-hidden" accept=".json" onchange="restoreBackup(event)"/>
         </label>
-        <div id="restore-status" style="font-size:.82rem;color:var(--muted)"></div>
+        <div id="restore-status" class="ex-restore-status"></div>
       </div>
     </div>
 
@@ -2660,10 +2676,10 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="export-data-summary"></div>
         <hr class="div"/>
         <div class="section-label"><i class="ti ti-trash"></i> Clear Data</div>
-        <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        <p class="ex-clear-desc">
           Permanently delete data from a specific section. Always export a backup first.
         </p>
-        <div id="export-clear-btns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <div id="export-clear-btns" class="ex-clear-btns"></div>
       </div>
     </div>
   </div>
@@ -2675,14 +2691,14 @@ window.addEventListener('unhandledrejection',function(e){
     <div class="bva-header">
       <div>
         <div class="page-title" id="bva-title">Budget vs Actuals</div>
-        <div class="page-sub" style="margin-bottom:0">Compare what you planned to spend vs what you actually spent.</div>
+        <div class="page-sub">Compare what you planned to spend vs what you actually spent.</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">
-          <button class="bva-view-btn active" data-view="month" onclick="bvaSetView('month')" style="padding:7px 14px;font-size:.8rem;font-weight:600;background:transparent;border:none;cursor:pointer;color:var(--text)">Monthly</button>
-          <button class="bva-view-btn" data-view="annual" onclick="bvaSetView('annual')" style="padding:7px 14px;font-size:.8rem;font-weight:600;background:transparent;border:none;border-left:1px solid var(--border);cursor:pointer;color:var(--muted)">Annual</button>
+      <div class="bva-controls">
+        <div class="bva-view-toggle">
+          <button class="bva-view-btn active" data-view="month" onclick="bvaSetView('month')">Monthly</button>
+          <button class="bva-view-btn" data-view="annual" onclick="bvaSetView('annual')">Annual</button>
         </div>
-        <select id="bva-period-select" onchange="bvaPeriodChanged()" style="padding:6px 10px;font-size:.78rem;width:auto;"></select>
+        <select id="bva-period-select" onchange="bvaPeriodChanged()"></select>
       </div>
     </div>
 
@@ -2691,11 +2707,11 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Budget vs Actuals table -->
     <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">Category Breakdown</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer;font-weight:400;color:var(--muted)">
-            <input type="checkbox" id="bva-show-all" onchange="renderBVA()" style="accent-color:var(--primary);width:auto;padding:0;border:none;background:none;box-shadow:none;"/>
+      <div class="bva-card-hd">
+        <div class="section-label">Category Breakdown</div>
+        <div class="bva-card-tools">
+          <label class="bva-showall">
+            <input type="checkbox" id="bva-show-all" onchange="renderBVA()"/>
             Show all categories
           </label>
           <button class="btn btn-ghost btn-sm" onclick="go('categories')"><i class="ti ti-settings"></i> Manage Categories</button>
@@ -2710,7 +2726,7 @@ window.addEventListener('unhandledrejection',function(e){
               <th id="bva-th-actual">Actual</th>
               <th id="bva-th-remain">Remaining</th>
               <th>% Used</th>
-              <th style="min-width:100px">Progress</th>
+              <th class="bva-th-progress">Progress</th>
             </tr>
           </thead>
           <tbody id="bva-tbody"></tbody>
@@ -2721,8 +2737,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Set budgets inline -->
     <div class="card">
-      <div class="section-label" style="margin-bottom:3px">Set Monthly Budgets</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Enter a monthly limit for each category. Leave blank for no budget. Changes save automatically.</p>
+      <div class="section-label bva-inputs-label">Set Monthly Budgets</div>
+      <p class="bva-inputs-note">Enter a monthly limit for each category. Leave blank for no budget. Changes save automatically.</p>
       <div id="bva-budget-inputs"></div>
     </div>
   </div>
@@ -2735,84 +2751,84 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Add category -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">Add New Category</div>
-      <div style="margin-bottom:12px">
-        <label class="lbl" style="margin-bottom:8px">Icon — click to select</label>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span id="cat-icon-preview" style="width:40px;height:40px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary)"></span>
+      <div class="section-label section-label--mb14">Add New Category</div>
+      <div class="cg-icon-block">
+        <label class="lbl cg-icon-lbl">Icon — click to select</label>
+        <div class="cg-icon-row">
+          <span id="cat-icon-preview" class="cg-icon-preview"></span>
           <input type="hidden" id="cat-icon-input" value="tag"/>
         </div>
-        <div id="cat-icon-picker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div id="cat-icon-picker" class="cg-icon-picker"></div>
       </div>
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div style="flex:1 1 160px"><label class="lbl">Name</label><input type="text" id="cat-name-input" placeholder="e.g. Subscriptions" maxlength="30"/></div>
-        <div style="flex:0 0 90px"><label class="lbl">Colour</label><input type="color" id="cat-color-input" value="#e8457a" style="height:44px;padding:3px 6px;cursor:pointer;width:100%"/></div>
+      <div class="cg-add-row">
+        <div class="cg-f-name"><label class="lbl">Name</label><input type="text" id="cat-name-input" placeholder="e.g. Subscriptions" maxlength="30"/></div>
+        <div class="cg-f-color"><label class="lbl">Colour</label><input type="color" id="cat-color-input" class="cg-color-input" value="#e8457a"/></div>
         <div><label class="lbl">Type</label>
-          <select id="cat-type-input" style="height:44px">
+          <select id="cat-type-input" class="cg-type-sel">
             <option value="expense">Expense</option>
             <option value="income">Income</option>
             <option value="both">Both</option>
           </select>
         </div>
-        <button class="btn btn-primary" onclick="addCategoryWithSubcats()" style="align-self:flex-end">+ Add</button>
+        <button class="btn btn-primary cg-add-btn" onclick="addCategoryWithSubcats()">+ Add</button>
       </div>
     </div>
 
     <!-- Import / Export / Reset -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:10px"><i class="ti ti-download"></i> Import / Export</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+      <div class="section-label section-label--mb10"><i class="ti ti-download"></i> Import / Export</div>
+      <div class="cg-io-row">
+        <label class="btn btn-ghost btn-sm cg-file-btn">
           <i class="ti ti-folder"></i> Import JSON
-          <input type="file" accept=".json" style="display:none" onchange="importCategories(event)"/>
+          <input type="file" accept=".json" class="cg-file-input" onchange="importCategories(event)"/>
         </label>
         <button class="btn btn-ghost btn-sm" onclick="exportCategories()"><i class="ti ti-download"></i> Export JSON</button>
         <button class="btn btn-ghost btn-sm" onclick="resetDefaultCategories()">↩ Reset to Defaults</button>
       </div>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Export saves all categories + subcategories. Import replaces the full list. Reset restores the built-in family categories.</div>
+      <div class="cg-io-note">Export saves all categories + subcategories. Import replaces the full list. Reset restores the built-in family categories.</div>
     </div>
 
     <!-- Category list -->
     <div class="card mb">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="section-label" style="margin:0">All Categories</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" id="cat-filter-expense" onclick="setCatFilter('expense')" style="background:rgba(232,69,122,.15);border-color:var(--primary);color:var(--primary)">Expense</button>
-          <button class="btn btn-ghost btn-sm" id="cat-filter-income" onclick="setCatFilter('income')">Income</button>
-          <button class="btn btn-ghost btn-sm" id="cat-filter-all" onclick="setCatFilter('all')">All</button>
+      <div class="cg-list-hd">
+        <div class="section-label section-label--flush">All Categories</div>
+        <div class="cg-filters">
+          <button class="btn btn-ghost btn-sm cat-filter is-active" id="cat-filter-expense" onclick="setCatFilter('expense')">Expense</button>
+          <button class="btn btn-ghost btn-sm cat-filter" id="cat-filter-income" onclick="setCatFilter('income')">Income</button>
+          <button class="btn btn-ghost btn-sm cat-filter" id="cat-filter-all" onclick="setCatFilter('all')">All</button>
         </div>
       </div>
       <div id="cat-list"></div>
     </div>
 
     <!-- Smart Rules shortcut -->
-    <div class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="go('smartrules')">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(240,83,138,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0"><i class="ti ti-bolt"></i></div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:.9rem;margin-bottom:2px">Smart Rules</div>
-        <div style="font-size:.75rem;color:var(--muted)">Create and manage auto-categorisation rules for your merchants.</div>
+    <div class="card cg-shortcut" onclick="go('smartrules')">
+      <div class="cg-shortcut-ico"><i class="ti ti-bolt"></i></div>
+      <div class="cg-shortcut-body">
+        <div class="cg-shortcut-title">Smart Rules</div>
+        <div class="cg-shortcut-desc">Create and manage auto-categorisation rules for your merchants.</div>
       </div>
-      <span style="color:var(--muted);font-size:1.1rem">›</span>
+      <span class="cg-shortcut-arrow">›</span>
     </div>
 
 
     <!-- Bank Category Comparison -->
     <div class="card mb" id="bank-comparison-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="toggleBankComparison()">
+      <div class="cg-bank-hd" onclick="toggleBankComparison()">
         <div>
-          <div class="section-label" style="margin:0"><i class="ti ti-building-bank"></i> Australian Bank Category Comparison</div>
-          <p style="font-size:.76rem;color:var(--muted);margin:4px 0 0">See how Kelda categories map to CBA, Westpac, NAB, ANZ, Macquarie, Up Bank, Amex &amp; HEM.</p>
+          <div class="section-label section-label--flush"><i class="ti ti-building-bank"></i> Australian Bank Category Comparison</div>
+          <p class="cg-bank-desc">See how Kelda categories map to CBA, Westpac, NAB, ANZ, Macquarie, Up Bank, Amex &amp; HEM.</p>
         </div>
-        <span id="bank-cmp-chevron" style="font-size:1.1rem;color:var(--muted);transition:transform .2s">▼</span>
+        <span id="bank-cmp-chevron" class="cg-bank-chevron">▼</span>
       </div>
-      <div id="bank-comparison-body" style="display:none;margin-top:16px">
+      <div id="bank-comparison-body" class="cg-bank-body" style="display:none">
         <!-- Bank filter pills -->
-        <div id="bank-filter-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+        <div id="bank-filter-pills" class="cg-bank-pills"></div>
         <!-- Table -->
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div class="cg-bank-scroll">
           <div id="bank-cmp-table"></div>
         </div>
-        <p style="font-size:.68rem;color:var(--muted);margin-top:12px">
+        <p class="cg-bank-note">
           <i class="ti ti-sparkles"></i> Kelda categories are a superset — some granular distinctions (e.g. Pets, Tax) don't appear in every bank's taxonomy.<br>
           <i class="ti ti-sparkles"></i> HEM = Australian Bureau of Statistics Household Expenditure Measure (12 primary categories).
         </p>
@@ -2821,19 +2837,19 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Bulk reprocess -->
     <div class="card">
-      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a rule.</p>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="section-label acat-sl"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
+      <p class="acat-desc">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a rule.</p>
+      <div class="acat-row acat-row--gap">
         <button class="btn btn-primary btn-sm" id="acat-reprocess-btn" onclick="acatReprocess()">▶ Run Now</button>
-        <progress id="acat-progress" value="0" max="100" style="display:none;width:160px;height:8px"></progress>
-        <span id="acat-result" style="font-size:.8rem"></span>
+        <progress id="acat-progress" class="acat-progress" value="0" max="100" style="display:none"></progress>
+        <span id="acat-result" class="acat-result"></span>
       </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px"><i class="ti ti-tool"></i> Fix Invalid Category IDs</div>
-        <p style="font-size:.74rem;color:var(--muted);margin-bottom:10px">Repairs transactions with legacy or unrecognised categories (e.g. "groceries", "dining", "Other") and maps them to the correct standard categories or Other.</p>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="cg-fix">
+        <div class="cg-fix-title"><i class="ti ti-tool"></i> Fix Invalid Category IDs</div>
+        <p class="cg-fix-desc">Repairs transactions with legacy or unrecognised categories (e.g. "groceries", "dining", "Other") and maps them to the correct standard categories or Other.</p>
+        <div class="acat-row">
           <button class="btn btn-ghost btn-sm" onclick="runFixOrphaned()"><i class="ti ti-tool"></i> Fix Now</button>
-          <span id="fix-orphan-result" style="font-size:.8rem"></span>
+          <span id="fix-orphan-result" class="acat-result"></span>
         </div>
       </div>
     </div>
@@ -2847,34 +2863,34 @@ window.addEventListener('unhandledrejection',function(e){
     <div id="how-to-smartrules"></div>
 
     <!-- How it works explainer -->
-    <div class="card mb" style="background:linear-gradient(135deg,rgba(240,83,138,.08) 0%,rgba(129,140,248,.08) 100%);border-color:rgba(240,83,138,.2)">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px"><i class="ti ti-bolt"></i></div>
+    <div class="card mb sr-intro">
+      <div class="sr-intro-grid">
+        <div class="sr-intro-item">
+          <div class="sr-intro-ico"><i class="ti ti-bolt"></i></div>
           <div>
-            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Confirmed Rules</div>
-            <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Rules you create manually or confirm from suggestions. Highest priority — always applied first.</div>
+            <div class="sr-intro-title">Confirmed Rules</div>
+            <div class="sr-intro-text">Rules you create manually or confirm from suggestions. Highest priority — always applied first.</div>
           </div>
         </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px"><i class="ti ti-robot"></i></div>
+        <div class="sr-intro-item">
+          <div class="sr-intro-ico"><i class="ti ti-robot"></i></div>
           <div>
-            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Auto-Learned</div>
-            <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Patterns the app learns when you categorise transactions. Promoted to Confirmed with one click.</div>
+            <div class="sr-intro-title">Auto-Learned</div>
+            <div class="sr-intro-text">Patterns the app learns when you categorise transactions. Promoted to Confirmed with one click.</div>
           </div>
         </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px">= vs ◡</div>
+        <div class="sr-intro-item">
+          <div class="sr-intro-ico">= vs ◡</div>
           <div>
-            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Exact vs Contains</div>
-            <div style="font-size:.75rem;color:var(--muted);line-height:1.5"><b>Exact</b> matches the precise merchant name. <b>Contains</b> matches any transaction whose name includes the keyword — great for chains with location suffixes.</div>
+            <div class="sr-intro-title">Exact vs Contains</div>
+            <div class="sr-intro-text"><b>Exact</b> matches the precise merchant name. <b>Contains</b> matches any transaction whose name includes the keyword — great for chains with location suffixes.</div>
           </div>
         </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px"><i class="ti ti-123"></i></div>
+        <div class="sr-intro-item">
+          <div class="sr-intro-ico"><i class="ti ti-123"></i></div>
           <div>
-            <div style="font-weight:700;font-size:.85rem;margin-bottom:3px">Priority order</div>
-            <div style="font-size:.75rem;color:var(--muted);line-height:1.5">Transfers → Confirmed Rules → High-confidence Learned → Keywords → Low-confidence Learned → Amount signal.</div>
+            <div class="sr-intro-title">Priority order</div>
+            <div class="sr-intro-text">Transfers → Confirmed Rules → High-confidence Learned → Keywords → Low-confidence Learned → Amount signal.</div>
           </div>
         </div>
       </div>
@@ -2887,13 +2903,13 @@ window.addEventListener('unhandledrejection',function(e){
 
 
     <!-- Bulk reprocess (also accessible here) -->
-    <div class="card" style="margin-top:16px">
-      <div class="section-label" style="margin-bottom:3px"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
-      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a confirmed rule.</p>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="card acat-card">
+      <div class="section-label acat-sl"><i class="ti ti-robot"></i> Bulk Auto-Categorise</div>
+      <p class="acat-desc">Re-run auto-categorisation across all existing transactions. Skips transfers and transactions already matched by a confirmed rule.</p>
+      <div class="acat-row">
         <button class="btn btn-primary btn-sm" id="acat-reprocess-btn2" onclick="acatReprocess2()">▶ Run Now</button>
-        <progress id="acat-progress2" value="0" max="100" style="display:none;width:160px;height:8px"></progress>
-        <span id="acat-result2" style="font-size:.8rem"></span>
+        <progress id="acat-progress2" class="acat-progress" value="0" max="100" style="display:none"></progress>
+        <span id="acat-result2" class="acat-result"></span>
       </div>
     </div>
   </div>
@@ -2907,13 +2923,13 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Sync / chart-mode bar -->
     <div class="card mb fc2-sync-bar">
-      <div style="flex:1;min-width:0">
-        <div id="fc2-bal-value" style="font-size:.85rem;color:var(--muted)">Sync from Cash Tracker to enable cumulative view</div>
-        <div id="fc2-sync-time" style="font-size:.72rem;color:var(--muted);margin-top:2px"></div>
+      <div class="fc2-bal-wrap">
+        <div id="fc2-bal-value" class="fc2-bal-value">Sync from Cash Tracker to enable cumulative view</div>
+        <div id="fc2-sync-time" class="fc2-sync-time"></div>
       </div>
-      <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:center">
+      <div class="fc2-sync-actions">
         <button class="btn btn-ghost btn-sm active" id="fc2-bars-btn" onclick="fc2SetChartMode('bars')"><i class="ti ti-chart-bar"></i> Bar Chart</button>
-        <button class="btn btn-ghost btn-sm" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled style="opacity:.4"><i class="ti ti-trending-up"></i> Cumulative</button>
+        <button class="btn btn-ghost btn-sm fc2-cum-toggle" id="fc2-cum-toggle" onclick="fc2SetChartMode('cumulative')" disabled><i class="ti ti-trending-up"></i> Cumulative</button>
         <button class="btn btn-primary btn-sm" onclick="fc2SyncBalance()">⟳ Sync Balance</button>
       </div>
     </div>
@@ -2923,8 +2939,8 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Chart -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px">Monthly Cash Flow</div>
-      <div class="chart-box" style="height:300px"><canvas id="fc2-chart"></canvas></div>
+      <div class="section-label fc2-sl">Monthly Cash Flow</div>
+      <div class="chart-box fc2-chart-box"><canvas id="fc2-chart"></canvas></div>
     </div>
 
     <!-- Month strip — click any month for breakdown -->
@@ -2932,16 +2948,16 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Insights -->
     <div class="card mb">
-      <div class="section-label" style="margin-bottom:14px"><i class="ti ti-bulb"></i> Insights</div>
+      <div class="section-label fc2-sl"><i class="ti ti-bulb"></i> Insights</div>
       <div id="fc2-insights"></div>
     </div>
 
     <!-- Adjustments -->
     <div class="card mb">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div class="fc2-adj-hd">
         <div>
-          <div class="section-label" style="margin-bottom:2px">Forecast Adjustments</div>
-          <div style="font-size:.76rem;color:var(--muted)">Override the baseline for specific months or add recurring income/expense changes.</div>
+          <div class="section-label fc2-sl-2">Forecast Adjustments</div>
+          <div class="fc2-adj-desc">Override the baseline for specific months or add recurring income/expense changes.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="fc2OpenAdjForm(-1)">+ Add Adjustment</button>
       </div>
@@ -2950,7 +2966,7 @@ window.addEventListener('unhandledrejection',function(e){
 
     <!-- Add / edit adjustment form (inline card) -->
     <div class="card mb" id="fc2-adj-form" style="display:none">
-      <div class="section-label" style="margin-bottom:14px">Add / Edit Adjustment</div>
+      <div class="section-label fc2-sl">Add / Edit Adjustment</div>
       <div class="form-grid">
         <div>
           <label class="lbl">Description</label>
@@ -2999,12 +3015,12 @@ window.addEventListener('unhandledrejection',function(e){
           <label class="lbl">End Month</label>
           <select id="fc2-adj-end"></select>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;padding-top:22px">
+        <div class="fc2-ongoing">
           <input type="checkbox" id="fc2-adj-ongoing" onchange="fc2AdjOngoingChange()"/>
-          <label for="fc2-adj-ongoing" style="font-size:.82rem;color:var(--muted);cursor:pointer">Ongoing (no end date)</label>
+          <label for="fc2-adj-ongoing" class="fc2-ongoing-lbl">Ongoing (no end date)</label>
         </div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+      <div class="fc2-form-actions">
         <button class="btn btn-primary" onclick="fc2SaveAdj()"><i class="ti ti-device-floppy"></i> Save</button>
         <button class="btn btn-ghost" onclick="fc2CloseAdjForm()">Cancel</button>
       </div>
@@ -3048,8 +3064,8 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- CSV IMPORT MODAL — thin wrapper. The wizard (#csv-wizard) lives on the
      Upload Transactions page and is relocated in here when opened as a modal. -->
 <div class="modal-overlay" id="csv-modal" onclick="if(event.target===this)closeCsvModal()">
-  <div class="modal-box" id="csv-modal-box" onclick="event.stopPropagation()" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:2px">
+  <div class="modal-box modal-box--scroll mdl-w720" id="csv-modal-box" onclick="event.stopPropagation()">
+    <div class="mdl-close-row">
       <button class="modal-close" onclick="closeCsvModal()" aria-label="Close"><i class="ti ti-x"></i></button>
     </div>
   </div>
@@ -3057,7 +3073,7 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- GLOBAL SEARCH MODAL — opened from the top-nav search icon (works on any page) -->
 <div class="modal-overlay" id="search-modal" onclick="if(event.target===this)closeSearchModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+  <div class="modal-box mdl-search" onclick="event.stopPropagation()">
     <div class="search-modal-bar">
       <i class="ti ti-search search-modal-ic"></i>
       <input id="search-modal-input" type="text" placeholder="Search transactions by merchant, category or amount…" autocomplete="off" oninput="runGlobalSearch()" onkeydown="if(event.key==='Escape')closeSearchModal()"/>
@@ -3069,9 +3085,9 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- NOTIFICATIONS / INSIGHTS MODAL — opened from the top-nav bell icon -->
 <div class="modal-overlay" id="notif-modal" onclick="if(event.target===this)closeNotifModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div class="section-label" style="margin:0"><i class="ti ti-bell"></i> Recommended for you</div>
+  <div class="modal-box mdl-85 mdl-w520" onclick="event.stopPropagation()">
+    <div class="mdl-hd">
+      <div class="section-label section-label--flush"><i class="ti ti-bell"></i> Recommended for you</div>
       <button class="btn btn-ghost btn-sm" onclick="closeNotifModal()"><i class="ti ti-x"></i> Close</button>
     </div>
     <div id="notif-modal-body"></div>
@@ -3080,28 +3096,28 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- BANK ACCOUNTS VISIBILITY MODAL — opened from the Dashboard Bank Accounts tile -->
 <div class="modal-overlay" id="acct-vis-modal" onclick="if(event.target===this)closeAcctVisModal()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div class="section-label" style="margin:0"><i class="ti ti-eye"></i> Show / hide accounts</div>
+  <div class="modal-box mdl-85 mdl-w420" onclick="event.stopPropagation()">
+    <div class="mdl-hd mdl-hd--mb6">
+      <div class="section-label section-label--flush"><i class="ti ti-eye"></i> Show / hide accounts</div>
       <button class="btn btn-ghost btn-sm" onclick="closeAcctVisModal()"><i class="ti ti-x"></i> Close</button>
     </div>
-    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">Hide accounts with no active balance so they don't clutter your dashboard. This only affects what's shown here — nothing is deleted.</div>
+    <div class="mdl-desc">Hide accounts with no active balance so they don't clutter your dashboard. This only affects what's shown here — nothing is deleted.</div>
     <div id="acct-vis-modal-body"></div>
   </div>
 </div>
 
 <!-- FORECAST MONTH DETAIL MODAL -->
 <div class="modal-overlay" id="fc2-month-overlay" onclick="fc2CloseMonthModal()">
-  <div class="modal-box" id="fc2-month-box" onclick="event.stopPropagation()" style="max-width:440px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+  <div class="modal-box mdl-fc2" id="fc2-month-box" onclick="event.stopPropagation()"></div>
 </div>
 
 <!-- GOAL UPDATE MODAL -->
 <!-- ═══ LIABILITIES MODAL ═══ -->
 <div class="modal-overlay" id="liab-modal">
-  <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div class="modal-box modal-box--scroll liab-modal-box">
     <h3 id="liab-modal-title">Add Liability</h3>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Liability Type</label>
       <select id="liab-m-type" onchange="liabModalTypeChange()">
         <option value="personal_loan">Personal Loan</option>
@@ -3115,12 +3131,12 @@ window.addEventListener('unhandledrejection',function(e){
       </select>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Lender / Provider</label>
-      <input type="text" id="liab-m-lender" placeholder="e.g. CommBank, Afterpay" style="font-size:16px"/>
+      <input type="text" id="liab-m-lender" placeholder="e.g. CommBank, Afterpay" class="liab-in16"/>
     </div>
 
-    <div class="form-grid" style="margin-bottom:14px">
+    <div class="form-grid">
       <div>
         <label class="lbl">Current Balance (AUD)</label>
         <input type="number" id="liab-m-balance" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
@@ -3131,18 +3147,18 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Opened / Start Date (optional)</label>
       <input type="date" id="liab-m-opened"/>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:4px">When the debt began — keeps it off Net Worth history before this month.</div>
+      <div class="liab-fld-hint">When the debt began — keeps it off Net Worth history before this month.</div>
     </div>
 
-    <div id="liab-m-rate-row" style="margin-bottom:14px">
+    <div id="liab-m-rate-row" class="liab-fld">
       <label class="lbl" id="liab-m-rate-label">Interest Rate (% p.a.)</label>
       <input type="number" id="liab-m-rate" placeholder="0" min="0" step="0.01" inputmode="decimal"/>
     </div>
 
-    <div class="form-grid" style="margin-bottom:14px">
+    <div class="form-grid">
       <div>
         <label class="lbl">Rate Type</label>
         <select id="liab-m-rate-type" onchange="liabModalRateTypeChange()">
@@ -3156,12 +3172,12 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <div id="liab-m-payment-row" style="margin-bottom:14px">
+    <div id="liab-m-payment-row" class="liab-fld">
       <label class="lbl" id="liab-m-payment-label">Minimum Monthly Payment (AUD)</label>
       <input type="number" id="liab-m-payment" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
     </div>
 
-    <div id="liab-m-due-row" class="form-grid" style="margin-bottom:14px">
+    <div id="liab-m-due-row" class="form-grid">
       <div>
         <label class="lbl">Payment Due Day (1–31)</label>
         <input type="number" id="liab-m-due-day" placeholder="15" min="1" max="31" inputmode="numeric"/>
@@ -3172,23 +3188,23 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
     </div>
 
-    <div id="liab-m-credit-limit-row" style="display:none;margin-bottom:14px">
+    <div id="liab-m-credit-limit-row" class="liab-fld" style="display:none">
       <label class="lbl">Credit Limit (AUD)</label>
       <input type="number" id="liab-m-credit-limit" placeholder="10000" min="0" step="0.01" inputmode="decimal"/>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div class="liab-fld">
       <label class="lbl">Notes (optional)</label>
-      <input type="text" id="liab-m-notes" placeholder="e.g. Consolidation loan" style="font-size:16px"/>
+      <input type="text" id="liab-m-notes" placeholder="e.g. Consolidation loan" class="liab-in16"/>
     </div>
 
-    <div id="liab-m-sched-note" style="display:none;background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:10px 14px;font-size:.76rem;color:var(--muted);margin-bottom:14px">
+    <div id="liab-m-sched-note" class="liab-m-note" style="display:none">
       <i class="ti ti-school"></i> HECS repayments are managed via ATO payroll deduction. Enter your estimated annual repayment. No amortisation schedule is generated.
     </div>
 
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:var(--card2);border-radius:10px">
-      <input type="checkbox" id="liab-m-add-to-bills" style="width:18px;height:18px;min-width:18px;accent-color:var(--primary)"/>
-      <label for="liab-m-add-to-bills" style="font-size:.82rem;color:var(--text);cursor:pointer">Add monthly payment to Bills tab</label>
+    <div class="liab-m-bills">
+      <input type="checkbox" id="liab-m-add-to-bills" class="liab-m-bills-cb"/>
+      <label for="liab-m-add-to-bills" class="liab-m-bills-lbl">Add monthly payment to Bills tab</label>
     </div>
 
     <div class="modal-actions">
@@ -3202,7 +3218,7 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="modal-box">
     <h3>Update Goal Progress</h3>
     <input type="hidden" id="modal-goal-idx"/>
-    <div style="margin-bottom:14px"><label class="lbl">Current Amount Saved (AUD)</label>
+    <div class="goal-fld"><label class="lbl">Current Amount Saved (AUD)</label>
       <input type="number" id="modal-goal-amt" placeholder="0.00" min="0" step="0.01"/></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -3295,16 +3311,16 @@ window.addEventListener('unhandledrejection',function(e){
         <div></div>
       </div>
       <div class="modal-actions" id="bill-edit-actions">
-        <button type="button" class="btn-danger-ghost" onclick="blShowEditDelete()" style="margin-right:auto"><i class="ti ti-trash"></i> Delete</button>
+        <button type="button" class="btn-danger-ghost bl-detail-del" onclick="blShowEditDelete()"><i class="ti ti-trash"></i> Delete</button>
         <button type="button" class="btn btn-ghost" onclick="blCloseEditModal()">Cancel</button>
         <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Save Changes</button>
       </div>
       <div class="modal-delete-confirm" id="bill-edit-delete-confirm" style="display:none">
         <div>
-          <div style="font-size:.78rem;color:var(--danger);font-weight:600"><i class="ti ti-alert-triangle"></i> Delete this bill permanently?</div>
-          <div id="bl-edit-delete-note" style="font-size:.68rem;color:var(--muted);margin-top:2px"></div>
+          <div class="bl-del-q"><i class="ti ti-alert-triangle"></i> Delete this bill permanently?</div>
+          <div id="bl-edit-delete-note" class="bl-del-note"></div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div class="bl-btn-row bl-btn-row--8">
           <button type="button" class="btn btn-ghost btn-sm" onclick="blHideEditDelete()">Cancel</button>
           <button type="button" class="btn-danger-ghost" onclick="blDeleteBillConfirmed()">Yes, delete</button>
         </div>
@@ -3320,7 +3336,7 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="modal-close" onclick="blCloseReviewModal()"><i class="ti ti-x"></i></button></div>
     <div class="modal-sub" id="bl-review-sub"></div>
     <div id="bl-review-list"></div>
-    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+    <div class="bl-review-foot">
       <button class="btn btn-ghost btn-sm" onclick="blCloseReviewModal()">Done</button>
     </div>
   </div>
@@ -3333,21 +3349,21 @@ window.addEventListener('unhandledrejection',function(e){
 
 <!-- ═══ REMINDER SETTINGS MODAL ═══ -->
 <div class="modal-overlay" id="bill-reminders-modal" onclick="if(event.target===this)blCloseRemindersModal()">
-  <div class="modal-box" style="max-width:440px">
+  <div class="modal-box modal-box--narrow">
     <div class="modal-header"><div class="modal-title"><i class="ti ti-bell"></i> Bill Reminders</div>
       <button class="modal-close" onclick="blCloseRemindersModal()"><i class="ti ti-x"></i></button></div>
     <div class="modal-sub">Get a heads-up before bills are due. Reminders are local to this device — nothing leaves it.</div>
     <div class="bl-setting-row">
-      <div><div style="font-weight:600;font-size:.86rem">Show a due-soon banner</div>
-        <div style="font-size:.72rem;color:var(--muted)">Highlight bills due within your reminder window when you open the app.</div></div>
+      <div><div class="bl-setting-title">Show a due-soon banner</div>
+        <div class="bl-setting-desc">Highlight bills due within your reminder window when you open the app.</div></div>
       <label class="bl-switch"><input type="checkbox" id="bl-remind-banner" onchange="blSaveReminderPrefs()"/><span class="bl-switch-slider"></span></label>
     </div>
     <div class="bl-setting-row">
-      <div><div style="font-weight:600;font-size:.86rem">Browser notifications</div>
-        <div style="font-size:.72rem;color:var(--muted)">Ask this browser to notify you about due-soon bills while the app is open.</div></div>
+      <div><div class="bl-setting-title">Browser notifications</div>
+        <div class="bl-setting-desc">Ask this browser to notify you about due-soon bills while the app is open.</div></div>
       <label class="bl-switch"><input type="checkbox" id="bl-remind-notify" onchange="blToggleBrowserNotify(this.checked)"/><span class="bl-switch-slider"></span></label>
     </div>
-    <div class="form-grid" style="margin-top:6px">
+    <div class="form-grid bl-remind-days">
       <div><label class="lbl">Remind me this many days ahead</label>
         <select id="bl-remind-days" onchange="blSaveReminderPrefs()">
           <option value="3">3 days</option>
@@ -3358,7 +3374,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div></div>
     </div>
-    <div id="bl-remind-status" style="font-size:.72rem;color:var(--muted);margin-top:4px"></div>
+    <div id="bl-remind-status" class="bl-remind-status"></div>
     <div class="modal-actions">
       <button type="button" class="btn btn-primary" onclick="blCloseRemindersModal()">Done</button>
     </div>
@@ -3683,7 +3699,7 @@ function obBuildRecap() {
           + '<div class="ob-recap-ic">' + it.ic + '</div>'
           + '<div><b>' + obEsc(it.label) + '</b><span>' + obEsc(it.sub) + '</span></div></div>';
   });
-  html += '</div><button class="ob-btn-primary" style="margin-top:0" onclick="obFinish()">Open my dashboard →</button>';
+  html += '</div><button class="ob-btn-primary ob-mt0" onclick="obFinish()">Open my dashboard →</button>';
   document.getElementById('recap-card').innerHTML = html;
 }
 
@@ -3994,9 +4010,20 @@ function showSwUpdatePrompt(reg){
   .sw-update-btn:disabled{ opacity:.6; cursor:default; }
   .sw-update-dismiss{
     background:none; border:none; color:var(--muted,#6278A0); cursor:pointer;
-    font-size:15px; line-height:1; padding:8px; min-height:40px;
+    font-size:15px; line-height:1; padding:8px; min-height:44px; min-width:44px;
   }
-  @media (max-width:760px){ .sw-update-bar{ bottom:88px; } }
+  /* Hidden until shown, so a partly off-screen bar can never peek out or catch taps */
+  .sw-update-bar:not(.show){ visibility:hidden; transition:transform .3s ease, visibility 0s .3s; }
+  /* Mobile (same query as layout.css): full-width bar sitting just above the tab bar */
+  @media (max-width:759px), (pointer:coarse) and (max-height:500px){
+    .sw-update-bar{
+      left:12px; right:12px; max-width:none;
+      bottom:calc(var(--tabbar-h,60px) + 12px + env(safe-area-inset-bottom,0px));
+      transform:translateY(calc(100% + var(--tabbar-h,60px) + 40px));
+    }
+    .sw-update-bar.show{ transform:none; }
+    .sw-update-text{ flex:1; min-width:0; }
+  }
 </style>
 <div class="sw-update-bar" id="sw-update-bar" role="status" aria-live="polite">
   <span class="sw-update-text">A new version of Kelda Finance is ready.</span>

@@ -62,9 +62,9 @@ function renderAssets() {
     bankRows.map(function(r) {
       return '<div class="dr"><span class="dr-k">' + iconTag(r.icon) + ' ' + r.label + '</span><span class="dr-v">' + fmt(r.value) + '</span></div>';
     }).join('')
-    + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
-    + '<span class="dr-k" style="font-weight:700">Total Bank</span>'
-    + '<span class="dr-v" style="color:var(--primary)">' + fmt(bankTotal) + '</span></div>';
+    + '<div class="dr dr--total">'
+    + '<span class="dr-k">Total Bank</span>'
+    + '<span class="dr-v tone-pink">' + fmt(bankTotal) + '</span></div>';
 
   // ── Super ─────────────────────────────────────────────────
   var supB = (SUPER.b && SUPER.b.balance) ? SUPER.b.balance : 0;
@@ -74,9 +74,9 @@ function renderAssets() {
   document.getElementById('assets-super').innerHTML =
     '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('brenton') + '</span><span class="dr-v">' + fmt(supB) + '</span></div>'
     + '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('shelley') + '</span><span class="dr-v">' + fmt(supS) + '</span></div>'
-    + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
-    + '<span class="dr-k" style="font-weight:700">Total Super</span>'
-    + '<span class="dr-v" style="color:var(--primary)">' + fmt(supTotal) + '</span></div>';
+    + '<div class="dr dr--total">'
+    + '<span class="dr-k">Total Super</span>'
+    + '<span class="dr-v tone-pink">' + fmt(supTotal) + '</span></div>';
 
   // ── Property (supports multiple properties — sums across all of them) ──
   var mortProps = (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length)
@@ -111,27 +111,27 @@ function renderAssets() {
     var gainHtml = '';
     if (pPp > 0 && pHv > 0) {
       var gain = pHv - pPp, gainPct = (gain / pPp * 100).toFixed(1);
-      var gainColor = gain >= 0 ? 'var(--success)' : 'var(--danger)';
-      gainHtml = '<div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v" style="color:' + gainColor + '">'
+      var gainTone = gain >= 0 ? 'tone-green' : 'tone-danger';
+      gainHtml = '<div class="dr"><span class="dr-k">Capital Growth</span><span class="dr-v ' + gainTone + '">'
         + (gain >= 0 ? '+' : '') + fmt(gain) + ' (' + (gain >= 0 ? '+' : '') + gainPct + '%)</span></div>';
     }
-    return '<div style="margin-bottom:10px">'
-      + (mortProps.length > 1 ? '<div class="dr-k" style="font-weight:700;margin-bottom:4px">' + ICON('home-2') + ' ' + (p.name || 'Property') + '</div>' : '')
+    return '<div class="as-prop">'
+      + (mortProps.length > 1 ? '<div class="dr-k as-prop-name">' + ICON('home-2') + ' ' + (p.name || 'Property') + '</div>' : '')
       + '<div class="dr"><span class="dr-k">Home Value</span><span class="dr-v">' + fmt(pHv) + '</span></div>'
-      + '<div class="dr"><span class="dr-k">Mortgage</span><span class="dr-v" style="color:var(--danger)">-' + fmt(pMb) + '</span></div>'
-      + (pOff ? '<div class="dr"><span class="dr-k">Offset</span><span class="dr-v" style="color:var(--success)">' + fmt(pOff) + '</span></div>' : '')
+      + '<div class="dr"><span class="dr-k">Mortgage</span><span class="dr-v tone-danger">-' + fmt(pMb) + '</span></div>'
+      + (pOff ? '<div class="dr"><span class="dr-k">Offset</span><span class="dr-v tone-green">' + fmt(pOff) + '</span></div>' : '')
       + (ai ? '<div class="dr"><span class="dr-k">Acquired</span><span class="dr-v">' + ai.date + ' · ' + ai.hold + '</span></div>' : '')
       + gainHtml
-      + '<div class="dr"><span class="dr-k">Equity</span><span class="dr-v" style="color:var(--primary)">' + fmt(pEq) + '</span></div>'
+      + '<div class="dr"><span class="dr-k">Equity</span><span class="dr-v tone-pink">' + fmt(pEq) + '</span></div>'
       + '</div>';
   }).join('');
 
   document.getElementById('assets-property').innerHTML = hv
     ? propertyRowsHtml
-      + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
-      + '<span class="dr-k" style="font-weight:700">Net Equity' + (mortProps.length > 1 ? ' (all properties)' : '') + '</span>'
-      + '<span class="dr-v" style="color:var(--primary)">' + fmt(eq) + '</span></div>'
-    : '<div class="empty" style="padding:12px 0"><p>Add mortgage details</p></div>';
+      + '<div class="dr dr--total">'
+      + '<span class="dr-k">Net Equity' + (mortProps.length > 1 ? ' (all properties)' : '') + '</span>'
+      + '<span class="dr-v tone-pink">' + fmt(eq) + '</span></div>'
+    : '<div class="empty empty--pad12"><p>Add mortgage details</p></div>';
 
   // eqVal still used in grossAssets calculation — equities tile removed from page view
   var eqVal = (typeof eqTotalEquitiesValue === 'function') ? eqTotalEquitiesValue() : 0;
@@ -143,15 +143,15 @@ function renderAssets() {
   if (liabSummEl) {
     if (liabSegs.length) {
       liabSummEl.innerHTML = liabSegs.map(function(s) {
-        return '<div class="dr"><span class="dr-k"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + s.color + ';margin-right:6px;vertical-align:middle"></span>' + s.label + '</span>'
-          + '<span class="dr-v" style="color:var(--danger)">-' + fmt(s.value) + '</span></div>';
+        return '<div class="dr"><span class="dr-k"><span class="as-liab-dot" style="background:' + s.color + '"></span>' + s.label + '</span>'
+          + '<span class="dr-v tone-danger">-' + fmt(s.value) + '</span></div>';
       }).join('')
-      + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:4px;padding-top:10px">'
-      + '<span class="dr-k" style="font-weight:700">Total Liabilities</span>'
-      + '<span class="dr-v" style="color:var(--danger)">' + fmt(totalLiab) + '</span></div>'
-      + '<div style="margin-top:10px"><a href="#" onclick="go(\'liabilities\');return false;" style="font-size:.8rem;color:var(--primary);text-decoration:none;font-weight:600">Manage Liabilities →</a></div>';
+      + '<div class="dr dr--total">'
+      + '<span class="dr-k">Total Liabilities</span>'
+      + '<span class="dr-v tone-danger">' + fmt(totalLiab) + '</span></div>'
+      + '<div class="as-link-wrap"><a href="#" onclick="go(\'liabilities\');return false;" class="as-link">Manage Liabilities →</a></div>';
     } else {
-      liabSummEl.innerHTML = '<div class="empty" style="padding:10px 0"><p>No liabilities recorded. <a href="#" onclick="go(\'liabilities\');return false;" style="color:var(--primary)">Add →</a></p></div>';
+      liabSummEl.innerHTML = '<div class="empty empty--pad10"><p>No liabilities recorded. <a href="#" onclick="go(\'liabilities\');return false;" class="as-link-inline">Add →</a></p></div>';
     }
   }
 
@@ -161,32 +161,32 @@ function renderAssets() {
   var grossAssets = bankTotal + supTotal + hv + eqVal;
   var netAssets   = grossAssets - totalLiab;
   var liabRatio   = grossAssets > 0 ? Math.min(100, (totalLiab / grossAssets) * 100) : 0;
-  var netColor    = netAssets >= 0 ? 'var(--success)' : 'var(--danger)';
+  var netTone     = netAssets >= 0 ? 'tone-green' : 'tone-danger';
 
   // ── KPI stats ─────────────────────────────────────────────
   document.getElementById('assets-stats').innerHTML =
     '<div class="stat stat-pink"><div class="sl">Net Assets</div><div class="sv">' + fmt(netAssets) + '</div><div class="ss">Assets minus liabilities</div></div>'
     + '<div class="stat stat-rose"><div class="sl">Gross Assets</div><div class="sv">' + fmt(grossAssets) + '</div><div class="ss">Total before debt</div></div>'
-    + '<div class="stat stat-purple"><div class="sl">Total Liabilities</div><div class="sv" style="color:var(--danger)">' + fmt(totalLiab) + '</div><div class="ss">All debt balances</div></div>'
+    + '<div class="stat stat-purple"><div class="sl">Total Liabilities</div><div class="sv tone-danger">' + fmt(totalLiab) + '</div><div class="ss">All debt balances</div></div>'
     + '<div class="stat stat-dark"><div class="sl">Debt Ratio</div><div class="sv">' + liabRatio.toFixed(1) + '%</div><div class="ss">Liabilities / Gross assets</div></div>';
 
   // ── Net Position hero card ────────────────────────────────
   var npEl = document.getElementById('assets-net-position');
   if (npEl) {
     npEl.innerHTML =
-      '<div class="section-label" style="margin-bottom:14px">Net Assets Position</div>'
-      + '<div style="text-align:center;padding:10px 0 16px">'
-      + '<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px">Net Assets</div>'
-      + '<div style="font-family:var(--font-mono);font-size:2.4rem;font-weight:700;color:' + netColor + '">' + fmt(netAssets) + '</div>'
+      '<div class="section-label section-label--mb14">Net Assets Position</div>'
+      + '<div class="as-np-hero">'
+      + '<div class="as-np-lbl">Net Assets</div>'
+      + '<div class="as-np-val ' + netTone + '">' + fmt(netAssets) + '</div>'
       + '</div>'
-      + '<div class="dr"><span class="dr-k">Gross Assets</span><span class="dr-v" style="color:var(--success)">' + fmt(grossAssets) + '</span></div>'
-      + '<div class="dr"><span class="dr-k">Total Liabilities</span><span class="dr-v" style="color:var(--danger)">-' + fmt(totalLiab) + '</span></div>'
-      + '<div class="dr" style="border-top:1.5px solid var(--border);margin-top:6px;padding-top:10px">'
-      + '<span class="dr-k" style="font-weight:700">Net Assets</span>'
-      + '<span class="dr-v" style="font-family:var(--font-mono);font-weight:700;color:' + netColor + '">' + fmt(netAssets) + '</span></div>'
+      + '<div class="dr"><span class="dr-k">Gross Assets</span><span class="dr-v tone-green">' + fmt(grossAssets) + '</span></div>'
+      + '<div class="dr"><span class="dr-k">Total Liabilities</span><span class="dr-v tone-danger">-' + fmt(totalLiab) + '</span></div>'
+      + '<div class="dr dr--total dr--total-6">'
+      + '<span class="dr-k">Net Assets</span>'
+      + '<span class="dr-v dr-v--bold ' + netTone + '">' + fmt(netAssets) + '</span></div>'
       + (totalLiab > 0
-        ? '<div style="margin-top:14px"><div class="prog-track" style="height:8px"><div class="prog-fill" style="width:' + Math.min(100, liabRatio).toFixed(1) + '%;background:var(--danger)"></div></div>'
-          + '<div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px"><span>Debt ' + liabRatio.toFixed(1) + '% of assets</span><span>' + (100 - liabRatio).toFixed(1) + '% equity</span></div></div>'
+        ? '<div class="as-ratio"><div class="prog-track prog-track--sm"><div class="prog-fill danger" style="width:' + Math.min(100, liabRatio).toFixed(1) + '%"></div></div>'
+          + '<div class="as-ratio-lbls"><span>Debt ' + liabRatio.toFixed(1) + '% of assets</span><span>' + (100 - liabRatio).toFixed(1) + '% equity</span></div></div>'
         : '');
   }
 
@@ -578,7 +578,7 @@ function renderNetWorthHistory() {
   var moKeys = Object.keys(moMap).sort().reverse(); // most-recent first for display
 
   if (moKeys.length === 0) {
-    el.innerHTML = '<div class="empty" style="padding:20px 0"><p>No history yet — save any balance to start recording snapshots automatically.</p></div>';
+    el.innerHTML = '<div class="empty empty--pad20"><p>No history yet — save any balance to start recording snapshots automatically.</p></div>';
     return;
   }
 
@@ -602,25 +602,20 @@ function renderNetWorthHistory() {
   var card2  = asToken('--card2') || '#111830';
   var pr     = chartKeys.length > 18 ? 0 : 3;
 
-  var chartHtml = '<div style="height:240px;position:relative;margin-bottom:24px"><canvas id="nw-trend-canvas"></canvas></div>';
+  var chartHtml = '<div class="nw-chart"><canvas id="nw-trend-canvas"></canvas></div>';
 
   // ── Table ────────────────────────────────────────────────────
   var hasBank = hasCmp, hasSuper = hasCmp, hasProp = hasCmp, hasEq = hasCmp, hasLiab = hasCmp;
 
-  var thStyle  = 'padding:8px 12px;text-align:right;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1.5px solid var(--border);white-space:nowrap';
-  var thStyleL = thStyle.replace('text-align:right','text-align:left');
-  var tdStyle  = 'padding:7px 12px;text-align:right;font-family:var(--font-mono);font-size:.8rem;border-bottom:1px solid var(--border)';
-  var tdStyleL = tdStyle.replace('text-align:right','text-align:left');
-
   var thead = '<thead><tr>'
-    + '<th style="' + thStyleL + '">Month</th>'
-    + (hasBank  ? '<th style="' + thStyle + '">' + ICON('building-bank') + ' Bank</th>'        : '')
-    + (hasSuper ? '<th style="' + thStyle + '">' + ICON('briefcase') + ' Super</th>'       : '')
-    + (hasProp  ? '<th style="' + thStyle + '">' + ICON('home-2') + ' Property</th>'    : '')
-    + (hasEq    ? '<th style="' + thStyle + '">' + ICON('trending-up') + ' Equities</th>'    : '')
-    + (hasLiab  ? '<th style="' + thStyle + '">' + ICON('scale') + ' Liabilities</th>' : '')
-    + '<th style="' + thStyle + ';color:var(--primary)">Net Worth</th>'
-    + '<th style="' + thStyle + '">Change</th>'
+    + '<th class="nw-th nw-th--l">Month</th>'
+    + (hasBank  ? '<th class="nw-th">' + ICON('building-bank') + ' Bank</th>'        : '')
+    + (hasSuper ? '<th class="nw-th">' + ICON('briefcase') + ' Super</th>'       : '')
+    + (hasProp  ? '<th class="nw-th">' + ICON('home-2') + ' Property</th>'    : '')
+    + (hasEq    ? '<th class="nw-th">' + ICON('trending-up') + ' Equities</th>'    : '')
+    + (hasLiab  ? '<th class="nw-th">' + ICON('scale') + ' Liabilities</th>' : '')
+    + '<th class="nw-th nw-th--nw">Net Worth</th>'
+    + '<th class="nw-th">Change</th>'
     + '</tr></thead>';
 
   var rows = moKeys.map(function(mk) {
@@ -628,24 +623,24 @@ function renderNetWorthHistory() {
     var nw      = e.netWorth || 0;
     var mo      = new Date(mk + '-02').toLocaleString('en-AU', {month:'short', year:'numeric'});
     var delta   = deltaMap[mk];
-    var nwColor  = nw >= 0 ? 'var(--success)' : 'var(--danger)';
-    var dltColor = delta === null ? '' : (delta >= 0 ? 'color:var(--success)' : 'color:var(--danger)');
+    var nwTone   = nw >= 0 ? 'tone-green' : 'tone-danger';
+    var dltTone  = delta === null ? '' : (delta >= 0 ? ' tone-green' : ' tone-danger');
     var dltStr   = delta === null ? '—' : (delta >= 0 ? '+' : '') + fmt(delta);
 
     return '<tr>'
-      + '<td style="' + tdStyleL + ';font-weight:600;color:var(--text)">' + mo + '</td>'
-      + (hasBank  ? '<td style="' + tdStyle + '">'                             + fmt(e.bank        || 0) + '</td>' : '')
-      + (hasSuper ? '<td style="' + tdStyle + '">'                             + fmt(e.super_      || 0) + '</td>' : '')
-      + (hasProp  ? '<td style="' + tdStyle + '">'                             + fmt(e.property    || 0) + '</td>' : '')
-      + (hasEq    ? '<td style="' + tdStyle + '">'                             + fmt(e.equities    || 0) + '</td>' : '')
-      + (hasLiab  ? '<td style="' + tdStyle + ';color:var(--danger)">-'       + fmt(e.liabilities || 0) + '</td>' : '')
-      + '<td style="' + tdStyle + ';font-weight:700;color:' + nwColor + '">'  + fmt(nw)                 + '</td>'
-      + '<td style="' + tdStyle + ';' + dltColor + '">'                       + dltStr                  + '</td>'
+      + '<td class="nw-td nw-td--month">' + mo + '</td>'
+      + (hasBank  ? '<td class="nw-td">'                             + fmt(e.bank        || 0) + '</td>' : '')
+      + (hasSuper ? '<td class="nw-td">'                             + fmt(e.super_      || 0) + '</td>' : '')
+      + (hasProp  ? '<td class="nw-td">'                             + fmt(e.property    || 0) + '</td>' : '')
+      + (hasEq    ? '<td class="nw-td">'                             + fmt(e.equities    || 0) + '</td>' : '')
+      + (hasLiab  ? '<td class="nw-td tone-danger">-'       + fmt(e.liabilities || 0) + '</td>' : '')
+      + '<td class="nw-td nw-td--bold ' + nwTone + '">'  + fmt(nw)                 + '</td>'
+      + '<td class="nw-td' + dltTone + '">'                       + dltStr                  + '</td>'
       + '</tr>';
   }).join('');
 
-  var tableHtml = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'
-    + '<table style="width:100%;border-collapse:collapse;min-width:480px">'
+  var tableHtml = '<div class="nw-scroll">'
+    + '<table class="nw-tbl">'
     + thead + '<tbody>' + rows + '</tbody></table></div>';
 
   el.innerHTML = chartHtml + tableHtml;

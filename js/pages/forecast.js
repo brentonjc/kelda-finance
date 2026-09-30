@@ -239,31 +239,31 @@ function fc2RenderKPIs(months) {
   var worstM    = months.filter(function(m){ return m.isForecast && m.net === worstNet; })[0];
   var yearEnd   = months.reduce(function(s,m){ return s + m.net; }, 0);
 
-  var worstColor = worstNet < 0 ? 'var(--danger)' : (avgMonthly > 0 && worstNet < avgMonthly * 0.2 ? 'var(--warn)' : 'var(--success)');
+  var worstTone = worstNet < 0 ? 'tone-danger' : (avgMonthly > 0 && worstNet < avgMonthly * 0.2 ? 'tone-amber' : 'tone-green');
 
   el.innerHTML =
     '<div class="fc2-kpi">'
     + '<div class="fc2-kpi-label">Avg Monthly Net</div>'
-    + '<div class="fc2-kpi-val" style="color:' + (avgMonthly >= 0 ? 'var(--success)' : 'var(--danger)') + '">'
+    + '<div class="fc2-kpi-val ' + (avgMonthly >= 0 ? 'tone-green' : 'tone-danger') + '">'
     + fmt(avgMonthly) + '</div>'
     + '<div class="fc2-kpi-sub">from ' + allNets.length + ' month' + (allNets.length !== 1 ? 's' : '') + ' history</div>'
     + '</div>'
 
     + '<div class="fc2-kpi">'
     + '<div class="fc2-kpi-label">Best Forecast Month</div>'
-    + '<div class="fc2-kpi-val" style="color:var(--success)">' + fmt(bestNet) + '</div>'
+    + '<div class="fc2-kpi-val tone-green">' + fmt(bestNet) + '</div>'
     + '<div class="fc2-kpi-sub">' + (fcastNets.length ? months.filter(function(m){return m.isForecast&&m.net===bestNet;})[0].label : '—') + '</div>'
     + '</div>'
 
     + '<div class="fc2-kpi">'
     + '<div class="fc2-kpi-label">Tightest Month</div>'
-    + '<div class="fc2-kpi-val" style="color:' + worstColor + '">' + fmt(worstNet) + '</div>'
+    + '<div class="fc2-kpi-val ' + worstTone + '">' + fmt(worstNet) + '</div>'
     + '<div class="fc2-kpi-sub">' + (worstM ? worstM.label : '—') + '</div>'
     + '</div>'
 
     + '<div class="fc2-kpi">'
     + '<div class="fc2-kpi-label">Projected Year-End Net</div>'
-    + '<div class="fc2-kpi-val" style="color:' + (yearEnd >= 0 ? 'var(--success)' : 'var(--danger)') + '">' + fmt(yearEnd) + '</div>'
+    + '<div class="fc2-kpi-val ' + (yearEnd >= 0 ? 'tone-green' : 'tone-danger') + '">' + fmt(yearEnd) + '</div>'
     + '<div class="fc2-kpi-sub">sum of all 12 months</div>'
     + '</div>';
 }
@@ -279,7 +279,7 @@ function fc2RenderSyncBar() {
 
   if (balEl) {
     balEl.textContent = bal !== null ? 'Starting balance: ' + fmt(bal) : 'Sync from Cash Tracker to enable cumulative view';
-    balEl.style.color = bal !== null ? 'var(--text)' : 'var(--muted)';
+    balEl.classList.toggle('tone-text', bal !== null);
   }
   if (timeEl) {
     if (syncTime) {
@@ -291,7 +291,6 @@ function fc2RenderSyncBar() {
   }
   if (togBtn) {
     togBtn.disabled = bal === null;
-    togBtn.style.opacity = bal === null ? '0.4' : '1';
   }
 }
 
@@ -502,7 +501,7 @@ function fc2RenderInsights(months) {
 
   if (keys.length < 2) {
     el.innerHTML =
-      '<div class="fc2-insight-card" style="background:var(--card2)">'
+      '<div class="fc2-insight-card fc2-insight-card--muted">'
       + '<div class="fc2-insight-icon">' + ICON('chart-bar') + '</div>'
       + '<div><div class="fc2-insight-title">Not enough data yet</div>'
       + '<div class="fc2-insight-body">Add more transactions to unlock forecast insights.</div></div>'
@@ -630,22 +629,22 @@ function fc2RenderStrip(months) {
   })();
 
   el.innerHTML = months.map(function(m, i) {
-    var netColor = m.net >= 0 ? 'var(--success)' : 'var(--danger)';
-    var status, statusColor;
+    var netTone = m.net >= 0 ? 'tone-green' : 'tone-danger';
+    var status, statusCls;
     if (m.isActual) {
-      status = 'Actual'; statusColor = '#6278A0';
+      status = 'Actual'; statusCls = 'fc2-status--actual';
     } else if (m.net < 0) {
-      status = 'Negative'; statusColor = 'var(--danger)';
+      status = 'Negative'; statusCls = 'fc2-status--neg';
     } else if (avgNet > 0 && m.net < avgNet * 0.25) {
-      status = 'Tight'; statusColor = 'var(--warn)';
+      status = 'Tight'; statusCls = 'fc2-status--tight';
     } else {
-      status = 'Forecast'; statusColor = 'rgba(240,83,138,0.7)';
+      status = 'Forecast'; statusCls = 'fc2-status--fc';
     }
 
     return '<button class="fc2-month-card" onclick="fc2OpenMonthModal(' + i + ')">'
       + '<div class="fc2-month-lbl">' + m.short + '</div>'
-      + '<div class="fc2-month-net" style="color:' + netColor + '">' + fmt(m.net) + '</div>'
-      + '<div class="fc2-month-status" style="color:' + statusColor + '">' + status + '</div>'
+      + '<div class="fc2-month-net ' + netTone + '">' + fmt(m.net) + '</div>'
+      + '<div class="fc2-month-status ' + statusCls + '">' + status + '</div>'
       + (m.isAvgProxy ? '<div class="fc2-month-proxy">avg proxy</div>' : '')
       + '</button>';
   }).join('');
@@ -666,38 +665,38 @@ function fc2OpenMonthModal(idx) {
   var srcLabel = m.isActual ? 'Actual transactions' : (m.isAvgProxy ? 'Average proxy (no prior-year data)' : 'Prior year ' + fc2FmtMonth(fc2PriorYear(m.month)));
 
   box.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
-    + '<h3 style="font-family:var(--font-display);font-size:1.2rem;margin:0">' + m.label + '</h3>'
-    + '<button onclick="fc2CloseMonthModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:4px 8px">×</button>'
+    '<div class="fc2-mm-hd">'
+    + '<h3 class="fc2-mm-title">' + m.label + '</h3>'
+    + '<button class="fc2-mm-close" onclick="fc2CloseMonthModal()">×</button>'
     + '</div>'
 
     + '<div class="fc2-modal-row">'
     + '<span class="fc2-modal-lbl">Baseline</span>'
-    + '<span style="font-family:var(--font-mono);color:' + (m.baseline>=0?'var(--success)':'var(--danger)') + '">' + fmt(m.baseline) + '</span>'
+    + '<span class="fc2-mm-amt ' + (m.baseline>=0?'tone-green':'tone-danger') + '">' + fmt(m.baseline) + '</span>'
     + '</div>'
     + '<div class="fc2-modal-row">'
     + '<span class="fc2-modal-lbl">Source</span>'
-    + '<span style="color:var(--muted);font-size:.8rem">' + srcLabel + '</span>'
+    + '<span class="fc2-mm-src">' + srcLabel + '</span>'
     + '</div>'
 
     + (adjs.length
-      ? '<div style="margin:14px 0 8px"><div class="section-label">Adjustments applied</div>'
+      ? '<div class="fc2-mm-adjs"><div class="section-label">Adjustments applied</div>'
         + adjs.map(function(a){
           return '<div class="fc2-modal-row">'
             + '<span>' + (a.desc || 'Adjustment') + '</span>'
-            + '<span style="font-family:var(--font-mono);color:' + (a.amount>=0?'var(--success)':'var(--danger)') + '">'
+            + '<span class="fc2-mm-amt ' + (a.amount>=0?'tone-green':'tone-danger') + '">'
             + (a.amount>=0?'+':'') + fmt(a.amount) + '</span>'
             + '</div>';
         }).join('') + '</div>'
-      : '<div style="color:var(--muted);font-size:.82rem;margin:14px 0">No adjustments for this month.</div>')
+      : '<div class="fc2-mm-none">No adjustments for this month.</div>')
 
-    + '<div class="fc2-modal-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">'
-    + '<span style="font-weight:700">Final net</span>'
-    + '<span style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:' + (m.net>=0?'var(--success)':'var(--danger)') + '">' + fmt(m.net) + '</span>'
+    + '<div class="fc2-modal-row fc2-mm-final">'
+    + '<span class="fc2-mm-final-lbl">Final net</span>'
+    + '<span class="fc2-mm-final-val ' + (m.net>=0?'tone-green':'tone-danger') + '">' + fmt(m.net) + '</span>'
     + '</div>'
 
     + (m.isActual ? '' :
-      '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:14px" onclick="fc2CloseMonthModal();fc2PrefilledAdj(\'' + m.month + '\')">+ Add adjustment for ' + m.label + '</button>')
+      '<button class="btn btn-ghost btn-sm fc2-mm-add" onclick="fc2CloseMonthModal();fc2PrefilledAdj(\'' + m.month + '\')">+ Add adjustment for ' + m.label + '</button>')
     ;
 
   overlay.classList.add('open');
@@ -725,7 +724,7 @@ function fc2RenderAdjs() {
 
   var adjs = fc2Load(FC_ADJ_KEY) || [];
   if (!adjs.length) {
-    if (wrap) wrap.innerHTML = '<div class="empty" style="padding:20px 0"><div class="ei">' + ICON('plus') + '</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>';
+    if (wrap) wrap.innerHTML = '<div class="empty empty--pad20"><div class="ei">' + ICON('plus') + '</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>';
     return;
   }
 
@@ -755,17 +754,17 @@ function fc2RenderAdjs() {
           return s;
         })();
 
-    var amtColor = Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)';
+    var amtTone = Number(a.amount) >= 0 ? 'tone-green' : 'tone-danger';
     var editedTag = a.wasEdited ? '<span class="fc2-edited-tag">Edited</span>' : '';
 
     return '<tr>'
       + '<td>' + (a.description || '—') + '</td>'
       + '<td>' + typeBadge + '</td>'
-      + '<td style="font-size:.8rem;color:var(--muted)">' + monthStr + '</td>'
-      + '<td style="font-size:.8rem;color:var(--muted)">' + (a.category || '—') + '</td>'
-      + '<td style="font-family:var(--font-mono);color:' + amtColor + '">' + (Number(a.amount)>=0?'+':'') + fmt(a.amount) + '</td>'
-      + '<td style="font-size:.78rem;color:var(--muted)">' + (a.source || 'Manual') + '</td>'
-      + '<td style="white-space:nowrap">' + editedTag
+      + '<td class="fc2-td-muted">' + monthStr + '</td>'
+      + '<td class="fc2-td-muted">' + (a.category || '—') + '</td>'
+      + '<td class="fc2-td-amt ' + amtTone + '">' + (Number(a.amount)>=0?'+':'') + fmt(a.amount) + '</td>'
+      + '<td class="fc2-td-src">' + (a.source || 'Manual') + '</td>'
+      + '<td class="fc2-td-actions">' + editedTag
       + '<button class="icon-btn" onclick="fc2OpenAdjForm(' + i + ')" title="Edit">' + ICON('pencil') + '</button>'
       + '<button class="del-btn" onclick="fc2DeleteAdj(' + i + ')" title="Delete">' + ICON('trash') + '</button>'
       + '</td>'

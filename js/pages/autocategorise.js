@@ -939,12 +939,12 @@ function _showNextGeneralisationToast() {
 
   var banner = document.createElement('div');
   banner.id = 'gen-toast';
-  banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;z-index:9999;max-width:340px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.4)';
-  banner.innerHTML = '<div id="gen-toast-label" style="font-size:.82rem;font-weight:600;margin-bottom:10px">Apply to all <em></em> stores? (' + item.variantCount + ' transactions)</div>'
-    + '<div style="display:flex;gap:8px">'
-    + '<button id="gen-apply" class="btn btn-primary btn-sm" style="flex:1">Apply</button>'
-    + '<button id="gen-keep" class="btn btn-ghost btn-sm" style="flex:1">Keep exact only</button>'
-    + '<button id="gen-close" class="btn btn-ghost btn-sm" style="padding:0 10px">×</button>'
+  banner.className = 'acat-gen-toast';
+  banner.innerHTML = '<div id="gen-toast-label" class="acat-gen-label">Apply to all <em></em> stores? (' + item.variantCount + ' transactions)</div>'
+    + '<div class="acat-gen-btns">'
+    + '<button id="gen-apply" class="btn btn-primary btn-sm acat-gen-btn">Apply</button>'
+    + '<button id="gen-keep" class="btn btn-ghost btn-sm acat-gen-btn">Keep exact only</button>'
+    + '<button id="gen-close" class="btn btn-ghost btn-sm acat-gen-x">×</button>'
     + '</div>';
   document.body.appendChild(banner);
   // Set merchant name via textContent to prevent XSS
@@ -1416,10 +1416,10 @@ var AutoCat = (function() {
     var catObj = (typeof LCATS !== 'undefined') ? LCATS.find(function(c) { return c.id === result.catId; }) : null;
     if (!catObj) { hideSuggestion(); return; }
     var label = catObj.name + (result.subcat ? ' › ' + result.subcat : '');
-    var confColor = result.confidence === CONF_HIGH ? 'var(--success)' : 'var(--warn)';
-    pill.innerHTML = '<span style="color:var(--muted);font-size:.72rem">Suggested: </span>'
-      + '<button class="btn btn-ghost btn-sm acat-apply-btn" style="color:' + confColor + ';font-size:.78rem;padding:3px 10px;border-color:' + confColor + '"></button>'
-      + '<button class="btn btn-ghost btn-sm acat-dismiss-btn" style="font-size:.72rem;padding:2px 8px;color:var(--muted)">' + ICON('x') + '</button>';
+    var confMod = result.confidence === CONF_HIGH ? 'acat-sugg-apply--high' : 'acat-sugg-apply--low';
+    pill.innerHTML = '<span class="acat-sugg-lbl">Suggested: </span>'
+      + '<button class="btn btn-ghost btn-sm acat-apply-btn acat-sugg-apply ' + confMod + '"></button>'
+      + '<button class="btn btn-ghost btn-sm acat-dismiss-btn acat-sugg-x">' + ICON('x') + '</button>';
     var applyBtn = pill.querySelector('.acat-apply-btn');
     applyBtn.textContent = label;
     applyBtn.dataset.catId = result.catId;
@@ -1475,17 +1475,17 @@ function acatReprocess() {
   var result = document.getElementById('acat-result');
   if (btn) btn.disabled = true;
   if (prog) { prog.style.display = 'block'; prog.value = 0; }
-  if (result) result.innerHTML = '<span style="color:var(--muted)">Processing...</span>';
+  if (result) result.innerHTML = '<span class="tone-muted">Processing...</span>';
   AutoCat.reprocess(
     function(pct, changed) {
       if (prog) prog.value = pct;
-      if (result) result.innerHTML = '<span style="color:var(--muted)">Processing... ' + pct + '% (' + changed + ' updated)</span>';
+      if (result) result.innerHTML = '<span class="tone-muted">Processing... ' + pct + '% (' + changed + ' updated)</span>';
     },
     function(changed) {
       if (btn) btn.disabled = false;
       if (prog) prog.style.display = 'none';
-      if (result) result.innerHTML = '<span style="color:var(--success)">Done — ' + changed + ' transactions updated.</span>'
-        + ' <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="acatUndoReprocess()">Undo</button>';
+      if (result) result.innerHTML = '<span class="tone-green">Done — ' + changed + ' transactions updated.</span>'
+        + ' <button class="btn btn-ghost btn-sm acat-undo-btn" onclick="acatUndoReprocess()">Undo</button>';
       if (typeof renderTx === 'function') renderTx();
       if (typeof renderDashboard === 'function') renderDashboard();
       if (typeof renderRulesList === 'function') renderRulesList();
@@ -1497,7 +1497,7 @@ function acatReprocess() {
 function acatUndoReprocess() {
   if (AutoCat.undoReprocess()) {
     var result = document.getElementById('acat-result');
-    if (result) result.innerHTML = '<span style="color:var(--warn)">Undo complete — transactions restored.</span>';
+    if (result) result.innerHTML = '<span class="tone-amber">Undo complete — transactions restored.</span>';
     if (typeof renderTx === 'function') renderTx();
     if (typeof renderDashboard === 'function') renderDashboard();
     toast('↩️ Undo complete');
@@ -1510,16 +1510,16 @@ function acatReprocess2() {
   var result = document.getElementById('acat-result2');
   if (btn) btn.disabled = true;
   if (prog) { prog.style.display = 'block'; prog.value = 0; }
-  if (result) result.innerHTML = '<span style="color:var(--muted)">Processing...</span>';
+  if (result) result.innerHTML = '<span class="tone-muted">Processing...</span>';
   AutoCat.reprocess(
     function(pct, changed) {
       if (prog) prog.value = pct;
-      if (result) result.innerHTML = '<span style="color:var(--muted)">Processing... ' + pct + '% (' + changed + ' updated)</span>';
+      if (result) result.innerHTML = '<span class="tone-muted">Processing... ' + pct + '% (' + changed + ' updated)</span>';
     },
     function(changed) {
       if (btn) btn.disabled = false;
       if (prog) prog.style.display = 'none';
-      if (result) result.innerHTML = '<span style="color:var(--success)">Done — ' + changed + ' transactions updated.</span>';
+      if (result) result.innerHTML = '<span class="tone-green">Done — ' + changed + ' transactions updated.</span>';
       if (typeof renderTx === 'function') renderTx();
       if (typeof renderDashboard === 'function') renderDashboard();
       if (typeof renderRulesList === 'function') renderRulesList();

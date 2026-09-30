@@ -33,32 +33,32 @@ function renderSettings() {
   // 3A — APP IDENTITY
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
-  html += '<div class="section-label" style="margin-bottom:18px">App Identity</div>';
+  html += '<div class="section-label sett-sl--18">App Identity</div>';
 
   html += '<div class="settings-row">';
   html += '<label class="lbl">App Name</label>';
-  html += '<input type="text" id="s-app-name" value="' + _settEsc(getAppName()) + '" placeholder="Kelda Finance" style="font-size:16px"/>';
+  html += '<input type="text" id="s-app-name" value="' + _settEsc(getAppName()) + '" placeholder="Kelda Finance" class="sett-in16"/>';
   html += '</div>';
 
-  html += '<div class="settings-row" style="margin-top:10px">';
+  html += '<div class="settings-row sett-row--mt10">';
   html += '<label class="lbl">Subtitle</label>';
-  html += '<input type="text" id="s-app-sub" value="' + _settEsc(getAppSub()) + '" placeholder="Family Finance Tracker \xb7 AUD" style="font-size:16px"/>';
+  html += '<input type="text" id="s-app-sub" value="' + _settEsc(getAppSub()) + '" placeholder="Family Finance Tracker \xb7 AUD" class="sett-in16"/>';
   html += '</div>';
 
-  html += '<button class="btn btn-primary btn-sm" onclick="settingsSaveAppIdentity()" style="margin-top:14px">Save App Identity</button>';
+  html += '<button class="btn btn-primary btn-sm sett-save-id" onclick="settingsSaveAppIdentity()">Save App Identity</button>';
   html += '</div>';
 
   // ════════════════════════════════════════════════════════════
   // 3B — PROFILES
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
-  html += '<div class="section-label" style="margin-bottom:18px">Profiles</div>';
+  html += '<div class="section-label sett-sl--18">Profiles</div>';
 
   html += _settProfileCard('brenton', '👔', 'Profile 1');
-  html += '<div style="height:12px"></div>';
+  html += '<div class="sett-gap12"></div>';
   html += _settProfileCard('shelley', '👩', 'Profile 2');
 
-  html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">';
+  html += '<div class="sett-foot">';
   html += '<button class="btn btn-primary btn-sm" onclick="settingsSaveProfiles()">Save Profile Names</button>';
   html += '</div>';
   html += '</div>';
@@ -67,8 +67,8 @@ function renderSettings() {
   // 3C — ACCOUNTS
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">';
-  html += '<div class="section-label" style="margin:0">Accounts</div>';
+  html += '<div class="sett-acct-hd">';
+  html += '<div class="section-label section-label--flush">Accounts</div>';
   if (ACCOUNTS.length < 8) {
     html += '<button class="btn btn-ghost btn-sm" onclick="settAcctShowAdd()">+ Add Account</button>';
   }
@@ -95,11 +95,11 @@ function renderSettings() {
   // 3D — APPEARANCE
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
-  html += '<div class="section-label" style="margin-bottom:14px">Appearance</div>';
-  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Choose a colour palette and switch between light and dark. Changes apply instantly.</p>';
-  html += '<div class="field-row" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">';
-  html += '  <label style="flex:1;min-width:180px">';
-  html += '    <span style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px">Palette</span>';
+  html += '<div class="section-label section-label--mb14">Appearance</div>';
+  html += '<p class="sett-desc">Choose a colour palette and switch between light and dark. Changes apply instantly.</p>';
+  html += '<div class="field-row sett-theme-row">';
+  html += '  <label class="sett-theme-pal">';
+  html += '    <span class="sett-theme-lbl">Palette</span>';
   html += '    <select class="input palette-select" onchange="setPalette(this.value)" aria-label="Colour palette">';
   html += '      <option value="kelda">Kelda</option>';
   html += '      <option value="fintech">Fintech</option>';
@@ -109,7 +109,7 @@ function renderSettings() {
   html += '    </select>';
   html += '  </label>';
   html += '  <div>';
-  html += '    <span style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px">Mode</span>';
+  html += '    <span class="sett-theme-lbl">Mode</span>';
   html += '    <div class="mode-toggle" role="group" aria-label="Light or dark mode">';
   html += '      <button class="mode-toggle-btn" data-mode="light" onclick="setMode(\'light\')"><i class="ti ti-sun"></i> Light</button>';
   html += '      <button class="mode-toggle-btn" data-mode="dark" onclick="setMode(\'dark\')"><i class="ti ti-moon"></i> Dark</button>';
@@ -122,36 +122,36 @@ function renderSettings() {
   // 3E — SETUP WIZARD
   // ════════════════════════════════════════════════════════════
   html += '<div class="card mb">';
-  html += '<div class="section-label" style="margin-bottom:10px">Setup Wizard</div>';
-  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Re-run the first-time setup to change your app name, profile names, PINs, and account labels.</p>';
+  html += '<div class="section-label section-label--mb10">Setup Wizard</div>';
+  html += '<p class="sett-desc">Re-run the first-time setup to change your app name, profile names, PINs, and account labels.</p>';
   html += '<button class="btn btn-primary btn-sm" onclick="settingsRunWizard()">Re-run Setup Wizard</button>';
   html += '</div>';
 
   // ════════════════════════════════════════════════════════════
   // 3F — DANGER ZONE
   // ════════════════════════════════════════════════════════════
-  html += '<div class="card mb" style="border:1px solid rgba(239,68,68,.35)">';
-  html += '<div class="section-label" style="margin-bottom:12px;color:var(--danger)">Danger Zone</div>';
-  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:16px">These actions cannot be undone. Proceed with caution.</p>';
+  html += '<div class="card mb sett-danger-card">';
+  html += '<div class="section-label sett-sl--danger">Danger Zone</div>';
+  html += '<p class="sett-desc sett-desc--16">These actions cannot be undone. Proceed with caution.</p>';
 
-  html += '<div style="display:flex;flex-direction:column;gap:10px">';
+  html += '<div class="sett-stack">';
 
   // Reset categories
   html += '<div class="settings-danger-row">';
   html += '<div>';
-  html += '<div style="font-weight:600;font-size:.88rem;margin-bottom:2px">Reset Categories to Defaults</div>';
-  html += '<div style="font-size:.74rem;color:var(--muted)">Restores the built-in category list. Your transactions are not deleted.</div>';
+  html += '<div class="sett-danger-title">Reset Categories to Defaults</div>';
+  html += '<div class="sett-danger-sub">Restores the built-in category list. Your transactions are not deleted.</div>';
   html += '</div>';
-  html += '<button class="btn btn-sm" style="background:var(--warn);color:#000;flex-shrink:0;white-space:nowrap" onclick="settingsResetCategories()">Reset</button>';
+  html += '<button class="btn btn-sm sett-dz-btn sett-dz-btn--warn" onclick="settingsResetCategories()">Reset</button>';
   html += '</div>';
 
   // Erase all data
   html += '<div class="settings-danger-row">';
   html += '<div>';
-  html += '<div style="font-weight:600;font-size:.88rem;margin-bottom:2px">Erase All Data</div>';
-  html += '<div style="font-size:.74rem;color:var(--muted)">Permanently deletes all transactions, bills, settings and profiles. The app will reload.</div>';
+  html += '<div class="sett-danger-title">Erase All Data</div>';
+  html += '<div class="sett-danger-sub">Permanently deletes all transactions, bills, settings and profiles. The app will reload.</div>';
   html += '</div>';
-  html += '<button class="btn btn-sm" style="background:var(--danger);flex-shrink:0;white-space:nowrap" onclick="settingsEraseAll()">Erase All</button>';
+  html += '<button class="btn btn-sm sett-dz-btn sett-dz-btn--danger" onclick="settingsEraseAll()">Erase All</button>';
   html += '</div>';
 
   html += '</div>';
@@ -173,32 +173,32 @@ function _settAboutCard() {
   var log = (typeof APP_CHANGELOG !== 'undefined' && Array.isArray(APP_CHANGELOG)) ? APP_CHANGELOG : [];
 
   var h = '<div class="card mb">';
-  h += '<div class="section-label" style="margin-bottom:14px">About</div>';
+  h += '<div class="section-label section-label--mb14">About</div>';
 
   // Current version row
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">';
-  h += '<div style="font-weight:600;font-size:.9rem">Kelda Finance</div>';
-  h += '<div style="font-family:var(--font-mono);font-size:.82rem;color:var(--primary)">v' + _settEsc(ver) + '</div>';
+  h += '<div class="sett-ver-row">';
+  h += '<div class="sett-ver-app">Kelda Finance</div>';
+  h += '<div class="sett-ver-num">v' + _settEsc(ver) + '</div>';
   h += '</div>';
-  h += '<p style="font-size:.76rem;color:var(--muted);margin-bottom:16px">Quote this version number when reporting an issue.</p>';
+  h += '<p class="sett-ver-hint">Quote this version number when reporting an issue.</p>';
 
   // Version history
-  h += '<div class="section-label" style="margin-bottom:10px">Version history</div>';
+  h += '<div class="section-label section-label--mb10">Version history</div>';
   if (!log.length) {
-    h += '<p style="font-size:.78rem;color:var(--muted)">No history recorded.</p>';
+    h += '<p class="sett-ver-none">No history recorded.</p>';
   } else {
-    h += '<div style="display:flex;flex-direction:column;gap:14px">';
+    h += '<div class="sett-rel-list">';
     log.forEach(function(rel) {
       h += '<div>';
-      h += '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">';
-      h += '<span style="font-family:var(--font-mono);font-size:.8rem;font-weight:500;color:var(--primary)">v' + _settEsc(rel.version) + '</span>';
-      if (rel.title) h += '<span style="font-size:.82rem;font-weight:600">' + _settEsc(rel.title) + '</span>';
-      if (rel.date) h += '<span style="font-size:.72rem;color:var(--muted);margin-left:auto">' + _settEsc(rel.date) + '</span>';
+      h += '<div class="sett-rel-hd">';
+      h += '<span class="sett-rel-ver">v' + _settEsc(rel.version) + '</span>';
+      if (rel.title) h += '<span class="sett-rel-title">' + _settEsc(rel.title) + '</span>';
+      if (rel.date) h += '<span class="sett-rel-date">' + _settEsc(rel.date) + '</span>';
       h += '</div>';
       if (Array.isArray(rel.notes) && rel.notes.length) {
-        h += '<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px">';
+        h += '<ul class="sett-rel-notes">';
         rel.notes.forEach(function(n) {
-          h += '<li style="font-size:.76rem;color:var(--muted)">' + _settEsc(n) + '</li>';
+          h += '<li class="sett-rel-note">' + _settEsc(n) + '</li>';
         });
         h += '</ul>';
       }
@@ -218,32 +218,32 @@ function _settProfileCard(profileId, defaultIcon, defaultName) {
   var currentIcon = getUserIcon(profileId);
   var hasPIN      = _settHasPIN(profileId);
   var pinStatus   = hasPIN ? 'PIN set' : 'No PIN';
-  var pinColor    = hasPIN ? 'var(--success)' : 'var(--warn)';
+  var pinTone     = hasPIN ? 'tone-green' : 'tone-amber';
   var pinBtnLabel = hasPIN ? 'Reset PIN' : 'Set PIN';
 
   var html = '';
-  html += '<div style="background:var(--card2);border-radius:12px;padding:14px 16px">';
-  html += '<div style="display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:start">';
+  html += '<div class="sett-prof">';
+  html += '<div class="sett-prof-grid">';
 
   // Icon input
   html += '<div>';
-  html += '<label class="lbl" style="font-size:.68rem;margin-bottom:4px">Icon</label>';
+  html += '<label class="lbl sett-prof-lbl">Icon</label>';
   html += '<input type="text" id="s-' + profileId + '-icon" value="' + _settEsc(currentIcon) + '"';
-  html += ' placeholder="' + _settEsc(defaultIcon) + '" style="font-size:1.4rem;text-align:center;padding:8px 4px;width:100%"/>';
+  html += ' placeholder="' + _settEsc(defaultIcon) + '" class="sett-prof-icon"/>';
   html += '</div>';
 
   // Name input
   html += '<div>';
-  html += '<label class="lbl" style="font-size:.68rem;margin-bottom:4px">Name</label>';
+  html += '<label class="lbl sett-prof-lbl">Name</label>';
   html += '<input type="text" id="s-' + profileId + '-name" value="' + _settEsc(currentName) + '"';
-  html += ' placeholder="' + _settEsc(defaultName) + '" style="font-size:16px;width:100%"/>';
+  html += ' placeholder="' + _settEsc(defaultName) + '" class="sett-in16 sett-w100"/>';
   html += '</div>';
 
   html += '</div>';
 
   // PIN status row
-  html += '<div style="display:flex;align-items:center;gap:10px;margin-top:12px">';
-  html += '<span style="font-size:.76rem;color:' + pinColor + ';font-weight:600">' + ICON('lock') + ' ' + pinStatus + '</span>';
+  html += '<div class="sett-pin-row">';
+  html += '<span class="sett-pin ' + pinTone + '">' + ICON('lock') + ' ' + pinStatus + '</span>';
   html += '<button class="btn btn-ghost btn-sm" onclick="settingsResetPIN(\'' + profileId + '\', \'' + _settEsc(currentName) + '\')">' + pinBtnLabel + '</button>';
   html += '</div>';
 
@@ -258,9 +258,9 @@ function _settProfileCard(profileId, defaultIcon, defaultName) {
 // Layout so a re-run of onboarding no longer strands them on the wrong layout.
 
 var _SETT_DASH_PROFILES = [
-  { id: 'starter',   icon: 'ti-wallet',    accent: 'var(--success)', headline: 'Track my spending',    subline: 'Budgets, bills and savings goals — nothing extra.',              pills: ['Spending', 'Budgets', 'Bills', 'Goals'] },
-  { id: 'household', icon: 'ti-home',       accent: 'var(--primary)', headline: 'Budget smarter',        subline: 'Household planning, mortgage and cashflow forecasting.',          pills: ['Net worth', 'Mortgage', 'Forecast', 'Goals'] },
-  { id: 'full',      icon: 'ti-chart-bar',  accent: 'var(--warn)',    headline: 'Full financial picture', subline: 'Investments, super, property and tax — the complete view.',      pills: ['Net worth', 'Investments', 'Super', 'Property'] }
+  { id: 'starter',   icon: 'ti-wallet',    headline: 'Track my spending',    subline: 'Budgets, bills and savings goals — nothing extra.',              pills: ['Spending', 'Budgets', 'Bills', 'Goals'] },
+  { id: 'household', icon: 'ti-home',       headline: 'Budget smarter',        subline: 'Household planning, mortgage and cashflow forecasting.',          pills: ['Net worth', 'Mortgage', 'Forecast', 'Goals'] },
+  { id: 'full',      icon: 'ti-chart-bar',  headline: 'Full financial picture', subline: 'Investments, super, property and tax — the complete view.',      pills: ['Net worth', 'Investments', 'Super', 'Property'] }
 ];
 
 var _SETT_DASH_ASSETS = [
@@ -294,7 +294,7 @@ function renderDashboardLayout() {
   _settDashLoadState();
   var html = '';
   html += '<div class="card mb">';
-  html += '<p style="font-size:.8rem;color:var(--muted);margin-bottom:16px">Choose which set of tiles your dashboard shows. This is the same choice you made during setup — pick it here any time without re-running onboarding.</p>';
+  html += '<p class="sett-desc sett-desc--16">Choose which set of tiles your dashboard shows. This is the same choice you made during setup — pick it here any time without re-running onboarding.</p>';
   html += '<div id="sett-dash-body">' + _settDashBody() + '</div>';
   html += '</div>';
   el.innerHTML = html;
@@ -304,28 +304,26 @@ function _settDashBody() {
   var html = '';
 
   // Profile cards
-  html += '<div style="display:flex;flex-direction:column;gap:10px">';
+  html += '<div class="sett-stack">';
   for (var i = 0; i < _SETT_DASH_PROFILES.length; i++) {
     var p = _SETT_DASH_PROFILES[i];
     var sel = (p.id === _settDashProfile);
-    var border = sel ? p.accent : 'var(--border)';
-    var bg = sel ? 'color-mix(in srgb,' + p.accent + ' 8%, var(--card2))' : 'var(--card2)';
     html += '<div role="radio" aria-checked="' + (sel ? 'true' : 'false') + '" tabindex="0"'
       + ' onclick="settDashSelectProfile(\'' + p.id + '\')"'
       + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();settDashSelectProfile(\'' + p.id + '\');}"'
-      + ' style="cursor:pointer;border:1.5px solid ' + border + ';background:' + bg + ';border-radius:12px;padding:14px 16px;transition:border-color .15s,background .15s">';
-    html += '<div style="display:flex;align-items:flex-start;gap:14px">';
-    html += '<div style="width:40px;height:40px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:color-mix(in srgb,' + p.accent + ' 14%, transparent);color:' + p.accent + '"><i class="ti ' + p.icon + '"></i></div>';
-    html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-family:var(--font-head,inherit);font-weight:600;font-size:.95rem;color:var(--text);margin-bottom:2px">' + _settEsc(p.headline) + '</div>';
-    html += '<div style="font-size:.78rem;color:var(--muted);line-height:1.45">' + _settEsc(p.subline) + '</div>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+      + ' class="sett-dp sett-dp--' + p.id + (sel ? ' sett-dp--sel' : '') + '">';
+    html += '<div class="sett-dp-row">';
+    html += '<div class="sett-dp-ico"><i class="ti ' + p.icon + '"></i></div>';
+    html += '<div class="sett-dp-main">';
+    html += '<div class="sett-dp-head">' + _settEsc(p.headline) + '</div>';
+    html += '<div class="sett-dp-sub">' + _settEsc(p.subline) + '</div>';
+    html += '<div class="sett-dp-pills">';
     for (var j = 0; j < p.pills.length; j++) {
-      html += '<span style="font-size:.68rem;color:var(--muted);background:var(--card3,var(--card2));border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-weight:500">' + _settEsc(p.pills[j]) + '</span>';
+      html += '<span class="sett-dp-pill">' + _settEsc(p.pills[j]) + '</span>';
     }
     html += '</div>';
     html += '</div>';
-    html += '<div style="width:22px;height:22px;flex-shrink:0;border-radius:50%;border:1.5px solid ' + (sel ? p.accent : 'var(--border)') + ';background:' + (sel ? p.accent : 'transparent') + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem">' + (sel ? '<i class="ti ti-check"></i>' : '') + '</div>';
+    html += '<div class="sett-dp-check">' + (sel ? '<i class="ti ti-check"></i>' : '') + '</div>';
     html += '</div>';
     html += '</div>';
   }
@@ -333,34 +331,31 @@ function _settDashBody() {
 
   // Asset picker — only relevant to the "full" profile
   if (_settDashProfile === 'full') {
-    html += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">';
-    html += '<div style="font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:4px">Assets to show</div>';
-    html += '<p style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Pick which asset types appear in your net-worth breakdown and Your assets tile.</p>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    html += '<div class="sett-dp-assets">';
+    html += '<div class="sett-dp-assets-title">Assets to show</div>';
+    html += '<p class="sett-dp-assets-desc">Pick which asset types appear in your net-worth breakdown and Your assets tile.</p>';
+    html += '<div class="sett-chips">';
     for (var k = 0; k < _SETT_DASH_ASSETS.length; k++) {
       var a = _SETT_DASH_ASSETS[k];
       var on = (_settDashAssets.indexOf(a.key) > -1);
-      var abrd = on ? 'var(--warn)' : 'var(--border)';
-      var abg = on ? 'color-mix(in srgb,var(--warn) 12%, transparent)' : 'var(--card2)';
-      var acol = on ? 'var(--text)' : 'var(--muted)';
-      html += '<span role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '" tabindex="0"'
+      html += '<span class="sett-asset-chip' + (on ? ' sett-asset-chip--on' : '') + '" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '" tabindex="0"'
         + ' onclick="settDashToggleAsset(\'' + a.key + '\')"'
         + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();settDashToggleAsset(\'' + a.key + '\');}"'
-        + ' style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;border:1.5px solid ' + abrd + ';background:' + abg + ';color:' + acol + ';border-radius:9px;padding:8px 12px;font-size:.78rem;font-weight:500;transition:border-color .15s,background .15s">'
+        + '>'
         + '<i class="ti ' + a.icon + '"></i>' + _settEsc(a.label)
-        + (on ? '<i class="ti ti-check" style="color:var(--warn)"></i>' : '')
+        + (on ? '<i class="ti ti-check tone-amber"></i>' : '')
         + '</span>';
     }
     html += '</div>';
     html += '</div>';
   } else if (_settDashProfile === 'household') {
-    html += '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">';
-    html += '<p style="font-size:.74rem;color:var(--muted);line-height:1.5"><i class="ti ti-info-circle"></i> This layout tracks your home equity and cashflow forecast. Add or edit your mortgage any time from <span style="color:var(--primary);cursor:pointer" onclick="go(\'mortgage\')">Mortgage</span>.</p>';
+    html += '<div class="sett-dp-note">';
+    html += '<p class="sett-dp-note-p"><i class="ti ti-info-circle"></i> This layout tracks your home equity and cashflow forecast. Add or edit your mortgage any time from <span class="sett-link" onclick="go(\'mortgage\')">Mortgage</span>.</p>';
     html += '</div>';
   }
 
   // Save
-  html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">';
+  html += '<div class="sett-foot">';
   html += '<button class="btn btn-primary btn-sm" onclick="settDashSave()">Save Dashboard Layout</button>';
   html += '</div>';
 
@@ -481,7 +476,7 @@ function _settAcctLocSelFor(id, loc) {
 }
 
 function _settAcctBankSel(selId, bank) {
-  var html = '<select id="' + selId + '" style="width:100%;box-sizing:border-box">';
+  var html = '<select id="' + selId + '" class="sett-bank-sel">';
   var labels = ['— No Bank —','Commonwealth Bank (CBA)','Westpac','NAB','ANZ','Macquarie Bank',
     'St George Bank','Bank of Melbourne','BankSA','ING Australia','Bendigo Bank',
     'Suncorp Bank','Bank of Queensland (BOQ)','HSBC Australia','Citibank Australia',
@@ -497,11 +492,11 @@ function _settAcctBankSel(selId, bank) {
 }
 
 function _settAcctsList() {
-  if (!ACCOUNTS || !ACCOUNTS.length) return '<p style="color:var(--muted);font-size:.82rem">No accounts yet.</p>';
+  if (!ACCOUNTS || !ACCOUNTS.length) return '<p class="sett-acct-none">No accounts yet.</p>';
   var html = '';
   for (var i = 0; i < ACCOUNTS.length; i++) {
     var a = ACCOUNTS[i];
-    var meta = (a.currency || 'AUD') + (a.bank ? ' &middot; ' + _settEsc(a.bank) : '') + (a.isCore ? '' : ' &middot; <span style="color:var(--muted);font-size:.68rem">Custom</span>');
+    var meta = (a.currency || 'AUD') + (a.bank ? ' &middot; ' + _settEsc(a.bank) : '') + (a.isCore ? '' : ' &middot; <span class="sett-acct-custom">Custom</span>');
     html += '<div class="sett-acct-row" id="sett-acct-row-' + _settEsc(a.id) + '">'
       + '<div class="sett-acct-icon">' + iconTag(a.icon || 'building-bank') + '</div>'
       + '<div class="sett-acct-info">'
@@ -510,7 +505,7 @@ function _settAcctsList() {
       + '</div>'
       + '<div class="sett-acct-actions">'
       + '<button class="btn btn-ghost btn-sm" onclick="settAcctEdit(\'' + _settEsc(a.id) + '\')">Edit</button>'
-      + (!a.isCore ? '<button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger)" onclick="settAcctDelete(\'' + _settEsc(a.id) + '\')">Delete</button>' : '')
+      + (!a.isCore ? '<button class="btn btn-sm sett-acct-del" onclick="settAcctDelete(\'' + _settEsc(a.id) + '\')">Delete</button>' : '')
       + '</div>'
       + '</div>';
   }
@@ -522,10 +517,10 @@ function _settAcctsList() {
 function _settIconPickerHtml(inputId, previewId, currentIcon) {
   currentIcon = currentIcon || 'building-bank';
   return '<input type="hidden" id="' + inputId + '" value="' + currentIcon + '"/>'
-    + '<div id="' + previewId + '" style="width:44px;height:44px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);cursor:default">' + iconTag(currentIcon) + '</div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;max-width:220px">'
+    + '<div id="' + previewId + '" class="sett-ip-prev">' + iconTag(currentIcon) + '</div>'
+    + '<div class="sett-ip-grid">'
     + ICON_PICKER_SET.map(function(k) {
-        return '<span style="cursor:pointer;font-size:1.05rem;padding:5px;border-radius:5px;background:var(--card2);color:var(--muted)" onclick="_settPickIcon(\'' + inputId + '\',\'' + previewId + '\',\'' + k + '\')">' + ICON(k) + '</span>';
+        return '<span class="sett-ip-opt" onclick="_settPickIcon(\'' + inputId + '\',\'' + previewId + '\',\'' + k + '\')">' + ICON(k) + '</span>';
       }).join('')
     + '</div>';
 }
@@ -538,16 +533,16 @@ function _settPickIcon(inputId, previewId, key) {
 
 function _settAcctAddForm() {
   return '<div class="sett-acct-form">'
-    + '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:12px">New Account</div>'
-    + '<div class="form-grid" style="grid-template-columns:56px 1fr">'
+    + '<div class="sett-acct-form-title">New Account</div>'
+    + '<div class="form-grid sett-fg-icon">'
     + '<div><label class="lbl">Icon</label>' + _settIconPickerHtml('sett-acct-new-icon', 'sett-acct-new-icon-preview', 'building-bank') + '</div>'
-    + '<div><label class="lbl">Nickname</label><input type="text" id="sett-acct-new-name" placeholder="e.g. US Investment Account" style="font-size:16px"/></div>'
+    + '<div><label class="lbl">Nickname</label><input type="text" id="sett-acct-new-name" placeholder="e.g. US Investment Account" class="sett-in16"/></div>'
     + '</div>'
-    + '<div class="form-grid" style="margin-top:8px">'
+    + '<div class="form-grid sett-fg-mt8">'
     + '<div><label class="lbl">Bank</label>' + _settAcctBankSel('sett-acct-bank', '') + '</div>'
     + '<div><label class="lbl">Currency</label>' + _settAcctCurrSel('AUD') + '</div>'
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<div class="sett-form-acts">'
     + '<button class="btn btn-primary btn-sm" onclick="settAcctAdd()">Add Account</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="settAcctCancelAdd()">Cancel</button>'
     + '</div>'
@@ -584,16 +579,16 @@ function settAcctEdit(id) {
   if (!a) return;
   var row = document.getElementById('sett-acct-row-' + id);
   if (!row) return;
-  row.innerHTML = '<div class="sett-acct-form" style="width:100%">'
-    + '<div class="form-grid" style="grid-template-columns:56px 1fr">'
+  row.innerHTML = '<div class="sett-acct-form sett-acct-form--full">'
+    + '<div class="form-grid sett-fg-icon">'
     + '<div><label class="lbl">Icon</label>' + _settIconPickerHtml('sett-edit-icon-' + _settEsc(id), 'sett-edit-icon-preview-' + _settEsc(id), a.icon || 'building-bank') + '</div>'
-    + '<div><label class="lbl">Nickname</label><input type="text" id="sett-edit-name-' + _settEsc(id) + '" value="' + _settEsc(a.name) + '" placeholder="Account nickname" style="font-size:16px"/></div>'
+    + '<div><label class="lbl">Nickname</label><input type="text" id="sett-edit-name-' + _settEsc(id) + '" value="' + _settEsc(a.name) + '" placeholder="Account nickname" class="sett-in16"/></div>'
     + '</div>'
-    + '<div class="form-grid" style="margin-top:8px">'
+    + '<div class="form-grid sett-fg-mt8">'
     + '<div><label class="lbl">Bank</label>' + _settAcctBankSel('sett-acct-bank-' + _settEsc(id), a.bank||'') + '</div>'
     + '<div><label class="lbl">Currency</label>' + _settAcctCurrSelFor(id, a.currency||'AUD') + '</div>'
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<div class="sett-form-acts">'
     + '<button class="btn btn-primary btn-sm" onclick="settAcctSave(\'' + _settEsc(id) + '\')">Save</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="settAcctCancel()">Cancel</button>'
     + '</div>'

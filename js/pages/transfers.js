@@ -352,22 +352,22 @@ function trRenderModalList() {
   if (!listEl) return;
 
   if (!pool.length) {
-    listEl.innerHTML = '<div style="padding:16px;text-align:center;color:#7A8FBC;font-size:.8rem">No transactions match.</div>';
+    listEl.innerHTML = '<div class="tr-ml-empty">No transactions match.</div>';
   } else {
     var html = '';
     pool.forEach(function(t) {
       var isSel = _trManualSel.indexOf(t.id) >= 0;
       var selIdx = _trManualSel.indexOf(t.id);
-      var color = t.type === 'income' ? 'var(--success)' : 'var(--primary)';
+      var tone = t.type === 'income' ? 'tone-green' : 'tone-pink';
       var sign = t.type === 'income' ? '+' : '-';
       html += '<div role="option" aria-selected="' + isSel + '" tabindex="0"'
-        + ' style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;min-height:44px;border:1.5px solid ' + (isSel ? 'var(--primary)' : 'transparent') + ';background:' + (isSel ? 'rgba(240,83,138,.06)' : 'transparent') + ';margin-bottom:3px"'
+        + ' class="tr-ml-row' + (isSel ? ' tr-ml-row--sel' : '') + '"'
         + ' onclick="trModalToggleSel(' + JSON.stringify(t.id) + ')"'
         + ' onkeydown="if(event.key===\'Enter\'||event.key==\' \'){trModalToggleSel(' + JSON.stringify(t.id) + ');event.preventDefault();}">'
-        + '<div style="flex:0 0 65px;font-size:.73rem;color:#7A8FBC">' + trFmtDate(t.date) + '</div>'
-        + '<div style="flex:1;min-width:0;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.name || t.description || '—') + '</div>'
-        + '<div style="font-size:.75rem;color:#7A8FBC;flex-shrink:0;margin-right:4px">' + esc(t.catId === 'transfers' ? 'Transfer' : (t.category || '')) + '</div>'
-        + '<div style="font-weight:700;color:' + color + ';flex-shrink:0;font-family:var(--font-mono);font-size:.82rem">' + sign + fmt(t.amount) + '</div>'
+        + '<div class="tr-ml-date">' + trFmtDate(t.date) + '</div>'
+        + '<div class="tr-ml-name">' + esc(t.name || t.description || '—') + '</div>'
+        + '<div class="tr-ml-cat">' + esc(t.catId === 'transfers' ? 'Transfer' : (t.category || '')) + '</div>'
+        + '<div class="tr-ml-amt ' + tone + '">' + sign + fmt(t.amount) + '</div>'
         + '</div>';
     });
     listEl.innerHTML = html;
@@ -489,21 +489,15 @@ function _trShowInlineConfirm(msg, onConfirm, onCancel) {
   if (existing) existing.remove();
   var el = document.createElement('div');
   el.id = 'tr-inline-confirm';
-  el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
-    + 'background:var(--card2);border:1px solid var(--border);border-radius:10px;'
-    + 'padding:12px 16px;display:flex;align-items:center;gap:12px;'
-    + 'font-size:.82rem;font-family:var(--font-body);color:var(--text);'
-    + 'box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9998;white-space:nowrap;';
+  el.className = 'tr-iconfirm';
   var msgEl = document.createElement('span');
   msgEl.textContent = msg;
   var confirmBtn = document.createElement('button');
   confirmBtn.textContent = 'Confirm';
-  confirmBtn.style.cssText = 'background:var(--danger);color:#fff;border:none;border-radius:999px;'
-    + 'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;';
+  confirmBtn.className = 'tr-ic-btn tr-ic-btn--ok';
   var cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.style.cssText = 'background:var(--card3);color:var(--text);border:1px solid var(--border);border-radius:999px;'
-    + 'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;';
+  cancelBtn.className = 'tr-ic-btn tr-ic-btn--cancel';
   confirmBtn.onclick = function() { el.remove(); onConfirm(); };
   cancelBtn.onclick = function() { el.remove(); if (onCancel) onCancel(); };
   el.appendChild(msgEl);
@@ -757,12 +751,12 @@ function renderTransfers() {
   var chartHtml = _trBuildChartCard();
 
   // KPI row
-  var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'
-    + _trKpiTile('Total transactions', totalTx, '', 'color:#7A8FBC')
-    + _trKpiTile('Included in analysis', included, '', 'color:var(--success)')
-    + _trKpiTile('Excluded (transfers)', excluded, TRANSFERS.length + ' pairs · ' + fmt(totalExcluded), 'color:var(--primary)')
+  var kpiHtml = '<div class="tr-kpis">'
+    + _trKpiTile('Total transactions', totalTx, '', 'tr-kpi-dim')
+    + _trKpiTile('Included in analysis', included, '', 'tone-green')
+    + _trKpiTile('Excluded (transfers)', excluded, TRANSFERS.length + ' pairs · ' + fmt(totalExcluded), 'tone-pink')
     + _trKpiTile('Pending review', pendingCount, pendingCount > 0 ? 'Needs your review' : 'All reviewed',
-        pendingCount > 0 ? 'color:var(--warn)' : 'color:#7A8FBC')
+        pendingCount > 0 ? 'tone-amber' : 'tr-kpi-dim')
     + '</div>';
 
   // Detection config card
@@ -770,10 +764,10 @@ function renderTransfers() {
   var configHtml = _trBuildConfigCard(rules, AUTO_CONFIRM_THRESHOLD, lastRun, activeRules);
 
   // Re-run preview banner (hidden by default)
-  var previewBannerHtml = '<div id="tr-rerun-preview" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:none;align-items:center;gap:12px;flex-wrap:wrap">'
-    + '<span id="tr-rerun-preview-msg" style="flex:1;font-size:.82rem;color:var(--warn)"></span>'
-    + '<button id="tr-rerun-proceed" style="background:var(--warn);color:#111;border:none;border-radius:999px;padding:8px 16px;font-size:.78rem;font-weight:700;cursor:pointer;min-height:44px">Proceed</button>'
-    + '<button id="tr-rerun-cancel" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:999px;padding:8px 16px;font-size:.78rem;cursor:pointer;min-height:44px">Cancel</button>'
+  var previewBannerHtml = '<div id="tr-rerun-preview" class="tr-pv" style="display:none">'
+    + '<span id="tr-rerun-preview-msg" class="tr-pv-msg"></span>'
+    + '<button id="tr-rerun-proceed" class="tr-pv-btn tr-pv-btn--go">Proceed</button>'
+    + '<button id="tr-rerun-cancel" class="tr-pv-btn tr-pv-btn--cancel">Cancel</button>'
     + '</div>';
 
   // Tab panel
@@ -781,10 +775,10 @@ function renderTransfers() {
   var pendingBadge   = pendingCount;
   var unmatchedBadge = unmatchedTx.length;
 
-  var tabsHtml = '<div role="tablist" aria-label="Transfer categories" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:0">'
-    + _trTabBtn('confirmed', 'Confirmed', confirmedBadge, 'rgba(0,200,150,.15)', 'var(--success)')
-    + _trTabBtn('pending',   'Pending review', pendingBadge, 'rgba(245,158,11,.15)', 'var(--warn)', true)
-    + _trTabBtn('unmatched', 'Unmatched', unmatchedBadge, 'rgba(239,68,68,.15)', 'var(--danger)')
+  var tabsHtml = '<div role="tablist" aria-label="Transfer categories" class="tr-tabs">'
+    + _trTabBtn('confirmed', 'Confirmed', confirmedBadge, 'green')
+    + _trTabBtn('pending',   'Pending review', pendingBadge, 'amber', true)
+    + _trTabBtn('unmatched', 'Unmatched', unmatchedBadge, 'danger')
     + '</div>'
     + '<div id="tr-tab-confirmed" role="tabpanel" aria-labelledby="tr-tab-btn-confirmed" tabindex="0"' + (_trActiveTab === 'confirmed' ? '' : ' hidden') + '>'
     + _trBuildConfirmedTab() + '</div>'
@@ -814,20 +808,20 @@ function renderTransfers() {
     + '</style>';
 
   el.innerHTML = styles + previewBannerHtml
-    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px" class="tr-header-row">'
-    + '<div><div class="page-title" style="margin-bottom:2px">Transfers</div>'
-    + '<div style="font-size:.76rem;color:#7A8FBC">Internal movements excluded from income and expense analysis</div></div>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
-    + '<button id="tr-rerun-btn" onclick="runDetection(true)" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--warn);border-radius:999px;padding:9px 16px;min-height:44px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:var(--font-body)">↻ Re-run detection</button>'
-    + '<button onclick="trExportCSV()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:999px;padding:9px 16px;min-height:44px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:var(--font-body)">⬇ Export</button>'
-    + '<button id="tr-manual-link-btn" onclick="trOpenManualModal(null)" style="background:var(--primary);color:#fff;border:none;border-radius:999px;padding:9px 16px;min-height:44px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--font-body)">＋ Link manually</button>'
+    + '<div class="tr-hdr tr-header-row">'
+    + '<div><div class="page-title tr-title">Transfers</div>'
+    + '<div class="tr-sub">Internal movements excluded from income and expense analysis</div></div>'
+    + '<div class="tr-hdr-btns">'
+    + '<button id="tr-rerun-btn" onclick="runDetection(true)" class="tr-hbtn tr-hbtn--rerun">↻ Re-run detection</button>'
+    + '<button onclick="trExportCSV()" class="tr-hbtn tr-hbtn--ghost">⬇ Export</button>'
+    + '<button id="tr-manual-link-btn" onclick="trOpenManualModal(null)" class="tr-hbtn tr-hbtn--primary">＋ Link manually</button>'
     + '</div></div>'
-    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" class="tr-kpi-grid">'
-    + _trKpiTile('Total transactions', totalTx, '', 'color:#7A8FBC')
-    + _trKpiTile('Included in analysis', included, '', 'color:var(--success)')
-    + _trKpiTile('Excluded (transfers)', excluded, TRANSFERS.length + ' pairs · ' + fmt(totalExcluded), 'color:var(--primary)')
+    + '<div class="tr-kpis tr-kpi-grid">'
+    + _trKpiTile('Total transactions', totalTx, '', 'tr-kpi-dim')
+    + _trKpiTile('Included in analysis', included, '', 'tone-green')
+    + _trKpiTile('Excluded (transfers)', excluded, TRANSFERS.length + ' pairs · ' + fmt(totalExcluded), 'tone-pink')
     + _trKpiTile('Pending review', pendingCount, pendingCount > 0 ? 'Needs your review' : 'All reviewed',
-        pendingCount > 0 ? 'color:var(--warn)' : 'color:#7A8FBC')
+        pendingCount > 0 ? 'tone-amber' : 'tr-kpi-dim')
     + '</div>'
     + chartHtml
     + configHtml
@@ -844,17 +838,17 @@ function renderTransfers() {
   _trUpdateBulkBar();
 }
 
-function _trKpiTile(label, value, sub, valueStyle) {
-  return '<div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px 16px">'
-    + '<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7A8FBC;margin-bottom:6px">' + esc(label) + '</div>'
-    + '<div style="font-size:1.4rem;font-weight:700;font-family:var(--font-mono);' + valueStyle + '">' + value + '</div>'
-    + (sub ? '<div style="font-size:.68rem;color:#7A8FBC;margin-top:2px;font-family:var(--font-mono)">' + esc(sub) + '</div>' : '')
+function _trKpiTile(label, value, sub, valueTone) {
+  return '<div class="tr-kpi">'
+    + '<div class="tr-kpi-lbl">' + esc(label) + '</div>'
+    + '<div class="tr-kpi-val ' + valueTone + '">' + value + '</div>'
+    + (sub ? '<div class="tr-kpi-sub">' + esc(sub) + '</div>' : '')
     + '</div>';
 }
 
-function _trTabBtn(id, label, count, badgeBg, badgeColor, pulse) {
+function _trTabBtn(id, label, count, badgeTone, pulse) {
   var isActive = _trActiveTab === id;
-  var badgeHtml = '<span aria-live="polite" aria-atomic="true" style="display:inline-block;background:' + badgeBg + ';color:' + badgeColor + ';border-radius:999px;padding:1px 7px;font-size:.65rem;font-weight:700;margin-left:5px">' + count + '</span>'
+  var badgeHtml = '<span aria-live="polite" aria-atomic="true" class="tr-badge tr-badge--' + badgeTone + '">' + count + '</span>'
     + (pulse && count > 0 ? '<span class="kf-pulse-dot"></span>' : '');
   return '<button id="tr-tab-btn-' + id + '" role="tab" class="tr-tab-btn' + (isActive ? ' active' : '') + '"'
     + ' aria-selected="' + isActive + '" aria-controls="tr-tab-' + id + '"'
@@ -887,43 +881,43 @@ function _trBuildChartCard() {
   var outlierHtml = '';
   if (outliers.length > 0) {
     outliers.slice(0, 3).forEach(function(o) {
-      outlierHtml += '<div style="margin-bottom:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;border:1px solid rgba(245,158,11,.15)">'
-        + '<div style="font-size:.72rem;color:var(--warn);font-weight:600">' + ICON('alert-triangle') + ' ' + esc(o.label) + ': ' + fmt(o.gap) + ' gap</div>'
-        + '<div style="font-size:.65rem;color:#7A8FBC;margin-top:2px">' + o.count + ' unmatched transaction' + (o.count !== 1 ? 's' : '') + '</div>'
+      outlierHtml += '<div class="tr-out tr-out--warn">'
+        + '<div class="tr-out-title tone-amber">' + ICON('alert-triangle') + ' ' + esc(o.label) + ': ' + fmt(o.gap) + ' gap</div>'
+        + '<div class="tr-out-sub">' + o.count + ' unmatched transaction' + (o.count !== 1 ? 's' : '') + '</div>'
         + '</div>';
     });
   } else {
-    outlierHtml = '<div style="padding:8px 10px;background:rgba(0,200,150,.06);border-radius:8px;border:1px solid rgba(0,200,150,.15)">'
-      + '<div style="font-size:.72rem;color:var(--success);font-weight:600">' + ICON('check') + ' All months balanced</div>'
+    outlierHtml = '<div class="tr-out tr-out--ok">'
+      + '<div class="tr-out-title tone-green">' + ICON('check') + ' All months balanced</div>'
       + '</div>';
   }
 
   var periodBtns = [['6m', '6 months'], ['12m', '12 months'], ['all', 'All time']];
-  var periodToggle = '<div style="display:flex;gap:4px">';
+  var periodToggle = '<div class="tr-flex4">';
   periodBtns.forEach(function(pb) {
     var active = _trPeriod === pb[0];
-    periodToggle += '<button onclick="_trSetPeriod(\'' + pb[0] + '\')" style="background:' + (active ? 'rgba(240,83,138,.15)' : 'transparent') + ';color:' + (active ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (active ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:5px 12px;font-size:.7rem;cursor:pointer;min-height:32px;font-family:var(--font-body)">' + esc(pb[1]) + '</button>';
+    periodToggle += '<button onclick="_trSetPeriod(\'' + pb[0] + '\')" class="tr-period' + (active ? ' tr-period--on' : '') + '">' + esc(pb[1]) + '</button>';
   });
   periodToggle += '</div>';
 
-  return '<div class="card" style="margin-bottom:16px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
-    + '<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7A8FBC">Transfer reconciliation</div>'
+  return '<div class="card tr-card">'
+    + '<div class="tr-chart-hd">'
+    + '<div class="tr-card-title">Transfer reconciliation</div>'
     + periodToggle
     + '</div>'
-    + '<div style="display:flex;gap:16px;flex-wrap:wrap">'
-    + '<div style="flex:1;min-width:0"><div style="position:relative;height:180px"><canvas id="chart-transfers-recon" role="img" aria-label="Bar chart showing money sent, money received, and unmatched transfers by month">Money sent, received, and unmatched transfers by month.</canvas></div>'
-    + '<div style="display:flex;gap:16px;margin-top:8px">'
-    + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(239,68,68,0.65);margin-right:5px"></span><span style="font-size:.7rem;color:#7A8FBC">Money sent</span></span>'
-    + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(0,200,150,0.65);margin-right:5px"></span><span style="font-size:.7rem;color:#7A8FBC">Money received</span></span>'
-    + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(245,158,11,0.75);margin-right:5px"></span><span style="font-size:.7rem;color:#7A8FBC">Unmatched</span></span>'
+    + '<div class="tr-chart-body">'
+    + '<div class="tr-chart-main"><div class="tr-chart-box"><canvas id="chart-transfers-recon" role="img" aria-label="Bar chart showing money sent, money received, and unmatched transfers by month">Money sent, received, and unmatched transfers by month.</canvas></div>'
+    + '<div class="tr-legend">'
+    + '<span><span class="tr-sw tr-sw--sent"></span><span class="tr-legend-lbl">Money sent</span></span>'
+    + '<span><span class="tr-sw tr-sw--recv"></span><span class="tr-legend-lbl">Money received</span></span>'
+    + '<span><span class="tr-sw tr-sw--unm"></span><span class="tr-legend-lbl">Unmatched</span></span>'
     + '</div></div>'
-    + '<div style="width:210px;flex-shrink:0">'
-    + '<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7A8FBC;margin-bottom:8px">Outliers</div>'
+    + '<div class="tr-chart-side">'
+    + '<div class="tr-side-title">Outliers</div>'
     + outlierHtml
-    + '<div id="tr-acct-flow-toggle" style="margin-top:12px">'
-    + '<button onclick="_trToggleAcctFlow()" style="background:none;border:none;color:#7A8FBC;font-size:.72rem;cursor:pointer;padding:0;font-family:var(--font-body)">Account flow ▸</button>'
-    + '<div id="tr-acct-flow" style="display:none;margin-top:8px">' + _trBuildAccountFlow() + '</div>'
+    + '<div id="tr-acct-flow-toggle" class="tr-af">'
+    + '<button onclick="_trToggleAcctFlow()" class="tr-af-btn">Account flow ▸</button>'
+    + '<div id="tr-acct-flow" class="tr-af-body" style="display:none">' + _trBuildAccountFlow() + '</div>'
     + '</div>'
     + '</div></div></div>';
 }
@@ -985,15 +979,15 @@ function _trBuildAccountFlow() {
   });
   var keys = Object.keys(pairMap);
   if (!keys.length) {
-    return '<div style="font-size:.72rem;color:#7A8FBC">No confirmed transfers yet</div>';
+    return '<div class="tr-af-empty">No confirmed transfers yet</div>';
   }
   return keys.map(function(k) {
     var parts = k.split('→');
-    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">'
-      + '<span style="background:var(--card2);border-radius:6px;padding:2px 8px;font-size:.68rem;color:#7A8FBC">' + esc(parts[0]) + '</span>'
-      + '<span style="color:#7A8FBC;font-size:.7rem">→</span>'
-      + '<span style="background:var(--card2);border-radius:6px;padding:2px 8px;font-size:.68rem;color:#7A8FBC">' + esc(parts[1]) + '</span>'
-      + '<span style="font-size:.7rem;color:#7A8FBC;font-family:var(--font-mono)">' + fmt(pairMap[k]) + '</span>'
+    return '<div class="tr-af-row">'
+      + '<span class="tr-af-acct">' + esc(parts[0]) + '</span>'
+      + '<span class="tr-af-arrow">→</span>'
+      + '<span class="tr-af-acct">' + esc(parts[1]) + '</span>'
+      + '<span class="tr-af-amt">' + fmt(pairMap[k]) + '</span>'
       + '</div>';
   }).join('');
 }
@@ -1065,37 +1059,37 @@ function _trInitChart(months) {
 // ── Detection config card ─────────────────────────────────────
 function _trBuildConfigCard(rules, threshold, lastRun, activeRules) {
   var summary = activeRules + ' rule' + (activeRules !== 1 ? 's' : '') + ' active · threshold ' + Math.round(threshold * 100) + '%';
-  return '<div class="card" style="margin-bottom:16px" id="tr-config-card">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between">'
-    + '<div><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7A8FBC;margin-bottom:2px">Detection rules</div>'
-    + '<div id="tr-config-summary" style="font-size:.74rem;color:#7A8FBC">' + esc(summary) + '</div></div>'
-    + '<button onclick="_trToggleConfig()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">▸ Configure</button>'
+  return '<div class="card tr-card" id="tr-config-card">'
+    + '<div class="tr-cfg-hd">'
+    + '<div><div class="tr-card-title tr-card-title--mb2">Detection rules</div>'
+    + '<div id="tr-config-summary" class="tr-cfg-sum">' + esc(summary) + '</div></div>'
+    + '<button onclick="_trToggleConfig()" class="tr-cfg-btn">▸ Configure</button>'
     + '</div>'
-    + '<div id="tr-config-body" style="display:none;margin-top:16px">'
+    + '<div id="tr-config-body" class="tr-cfg-body" style="display:none">'
     + _trToggleRow('exactAmount', 'Exact amount match', 'Same amount within ±3 days across accounts', rules.exactAmount !== false)
     + _trToggleRow('recurring',   'Recurring pattern',   'Same amount seen in prior months',           rules.recurring  !== false)
     + _trToggleRow('keyword',     'Keyword matching',    'Description contains transfer-related terms', rules.keyword    !== false)
     + _trToggleRow('frequency',   'Cross-account bonus', 'Confirms different source and destination accounts', rules.frequency !== false)
-    + '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">'
-    + '<div style="font-size:.78rem;font-weight:600;margin-bottom:4px">Auto-confirm threshold: '
+    + '<div class="tr-cfg-th">'
+    + '<div class="tr-cfg-th-lbl">Auto-confirm threshold: '
     + '<input id="tr-threshold-input" type="number" inputmode="decimal" min="50" max="99" step="1" value="' + Math.round(threshold * 100)
-    + '" style="width:60px;padding:4px 8px;font-size:.78rem;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);text-align:center" onblur="_trSaveThreshold()" onchange="_trSaveThreshold()">%'
+    + '" class="tr-cfg-th-in" onblur="_trSaveThreshold()" onchange="_trSaveThreshold()">%'
     + '</div>'
-    + '<div style="font-size:.7rem;color:#7A8FBC">Pairs scoring above this are confirmed automatically. Below it, they appear in Pending review.</div>'
+    + '<div class="tr-cfg-sub">Pairs scoring above this are confirmed automatically. Below it, they appear in Pending review.</div>'
     + '</div>'
-    + '<div style="font-size:.68rem;color:#7A8FBC;margin-top:10px">Last run: ' + esc(lastRun ? trFmtTimestamp(lastRun) : 'Never') + '</div>'
+    + '<div class="tr-cfg-last">Last run: ' + esc(lastRun ? trFmtTimestamp(lastRun) : 'Never') + '</div>'
     + '</div></div>';
 }
 
 function _trToggleRow(key, label, sub, on) {
-  var pill = '<div class="tr-toggle-pill" style="background:' + (on ? 'var(--primary)' : 'var(--card3)') + '">'
-    + '<div class="tr-toggle-thumb" style="left:' + (on ? '16px' : '2px') + '"></div></div>';
-  return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
-    + '<div style="flex:1"><div style="font-size:.8rem;font-weight:600">' + esc(label) + '</div>'
-    + '<div style="font-size:.7rem;color:#7A8FBC">' + esc(sub) + '</div></div>'
+  var pill = '<div class="tr-toggle-pill' + (on ? ' tr-toggle-pill--on' : '') + '">'
+    + '<div class="tr-toggle-thumb"></div></div>';
+  return '<div class="tr-cfg-row">'
+    + '<div class="tr-cfg-row-main"><div class="tr-cfg-row-lbl">' + esc(label) + '</div>'
+    + '<div class="tr-cfg-sub">' + esc(sub) + '</div></div>'
     + '<div class="tr-toggle-wrap" id="tr-toggle-wrap-' + key + '">'
     + '<button role="switch" aria-checked="' + on + '" aria-label="' + esc(label) + ' detection rule"'
-    + ' id="tr-toggle-' + key + '" class="tr-btn" style="background:none;border:none;padding:0;display:flex;align-items:center">'
+    + ' id="tr-toggle-' + key + '" class="tr-btn tr-switch">'
     + pill + '</button></div></div>';
 }
 
@@ -1157,20 +1151,20 @@ function _trBuildConfirmedTab() {
   TRANSFERS.forEach(function(p) { if (p.date) months[p.date.slice(0, 7)] = true; });
   var monthKeys = Object.keys(months).sort().reverse();
 
-  var filterHtml = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">'
-    + '<button onclick="_trSetAcctFilter(\'all\')" style="background:' + (_trAcctFilter === 'all' ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (_trAcctFilter === 'all' ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (_trAcctFilter === 'all' ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">All accounts</button>'
+  var filterHtml = '<div class="tr-filters">'
+    + '<button onclick="_trSetAcctFilter(\'all\')" class="tr-fpill' + (_trAcctFilter === 'all' ? ' tr-fpill--on' : '') + '">All accounts</button>'
     + acctKeys.map(function(a) {
       var active = _trAcctFilter === a;
-      return '<button onclick="_trSetAcctFilter(\'' + esc(a) + '\')" style="background:' + (active ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (active ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (active ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">' + esc(a) + '</button>';
+      return '<button onclick="_trSetAcctFilter(\'' + esc(a) + '\')" class="tr-fpill' + (active ? ' tr-fpill--on' : '') + '">' + esc(a) + '</button>';
     }).join('')
-    + '<select onchange="_trSetMonthFilter(this.value)" style="padding:6px 10px;font-size:.72rem;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;min-height:36px">'
+    + '<select onchange="_trSetMonthFilter(this.value)" class="tr-fsel">'
     + '<option value="all"' + (_trMonthFilter === 'all' ? ' selected' : '') + '>All months</option>'
     + monthKeys.map(function(m) {
       var lbl = new Date(m + '-02').toLocaleString('en-AU', { month: 'long', year: 'numeric' });
       return '<option value="' + m + '"' + (_trMonthFilter === m ? ' selected' : '') + '>' + lbl + '</option>';
     }).join('')
     + '</select>'
-    + '<button onclick="_trToggleAutoFilter()" style="background:' + (_trAutoFilter ? 'rgba(240,83,138,.12)' : 'transparent') + ';color:' + (_trAutoFilter ? 'var(--primary)' : '#7A8FBC') + ';border:1px solid ' + (_trAutoFilter ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';border-radius:999px;padding:6px 14px;font-size:.72rem;cursor:pointer;min-height:36px;font-family:var(--font-body)">Auto only</button>'
+    + '<button onclick="_trToggleAutoFilter()" class="tr-fpill' + (_trAutoFilter ? ' tr-fpill--on' : '') + '">Auto only</button>'
     + '</div>';
 
   // Filter pairs
@@ -1195,24 +1189,24 @@ function _trBuildConfirmedTab() {
   var pagePairs = pairs.slice(start, start + PAGE_SIZE);
 
   if (!TRANSFERS.length) {
-    return filterHtml + '<div style="text-align:center;padding:32px;color:#7A8FBC">'
-      + '<div style="font-size:2rem;margin-bottom:8px">' + ICON('refresh') + '</div>'
-      + '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px">No confirmed transfers yet</div>'
-      + '<div style="font-size:.76rem">Import transactions or link pairs manually to see transfer pairs here.</div>'
+    return filterHtml + '<div class="tr-empty">'
+      + '<div class="tr-empty-ico">' + ICON('refresh') + '</div>'
+      + '<div class="tr-empty-title">No confirmed transfers yet</div>'
+      + '<div class="tr-empty-sub">Import transactions or link pairs manually to see transfer pairs here.</div>'
       + '</div>';
   }
 
-  var tableHtml = '<div style="overflow-x:auto"><table role="table" style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:.78rem">'
-    + '<thead><tr style="border-bottom:1px solid var(--border)">'
-    + '<th style="width:70px;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Date</th>'
-    + '<th style="width:20%;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">From</th>'
-    + '<th style="width:28px;padding:8px 4px;text-align:center;color:#7A8FBC">→</th>'
-    + '<th style="width:20%;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">To</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Description</th>'
-    + '<th style="width:90px;padding:8px 10px;text-align:right;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Amount</th>'
-    + '<th style="width:110px;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Confidence <span class="help-tip" tabindex="0" aria-label="How confidence is calculated" title="Score based on: exact amount match (50%), keyword match (25%), recurring pattern (20%), cross-account bonus (5%). Pairs above the auto-confirm threshold are confirmed automatically.">?</span></th>'
-    + '<th style="width:70px;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Source</th>'
-    + '<th style="width:80px;padding:8px 10px;text-align:center;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Action</th>'
+  var tableHtml = '<div class="tr-tbl-wrap"><table role="table" class="tr-tbl tr-tbl--fixed">'
+    + '<thead><tr class="tr-row">'
+    + '<th class="tr-th tr-w70">Date</th>'
+    + '<th class="tr-th tr-w20p">From</th>'
+    + '<th class="tr-th-arrow tr-th-arrow--tight">→</th>'
+    + '<th class="tr-th tr-w20p">To</th>'
+    + '<th class="tr-th">Description</th>'
+    + '<th class="tr-th tr-th--r tr-w90">Amount</th>'
+    + '<th class="tr-th tr-w110">Confidence <span class="help-tip" tabindex="0" aria-label="How confidence is calculated" title="Score based on: exact amount match (50%), keyword match (25%), recurring pattern (20%), cross-account bonus (5%). Pairs above the auto-confirm threshold are confirmed automatically.">?</span></th>'
+    + '<th class="tr-th tr-w70">Source</th>'
+    + '<th class="tr-th tr-th--c tr-w80">Action</th>'
     + '</tr></thead><tbody>';
 
   pagePairs.forEach(function(p) {
@@ -1227,31 +1221,32 @@ function _trBuildConfirmedTab() {
     var confPct  = Math.round(conf * 100);
     var confColor = conf >= 0.80 ? 'var(--success)' : conf >= 0.50 ? 'var(--warn)' : 'var(--danger)';
     var confLabel = conf >= 0.80 ? 'High' : conf >= 0.50 ? 'Medium' : 'Low';
+    var confTone  = conf >= 0.80 ? 'tone-green' : conf >= 0.50 ? 'tone-amber' : 'tone-danger';
     var reasons   = (p.confidenceReasons || []).map(function(r) {
       var m = { amount_match: 'Amount match (+50%)', keyword_match: 'Keyword match (+25%)', recurring_strong: 'Recurring (+20%)', recurring_weak: 'Recurring (+10%)', cross_account: 'Cross-account (+5%)', manual: 'Manual link' };
       return m[r] || r;
     }).join(' · ');
     var sourceBadge = p.source === 'manual'
-      ? '<span style="background:rgba(240,83,138,.15);color:var(--primary);border-radius:999px;padding:2px 7px;font-size:.65rem;font-weight:700">manual</span>'
-      : '<span style="background:rgba(129,140,248,.15);color:var(--purple);border-radius:999px;padding:2px 7px;font-size:.65rem;font-weight:700">auto</span>';
+      ? '<span class="tr-src tr-src--manual">manual</span>'
+      : '<span class="tr-src tr-src--auto">auto</span>';
 
-    tableHtml += '<tr style="border-bottom:1px solid var(--border)">'
-      + '<td style="padding:10px;color:#7A8FBC;font-size:.72rem">' + esc(trFmtDate(p.date)) + '</td>'
-      + '<td style="padding:10px"><div style="font-weight:600;font-size:.76rem">' + fromAcct + '</div><div style="font-size:.68rem;color:#7A8FBC">' + fromDesc + '</div></td>'
-      + '<td style="padding:4px;text-align:center;color:#7A8FBC">→</td>'
-      + '<td style="padding:10px"><div style="font-weight:600;font-size:.76rem">' + toAcct + '</div><div style="font-size:.68rem;color:#7A8FBC">' + toDesc + '</div></td>'
-      + '<td style="padding:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + desc + '</td>'
-      + '<td style="padding:10px;text-align:right;font-family:var(--font-mono);font-weight:700">' + fmt(p.amount || 0) + '</td>'
-      + '<td style="padding:10px">'
-      + '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'
-      + '<span style="width:7px;height:7px;border-radius:50%;background:' + confColor + ';display:inline-block;flex-shrink:0"></span>'
-      + '<span style="font-size:.7rem;color:' + confColor + '">' + confLabel + '</span>'
+    tableHtml += '<tr class="tr-row">'
+      + '<td class="tr-td tr-td-date">' + esc(trFmtDate(p.date)) + '</td>'
+      + '<td class="tr-td"><div class="tr-acct">' + fromAcct + '</div><div class="tr-acct-desc">' + fromDesc + '</div></td>'
+      + '<td class="tr-td-arrow">→</td>'
+      + '<td class="tr-td"><div class="tr-acct">' + toAcct + '</div><div class="tr-acct-desc">' + toDesc + '</div></td>'
+      + '<td class="tr-td tr-ellip">' + desc + '</td>'
+      + '<td class="tr-td tr-td-amt">' + fmt(p.amount || 0) + '</td>'
+      + '<td class="tr-td">'
+      + '<div class="tr-conf">'
+      + '<span class="tr-conf-dot tr-conf-dot--ns" style="background:' + confColor + '"></span>'
+      + '<span class="tr-conf-lbl ' + confTone + '">' + confLabel + '</span>'
       + '</div>'
-      + '<div role="meter" aria-valuenow="' + confPct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Confidence ' + confPct + '%" title="' + esc(reasons) + '" style="width:60px;height:5px;background:var(--card3);border-radius:3px">'
-      + '<div style="width:' + confPct + '%;height:100%;background:' + confColor + ';border-radius:3px"></div></div>'
+      + '<div role="meter" aria-valuenow="' + confPct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Confidence ' + confPct + '%" title="' + esc(reasons) + '" class="tr-meter">'
+      + '<div class="tr-meter-fill" style="width:' + confPct + '%;background:' + confColor + '"></div></div>'
       + '</td>'
-      + '<td style="padding:10px">' + sourceBadge + '</td>'
-      + '<td style="padding:10px;text-align:center"><button onclick="trUnlinkPair(\'' + esc(p.id) + '\')" class="tr-btn" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);border-radius:6px;min-width:60px;min-height:44px;padding:10px 12px;font-size:.72rem;font-weight:600">Unlink</button></td>'
+      + '<td class="tr-td">' + sourceBadge + '</td>'
+      + '<td class="tr-td tr-td-c"><button onclick="trUnlinkPair(\'' + esc(p.id) + '\')" class="tr-btn tr-act tr-act--danger tr-act--unlink">Unlink</button></td>'
       + '</tr>';
   });
 
@@ -1259,7 +1254,7 @@ function _trBuildConfirmedTab() {
 
   var pagHtml = _trPagination(total, PAGE_SIZE, page, 'confirmed');
 
-  return filterHtml + (total > 0 ? tableHtml + pagHtml : '<div style="text-align:center;padding:32px;color:#7A8FBC"><div style="font-size:.9rem">No confirmed pairs match these filters.</div></div>');
+  return filterHtml + (total > 0 ? tableHtml + pagHtml : '<div class="tr-empty"><div class="tr-empty-lead">No confirmed pairs match these filters.</div></div>');
 }
 
 function _trSetAcctFilter(v) { _trAcctFilter = v; _trPage.confirmed = 1; renderTransfers(); }
@@ -1273,42 +1268,42 @@ function _trBuildPendingTab() {
   var highConf = TRANSFERS_PENDING.filter(function(p) { return p.confidence >= threshold; });
 
   if (!TRANSFERS_PENDING.length) {
-    return '<div style="text-align:center;padding:40px;color:#7A8FBC">'
-      + '<div style="font-size:2rem;margin-bottom:8px">' + ICON('check') + '</div>'
-      + '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px">All caught up</div>'
-      + '<div style="font-size:.76rem">No suggested pairs waiting for review.</div>'
+    return '<div class="tr-empty tr-empty--40">'
+      + '<div class="tr-empty-ico">' + ICON('check') + '</div>'
+      + '<div class="tr-empty-title">All caught up</div>'
+      + '<div class="tr-empty-sub">No suggested pairs waiting for review.</div>'
       + '</div>';
   }
 
   // Header row
-  var headerHtml = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">'
-    + '<div style="font-size:.8rem;color:#7A8FBC">' + TRANSFERS_PENDING.length + ' suggested pair' + (TRANSFERS_PENDING.length !== 1 ? 's' : '') + '</div>'
-    + '<div style="display:flex;gap:8px;align-items:center">'
-    + '<input type="checkbox" id="tr-select-all" onchange="trBulkSelectAll(this.checked)" style="width:16px;height:16px;cursor:pointer" aria-label="Select all suggestions">'
-    + '<label for="tr-select-all" style="font-size:.75rem;color:#7A8FBC">Select all</label>'
-    + (highConf.length > 0 ? '<button onclick="trBulkConfirmHighConf()" style="background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.2);color:var(--success);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:600;cursor:pointer;min-height:44px;font-family:var(--font-body)">Confirm all high-confidence ▸</button>' : '')
+  var headerHtml = '<div class="tr-pend-hd">'
+    + '<div class="tr-pend-count">' + TRANSFERS_PENDING.length + ' suggested pair' + (TRANSFERS_PENDING.length !== 1 ? 's' : '') + '</div>'
+    + '<div class="tr-pend-tools">'
+    + '<input type="checkbox" id="tr-select-all" onchange="trBulkSelectAll(this.checked)" class="tr-cb" aria-label="Select all suggestions">'
+    + '<label for="tr-select-all" class="tr-sa-lbl">Select all</label>'
+    + (highConf.length > 0 ? '<button onclick="trBulkConfirmHighConf()" class="tr-pend-hc">Confirm all high-confidence ▸</button>' : '')
     + '</div></div>';
 
   // Bulk action bar
-  var bulkBarHtml = '<div id="tr-bulk-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;position:sticky;top:0;z-index:10">'
-    + '<span id="tr-bulk-count" style="flex:1;font-size:.8rem;font-weight:600"></span>'
-    + '<button id="tr-bulk-confirm-sel" onclick="trBulkConfirmSelected()" style="background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.2);color:var(--success);border-radius:6px;padding:8px 14px;font-size:.75rem;font-weight:600;cursor:pointer;min-height:44px;font-family:var(--font-body)">Confirm selected</button>'
-    + '<button id="tr-bulk-reject-sel" onclick="trBulkRejectSelected()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);border-radius:6px;padding:8px 14px;font-size:.75rem;font-weight:600;cursor:pointer;min-height:44px;font-family:var(--font-body)">Reject selected</button>'
-    + '<button onclick="_trBulkClear()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;padding:8px 14px;font-size:.75rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">Clear selection</button>'
+  var bulkBarHtml = '<div id="tr-bulk-bar" class="tr-bulk" style="display:none">'
+    + '<span id="tr-bulk-count" class="tr-bulk-n"></span>'
+    + '<button id="tr-bulk-confirm-sel" onclick="trBulkConfirmSelected()" class="tr-bb tr-bb--green">Confirm selected</button>'
+    + '<button id="tr-bulk-reject-sel" onclick="trBulkRejectSelected()" class="tr-bb tr-bb--danger">Reject selected</button>'
+    + '<button onclick="_trBulkClear()" class="tr-bb tr-bb--ghost">Clear selection</button>'
     + '</div>';
 
   // Table
-  var tableHtml = '<div style="overflow-x:auto"><table role="table" style="width:100%;border-collapse:collapse;font-size:.78rem">'
-    + '<thead><tr style="border-bottom:1px solid var(--border)">'
-    + '<th style="width:28px;padding:8px 10px"></th>'
-    + '<th style="width:70px;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Date</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">From</th>'
-    + '<th style="width:28px;text-align:center;color:#7A8FBC">→</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">To</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Description</th>'
-    + '<th style="width:90px;padding:8px 10px;text-align:right;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Amount</th>'
-    + '<th style="width:90px;padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Confidence</th>'
-    + '<th style="width:130px;padding:8px 10px;text-align:center;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Action</th>'
+  var tableHtml = '<div class="tr-tbl-wrap"><table role="table" class="tr-tbl">'
+    + '<thead><tr class="tr-row">'
+    + '<th class="tr-th-cb"></th>'
+    + '<th class="tr-th tr-w70">Date</th>'
+    + '<th class="tr-th">From</th>'
+    + '<th class="tr-th-arrow">→</th>'
+    + '<th class="tr-th">To</th>'
+    + '<th class="tr-th">Description</th>'
+    + '<th class="tr-th tr-th--r tr-w90">Amount</th>'
+    + '<th class="tr-th tr-w90">Confidence</th>'
+    + '<th class="tr-th tr-th--c tr-w130">Action</th>'
     + '</tr></thead><tbody>';
 
   var PAGE_SIZE = 20;
@@ -1328,25 +1323,26 @@ function _trBuildPendingTab() {
     var confPct  = Math.round(conf * 100);
     var confColor = conf >= 0.80 ? 'var(--success)' : conf >= 0.50 ? 'var(--warn)' : 'var(--danger)';
     var confLabel = conf >= 0.80 ? 'High' : conf >= 0.50 ? 'Medium' : 'Low';
+    var confTone  = conf >= 0.80 ? 'tone-green' : conf >= 0.50 ? 'tone-amber' : 'tone-danger';
     var isSel    = _trBulkSel.indexOf(p.id) >= 0;
     var desc     = debitTx ? esc((debitTx.name || debitTx.description || '').slice(0, 24)) : '';
 
-    tableHtml += '<tr style="border-bottom:1px solid var(--border)">'
-      + '<td style="padding:10px"><input type="checkbox" ' + (isSel ? 'checked' : '') + ' onchange="trBulkToggle(\'' + esc(p.id) + '\',this.checked)" style="width:16px;height:16px;cursor:pointer"></td>'
-      + '<td style="padding:10px;color:#7A8FBC;font-size:.72rem">' + esc(trFmtDate(date)) + '</td>'
-      + '<td style="padding:10px"><div style="font-weight:600;font-size:.76rem">' + (fromAcct || fromDesc) + '</div><div style="font-size:.68rem;color:#7A8FBC">' + fromDesc + '</div></td>'
-      + '<td style="padding:4px;text-align:center;color:#7A8FBC">→</td>'
-      + '<td style="padding:10px"><div style="font-weight:600;font-size:.76rem">' + (toAcct || toDesc) + '</div><div style="font-size:.68rem;color:#7A8FBC">' + toDesc + '</div></td>'
-      + '<td style="padding:10px;font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + desc + '</td>'
-      + '<td style="padding:10px;text-align:right;font-family:var(--font-mono);font-weight:700">' + fmt(p.amount || 0) + '</td>'
-      + '<td style="padding:10px">'
-      + '<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px"><span style="width:7px;height:7px;border-radius:50%;background:' + confColor + ';display:inline-block"></span><span style="font-size:.7rem;color:' + confColor + '">' + confLabel + ' (' + confPct + '%)</span></div>'
-      + '<div role="meter" aria-valuenow="' + confPct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Confidence ' + confPct + '%" style="width:60px;height:5px;background:var(--card3);border-radius:3px"><div style="width:' + confPct + '%;height:100%;background:' + confColor + ';border-radius:3px"></div></div>'
+    tableHtml += '<tr class="tr-row">'
+      + '<td class="tr-td"><input type="checkbox" ' + (isSel ? 'checked' : '') + ' onchange="trBulkToggle(\'' + esc(p.id) + '\',this.checked)" class="tr-cb"></td>'
+      + '<td class="tr-td tr-td-date">' + esc(trFmtDate(date)) + '</td>'
+      + '<td class="tr-td"><div class="tr-acct">' + (fromAcct || fromDesc) + '</div><div class="tr-acct-desc">' + fromDesc + '</div></td>'
+      + '<td class="tr-td-arrow">→</td>'
+      + '<td class="tr-td"><div class="tr-acct">' + (toAcct || toDesc) + '</div><div class="tr-acct-desc">' + toDesc + '</div></td>'
+      + '<td class="tr-td tr-ellip tr-fs74">' + desc + '</td>'
+      + '<td class="tr-td tr-td-amt">' + fmt(p.amount || 0) + '</td>'
+      + '<td class="tr-td">'
+      + '<div class="tr-conf tr-conf--4"><span class="tr-conf-dot" style="background:' + confColor + '"></span><span class="tr-conf-lbl ' + confTone + '">' + confLabel + ' (' + confPct + '%)</span></div>'
+      + '<div role="meter" aria-valuenow="' + confPct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Confidence ' + confPct + '%" class="tr-meter"><div class="tr-meter-fill" style="width:' + confPct + '%;background:' + confColor + '"></div></div>'
       + '</td>'
-      + '<td style="padding:10px;text-align:center">'
-      + '<div style="display:flex;gap:4px;justify-content:center">'
-      + '<button onclick="trConfirmPending(\'' + esc(p.id) + '\')" class="tr-btn" style="background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.2);color:var(--success);border-radius:6px;min-height:44px;padding:10px 10px;font-size:.72rem">Confirm</button>'
-      + '<button onclick="trRejectPending(\'' + esc(p.id) + '\')" class="tr-btn" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);border-radius:6px;min-height:44px;padding:10px 10px;font-size:.72rem">Reject</button>'
+      + '<td class="tr-td tr-td-c">'
+      + '<div class="tr-acts">'
+      + '<button onclick="trConfirmPending(\'' + esc(p.id) + '\')" class="tr-btn tr-act tr-act--green">Confirm</button>'
+      + '<button onclick="trRejectPending(\'' + esc(p.id) + '\')" class="tr-btn tr-act tr-act--danger">Reject</button>'
       + '</div></td>'
       + '</tr>';
   });
@@ -1361,21 +1357,21 @@ function _trBulkClear() { _trBulkSel = []; renderTransfers(); }
 // ── Unmatched tab ─────────────────────────────────────────────
 function _trBuildUnmatchedTab(unmatchedTx) {
   if (!unmatchedTx.length) {
-    return '<div style="text-align:center;padding:40px;color:#7A8FBC">'
-      + '<div style="font-size:2rem;margin-bottom:8px">' + ICON('check') + '</div>'
-      + '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px">All transfers reconciled</div>'
-      + '<div style="font-size:.76rem">No unmatched transfer transactions detected.</div>'
+    return '<div class="tr-empty tr-empty--40">'
+      + '<div class="tr-empty-ico">' + ICON('check') + '</div>'
+      + '<div class="tr-empty-title">All transfers reconciled</div>'
+      + '<div class="tr-empty-sub">No unmatched transfer transactions detected.</div>'
       + '</div>';
   }
 
-  var tableHtml = '<div style="overflow-x:auto"><table role="table" style="width:100%;border-collapse:collapse;font-size:.78rem">'
-    + '<thead><tr style="border-bottom:1px solid var(--border)">'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Date</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Account</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Description</th>'
-    + '<th style="width:90px;padding:8px 10px;text-align:right;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Amount</th>'
-    + '<th style="padding:8px 10px;text-align:left;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Reason</th>'
-    + '<th style="width:110px;padding:8px 10px;text-align:center;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7A8FBC">Action</th>'
+  var tableHtml = '<div class="tr-tbl-wrap"><table role="table" class="tr-tbl">'
+    + '<thead><tr class="tr-row">'
+    + '<th class="tr-th">Date</th>'
+    + '<th class="tr-th">Account</th>'
+    + '<th class="tr-th">Description</th>'
+    + '<th class="tr-th tr-th--r tr-w90">Amount</th>'
+    + '<th class="tr-th">Reason</th>'
+    + '<th class="tr-th tr-th--c tr-w110">Action</th>'
     + '</tr></thead><tbody>';
 
   var PAGE_SIZE = 20;
@@ -1390,15 +1386,15 @@ function _trBuildUnmatchedTab(unmatchedTx) {
       ? 'Pair removed by re-run'
       : 'Categorised as transfer — no pair found';
     var sign  = t.type === 'income' ? '+' : '-';
-    var color = t.type === 'income' ? 'var(--success)' : 'var(--danger)';
+    var tone  = t.type === 'income' ? 'tone-green' : 'tone-danger';
 
-    tableHtml += '<tr style="border-bottom:1px solid var(--border)">'
-      + '<td style="padding:10px;color:#7A8FBC;font-size:.72rem">' + esc(trFmtDate(t.date)) + '</td>'
-      + '<td style="padding:10px;font-size:.76rem">' + acct + '</td>'
-      + '<td style="padding:10px;font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + desc + '</td>'
-      + '<td style="padding:10px;text-align:right;font-family:var(--font-mono);font-weight:700;color:' + color + '">' + sign + fmt(t.amount) + '</td>'
-      + '<td style="padding:10px;font-size:.72rem;color:#7A8FBC">' + esc(reason) + '</td>'
-      + '<td style="padding:10px;text-align:center"><button onclick="trOpenManualModal(\'' + esc(t.id) + '\')" class="tr-btn" style="background:rgba(240,83,138,.1);border:1px solid rgba(240,83,138,.2);color:var(--primary);border-radius:6px;min-height:44px;padding:10px 10px;font-size:.72rem;font-weight:600">Find match</button></td>'
+    tableHtml += '<tr class="tr-row">'
+      + '<td class="tr-td tr-td-date">' + esc(trFmtDate(t.date)) + '</td>'
+      + '<td class="tr-td tr-fs76">' + acct + '</td>'
+      + '<td class="tr-td tr-ellip tr-fs76">' + desc + '</td>'
+      + '<td class="tr-td tr-td-amt ' + tone + '">' + sign + fmt(t.amount) + '</td>'
+      + '<td class="tr-td tr-td-reason">' + esc(reason) + '</td>'
+      + '<td class="tr-td tr-td-c"><button onclick="trOpenManualModal(\'' + esc(t.id) + '\')" class="tr-btn tr-act tr-act--pink">Find match</button></td>'
       + '</tr>';
   });
 
@@ -1413,23 +1409,23 @@ function _trPagination(total, pageSize, current, tabKey) {
   var start = (current - 1) * pageSize + 1;
   var end   = Math.min(current * pageSize, total);
 
-  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
-    + '<div style="font-size:.75rem;color:#7A8FBC">Showing ' + start + '–' + end + ' of ' + total + '</div>'
-    + '<div style="display:flex;gap:4px">';
+  var html = '<div class="tr-pag">'
+    + '<div class="tr-pag-info">Showing ' + start + '–' + end + ' of ' + total + '</div>'
+    + '<div class="tr-flex4">';
 
   // Prev
-  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current - 1) + ')" ' + (current <= 1 ? 'disabled' : '') + ' style="min-height:36px;min-width:36px;background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;cursor:pointer;font-size:.75rem">‹</button>';
+  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current - 1) + ')" ' + (current <= 1 ? 'disabled' : '') + ' class="tr-pg">‹</button>';
 
   // Page numbers (max 5)
   var pStart = Math.max(1, current - 2);
   var pEnd   = Math.min(totalPages, pStart + 4);
   for (var i = pStart; i <= pEnd; i++) {
     var isActive = i === current;
-    html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + i + ')" style="min-height:36px;min-width:36px;background:' + (isActive ? 'rgba(240,83,138,.15)' : 'transparent') + ';border:1px solid ' + (isActive ? 'rgba(240,83,138,.3)' : 'var(--border)') + ';color:' + (isActive ? 'var(--primary)' : '#7A8FBC') + ';border-radius:6px;cursor:pointer;font-size:.75rem">' + i + '</button>';
+    html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + i + ')" class="tr-pg' + (isActive ? ' tr-pg--on' : '') + '">' + i + '</button>';
   }
 
   // Next
-  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current + 1) + ')" ' + (current >= totalPages ? 'disabled' : '') + ' style="min-height:36px;min-width:36px;background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:6px;cursor:pointer;font-size:.75rem">›</button>';
+  html += '<button onclick="_trGoPage(\'' + tabKey + '\',' + (current + 1) + ')" ' + (current >= totalPages ? 'disabled' : '') + ' class="tr-pg">›</button>';
 
   html += '</div></div>';
   return html;
@@ -1449,21 +1445,21 @@ function _trBuildModal() {
     }).join('');
 
   return '<div id="tr-link-modal" role="dialog" aria-modal="true" aria-labelledby="tr-modal-title" aria-hidden="true"'
-    + ' style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:10000;align-items:center;justify-content:center;padding:16px"'
+    + ' class="tr-modal" style="display:none"'
     + ' onclick="if(event.target===this)trCloseManualModal()">'
-    + '<div style="background:var(--card);border-radius:14px;border:1px solid var(--border);max-width:480px;width:100%;max-height:88vh;overflow-y:auto;padding:20px" onclick="event.stopPropagation()">'
-    + '<h3 id="tr-modal-title" tabindex="-1" style="margin:0 0 6px;font-size:1rem;font-weight:700">Link two transactions as a transfer pair</h3>'
-    + '<p style="font-size:.78rem;color:#7A8FBC;margin-bottom:14px">Select one outgoing and one incoming transaction. Both will be excluded from income and expense analysis.</p>'
-    + '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
-    + '<input id="tr-modal-search" type="text" placeholder="Search..." oninput="trRenderModalList()" style="flex:1;min-width:140px;padding:8px 10px;font-size:.8rem;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px">'
-    + '<select id="tr-modal-month" onchange="trRenderModalList()" style="padding:8px 10px;font-size:.78rem;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px">' + monthOpts + '</select>'
+    + '<div class="tr-modal-box" onclick="event.stopPropagation()">'
+    + '<h3 id="tr-modal-title" tabindex="-1" class="tr-modal-h">Link two transactions as a transfer pair</h3>'
+    + '<p class="tr-modal-p">Select one outgoing and one incoming transaction. Both will be excluded from income and expense analysis.</p>'
+    + '<div class="tr-modal-tools">'
+    + '<input id="tr-modal-search" type="text" placeholder="Search..." oninput="trRenderModalList()" class="tr-modal-q">'
+    + '<select id="tr-modal-month" onchange="trRenderModalList()" class="tr-modal-sel">' + monthOpts + '</select>'
     + '</div>'
-    + '<div id="tr-modal-list" role="listbox" aria-label="Transactions to link" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:4px"></div>'
-    + '<div id="tr-modal-status" style="font-size:.78rem;color:#7A8FBC;margin:10px 0;min-height:18px">Select one outgoing and one incoming transaction</div>'
-    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
-    + '<button onclick="trCloseManualModal()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:8px;padding:10px 16px;font-size:.8rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">Cancel</button>'
-    + '<button onclick="_trBulkClearModal()" style="background:transparent;border:1px solid var(--border);color:#7A8FBC;border-radius:8px;padding:10px 16px;font-size:.8rem;cursor:pointer;min-height:44px;font-family:var(--font-body)">Clear</button>'
-    + '<button id="tr-modal-confirm" onclick="trConfirmManualLink()" disabled aria-disabled="true" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:.8rem;font-weight:700;cursor:pointer;min-height:44px;opacity:.4;font-family:var(--font-body)">Link as transfer</button>'
+    + '<div id="tr-modal-list" role="listbox" aria-label="Transactions to link" class="tr-modal-list"></div>'
+    + '<div id="tr-modal-status" class="tr-modal-status">Select one outgoing and one incoming transaction</div>'
+    + '<div class="tr-modal-acts">'
+    + '<button onclick="trCloseManualModal()" class="tr-mbtn tr-mbtn--ghost">Cancel</button>'
+    + '<button onclick="_trBulkClearModal()" class="tr-mbtn tr-mbtn--ghost">Clear</button>'
+    + '<button id="tr-modal-confirm" onclick="trConfirmManualLink()" disabled aria-disabled="true" class="tr-mbtn tr-mbtn--primary" style="opacity:.4">Link as transfer</button>'
     + '</div></div></div>';
 }
 

@@ -186,7 +186,7 @@ function _wzHtml1() {
     '<label class="wz-label">App Name</label>' +
     '<input id="wz-app-name" type="text" class="wz-input" placeholder="Family Finance"' +
     ' value="' + _wzEsc(_wz.appName) + '" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="40"/>' +
-    '<label class="wz-label" style="margin-top:14px">Subtitle <span class="wz-optional">(optional)</span></label>' +
+    '<label class="wz-label wz-mt14">Subtitle <span class="wz-optional">(optional)</span></label>' +
     '<input id="wz-app-sub" type="text" class="wz-input" placeholder="AUD · Private"' +
     ' value="' + _wzEsc(_wz.appSub) + '" autocomplete="off" maxlength="60"/>' +
     '<button class="wz-next-btn" onclick="wzStep1Next()">Next →</button>'
@@ -216,11 +216,11 @@ function _wzHtml2() {
     _wzProg(2) +
     '<h2 class="wz-heading">Who\'s the first person<br>using this tracker?</h2>' +
     '<div class="wz-emoji-grid" id="wz-eg1">' + _wzEmojiGrid(1, _wz.p1Icon) + '</div>' +
-    '<label class="wz-label" style="margin-top:18px">Name</label>' +
+    '<label class="wz-label wz-mt18">Name</label>' +
     '<input id="wz-p1name" type="text" class="wz-input" placeholder="Your name"' +
     ' value="' + _wzEsc(_wz.p1Name) + '"' +
     ' autocomplete="given-name" autocorrect="off" maxlength="24" oninput="wzCheckP1Next()"/>' +
-    '<label class="wz-label" style="margin-top:22px">PIN for this profile</label>' +
+    '<label class="wz-label wz-mt22">PIN for this profile</label>' +
     '<div class="wz-pin-dots pin-dots" id="wz-dots1">' + _wzDotHtml('p1') + '</div>' +
     '<div class="wz-pin-hint pin-hint" id="wz-phint1">' + _wzP1HintText() + '</div>' +
     '<div class="wz-pin-err pin-err" id="wz-perr1"></div>' +
@@ -291,11 +291,11 @@ function wzShowP2Form() {
   var nextDis = _wzP2Ready() ? '' : ' disabled';
   area.innerHTML = (
     '<div class="wz-emoji-grid" id="wz-eg2">' + _wzEmojiGrid(2, _wz.p2Icon) + '</div>' +
-    '<label class="wz-label" style="margin-top:18px">Name</label>' +
+    '<label class="wz-label wz-mt18">Name</label>' +
     '<input id="wz-p2name" type="text" class="wz-input" placeholder="Their name"' +
     ' value="' + _wzEsc(_wz.p2Name) + '"' +
     ' autocomplete="given-name" autocorrect="off" maxlength="24" oninput="wzCheckP2Next()"/>' +
-    '<label class="wz-label" style="margin-top:22px">PIN for this profile</label>' +
+    '<label class="wz-label wz-mt22">PIN for this profile</label>' +
     '<div class="wz-pin-dots pin-dots" id="wz-dots2">' + _wzDotHtml('p2') + '</div>' +
     '<div class="wz-pin-hint pin-hint" id="wz-phint2">' + (_wz.p2Done ? '<i class="ti ti-check"></i> PIN set' : 'Enter a 4-digit PIN') + '</div>' +
     '<div class="wz-pin-err pin-err" id="wz-perr2"></div>' +
@@ -361,14 +361,14 @@ function _wzHtml4() {
     '<label class="wz-label"><i class="ti ti-building-bank"></i> Main / Offset Account</label>' +
     '<input id="wz-acct-offset" type="text" class="wz-input" placeholder="Offset Account"' +
     ' value="' + _wzEsc(_wz.acctOffset) + '" autocorrect="off"/>' +
-    '<label class="wz-label" style="margin-top:14px"><i class="ti ti-home"></i> Joint / Everyday Account</label>' +
+    '<label class="wz-label wz-mt14"><i class="ti ti-home"></i> Joint / Everyday Account</label>' +
     '<input id="wz-acct-home" type="text" class="wz-input" placeholder="Everyday Account"' +
     ' value="' + _wzEsc(_wz.acctHome) + '" autocorrect="off"/>' +
-    '<label class="wz-label" style="margin-top:14px"><i class="ti ti-coin"></i> ' + p1n + '\'s Savings</label>' +
+    '<label class="wz-label wz-mt14"><i class="ti ti-coin"></i> ' + p1n + '\'s Savings</label>' +
     '<input id="wz-acct-sav1" type="text" class="wz-input" placeholder="Savings"' +
     ' value="' + _wzEsc(_wz.acctSav1) + '" autocorrect="off"/>' +
     (_wz.p2On
-      ? '<label class="wz-label" style="margin-top:14px"><i class="ti ti-diamond"></i> ' + p2n + '\'s Savings</label>' +
+      ? '<label class="wz-label wz-mt14"><i class="ti ti-diamond"></i> ' + p2n + '\'s Savings</label>' +
         '<input id="wz-acct-sav2" type="text" class="wz-input" placeholder="Savings"' +
         ' value="' + _wzEsc(_wz.acctSav2) + '" autocorrect="off"/>'
       : '') +
@@ -436,7 +436,7 @@ function _wzHtml5() {
   return (
     '<div class="wz-done-wrap">' +
       '<div class="wz-done-icon" id="wz-check-icon"><i class="ti ti-check"></i></div>' +
-      '<h2 class="wz-heading" style="margin-top:20px">' + appName + ' is ready,<br>' + p1n + '.</h2>' +
+      '<h2 class="wz-heading wz-mt20">' + appName + ' is ready,<br>' + p1n + '.</h2>' +
       '<div class="wz-chips">' +
         '<div class="wz-chip">' + chip2 + '</div>' +
         '<div class="wz-chip">' + chipA + '</div>' +

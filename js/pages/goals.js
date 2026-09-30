@@ -46,28 +46,28 @@ function renderGoalsPage(){
   const totalTarget=GOALS.reduce((s,g)=>s+_goalTarget(g),0);
   el.innerHTML=`
     <div class="g3 mb">
-      <div class="card" style="text-align:center">
-        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Goals</div>
-        <div style="font-size:1.6rem;font-weight:700;color:var(--primary)">${GOALS.length}</div>
+      <div class="card goals-stat">
+        <div class="goals-stat-lbl">Goals</div>
+        <div class="goals-stat-val tone-pink">${GOALS.length}</div>
       </div>
-      <div class="card" style="text-align:center">
-        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Total Saved</div>
-        <div style="font-size:1.3rem;font-weight:700;color:var(--success);font-family:var(--font-mono)">${fmtAUD(totalSaved)}</div>
+      <div class="card goals-stat">
+        <div class="goals-stat-lbl">Total Saved</div>
+        <div class="goals-stat-val goals-stat-val--money tone-green">${fmtAUD(totalSaved)}</div>
       </div>
-      <div class="card" style="text-align:center">
-        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Total Target</div>
-        <div style="font-size:1.3rem;font-weight:700;font-family:var(--font-mono)">${fmtAUD(totalTarget)}</div>
+      <div class="card goals-stat">
+        <div class="goals-stat-lbl">Total Target</div>
+        <div class="goals-stat-val goals-stat-val--money">${fmtAUD(totalTarget)}</div>
       </div>
     </div>
     <div id="goals-cards-list"></div>
-    <div class="card" style="margin-top:16px">
+    <div class="card goals-add">
       <div class="section-label">Add New Goal</div>
       <div class="form-grid">
         <div><label class="lbl">Goal Name</label><input type="text" id="g-name" placeholder="e.g. Emergency Fund"/></div>
         <div><label class="lbl">Icon</label>
           <input type="hidden" id="g-icon" value="target"/>
-          <div id="g-icon-preview" style="width:38px;height:38px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--primary)">${ICON('target')}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px" id="g-icon-presets"></div>
+          <div id="g-icon-preview" class="g-icon-preview">${ICON('target')}</div>
+          <div class="g-icon-presets" id="g-icon-presets"></div>
         </div>
       </div>
       <div class="form-grid">
@@ -75,7 +75,7 @@ function renderGoalsPage(){
         <div><label class="lbl">Target Date (optional)</label><input type="date" id="g-date"/></div>
       </div>
       <div class="form-grid">
-        <div><label class="lbl">Linked Account <span style="font-size:.7rem;color:var(--muted)">(balance syncs from Cash Tracker)</span></label>
+        <div><label class="lbl">Linked Account <span class="lbl-hint">(balance syncs from Cash Tracker)</span></label>
           ${_goalAccountSelect()}
         </div>
       </div>
@@ -86,7 +86,7 @@ function renderGoalsPage(){
   var presetsEl = document.getElementById('g-icon-presets');
   if (presetsEl) {
     presetsEl.innerHTML = ICON_PICKER_SET.map(function(k) {
-      return '<span style="cursor:pointer;font-size:1.15rem;padding:6px;border-radius:6px;background:var(--card2);color:var(--muted)" onclick="_gNewPickIcon(\'' + k + '\')">' + ICON(k) + '</span>';
+      return '<span class="g-icon-opt" onclick="_gNewPickIcon(\'' + k + '\')">' + ICON(k) + '</span>';
     }).join('');
   }
 }
@@ -113,26 +113,26 @@ function renderGoalCards(){
     var proj    = _goalProjection(g, current, target);
     var isCtLinked = g.linkedAccount && _goalCtBalance(g.linkedAccount) !== null;
     var acctName = isCtLinked && typeof getAccountName === 'function' ? getAccountName(g.linkedAccount) : '';
-    return '<div class="goal-card" style="margin-bottom:12px" id="goal-card-' + i + '">'
+    return '<div class="goal-card" id="goal-card-' + i + '">'
       + '<div class="goal-hd">'
       + '<div>'
       + '<div class="goal-name">' + iconTag(g.icon || 'target') + ' ' + (pct >= 100 ? ICON('circle-check-filled') + ' ' : '') + g.name + '</div>'
-      + '<div style="font-size:.74rem;color:var(--muted);margin-top:2px;font-family:var(--font-mono)">'
+      + '<div class="goal-meta">'
       + fmtAUD(current) + ' saved of ' + fmtAUD(target)
-      + (isCtLinked ? ' · <span style="color:var(--success);font-size:.7rem">' + ICON('link') + ' ' + acctName + '</span>' : '')
+      + (isCtLinked ? ' · <span class="goal-linked">' + ICON('link') + ' ' + acctName + '</span>' : '')
       + '</div>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px">'
+      + '<div class="goal-actions">'
       + '<div class="goal-pct">' + pct.toFixed(0) + '%</div>'
       + '<button class="btn btn-ghost btn-sm" onclick="toggleGoalEdit(' + i + ')">' + ICON('pencil') + ' Edit</button>'
       + '<button class="del-btn" onclick="delGoalItem(' + g.id + ')">' + ICON('trash') + '</button>'
       + '</div>'
       + '</div>'
-      + '<div class="prog-track" style="height:10px"><div class="prog-fill ' + barCls + '" style="width:' + pct.toFixed(0) + '%"></div></div>'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px">'
-      + '<div style="font-size:.75rem;color:var(--muted)">' + (pct >= 100 ? ICON('confetti') + ' Goal reached!' : (rem > 0 ? fmtAUD(rem) + ' to go' : '')) + (proj ? ' · ' + proj : '') + '</div>'
+      + '<div class="prog-track prog-track--lg"><div class="prog-fill ' + barCls + '" style="width:' + pct.toFixed(0) + '%"></div></div>'
+      + '<div class="goal-foot">'
+      + '<div class="goal-foot-note">' + (pct >= 100 ? ICON('confetti') + ' Goal reached!' : (rem > 0 ? fmtAUD(rem) + ' to go' : '')) + (proj ? ' · ' + proj : '') + '</div>'
       + '</div>'
-      + '<div id="goal-edit-' + i + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
+      + '<div id="goal-edit-' + i + '" class="goal-edit" style="display:none">'
       + _goalEditForm(g, i)
       + '</div>'
       + '</div>';
@@ -145,12 +145,12 @@ function _goalEditForm(g, i) {
     + '<div><label class="lbl">Goal Name</label><input type="text" id="ge-name-' + i + '" value="' + (g.name || '').replace(/"/g, '&quot;') + '" placeholder="Goal name"/></div>'
     + '<div><label class="lbl">Icon</label>'
     + '<input type="hidden" id="ge-icon-' + i + '" value="' + (g.icon || 'target') + '"/>'
-    + '<div id="ge-icon-preview-' + i + '" style="width:38px;height:38px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--primary)">' + iconTag(g.icon || 'target') + '</div>'
+    + '<div id="ge-icon-preview-' + i + '" class="g-icon-preview">' + iconTag(g.icon || 'target') + '</div>'
     + '</div>'
     + '</div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:5px;margin:-6px 0 10px">'
+    + '<div class="g-icon-presets g-icon-presets--edit">'
     + ICON_PICKER_SET.map(function(k) {
-        return '<span style="cursor:pointer;font-size:1.15rem;padding:6px;border-radius:6px;background:var(--card2);color:var(--muted)" onclick="_goalPickIcon(' + i + ',\'' + k + '\')">' + ICON(k) + '</span>';
+        return '<span class="g-icon-opt" onclick="_goalPickIcon(' + i + ',\'' + k + '\')">' + ICON(k) + '</span>';
       }).join('')
     + '</div>'
     + '<div class="form-grid">'
@@ -161,7 +161,7 @@ function _goalEditForm(g, i) {
     + '<div><label class="lbl">Target Date (optional)</label><input type="date" id="ge-date-' + i + '" value="' + (g.targetDate || '') + '"/></div>'
     + '<div><label class="lbl">Linked Account</label>' + acctSel + '</div>'
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<div class="goal-edit-actions">'
     + '<button class="btn btn-primary btn-sm" onclick="saveGoalEdit(' + i + ')">Save</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="toggleGoalEdit(' + i + ')">Cancel</button>'
     + '</div>';

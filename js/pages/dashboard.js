@@ -807,7 +807,7 @@ function kdSparkReal(vals, up) {
   });
   var color = up ? 'var(--green)' : 'var(--amber)';
   var fill = up ? 'rgba(0,200,150,0.12)' : 'rgba(245,158,11,0.12)';
-  return '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="display:block">'
+  return '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" class="kd-spark-svg">'
     + '<polyline points="0,' + h + ' ' + coords.join(' ') + ' ' + w + ',' + h + '" fill="' + fill + '" stroke="none"/>'
     + '<polyline points="' + coords.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
     + '<circle cx="' + w + '" cy="' + coords[coords.length - 1].split(',')[1] + '" r="2.2" fill="' + color + '"/></svg>';
@@ -821,7 +821,7 @@ function kdDonut(segs) {
     circles += '<circle cx="58" cy="58" r="46" fill="none" stroke="' + x.color + '" stroke-width="15" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" stroke-dashoffset="' + (-acc).toFixed(1) + '" transform="rotate(-90 58 58)"/>';
     acc += len;
   });
-  return '<svg width="116" height="116" viewBox="0 0 116 116" role="img" style="flex-shrink:0">'
+  return '<svg width="116" height="116" viewBox="0 0 116 116" role="img" class="kd-donut-svg">'
     + '<circle cx="58" cy="58" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="15"/>'
     + circles
     + '<text x="58" y="62" text-anchor="middle" fill="#6278A0" font-family="DM Sans,sans-serif" font-size="11">assets</text></svg>';
@@ -955,10 +955,10 @@ function renderAcctVisModal() {
     var nm = (typeof ctLabel === 'function') ? ctLabel(a) : a.id;
     var bal = lm ? ((CT[a.id]||{})[lm] || 0) : 0;
     var isHidden = hidden.indexOf(a.id) !== -1;
-    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer">'
-      + '<input type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--primary)" ' + (isHidden ? '' : 'checked') + ' onchange="kdToggleAcctVisible(\'' + a.id + '\')"/>'
-      + '<span style="flex:1;font-size:.85rem;color:var(--text)">' + kdEsc(nm) + '</span>'
-      + '<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">' + fmtWhole(bal) + '</span>'
+    return '<label class="acctvis-row">'
+      + '<input type="checkbox" ' + (isHidden ? '' : 'checked') + ' onchange="kdToggleAcctVisible(\'' + a.id + '\')"/>'
+      + '<span class="acctvis-name">' + kdEsc(nm) + '</span>'
+      + '<span class="acctvis-bal">' + fmtWhole(bal) + '</span>'
       + '</label>';
   }).join('');
 }
@@ -1006,7 +1006,7 @@ function renderNotifModal() {
   }).join('');
 
   el.innerHTML = (cardsHtml ? '<div class="notif-section-lbl">Priorities</div>' + cardsHtml : '')
-    + (nudgesHtml ? '<div class="notif-section-lbl" style="margin-top:16px">Smart insights</div>' + nudgesHtml : '')
+    + (nudgesHtml ? '<div class="notif-section-lbl notif-section-lbl--gap">Smart insights</div>' + nudgesHtml : '')
     + (!cardsHtml && !nudgesHtml ? '<div class="kd-empty">Nothing to flag right now — you\'re all caught up.</div>' : '');
 }
 
@@ -1184,12 +1184,12 @@ function kdRenderDashboard() {
   var tileNW = '<div class="kdt">'
     + '<div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-pie"></i> ' + nwTitle + '</div><button class="kdt-act" onclick="go(\'assets\')">Details</button></div>'
     + '<div class="kd-nw-big">' + nwBig + '</div>'
-    + '<div class="kd-nw-delta" style="color:' + (periodCF.surplus < 0 ? 'var(--amber)' : 'var(--green)') + '">' + nwDelta + '</div>'
+    + '<div class="kd-nw-delta ' + (periodCF.surplus < 0 ? 'tone-amber' : 'tone-green') + '">' + nwDelta + '</div>'
     + '<div class="kd-sep"></div>'
     + '<div class="kd-cflbl">' + kdEsc(range.label) + ' cashflow</div>'
-    + '<div class="kd-cf3"><div class="kd-cfi"><label>Income</label><span style="color:var(--green)">+' + fmtWhole(periodCF.income) + '</span></div>'
-    + '<div class="kd-cfi"><label>Spent</label><span style="color:var(--muted)">−' + fmtWhole(periodCF.expenses) + '</span></div>'
-    + '<div class="kd-cfi"><label>Saved</label><span style="color:var(--pink)">' + (periodCF.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(periodCF.surplus)) + '</span></div></div>'
+    + '<div class="kd-cf3"><div class="kd-cfi"><label>Income</label><span class="tone-green">+' + fmtWhole(periodCF.income) + '</span></div>'
+    + '<div class="kd-cfi"><label>Spent</label><span class="tone-muted">−' + fmtWhole(periodCF.expenses) + '</span></div>'
+    + '<div class="kd-cfi"><label>Saved</label><span class="tone-pink">' + (periodCF.surplus < 0 ? '−' : '+') + fmtWhole(Math.abs(periodCF.surplus)) + '</span></div></div>'
     + '<div class="kd-donut-wrap">' + kdDonut(segs) + '<div class="kd-leg">' + legend + '</div></div>'
     + '</div>';
 
@@ -1212,10 +1212,10 @@ function kdRenderDashboard() {
       + '<div class="kd-acc2-r"><div class="kd-acc2-delta ' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + (delta < 0 ? '−' : '+') + fmtWhole(Math.abs(delta)).replace('−','') + '</div>'
       + '<div class="kd-acc2-bal">' + fmtWhole(b) + ' · ' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</div></div></div>';
   }).join('') : (accts.length
-    ? '<div class="kd-empty">All accounts hidden — <span style="color:var(--pink);cursor:pointer" onclick="openAcctVisModal()">show accounts →</span></div>'
-    : '<div class="kd-empty">No accounts yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'cash\')">add balances →</span></div>');
+    ? '<div class="kd-empty">All accounts hidden — <span class="kd-empty-link" onclick="openAcctVisModal()">show accounts →</span></div>'
+    : '<div class="kd-empty">No accounts yet — <span class="kd-empty-link" onclick="go(\'cash\')">add balances →</span></div>');
   var tileAcc = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-building-bank"></i> Bank accounts</div>'
-    + '<div style="display:flex;align-items:center;gap:10px">'
+    + '<div class="kdt-hd-r">'
     + '<button class="kdt-act" onclick="openAcctVisModal()" aria-label="Show or hide accounts" title="Show/hide accounts"><i class="ti ti-eye"></i></button>'
     + '<button class="kdt-act" onclick="go(\'cash\')">Manage</button></div></div>'
     + acctRows
@@ -1224,9 +1224,9 @@ function kdRenderDashboard() {
   // ── TILE 3 — Budget (period-aware) ──
   var bud = kdBudgetActualsRange(range.months);
   var tileBudget = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-target"></i> Budget · ' + kdEsc(range.label) + '</div><button class="kdt-act" onclick="go(\'bva\')">Edit</button></div>'
-    + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Budgeted</div><div class="kd-bs-v" style="color:var(--text)">' + fmtWhole(bud.budgeted) + '</div></div>'
-    + '<div class="kd-bs"><div class="kd-bs-l">Spent</div><div class="kd-bs-v" style="color:var(--muted)">' + fmtWhole(bud.spent) + '</div></div>'
-    + '<div class="kd-bs"><div class="kd-bs-l">Left</div><div class="kd-bs-v" style="color:' + (bud.left < 0 ? 'var(--amber)' : 'var(--green)') + '">' + fmtWhole(bud.left) + '</div></div></div>'
+    + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Budgeted</div><div class="kd-bs-v tone-text">' + fmtWhole(bud.budgeted) + '</div></div>'
+    + '<div class="kd-bs"><div class="kd-bs-l">Spent</div><div class="kd-bs-v tone-muted">' + fmtWhole(bud.spent) + '</div></div>'
+    + '<div class="kd-bs"><div class="kd-bs-l">Left</div><div class="kd-bs-v ' + (bud.left < 0 ? 'tone-amber' : 'tone-green') + '">' + fmtWhole(bud.left) + '</div></div></div>'
     + '<div class="kd-chart-area">' + kdBudgetChart(bud.rows) + '</div></div>';
 
   // ── TILE 4 — Savings goals ──
@@ -1243,7 +1243,7 @@ function kdRenderDashboard() {
         + '<div class="kd-goal-amt">' + kdShort(cur) + ' / ' + kdShort(tgt) + '</div></div>';
     }).join('') + '</div>';
   } else {
-    goalsInner = '<div class="kd-empty">No savings goals yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'goals\')">add one →</span></div>';
+    goalsInner = '<div class="kd-empty">No savings goals yet — <span class="kd-empty-link" onclick="go(\'goals\')">add one →</span></div>';
   }
   var tileGoals = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-pig-money"></i> Savings goals</div><button class="kdt-act" onclick="go(\'goals\')">+ Add</button></div>' + goalsInner + '</div>';
 
@@ -1265,15 +1265,15 @@ function kdRenderDashboard() {
   function billSum(arr){ return arr.reduce(function(s,b){ return s + (Number(b.amount)||0); }, 0); }
   var upcoming = bills.slice().sort(function(a,b){ return (a.nextDueDate||'') < (b.nextDueDate||'') ? -1 : 1; }).slice(0, 3);
   var billRows = bills.length ? upcoming.map(function(b) {
-    return '<div class="kd-bill" onclick="go(\'bills\')" style="cursor:pointer"><div class="kd-bill-ic" style="background:color-mix(in srgb,var(--pink) 12%, transparent)"><i class="ti ti-calendar-event" style="color:var(--pink)"></i></div>'
-      + '<div><div class="kd-bill-name">' + kdEsc(b.displayName || 'Bill') + '</div><div class="kd-bill-due" style="color:#f48cb2">' + billDateLabel(b) + '</div></div>'
+    return '<div class="kd-bill kd-bill--link" onclick="go(\'bills\')"><div class="kd-bill-ic kd-bill-ic--pink"><i class="ti ti-calendar-event"></i></div>'
+      + '<div><div class="kd-bill-name">' + kdEsc(b.displayName || 'Bill') + '</div><div class="kd-bill-due tone-pink-soft">' + billDateLabel(b) + '</div></div>'
       + '<div class="kd-bill-r"><div class="kd-bill-amt">' + fmtWhole(b.amount) + '</div></div></div>';
-  }).join('') : '<div class="kd-empty">No bills tracked yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'bills\')">add one →</span></div>';
+  }).join('') : '<div class="kd-empty">No bills tracked yet — <span class="kd-empty-link" onclick="go(\'bills\')">add one →</span></div>';
   var dueSoonPill = dueSoon.length ? '<span class="kd-pillbadge">' + dueSoon.length + ' due soon</span>' : '';
-  var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div style="display:flex;align-items:center;gap:7px">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">View</button></div></div>'
-    + '<div class="kd-bchips"><div class="kd-bchip"><div class="kd-bchip-l">Overdue</div><div class="kd-bchip-v" style="color:' + (overdue.length ? 'var(--amber)' : '#3D4D70') + '">' + fmtWhole(billSum(overdue)) + '</div></div>'
-    + '<div class="kd-bchip"><div class="kd-bchip-l">Due soon</div><div class="kd-bchip-v" style="color:#f48cb2">' + fmtWhole(billSum(dueSoon)) + '</div></div>'
-    + '<div class="kd-bchip"><div class="kd-bchip-l">This month</div><div class="kd-bchip-v" style="color:var(--green)">' + fmtWhole(billSum(dueThisMonth)) + '</div></div></div>'
+  var tileBills = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-calendar-event"></i> Bills · this month</div><div class="kdt-hd-r kdt-hd-r--tight">' + dueSoonPill + '<button class="kdt-act" onclick="go(\'bills\')">View</button></div></div>'
+    + '<div class="kd-bchips"><div class="kd-bchip"><div class="kd-bchip-l">Overdue</div><div class="kd-bchip-v ' + (overdue.length ? 'tone-amber' : 'tone-faint') + '">' + fmtWhole(billSum(overdue)) + '</div></div>'
+    + '<div class="kd-bchip"><div class="kd-bchip-l">Due soon</div><div class="kd-bchip-v tone-pink-soft">' + fmtWhole(billSum(dueSoon)) + '</div></div>'
+    + '<div class="kd-bchip"><div class="kd-bchip-l">This month</div><div class="kd-bchip-v tone-green">' + fmtWhole(billSum(dueThisMonth)) + '</div></div></div>'
     + billRows + '</div>';
 
   // ── TILE 6 — profile specific ──
@@ -1290,15 +1290,15 @@ function kdRenderDashboard() {
           curFc = fcMonths[0];
           var worst = fcMonths[0];
           for (var wi = 1; wi < fcMonths.length; wi++) { if (fcMonths[wi].net < worst.net) worst = fcMonths[wi]; }
-          fcNote = 'Lowest projected net <b style="color:var(--amber)">' + fmtWhole(worst.net) + '</b> in ' + kdEsc(worst.short || worst.label || 'the months ahead') + '.';
+          fcNote = 'Lowest projected net <b class="tone-amber">' + fmtWhole(worst.net) + '</b> in ' + kdEsc(worst.short || worst.label || 'the months ahead') + '.';
         }
       }
     } catch(e) {}
     var fcIncome = curFc ? curFc.income : 0, fcExpenses = curFc ? curFc.expenses : 0, fcNet = curFc ? curFc.net : 0;
     tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-line"></i> Cashflow forecast</div><button class="kdt-act" onclick="go(\'forecast\')">Details</button></div>'
-      + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Money in</div><div class="kd-bs-v" style="color:var(--green)">+' + fmtWhole(fcIncome) + '</div></div>'
-      + '<div class="kd-bs"><div class="kd-bs-l">Money out</div><div class="kd-bs-v" style="color:var(--muted)">−' + fmtWhole(fcExpenses) + '</div></div>'
-      + '<div class="kd-bs"><div class="kd-bs-l">Net</div><div class="kd-bs-v" style="color:' + (fcNet < 0 ? 'var(--amber)' : 'var(--green)') + '">' + (fcNet < 0 ? '−' : '+') + fmtWhole(Math.abs(fcNet)) + '</div></div></div>'
+      + '<div class="kd-bud-top"><div class="kd-bs"><div class="kd-bs-l">Money in</div><div class="kd-bs-v tone-green">+' + fmtWhole(fcIncome) + '</div></div>'
+      + '<div class="kd-bs"><div class="kd-bs-l">Money out</div><div class="kd-bs-v tone-muted">−' + fmtWhole(fcExpenses) + '</div></div>'
+      + '<div class="kd-bs"><div class="kd-bs-l">Net</div><div class="kd-bs-v ' + (fcNet < 0 ? 'tone-amber' : 'tone-green') + '">' + (fcNet < 0 ? '−' : '+') + fmtWhole(Math.abs(fcNet)) + '</div></div></div>'
       + '<div class="kd-chart-area">' + kdForecastChartReal(fcMonths) + '</div>'
       + '<div class="kd-fc-note"><span class="kd-fc-dot"></span><span>' + fcNote + '</span></div></div>';
   } else if (profile === 'full') {
@@ -1313,7 +1313,7 @@ function kdRenderDashboard() {
       var neg = v < 0;
       return '<div class="kd-acc"><div class="kd-acc-ic" style="background:color-mix(in srgb,' + (assetAcc[k]||'var(--pink)') + ' 13%, transparent)"><i class="ti ' + (assetIcon[k]||'ti-coin') + '" style="color:' + (assetAcc[k]||'var(--pink)') + '"></i></div>'
         + '<div><div class="kd-acc-name">' + (assetLbl[k]||k) + '</div></div>'
-        + '<div class="kd-acc-bal" style="color:' + (neg ? 'var(--muted)' : 'var(--text)') + '">' + fmtWhole(v) + '</div></div>';
+        + '<div class="kd-acc-bal ' + (neg ? 'tone-muted' : 'tone-text') + '">' + fmtWhole(v) + '</div></div>';
     }).join('') : '<div class="kd-empty">No assets added yet — set them up any time.</div>';
     tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-coins"></i> Your assets</div><button class="kdt-act" onclick="go(\'assets\')">+ Add</button></div>'
       + rows6 + '<div class="kd-acc-total"><span class="kd-acc-total-l">Total assets</span><span class="kd-acc-total-v">' + fmtWhole(atot) + '</span></div></div>';
@@ -1329,25 +1329,20 @@ function kdRenderDashboard() {
       var nm = t.merchant || t.description || t.desc || t.category || 'Transaction';
       return '<div class="kd-acc"><div class="kd-acc-ic" style="background:color-mix(in srgb,' + col + ' 13%, transparent)"><i class="ti ' + (pos ? 'ti-businessplan' : isTransfer ? 'ti-arrows-exchange' : 'ti-shopping-cart') + '" style="color:' + col + '"></i></div>'
         + '<div><div class="kd-acc-name">' + kdEsc(nm) + '</div><div class="kd-acc-sub">' + kdEsc(t.category || '') + '</div></div>'
-        + '<div class="kd-acc-bal" style="color:' + (pos ? 'var(--green)' : 'var(--text)') + '">' + amt + '</div></div>';
-    }).join('') : '<div class="kd-empty">No transactions yet — <span style="color:var(--pink);cursor:pointer" onclick="go(\'transactions\')">add one →</span></div>';
+        + '<div class="kd-acc-bal ' + (pos ? 'tone-green' : 'tone-text') + '">' + amt + '</div></div>';
+    }).join('') : '<div class="kd-empty">No transactions yet — <span class="kd-empty-link" onclick="go(\'transactions\')">add one →</span></div>';
     tile6 = '<div class="kdt"><div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-arrows-exchange"></i> Recent activity</div><button class="kdt-act" onclick="go(\'transactions\')">See all</button></div>' + actInner + '</div>';
   }
 
   // ── Compose ──
   // Greeting + date now live in the static top bar (renderTopbarGreeting); the
-  // dashboard header keeps the period pills, plus a mobile-only action cluster.
+  // dashboard header keeps the period pills (search/alerts/upload live in the top bar).
   var html = '<div class="kd-dash">'
     + '<div class="kd-top">'
     + '<div class="kd-pills">'
     + '<button class="kd-pill' + (kdPeriod==='lastMonth'?' active':'') + '" onclick="kdSetPeriod(\'lastMonth\')">Last Month</button>'
     + '<button class="kd-pill' + (kdPeriod==='ytd'?' active':'') + '" onclick="kdSetPeriod(\'ytd\')">Year to Date</button>'
     + '<button class="kd-pill' + (kdPeriod==='lastYear'?' active':'') + '" onclick="kdSetPeriod(\'lastYear\')">Last Year</button>'
-    + '</div>'
-    + '<div class="kd-top-r">'
-    + '<button class="kd-ibtn" aria-label="Search" onclick="openSearchModal()"><i class="ti ti-search"></i></button>'
-    + '<button class="kd-ibtn" aria-label="Notifications" onclick="openNotifModal()"><i class="ti ti-bell"></i><span class="kd-ndot"></span></button>'
-    + '<button class="kd-addbtn" onclick="go(\'upload\')"><i class="ti ti-upload" style="font-size:12px"></i> Upload</button>'
     + '</div></div>'
     + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
     + '</div>';

@@ -188,9 +188,9 @@ function csvBuildMapTable(){
     const guess=csvGuess(h);
     const opts=CSV_FIELDS.map(o=>`<option value="${o.v}"${o.v===guess?' selected':''}>${o.l}</option>`).join('');
     tbody.innerHTML+=`<tr>
-      <td style="font-weight:600">${h}</td>
-      <td style="color:var(--muted);font-size:.76rem">${samples||'(empty)'}</td>
-      <td><select data-col="${h}" style="min-width:190px">${opts}</select></td>
+      <td class="up-map-col">${h}</td>
+      <td class="up-map-sample">${samples||'(empty)'}</td>
+      <td><select data-col="${h}" class="up-map-sel">${opts}</select></td>
     </tr>`;
   });
 }
@@ -288,24 +288,24 @@ function csvRefreshPreview(){
       isDup?`<span class="tag-dup">Duplicate</span>`:`<span class="tag-ok">${ICON('check')} Ready</span>`;
 
     const cls=isErr?'row-err':isDup?'row-dup':'';
-    const subcatBadge=r.subcat?'<span style="font-size:.68rem;background:#2a2535;color:var(--muted);border-radius:99px;padding:1px 6px">'+r.subcat+'</span>':'—';
+    const subcatBadge=r.subcat?'<span class="up-subcat">'+r.subcat+'</span>':'—';
     tbody.innerHTML+='<tr class="'+cls+(skipped?' row-skip':'') + '">'
       +'<td>'+(r.date||'—')+'</td>'
       +'<td><span class="badge '+(r.type==='income'?'b-income':'b-expense')+'">'+r.type+'</span></td>'
-      +'<td style="font-size:.8rem;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.name||'—')+'</td>'
-      +'<td style="font-size:.8rem">'+(r.category||'—')+'</td>'
+      +'<td class="up-td-name">'+(r.name||'—')+'</td>'
+      +'<td class="up-td-cat">'+(r.category||'—')+'</td>'
       +'<td>'+subcatBadge+'</td>'
-      +'<td style="color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem">'+(r.description||'—')+'</td>'
-      +'<td style="font-weight:600;color:'+(r.type==='income'?'var(--success)':'var(--primary)')+'">'+  (r.type==='income'?'+':'-')+fmt(r.amount)+'</td>'
+      +'<td class="up-td-desc">'+(r.description||'—')+'</td>'
+      +'<td class="up-td-amt '+(r.type==='income'?'tone-green':'tone-pink')+'">'+  (r.type==='income'?'+':'-')+fmt(r.amount)+'</td>'
       +'<td>'+status+'</td>'
       +'</tr>';
   });
 
   document.getElementById('csv-imp-stats').innerHTML=`
-    <div class="imp-stat" style="background:#1a1a2e"><div class="isn">${total}</div><div class="isl">Total rows</div></div>
-    <div class="imp-stat" style="background:#1a2a1a"><div class="isn" style="color:var(--success)">${willImport}</div><div class="isl">Will import</div></div>
-    <div class="imp-stat" style="background:#2a2010"><div class="isn" style="color:var(--warn)">${dupes}</div><div class="isl">Duplicates</div></div>
-    <div class="imp-stat" style="background:#2a1020"><div class="isn" style="color:var(--danger)">${errs}</div><div class="isl">Errors</div></div>`;
+    <div class="imp-stat imp-stat--total"><div class="isn">${total}</div><div class="isl">Total rows</div></div>
+    <div class="imp-stat imp-stat--ok"><div class="isn tone-green">${willImport}</div><div class="isl">Will import</div></div>
+    <div class="imp-stat imp-stat--dup"><div class="isn tone-amber">${dupes}</div><div class="isl">Duplicates</div></div>
+    <div class="imp-stat imp-stat--err"><div class="isn tone-danger">${errs}</div><div class="isl">Errors</div></div>`;
 }
 
 // ── CONFIRM IMPORT ───────────────────────────────────────────
@@ -524,7 +524,7 @@ function restoreBackup(event) {
   const statusEl = document.getElementById('restore-status');
   restoreBackupFile(file, (text, isError) => {
     statusEl.innerHTML = isError
-      ? '<span style="color:var(--danger)">' + ICON('x') + ' ' + esc(text) + '</span>'
+      ? '<span class="tone-danger">' + ICON('x') + ' ' + esc(text) + '</span>'
       : esc(text);
   });
 }

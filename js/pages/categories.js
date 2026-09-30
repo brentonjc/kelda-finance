@@ -406,34 +406,29 @@ function renderCategories() {
   } else {
     el.innerHTML = filtered.map(c => {
       const count    = TX.filter(t => t.catId === c.id || t.category === c.name).length;
-      const typeCol  = c.type === 'income' ? 'var(--success)' : c.type === 'both' ? '#74b9ff' : 'var(--primary)';
-      const typeBg   = c.type === 'income' ? '#1a3020' : c.type === 'both' ? '#0a1a30' : '#2a1020';
+      const typeMod  = c.type === 'income' ? 'income' : c.type === 'both' ? 'both' : 'expense';
       const typeLbl  = c.type || 'expense';
       const subcatPills = (c.subcats || []).map(s =>
-        '<span style="display:inline-block;font-size:.68rem;background:#2a2535;color:var(--muted);'
-        + 'border-radius:99px;padding:2px 8px;margin:2px 3px 2px 0;cursor:pointer;border:1px solid var(--border)"'
+        '<span class="subcat-chip"'
         + ' onclick="deleteSubcat(\'' + c.id + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="Click to remove">'
         + s + ' ' + ICON('x') + '</span>'
       ).join('');
-      return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;'
-        + 'padding:14px 16px;margin-bottom:10px">'
-        + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
-        + '<div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;'
-        + 'justify-content:center;font-size:1.2rem;flex-shrink:0;background:' + c.color + '33;color:' + c.color + '">'
+      return '<div class="cg-card">'
+        + '<div class="cg-card-row">'
+        + '<div class="cg-card-ico" style="background:' + c.color + '33;color:' + c.color + '">'
         + iconTag(c.icon) + '</div>'
-        + '<div style="flex:1;min-width:0">'
-        + '<div style="font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<div class="cg-card-body">'
+        + '<div class="cg-card-name">'
         + c.name
-        + ' <span style="font-size:.66rem;padding:2px 7px;border-radius:99px;background:' + typeBg + ';color:' + typeCol + '">' + typeLbl + '</span>'
-        + ' <span style="font-size:.7rem;color:var(--muted)">' + count + ' tx</span>'
+        + ' <span class="cg-type-badge cg-type-badge--' + typeMod + '">' + typeLbl + '</span>'
+        + ' <span class="cg-count">' + count + ' tx</span>'
         + '</div>'
-        + '<div style="margin-top:8px;line-height:1.8">' + subcatPills
-        + '<span style="font-size:.68rem;color:var(--primary);cursor:pointer;padding:2px 8px;border:1px dashed var(--primary);'
-        + 'border-radius:99px;margin-left:2px" onclick="promptAddSubcat(\'' + c.id + '\')" title="Add subcategory">+ add</span>'
+        + '<div class="cg-subcats">' + subcatPills
+        + '<span class="subcat-chip subcat-chip--add" onclick="promptAddSubcat(\'' + c.id + '\')" title="Add subcategory">+ add</span>'
         + '</div>'
         + '</div>'
-        + '<div style="display:flex;gap:6px;flex-shrink:0">'
-        + '<button class="del-btn" onclick="renameCategory(\'' + c.id + '\')" title="Rename" style="font-size:.9rem">' + ICON('pencil') + '</button>'
+        + '<div class="cg-card-actions">'
+        + '<button class="del-btn cg-rename" onclick="renameCategory(\'' + c.id + '\')" title="Rename">' + ICON('pencil') + '</button>'
         + '<button class="del-btn" onclick="deleteCategory(\'' + c.id + '\')" title="Delete">' + ICON('trash') + '</button>'
         + '</div>'
         + '</div></div>';
@@ -459,32 +454,32 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
 
   // Source badge + meta line
   var sourceBadge = source === 'lrule'
-    ? '<span style="font-size:.65rem;background:#1a2540;color:var(--primary);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">' + ICON('bolt') + ' RULE</span>'
-    : '<span style="font-size:.65rem;background:#1a2520;color:var(--success);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.04em">' + ICON('robot') + ' AUTO-LEARNED</span>';
+    ? '<span class="rc-badge rc-badge--rule">' + ICON('bolt') + ' RULE</span>'
+    : '<span class="rc-badge rc-badge--learned">' + ICON('robot') + ' AUTO-LEARNED</span>';
 
   var metaLine = '';
   if (source === 'learned' && meta) {
     var conf = meta.matchCount >= 5 ? 'High confidence' : meta.matchCount >= 3 ? 'Medium confidence' : 'Low confidence';
-    var confColor = meta.matchCount >= 5 ? 'var(--success)' : meta.matchCount >= 3 ? 'var(--warn)' : 'var(--danger)';
+    var confTone = meta.matchCount >= 5 ? 'tone-green' : meta.matchCount >= 3 ? 'tone-amber' : 'tone-danger';
     var daysAgo = meta.lastMatchedAt ? Math.round((Date.now() - meta.lastMatchedAt) / 86400000) : null;
     var lastSeen = daysAgo !== null ? (daysAgo === 0 ? 'today' : daysAgo + 'd ago') : '';
-    metaLine = '<span style="font-size:.7rem;color:' + confColor + '">' + conf + '</span>'
-      + (lastSeen ? '<span style="font-size:.7rem;color:var(--muted)"> · last seen ' + lastSeen + '</span>' : '')
-      + '<span style="font-size:.7rem;color:var(--muted)"> · ' + meta.matchCount + ' match' + (meta.matchCount !== 1 ? 'es' : '') + '</span>';
+    metaLine = '<span class="rc-meta ' + confTone + '">' + conf + '</span>'
+      + (lastSeen ? '<span class="rc-meta tone-muted"> · last seen ' + lastSeen + '</span>' : '')
+      + '<span class="rc-meta tone-muted"> · ' + meta.matchCount + ' match' + (meta.matchCount !== 1 ? 'es' : '') + '</span>';
   } else {
-    metaLine = '<span style="font-size:.7rem;color:var(--muted)">' + txCount + ' transaction' + (txCount !== 1 ? 's' : '') + ' matched</span>';
+    metaLine = '<span class="rc-meta tone-muted">' + txCount + ' transaction' + (txCount !== 1 ? 's' : '') + ' matched</span>';
   }
 
   // Promote button only for learned entries
   var promoteBtn = source === 'learned'
-    ? '<button class="btn btn-ghost btn-sm" onclick="promoteLearnedRule(this.closest(\'.rule-card\'))" title="Promote to confirmed rule" style="color:var(--primary)">⬆ Confirm</button>'
+    ? '<button class="btn btn-ghost btn-sm rc-promote" onclick="promoteLearnedRule(this.closest(\'.rule-card\'))" title="Promote to confirmed rule">⬆ Confirm</button>'
     : '';
 
   // Get pattern from rule if it exists
   var rule = ruleRead(merchant);
   var pattern = rule && rule.pattern ? rule.pattern : 'exact';
   var patternBadge = source === 'lrule'
-    ? '<span style="font-size:.65rem;background:rgba(120,119,248,.15);color:#818cf8;border-radius:99px;padding:2px 8px;font-weight:600;letter-spacing:.03em">'
+    ? '<span class="rc-badge rc-badge--pattern">'
       + (pattern === 'contains' ? '◡ CONTAINS' : '= EXACT') + '</span>'
     : '';
 
@@ -496,47 +491,47 @@ function _buildRuleCardHtml(merchant, catId, subcat, source, meta) {
     if (_ov.length) {
       var _ovKeys = _ov.map(function(o) { return o.key; }).join(', ');
       overlapBadge = '<span title="Overlaps: ' + esc(_ovKeys).replace(/"/g, '&quot;') + '" '
-        + 'style="font-size:.65rem;background:rgba(245,158,11,.15);color:var(--warn);border-radius:99px;padding:2px 8px;font-weight:700;letter-spacing:.03em">'
+        + 'class="rc-badge rc-badge--overlap">'
         + ICON('alert-triangle') + ' OVERLAPS ' + _ov.length + '</span>';
     }
   }
 
   return '<div class="rule-card" data-merchant="' + merchant.replace(/"/g, '&quot;') + '" data-source="' + source + '">'
-    + '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">'
-    + '<div style="flex:1;min-width:140px">'
-    + '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">'
-    + '<span style="font-weight:700;font-size:.88rem">' + ICON('building-store') + ' ' + merchant + '</span>'
+    + '<div class="rc-row">'
+    + '<div class="rc-main">'
+    + '<div class="rc-head">'
+    + '<span class="rc-merchant">' + ICON('building-store') + ' ' + merchant + '</span>'
     + sourceBadge
     + patternBadge
     + overlapBadge
     + '</div>'
     + '<div>' + metaLine + '</div>'
     + '</div>'
-    + '<div style="display:flex;align-items:center;gap:12px;flex:2;min-width:200px;flex-wrap:wrap">'
-    + '<div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px">Category</div>'
-    + '<span style="font-weight:700;color:' + catColor + '">' + catName + '</span></div>'
-    + '<span style="color:var(--border)">›</span>'
-    + '<div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px">Subcategory</div>'
-    + (subcat ? '<span style="background:#2a2535;color:var(--text);border-radius:6px;padding:2px 9px;font-size:.8rem;font-weight:600">' + subcat + '</span>'
-              : '<span style="font-size:.78rem;color:var(--muted);font-style:italic">None</span>')
+    + '<div class="rc-map">'
+    + '<div><div class="rc-map-lbl">Category</div>'
+    + '<span class="rc-cat" style="color:' + catColor + '">' + catName + '</span></div>'
+    + '<span class="rc-arrow">›</span>'
+    + '<div><div class="rc-map-lbl">Subcategory</div>'
+    + (subcat ? '<span class="rc-subcat">' + subcat + '</span>'
+              : '<span class="rc-none">None</span>')
     + '</div></div>'
-    + '<div style="display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap">'
+    + '<div class="rc-actions">'
     + promoteBtn
     + '<button class="btn btn-ghost btn-sm" onclick="toggleRuleEdit(this.closest(\'.rule-card\'))">' + ICON('pencil') + ' Edit</button>'
     + '<button class="del-btn" onclick="deleteRuleCard(this.closest(\'.rule-card\'))" title="Delete">' + ICON('trash') + '</button>'
     + '</div></div>'
-    + '<div class="rule-edit-inline" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
-    + '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">'
-    + '<div style="flex:1;min-width:150px"><label class="lbl" style="font-size:.72rem">Pattern</label>'
-    + '<select class="rule-pattern-sel" style="width:100%">'
+    + '<div class="rule-edit-inline" style="display:none">'
+    + '<div class="rc-edit-row">'
+    + '<div class="rc-edit-f"><label class="lbl">Pattern</label>'
+    + '<select class="rule-pattern-sel">'
     + '<option value="exact"' + (pattern === 'exact' ? ' selected' : '') + '>= Exact Match</option>'
     + '<option value="contains"' + (pattern === 'contains' ? ' selected' : '') + '>◡ Contains</option>'
     + '</select></div>'
-    + '<div style="flex:1;min-width:150px"><label class="lbl" style="font-size:.72rem">Category</label>'
-    + '<select class="rule-cat-sel" style="width:100%" onchange="ruleEditCatChanged(this)">' + catOpts + '</select></div>'
-    + '<div style="flex:1;min-width:150px"><label class="lbl" style="font-size:.72rem">Subcategory</label>'
-    + '<select class="rule-subcat-sel" style="width:100%"><option value="">— None —</option>' + subcatOpts + '</select></div>'
-    + '<div style="display:flex;gap:6px">'
+    + '<div class="rc-edit-f"><label class="lbl">Category</label>'
+    + '<select class="rule-cat-sel" onchange="ruleEditCatChanged(this)">' + catOpts + '</select></div>'
+    + '<div class="rc-edit-f"><label class="lbl">Subcategory</label>'
+    + '<select class="rule-subcat-sel"><option value="">— None —</option>' + subcatOpts + '</select></div>'
+    + '<div class="rc-edit-actions">'
     + '<button class="btn btn-primary btn-sm" onclick="saveRuleCard(this.closest(\'.rule-card\'))">Save</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="toggleRuleEdit(this.closest(\'.rule-card\'))">Cancel</button>'
     + '</div></div></div>'
@@ -604,11 +599,11 @@ function renderRulesList() {
   var html = '';
 
   // Search input
-  html += '<div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap">'
+  html += '<div class="rules-toolbar">'
     + '<input type="text" id="rules-search-input" placeholder="Search rules..." value="' + (_rulesSearch || '') + '" '
-    + 'style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:.85rem" '
+    + 'class="rules-search" '
     + 'onkeyup="rulesSearchUpdate(this.value)">'
-    + '<button class="btn btn-primary btn-sm" onclick="rulesShowCreateForm()" style="white-space:nowrap;gap:6px">' + ICON('bolt') + ' New Rule</button>'
+    + '<button class="btn btn-primary btn-sm rules-new-btn" onclick="rulesShowCreateForm()">' + ICON('bolt') + ' New Rule</button>'
     + '</div>';
 
   // Results count and pagination info
@@ -618,7 +613,7 @@ function renderRulesList() {
   } else {
     countText = totalRules + ' rule' + (totalRules !== 1 ? 's' : '');
   }
-  html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">' + countText + '</div>';
+  html += '<div class="rules-count">' + countText + '</div>';
 
   // Rules cards
   if (paginatedRules.length === 0) {
@@ -635,9 +630,9 @@ function renderRulesList() {
 
   // Pagination controls
   if (totalPages > 1) {
-    html += '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px">'
+    html += '<div class="rules-pager">'
       + '<button class="btn btn-ghost btn-sm" onclick="rulesPreviousPage()" ' + (_rulesPage === 0 ? 'disabled' : '') + '>← Previous</button>'
-      + '<span style="font-size:.8rem;color:var(--muted)">Page ' + (_rulesPage + 1) + ' of ' + totalPages + '</span>'
+      + '<span class="rules-page-lbl">Page ' + (_rulesPage + 1) + ' of ' + totalPages + '</span>'
       + '<button class="btn btn-ghost btn-sm" onclick="rulesNextPage()" ' + (_rulesPage >= totalPages - 1 ? 'disabled' : '') + '>Next →</button>'
       + '</div>';
   }
@@ -864,9 +859,7 @@ function setCatFilter(f) {
   ['expense','income','all'].forEach(x => {
     const b = document.getElementById('cat-filter-' + x);
     if (!b) return;
-    b.style.background = x === f ? 'rgba(232,69,122,.15)' : 'transparent';
-    b.style.borderColor = x === f ? 'var(--primary)' : 'var(--border)';
-    b.style.color = x === f ? 'var(--primary)' : 'var(--muted)';
+    b.classList.toggle('is-active', x === f);
   });
   renderCategories();
 }
@@ -1134,12 +1127,12 @@ function ruleModalScan() {
   if (catId) {
     var p = previewRuleMatches(merchant, pattern, catId, subcat);
     var line;
-    if (p.willChange > 0) line = '<strong style="color:var(--primary)">' + p.willChange + '</strong> existing transaction' + (p.willChange !== 1 ? 's' : '') + ' will be re-categorised';
+    if (p.willChange > 0) line = '<strong class="tone-pink">' + p.willChange + '</strong> existing transaction' + (p.willChange !== 1 ? 's' : '') + ' will be re-categorised';
     else if (p.already > 0) line = 'Matches ' + p.already + ' transaction' + (p.already !== 1 ? 's' : '') + ' — all already correct';
     else line = 'No existing transactions match yet — this rule applies going forward';
-    html += '<div style="font-size:.78rem;color:var(--muted);background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-top:2px">'
+    html += '<div class="cr-preview">'
       + ICON('bolt') + ' ' + line
-      + (p.manualKept > 0 ? '<div style="margin-top:4px;color:var(--warn)">' + ICON('lock') + ' ' + p.manualKept + ' manually-set transaction' + (p.manualKept !== 1 ? 's' : '') + ' will be left untouched</div>' : '')
+      + (p.manualKept > 0 ? '<div class="cr-kept">' + ICON('lock') + ' ' + p.manualKept + ' manually-set transaction' + (p.manualKept !== 1 ? 's' : '') + ' will be left untouched</div>' : '')
       + '</div>';
   }
 
@@ -1147,25 +1140,25 @@ function ruleModalScan() {
   var conf = detectRuleConflicts(merchant, pattern);
   if (conf.duplicate) {
     var dCat = LCATS.find(function(c) { return c.id === conf.duplicate.catId; });
-    html += '<div style="font-size:.78rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:9px 11px;margin-top:8px;color:var(--text)">'
+    html += '<div class="cr-dup">'
       + ICON('alert-triangle') + ' A rule for <strong>' + esc(conf.duplicate.key) + '</strong> already exists ('
       + (dCat ? esc(dCat.name) : esc(conf.duplicate.catId)) + '). Saving will <strong>replace</strong> it.'
       + '</div>';
   }
   if (conf.overlaps.length) {
-    html += '<div style="margin-top:8px;border:1px solid rgba(245,158,11,.35);border-radius:8px;overflow:hidden">'
-      + '<div style="font-size:.74rem;font-weight:700;color:var(--warn);background:rgba(245,158,11,.1);padding:8px 11px">'
+    html += '<div class="cr-ov">'
+      + '<div class="cr-ov-hd">'
       + ICON('alert-triangle') + ' ' + conf.overlaps.length + ' overlapping rule' + (conf.overlaps.length !== 1 ? 's' : '') + ' — tick any you want to remove</div>'
-      + '<div style="padding:6px 11px 9px">';
+      + '<div class="cr-ov-body">';
     conf.overlaps.forEach(function(o, i) {
       var oCat = LCATS.find(function(c) { return c.id === o.catId; });
       var winsNote = _overlapPrecedenceNote(merchant, pattern, o.key, o.pattern);
-      html += '<label style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;cursor:pointer;font-size:.78rem;line-height:1.35">'
-        + '<input type="checkbox" class="rule-conflict-cb" data-key="' + esc(o.key).replace(/"/g, '&quot;') + '" data-source="' + o.source + '" style="width:auto;flex-shrink:0;margin-top:3px;accent-color:var(--danger)"/>'
-        + '<span><strong>' + esc(o.key) + '</strong> <span style="color:var(--muted)">(' + (o.pattern === 'contains' ? '◡ contains' : '= exact') + ')</span> → '
+      html += '<label class="cr-ov-item">'
+        + '<input type="checkbox" class="rule-conflict-cb cr-ov-cb" data-key="' + esc(o.key).replace(/"/g, '&quot;') + '" data-source="' + o.source + '"/>'
+        + '<span><strong>' + esc(o.key) + '</strong> <span class="tone-muted">(' + (o.pattern === 'contains' ? '◡ contains' : '= exact') + ')</span> → '
         + (oCat ? esc(oCat.name) : esc(o.catId)) + (o.subcat ? ' › ' + esc(o.subcat) : '')
-        + (o.source === 'learned' ? ' <span style="color:var(--success)">· auto-learned</span>' : '')
-        + (winsNote ? '<br><span style="color:var(--muted);font-size:.72rem">' + winsNote + '</span>' : '')
+        + (o.source === 'learned' ? ' <span class="tone-green">· auto-learned</span>' : '')
+        + (winsNote ? '<br><span class="cr-ov-note">' + winsNote + '</span>' : '')
         + '</span></label>';
     });
     html += '</div></div>';
@@ -1196,11 +1189,7 @@ function updatePatternLabels() {
 
     function applyCard(el, active) {
       if (!el) return;
-      el.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
-      el.style.borderWidth  = '2px';
-      el.style.background   = active ? 'rgba(240,83,138,.1)' : 'var(--card2)';
-      var title = el.querySelector('div > div:first-child');
-      if (title) title.style.color = active ? 'var(--primary)' : 'var(--muted)';
+      el.classList.toggle('is-active', active);
     }
 
     applyCard(exactEl,    pattern === 'exact');
@@ -1277,9 +1266,7 @@ function renderIconPicker() {
   const prev = document.getElementById('cat-icon-preview');
   if (prev) prev.innerHTML = ICON(cur);
   el.innerHTML = ICON_PICKER_SET.map(k =>
-    '<div onclick="pickIcon(\'' + k + '\')" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;background:'
-    + (cur === k ? 'var(--primary)' : 'var(--card)') + ';color:' + (cur === k ? '#fff' : 'var(--muted)') + ';border:1.5px solid '
-    + (cur === k ? 'var(--primary)' : 'var(--border)') + ';transition:all .15s">'
+    '<div class="cg-icon-opt' + (cur === k ? ' is-active' : '') + '" onclick="pickIcon(\'' + k + '\')">'
     + ICON(k) + '</div>'
   ).join('');
 }
@@ -1498,10 +1485,7 @@ function setBankFilter(bank) {
   // Update pill styles
   var pills = document.querySelectorAll('.bank-filter-pill');
   pills.forEach(function(p) {
-    var active = p.dataset.bank === bank;
-    p.style.background   = active ? 'var(--primary)' : 'var(--card2)';
-    p.style.color        = active ? '#fff' : 'var(--muted)';
-    p.style.borderColor  = active ? 'var(--primary)' : 'var(--border)';
+    p.classList.toggle('is-active', p.dataset.bank === bank);
   });
   renderBankComparison();
 }
@@ -1514,11 +1498,7 @@ function renderBankComparison() {
   // Pills
   pillsEl.innerHTML = _BANKS.map(function(b) {
     var active = b === _bankCmpFilter;
-    return '<button class="bank-filter-pill" data-bank="' + b + '" onclick="setBankFilter(\'' + b + '\')" '
-      + 'style="font-size:.72rem;padding:4px 12px;border-radius:99px;border:1px solid '
-      + (active ? 'var(--primary)' : 'var(--border)') + ';background:'
-      + (active ? 'var(--primary)' : 'var(--card2)') + ';color:'
-      + (active ? '#fff' : 'var(--muted)') + ';cursor:pointer;font-weight:600;white-space:nowrap">'
+    return '<button class="bank-filter-pill' + (active ? ' is-active' : '') + '" data-bank="' + b + '" onclick="setBankFilter(\'' + b + '\')">'
       + b + '</button>';
   }).join('');
 
@@ -1533,32 +1513,31 @@ function renderBankComparison() {
   var isDark = document.documentElement.getAttribute('data-mode') !== 'light';
 
   // Table header
-  var headerCells = '<th style="text-align:left;padding:8px 12px 8px 0;font-size:.72rem;color:var(--muted);font-weight:700;white-space:nowrap">Kelda Category</th>';
+  var headerCells = '<th class="cg-bth">Kelda Category</th>';
   bankCols.forEach(function(b) {
     var c = _BANK_COLORS[b] || {};
     var bg   = isDark ? (c.dark_bg   || 'rgba(180,180,180,.1)')  : (c.bg   || '#f0f0f0');
     var col  = isDark ? (c.dark_text || 'var(--muted)')           : (c.text || '#444');
-    headerCells += '<th style="text-align:left;padding:8px 10px;font-size:.72rem;font-weight:700;'
-      + 'background:' + bg + ';color:' + col + ';border-radius:6px 6px 0 0;white-space:nowrap">'
+    headerCells += '<th class="cg-bth-bank" style="background:' + bg + ';color:' + col + '">'
       + b + '</th>';
   });
 
   // Table rows
   var rows = _BANK_MAP.map(function(row) {
     var _bmCat = LCATS.find(function(c){ return c.id === row[0]; });
-    var cells = '<td style="padding:7px 12px 7px 0;font-size:.8rem;font-weight:600;white-space:nowrap;color:var(--text)">'
+    var cells = '<td class="cg-btd-cat">'
       + (_bmCat ? iconTag(_bmCat.icon) + ' ' : '') + row[1] + '</td>';
     bankCols.forEach(function(b) {
       var idx = _BANK_COL[b];
       var val = idx !== undefined ? (row[idx] || '—') : '—';
       var isEmpty = val === '—';
-      cells += '<td style="padding:7px 10px;font-size:.78rem;color:' + (isEmpty ? 'var(--muted)' : 'var(--text)') + ';border-bottom:1px solid var(--border)">'
+      cells += '<td class="cg-btd ' + (isEmpty ? 'tone-muted' : 'tone-text') + '">'
         + val + '</td>';
     });
     return '<tr>' + cells + '</tr>';
   }).join('');
 
-  tableEl.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+  tableEl.innerHTML = '<table class="cg-btable">'
     + '<thead><tr>' + headerCells + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table>';

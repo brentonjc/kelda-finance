@@ -1,0 +1,16 @@
+/* ══════════════════════════════════
+   UTILITIES — Kelda Finance
+   Loaded last so a utility beats same-specificity component rules without
+   !important (replaces inline colour styles picked per value in JS).
+   ══════════════════════════════════ */
+
+/* Text tones */
+.tone-text{color:var(--text);}
+.tone-muted{color:var(--muted);}
+.tone-green{color:var(--green);}
+.tone-amber{color:var(--amber);}
+.tone-pink{color:var(--pink);}
+.tone-purple{color:var(--purple);}
+.tone-danger{color:var(--danger);}
+.tone-pink-soft{color:#f48cb2;}   /* dashboard due-soon pink (kept from the old inline value) */
+.tone-faint{color:#3D4D70;}       /* dashboard "nothing overdue" (kept from the old inline value) */

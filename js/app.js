@@ -103,6 +103,8 @@ function toast(msg,dur=2400,type){
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
 const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','borrowing','investment','settings','dashboard-layout','quickstart'];
+// Short titles for the compact mobile header (the dashboard keeps the greeting instead)
+const MOB_TITLES={insights:'Graphs',transactions:'Spending',bills:'Bills',goals:'Goals',mortgage:'Mortgage',liabilities:'Liabilities',cash:'Cash',insurance:'Insurance',super:'Super',assets:'Net Worth',bva:'Budget',categories:'Categories',smartrules:'Smart Rules',export:'Export',upload:'Upload',forecast:'Forecast',transfers:'Transfers',equities:'Equities',borrowing:'Borrowing Power',investment:'Investment Property',settings:'Settings','dashboard-layout':'Dashboard Layout',quickstart:'Quick Start'};
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -144,15 +146,16 @@ function go(id){
     else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
-  // Sync mobile tab bar
-  var tabs=['dashboard','bva','bills','transactions','cash'];
+  // Sync mobile tab bar — pages without their own tab light up "More"
+  var tabs=['dashboard','transactions','bva'];
   tabs.forEach(function(t){
     var btn=document.getElementById('tb-'+t);
     if(btn)btn.classList.toggle('active',t===id);
   });
-  var stPages=['dashboard','insights','categories','smartrules','export','mortgage','liabilities','cash','insurance','super','assets','transfers','forecast'];
   var stBtn=document.getElementById('tb-settings');
-  if(stBtn)stBtn.classList.toggle('active',stPages.indexOf(id)>=0);
+  if(stBtn)stBtn.classList.toggle('active',tabs.indexOf(id)<0);
+  var mt=document.getElementById('mob-title');
+  if(mt)mt.textContent=MOB_TITLES[id]||'';
   navSyncActive(id);
 }
 
@@ -258,12 +261,26 @@ function navFlyHideSoon(group) {
     if (cat) cat.setAttribute('aria-expanded', 'false');
   }, 160);
 }
+function navFlyCloseAll() {
+  document.querySelectorAll('.nav-group.fly-open').forEach(function(g){
+    g.classList.remove('fly-open');
+    var cat = g.querySelector('.nav-cat');
+    if (cat) cat.setAttribute('aria-expanded', 'false');
+  });
+}
 function initNavFlyouts() {
+  // Touch (iPad) has no hover to close a flyout: close it once an item is
+  // picked, or on any tap outside the nav groups.
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.nav-pin')) return;   // pinning keeps the flyout open
+    if (e.target.closest('.nav-fly-item') || !e.target.closest('#nav .nav-group')) navFlyCloseAll();
+  });
   document.querySelectorAll('#nav .nav-group').forEach(function(g){
     g.addEventListener('mouseenter', function(){ navFlyShow(g); });
     g.addEventListener('mouseleave', function(){ navFlyHideSoon(g); });
     var cat = g.querySelector('.nav-cat');
     if (cat) {
+      cat.addEventListener('click', function(){ navFlyShow(g); });
       cat.addEventListener('focus', function(){ navFlyShow(g); });
       cat.addEventListener('keydown', function(e){
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navFlyShow(g); var first = g.querySelector('.nav-fly-item'); if (first) first.focus(); }
@@ -402,11 +419,11 @@ function runGlobalSearch(){
     var pos = t.type === 'income';
     var nm = t.merchant || t.description || t.desc || t.category || 'Transaction';
     var amt = (pos ? '+' : '−') + fmt(Math.abs(Number(t.amount)||0)).replace('−','').replace('-','');
-    var col = pos ? 'var(--success)' : 'var(--text)';
+    var tone = pos ? 'tone-green' : 'tone-text';
     return '<div class="search-res" onclick="searchResultGo()">'
       + '<div class="search-res-main"><div class="search-res-name">' + _esc(nm) + '</div>'
       + '<div class="search-res-sub">' + _esc(t.date||'') + ' · ' + _esc(t.category||'—') + '</div></div>'
-      + '<div class="search-res-amt" style="color:' + col + '">' + amt + '</div></div>';
+      + '<div class="search-res-amt ' + tone + '">' + amt + '</div></div>';
   }).join('');
 }
 function searchResultGo(){ closeSearchModal(); if (typeof go === 'function') go('transactions'); }
@@ -434,18 +451,12 @@ function showUndoToast(message,durationMs,onUndo){
   el.id='undo-toast';
   el.setAttribute('role','status');
   el.setAttribute('aria-live','polite');
-  el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
-    +'background:var(--card2);border:1px solid var(--border);border-radius:10px;'
-    +'padding:12px 18px;display:flex;align-items:center;gap:14px;'
-    +'font-size:.82rem;font-family:var(--font-body);color:var(--text);'
-    +'box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9999;white-space:nowrap;';
+  el.className='undo-toast';
   var msg=document.createElement('span');
   msg.textContent=message;
   var btn=document.createElement('button');
   btn.textContent='Undo';
-  btn.style.cssText='background:var(--primary);color:#fff;border:none;border-radius:999px;'
-    +'padding:6px 14px;font-size:.78rem;font-weight:600;cursor:pointer;min-height:32px;'
-    +'font-family:var(--font-body);';
+  btn.className='undo-toast-btn';
   btn.onclick=function(){el.remove();clearTimeout(timer);onUndo();};
   el.appendChild(msg);
   el.appendChild(btn);
@@ -470,17 +481,7 @@ function getTotalBal(){return activeTX().reduce((s,t)=>t.type==='income'?s+Numbe
 
 function goMob(pageId) {
   closeMobMenu();
-  go(pageId);
-  // Update tab bar active state
-  var tabs = ['dashboard','bills','transactions','cash'];
-  tabs.forEach(function(t) {
-    var btn = document.getElementById('tb-' + t);
-    if (btn) btn.classList.toggle('active', t === pageId);
-  });
-  // Settings btn active if settings-related page
-  var settingsPages = ['categories','export','mortgage','cash','insurance','super','assets','transfers','forecast'];
-  var settBtn = document.getElementById('tb-settings');
-  if (settBtn) settBtn.classList.toggle('active', settingsPages.indexOf(pageId) >= 0);
+  go(pageId);   // go() syncs the tab bar active state
 }
 
 function openMobMenu() {
@@ -834,12 +835,12 @@ function renderHowTo(pageId) {
   }).join('');
   return '<div class="card how-to-card mb">'
     + '<div class="how-to-hd" onclick="this.parentNode.querySelector(\'.how-to-body\').style.display=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'grid\':\'none\';this.querySelector(\'.how-to-chev\').style.transform=this.parentNode.querySelector(\'.how-to-body\').style.display===\'none\'?\'\':\' rotate(180deg)\'">'
-    + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.1rem">' + ICON('books') + '</span>'
-    + '<div><div style="font-weight:700;font-size:.88rem;color:var(--text)">How to use — ' + cfg.title + '</div>'
-    + '<div style="font-size:.72rem;color:var(--muted)">Tap to expand guide</div></div></div>'
-    + '<span class="how-to-chev" style="font-size:.9rem;color:var(--muted);transition:transform .2s">▼</span>'
+    + '<div class="how-to-hd-main"><span class="how-to-book">' + ICON('books') + '</span>'
+    + '<div><div class="how-to-name">How to use — ' + cfg.title + '</div>'
+    + '<div class="how-to-tap">Tap to expand guide</div></div></div>'
+    + '<span class="how-to-chev">▼</span>'
     + '</div>'
-    + '<div class="how-to-body" style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
+    + '<div class="how-to-body" style="display:none">'
     + itemsHtml
     + '</div>'
     + '</div>';
@@ -871,14 +872,12 @@ function fabAction(action) {
   closeFabMenu();
   if (action === 'transaction') {
     goMob('transactions');
-    setTimeout(function() {
-      var addBtn = document.getElementById('tx-add-toggle');
-      if (addBtn) addBtn.click();
-    }, 300);
+    if (typeof openTxModal === 'function') openTxModal();
   } else if (action === 'import') {
     goMob('upload');
   } else if (action === 'bill') {
     goMob('bills');
+    if (typeof blOpenAddModal === 'function') blOpenAddModal();
   } else if (action === 'cash') {
     goMob('cash');
   } else if (action === 'transfer') {
@@ -1008,17 +1007,18 @@ function toggleNav(){
   const hb=document.getElementById('hamburger');
   const open=nav.classList.toggle('open');
   ov.classList.toggle('show',open);
-  hb.classList.toggle('open',open);
+  if(hb)hb.classList.toggle('open',open);
 }
 function closeNav(){
   document.getElementById('nav').classList.remove('open');
   document.getElementById('nav-overlay').classList.remove('show');
-  document.getElementById('hamburger').classList.remove('open');
+  const hb=document.getElementById('hamburger');
+  if(hb)hb.classList.remove('open');
 }
 // Auto-close nav on link tap (mobile)
 document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('#nav .nav-item, #nav .nav-fly-item').forEach(a=>{
-    a.addEventListener('click',()=>{if(window.innerWidth<=680)closeNav();});
+    a.addEventListener('click',()=>{if(window.innerWidth<760)closeNav();});
   });
   if (typeof initNavFlyouts === 'function') initNavFlyouts();
   if (typeof initNavPins === 'function') initNavPins();

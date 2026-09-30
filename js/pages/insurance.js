@@ -503,10 +503,10 @@ function renderInsurance(){
   // Renewals
   const upcoming=[...INS].filter(p=>p.renewal).sort((a,b)=>new Date(a.renewal)-new Date(b.renewal)).filter(p=>{const d=daysTilRenewal(p.renewal);return d!==null&&d>=-365;});
   document.getElementById('ins-renewals').innerHTML=upcoming.length
-    ?upcoming.map(p=>{const d=daysTilRenewal(p.renewal);const style=d<0?'color:var(--danger)':d<=30?'color:var(--warn)':'color:var(--success)';const lbl=d<0?Math.abs(d)+'d overdue':d===0?'Today!':d+'d';
+    ?upcoming.map(p=>{const d=daysTilRenewal(p.renewal);const tone=d<0?'tone-danger':d<=30?'tone-amber':'tone-green';const lbl=d<0?Math.abs(d)+'d overdue':d===0?'Today!':d+'d';
       const m=INS_META[p.type]||INS_META['Other'];
-      return`<div class="dr"><div class="dr-k">${iconTag(m.icon)} ${p.name}</div><div style="display:flex;gap:12px;align-items:center"><div class="dr-v" style="${style}">${lbl}</div><div style="font-size:.76rem;color:var(--muted)">${fmt(insToAnnual(p.prem,p.freq))}/yr</div></div></div>`;}).join('')
-    :'<div class="empty" style="padding:16px 0"><div class="ei">'+ICON('calendar')+'</div><p>No upcoming renewals</p></div>';
+      return`<div class="dr"><div class="dr-k">${iconTag(m.icon)} ${p.name}</div><div class="ins-ren-r"><div class="dr-v ${tone}">${lbl}</div><div class="ins-ren-yr">${fmt(insToAnnual(p.prem,p.freq))}/yr</div></div></div>`;}).join('')
+    :'<div class="empty empty--compact"><div class="ei">'+ICON('calendar')+'</div><p>No upcoming renewals</p></div>';
 
   // Coverage
   renderInsCoverage();
@@ -524,8 +524,8 @@ function renderInsurance(){
     const rdate=p.renewal?new Date(p.renewal+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
     const cov=p.covered==='brenton'?getUserName('brenton'):p.covered==='shelley'?getUserName('shelley'):'Both';
     const fl={monthly:'mo',annual:'yr',quarterly:'qtr',fortnightly:'fn'}[p.freq]||p.freq;
-    const locBadge=p.location&&p.location!=='outside'?`<span class="ins-tag" style="background:var(--card3);color:var(--muted)">${ICON('building-bank')} ${p.location==='inside'?'Inside Super':'Outside Super'}</span>`:'';
-    const docBadge=p.doclink?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)"><a href="${esc(p.doclink)}" target="_blank" style="color:inherit;text-decoration:none">${ICON('file-text')} Document</a></span>`:'';
+    const locBadge=p.location&&p.location!=='outside'?`<span class="ins-tag ins-tag--card3">${ICON('building-bank')} ${p.location==='inside'?'Inside Super':'Outside Super'}</span>`:'';
+    const docBadge=p.doclink?`<span class="ins-tag ins-tag--card2"><a href="${esc(p.doclink)}" target="_blank">${ICON('file-text')} Document</a></span>`:'';
     return`<div class="ins-card">
       <div class="ins-icon" style="background:${m.bg};color:${m.color}">${iconTag(m.icon)}</div>
       <div class="ins-body">
@@ -534,18 +534,18 @@ function renderInsurance(){
         <div class="ins-tags">
           <span class="ins-tag" style="background:${m.bg};color:${m.color}">${p.type}</span>
           <span class="badge ${rbc}">${rlbl} · ${rdate}</span>
-          <span class="ins-tag" style="background:var(--card2);color:var(--muted)">${ICON('user')} ${cov}</span>
+          <span class="ins-tag ins-tag--card2">${ICON('user')} ${cov}</span>
           ${locBadge}
           ${docBadge}
-          ${p.notes?`<span class="ins-tag" style="background:var(--card2);color:var(--muted)">${ICON('notes')} ${p.notes}</span>`:''}
-          ${p.type==='Income Protection'&&p.ipBenefit?`<span class="ins-tag" style="background:var(--card3);color:var(--purple)">${fmt(p.ipBenefit)}/mo · ${p.ipWait||90}d wait · to ${p.ipPeriod==='age65'?'age 65':p.ipPeriod}</span>`:''}
-          ${p.type==='TPD'&&p.tpdDef?`<span class="ins-tag" style="background:var(--warn-bg);color:var(--warn)">${p.tpdDef==='own'?'Own Occupation':'Any Occupation'} TPD</span>`:''}
+          ${p.notes?`<span class="ins-tag ins-tag--card2">${ICON('notes')} ${p.notes}</span>`:''}
+          ${p.type==='Income Protection'&&p.ipBenefit?`<span class="ins-tag ins-tag--ip">${fmt(p.ipBenefit)}/mo · ${p.ipWait||90}d wait · to ${p.ipPeriod==='age65'?'age 65':p.ipPeriod}</span>`:''}
+          ${p.type==='TPD'&&p.tpdDef?`<span class="ins-tag ins-tag--tpd">${p.tpdDef==='own'?'Own Occupation':'Any Occupation'} TPD</span>`:''}
         </div>
       </div>
       <div>
         <div class="ins-amt" style="color:${m.color}">${fmt(p.prem)}<small>/${fl}</small></div>
-        <div style="font-size:.68rem;color:var(--muted);text-align:right;margin-top:2px">${fmt(insToAnnual(p.prem,p.freq))}/yr</div>
-        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:7px"><button class="btn btn-ghost btn-sm" onclick="insShowEditModal(${p.id})">Edit</button><button class="del-btn" onclick="delIns(${p.id})">${ICON('trash')}</button></div>
+        <div class="ins-amt-yr">${fmt(insToAnnual(p.prem,p.freq))}/yr</div>
+        <div class="ins-actions"><button class="btn btn-ghost btn-sm" onclick="insShowEditModal(${p.id})">Edit</button><button class="del-btn" onclick="delIns(${p.id})">${ICON('trash')}</button></div>
       </div></div>`;
   }).join('');
 }
@@ -576,7 +576,7 @@ function renderInsCoverage() {
   const hasPols  = INS.some(p => ['Life','TPD','Income Protection'].includes(p.type));
 
   if (!hasNeeds && !hasPols) {
-    el.innerHTML = '<div class="empty" style="padding:12px 0"><div class="ei">' + ICON('shield-check') + '</div><p>Enter income in the Needs Analysis above and add policies to see gap analysis</p></div>';
+    el.innerHTML = '<div class="empty empty--pad12"><div class="ei">' + ICON('shield-check') + '</div><p>Enter income in the Needs Analysis above and add policies to see gap analysis</p></div>';
     return;
   }
 
@@ -602,14 +602,14 @@ function renderInsCoverage() {
       const gap    = Math.max(0, need - cover);
       const suffix = isMonthly ? '/mo' : '';
       const status = gap <= 0
-        ? `<span style="color:var(--success);font-weight:700">${ICON('circle-check-filled')} Fully covered</span>`
-        : `<span style="color:var(--warn);font-weight:700">${ICON('alert-triangle')} Gap: ${fmt(gap)}${suffix}</span>`;
+        ? `<span class="ins-status tone-green">${ICON('circle-check-filled')} Fully covered</span>`
+        : `<span class="ins-status tone-amber">${ICON('alert-triangle')} Gap: ${fmt(gap)}${suffix}</span>`;
       return `<div class="prog-wrap">
         <div class="prog-hd"><span class="prog-lbl">${label}</span>
           <span class="prog-val">${fmt(cover)}${suffix} of ${fmt(need)}${suffix} needed</span></div>
         <div class="prog-track"><div class="prog-fill ${cls}" style="width:${pct.toFixed(0)}%"></div></div>
-        <div style="display:flex;justify-content:space-between;margin-top:3px">
-          <span style="font-size:.7rem;color:var(--muted)">${pct.toFixed(0)}% covered</span>${status}</div></div>`;
+        <div class="ins-cov-foot">
+          <span class="ins-cov-pct">${pct.toFixed(0)}% covered</span>${status}</div></div>`;
     }
 
     html += bar(ICON('heart') + ' Life', lifeCover, lifeNeed, false);
@@ -618,7 +618,7 @@ function renderInsCoverage() {
     html += '</div>';
   });
 
-  el.innerHTML = html || '<div class="empty" style="padding:10px 0"><p>Enter income in the Needs Analysis above to calculate needs</p></div>';
+  el.innerHTML = html || '<div class="empty empty--pad10"><p>Enter income in the Needs Analysis above to calculate needs</p></div>';
 }
 
 let insGapChart = null;
@@ -657,7 +657,6 @@ function renderInsCoverageChart() {
     if (parent && !parent.querySelector('.ins-chart-empty')) {
       const msg = document.createElement('div');
       msg.className = 'ins-chart-empty empty';
-      msg.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px';
       msg.innerHTML = '<div class="ei">' + ICON('chart-bar') + '</div><p>Enter income in the Needs Analysis above to see the gap chart</p>';
       parent.appendChild(msg);
     }
@@ -750,11 +749,11 @@ function showSuperResults(){
     const final=rows[rows.length-1];
     const sgcAmt=(d.salary||0)*(d.sgc||11.5)/100;
     const methodNote='Standard projection';
-    el.innerHTML=`<div style="text-align:center;padding:10px;background:var(--primary-bg);border-radius:10px;margin-bottom:10px">
-      <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">At age ${d.retire}</div>
-      <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--primary)">${fmt(final.nominal)}</div>
-      <div style="font-size:.72rem;color:var(--muted)">Real: ${fmt(final.real)} · Drawdown: ${fmt(final.nominal*.04/12)}/mo</div>
-      <div style="font-size:.68rem;color:var(--purple);margin-top:3px">${methodNote}</div></div>
+    el.innerHTML=`<div class="sp-proj">
+      <div class="sp-proj-age">At age ${d.retire}</div>
+      <div class="sp-proj-val">${fmt(final.nominal)}</div>
+      <div class="sp-proj-sub">Real: ${fmt(final.real)} · Drawdown: ${fmt(final.nominal*.04/12)}/mo</div>
+      <div class="sp-proj-note">${methodNote}</div></div>
       <div class="dr"><span class="dr-k">Annual SGC</span><span class="dr-v">${fmt(sgcAmt)}</span></div>
       <div class="dr"><span class="dr-k">Years to retire</span><span class="dr-v">${(d.retire||67)-(d.age||40)} yrs</span></div>`;
   });
@@ -810,13 +809,7 @@ function liSwitchTab(tab) {
   ['all','dime','income','needs'].forEach(t => {
     const el = document.getElementById('li-tab-' + t);
     if (!el) return;
-    if (t === tab) {
-      el.style.background = 'var(--primary)';
-      el.style.color = '#fff';
-    } else {
-      el.style.background = 'transparent';
-      el.style.color = 'var(--muted)';
-    }
+    el.classList.toggle('active', t === tab);
   });
   calcLifeNeeds();
 }
@@ -855,7 +848,7 @@ function calcLifeNeeds() {
     const polIPmthly = INS.filter(i=>i.type==='Income Protection'&&(i.covered===p||i.covered==='joint')).reduce((s,i)=>s+(i.ipBenefit||(i.cover/12)||0),0);
     const polTPD     = INS.filter(i=>i.type==='TPD'&&(i.covered===p||i.covered==='joint')).reduce((s,i)=>s+(i.cover||0),0);
 
-    const color = p === 'b' ? 'var(--primary)' : 'var(--purple)';
+    const tone = p === 'b' ? 'tone-pink' : 'tone-purple';
 
     const showAll    = liActiveTab === 'all';
     const showDime   = showAll || liActiveTab === 'dime';
@@ -867,22 +860,22 @@ function calcLifeNeeds() {
       const gapText  = gap > 0 ? 'Gap: ' + fmt(gap) : 'Covered';
       return '<div class="li-method-box">'
         + '<div class="li-method-title">' + title + '</div>'
-        + '<div class="li-method-amount" style="color:' + color + '">' + fmt(net) + '</div>'
-        + '<div style="font-size:.7rem;color:var(--muted);margin-top:3px">Gross need: ' + fmt(gross) + ' · Less assets/existing: ' + fmt(assets + existing) + '</div>'
-        + '<div style="margin-top:6px;font-size:.74rem;font-weight:700" class="' + gapStyle + '">' + gapText + '</div>'
+        + '<div class="li-method-amount ' + tone + '">' + fmt(net) + '</div>'
+        + '<div class="li-method-detail">Gross need: ' + fmt(gross) + ' · Less assets/existing: ' + fmt(assets + existing) + '</div>'
+        + '<div class="li-method-gap ' + gapStyle + '">' + gapText + '</div>'
         + (cols || '')
         + '</div>';
     }
 
     function dimeBreakdown() {
-      return '<details style="margin-top:8px"><summary style="font-size:.72rem;color:var(--muted);cursor:pointer">Breakdown</summary>'
-        + '<div style="margin-top:6px">'
+      return '<details class="li-bd"><summary class="li-bd-sum">Breakdown</summary>'
+        + '<div class="li-bd-body">'
         + '<div class="li-dr"><span class="li-dr-k">D — Debts</span><span class="li-dr-v">' + fmt(debts) + '</span></div>'
         + '<div class="li-dr"><span class="li-dr-k">I — Income × ' + years + ' yrs</span><span class="li-dr-v">' + fmt(income * years) + '</span></div>'
         + '<div class="li-dr"><span class="li-dr-k">M — Mortgage</span><span class="li-dr-v">' + fmt(mortgage) + '</span></div>'
         + '<div class="li-dr"><span class="li-dr-k">E — Education + Funeral</span><span class="li-dr-v">' + fmt(education + funeral) + '</span></div>'
-        + '<div class="li-dr"><span class="li-dr-k">Less: Savings / Super</span><span class="li-dr-v" style="color:var(--success)">-' + fmt(assets) + '</span></div>'
-        + '<div class="li-dr"><span class="li-dr-k">Less: Existing Cover</span><span class="li-dr-v" style="color:var(--success)">-' + fmt(existing) + '</span></div>'
+        + '<div class="li-dr"><span class="li-dr-k">Less: Savings / Super</span><span class="li-dr-v tone-green">-' + fmt(assets) + '</span></div>'
+        + '<div class="li-dr"><span class="li-dr-k">Less: Existing Cover</span><span class="li-dr-v tone-green">-' + fmt(existing) + '</span></div>'
         + '</div></details>';
     }
 
@@ -895,26 +888,26 @@ function calcLifeNeeds() {
       return '<div class="li-cover-row">'
         + '<div class="li-cover-hd"><span class="li-cover-lbl">' + label + '</span><span class="li-cover-val">' + fmt(actual) + ' covered of ' + fmt(need) + ' needed</span></div>'
         + '<div class="prog-track"><div class="prog-fill ' + cls + '" style="width:' + pct.toFixed(0) + '%"></div></div>'
-        + '<div style="display:flex;justify-content:space-between;margin-top:3px;font-size:.7rem">'
-        + '<span style="color:var(--muted)">' + pct.toFixed(0) + '% covered</span>'
+        + '<div class="li-cov-foot">'
+        + '<span class="tone-muted">' + pct.toFixed(0) + '% covered</span>'
         + '<span class="' + gapClass + '">' + gapText + '</span></div></div>';
     }
 
     el.innerHTML = ''
       + (showDime   ? methodBox('DIME Method',         dimeGross,              dimeLife,  lifeGap, dimeBreakdown()) : '')
       + (showIncome ? methodBox('10× Income Method',   incGross,               incLife,   lifeGap, '') : '')
-      + (showNeeds  ? methodBox('Needs Analysis (PV)', Math.round(needsGross), Math.round(needsLife), lifeGap, '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">PV of ' + years + ' yrs income at 5% discount rate</div>') : '')
-      + '<div style="margin-top:14px">'
+      + (showNeeds  ? methodBox('Needs Analysis (PV)', Math.round(needsGross), Math.round(needsLife), lifeGap, '<div class="li-method-note">PV of ' + years + ' yrs income at 5% discount rate</div>') : '')
+      + '<div class="li-bars">'
       + coverBar(allExistLife, recLife, ICON('heart') + ' Life Cover (recommended)')
       + coverBar(existTPD, tpdNeed, ICON('wheelchair') + ' TPD Cover (independent, to age 65)')
       + coverBar(existIP * 12, ipAnnual, ICON('shield-check') + ' Income Protection (annual) — current: '
           + fmt(existIP) + '/mo · needed: ' + fmt(ipMonthly) + '/mo to age 65')
       + '</div>'
-      + '<details style="margin-top:10px"><summary style="font-size:.74rem;color:var(--muted);cursor:pointer">TPD &amp; IP calculation detail</summary>'
-      + '<div style="margin-top:8px">'
+      + '<details class="li-bd li-bd--detail"><summary class="li-bd-sum li-bd-sum--md">TPD &amp; IP calculation detail</summary>'
+      + '<div class="li-bd-body li-bd-body--8">'
       + '<div class="li-dr"><span class="li-dr-k">TPD: PV of income to age 65 (' + yearsTo65 + ' yrs)</span><span class="li-dr-v">' + fmt(tpdIncomePV) + '</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">TPD: Home/vehicle modifications allowance</span><span class="li-dr-v">' + fmt(modAllow) + '</span></div>'
-      + '<div class="li-dr"><span class="li-dr-k">TPD: Less existing savings/super</span><span class="li-dr-v" style="color:var(--success)">-' + fmt(assets) + '</span></div>'
+      + '<div class="li-dr"><span class="li-dr-k">TPD: Less existing savings/super</span><span class="li-dr-v tone-green">-' + fmt(assets) + '</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">IP: 75% of income/month needed (90-day wait)</span><span class="li-dr-v">' + fmt(ipMonthly) + '/mo</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">IP: Existing cover</span><span class="li-dr-v">' + (manualIPmo > 0 ? fmt(manualIPmo) + '/mo (manual)' : polIPmthly > 0 ? fmt(polIPmthly) + '/mo (from policies)' : 'None entered') + '</span></div>'
       + '<div class="li-dr"><span class="li-dr-k">TPD: Existing cover</span><span class="li-dr-v">' + (manualTPD > 0 ? fmt(manualTPD) + ' (manual)' : polTPD > 0 ? fmt(polTPD) + ' (from policies)' : 'None entered') + '</span></div>'
@@ -981,8 +974,8 @@ function renderD293Section() {
   el.innerHTML = people.map(p => {
     if (!p.d?.salary) {
       return '<div class="d293-person"><div class="d293-hd" style="background:' + p.grad + '">'
-        + '<span style="font-weight:700;color:#fff">' + p.name + '</span></div>'
-        + '<div class="d293-body" style="color:var(--muted);font-size:.82rem">Enter salary in the Superannuation tab to calculate.</div></div>';
+        + '<span class="d293-name">' + p.name + '</span></div>'
+        + '<div class="d293-body d293-body--empty">Enter salary in the Superannuation tab to calculate.</div></div>';
     }
 
     const r = calcDiv293(p.d.salary, p.d.sgc || 11.5, p.d.extra || 0);
@@ -1003,28 +996,28 @@ function renderD293Section() {
 
     return '<div class="d293-person">'
       + '<div class="d293-hd" style="background:' + p.grad + '">'
-      + '<div><span style="font-weight:700;color:#fff;font-size:.92rem">' + p.name + '</span>'
-      + '<span style="margin-left:10px;font-size:.72rem;color:rgba(255,255,255,.75)">' + fmt(p.d.salary) + '/yr</span></div>'
+      + '<div><span class="d293-name d293-name--lg">' + p.name + '</span>'
+      + '<span class="d293-sal">' + fmt(p.d.salary) + '/yr</span></div>'
       + badge + '</div>'
       + '<div class="d293-body">'
       + '<div class="d293-row"><span class="d293-k">Annual Salary</span><span class="d293-v">' + fmt(r.salary) + '</span></div>'
       + '<div class="d293-row"><span class="d293-k">SGC Contributions (' + (p.d.sgc||11.5) + '%)</span><span class="d293-v">' + fmt(r.sgcAmt) + '</span></div>'
       + (r.extraConc > 0 ? '<div class="d293-row"><span class="d293-k">Extra Concessional</span><span class="d293-v">' + fmt(r.extraConc) + '</span></div>' : '')
-      + '<div class="d293-row"><span class="d293-k">Total Concessional</span><span class="d293-v">' + fmt(r.totalConc) + (r.capHit ? ' <span style="color:var(--warn);font-size:.7rem">(cap)</span>' : '') + '</span></div>'
+      + '<div class="d293-row"><span class="d293-k">Total Concessional</span><span class="d293-v">' + fmt(r.totalConc) + (r.capHit ? ' <span class="d293-cap">(cap)</span>' : '') + '</span></div>'
       + '<div class="d293-row"><span class="d293-k">Income Test Total</span><span class="d293-v">' + fmt(r.incomeTest) + '</span></div>'
       + '<div class="d293-row"><span class="d293-k">Div 293 Threshold</span><span class="d293-v">$250,000</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Amount Subject to Div 293</span><span class="d293-v" style="color:' + (r.applies ? 'var(--danger)' : 'var(--muted)') + '">' + (r.applies ? fmt(r.taxableAmt) : 'Nil') + '</span></div>'
-      + '<div style="height:1px;background:var(--border);margin:10px 0"></div>'
+      + '<div class="d293-row"><span class="d293-k">Amount Subject to Div 293</span><span class="d293-v ' + (r.applies ? 'tone-danger' : 'tone-muted') + '">' + (r.applies ? fmt(r.taxableAmt) : 'Nil') + '</span></div>'
+      + '<div class="d293-sep"></div>'
       + '<div class="d293-row"><span class="d293-k">Standard Contributions Tax (15%)</span><span class="d293-v">-' + fmt(r.stdTax) + '</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Div 293 Additional Tax (15%)</span><span class="d293-v" style="color:' + (r.applies ? 'var(--danger)' : 'var(--muted)') + '">' + (r.applies ? '-' + fmt(r.d293Tax) : 'Nil') + '</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Total Tax on Contributions</span><span class="d293-v" style="color:var(--danger)">-' + fmt(r.totalTax) + '</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Effective Contribution Tax Rate</span><span class="d293-v" style="color:' + (r.effRate > 0.2 ? 'var(--danger)' : 'var(--success)') + '">' + (r.effRate * 100).toFixed(1) + '%</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Net After-Tax Contribution</span><span class="d293-v" style="color:var(--success)">' + fmt(r.netContrib) + '</span></div>'
-      + '<div style="height:1px;background:var(--border);margin:10px 0"></div>'
+      + '<div class="d293-row"><span class="d293-k">Div 293 Additional Tax (15%)</span><span class="d293-v ' + (r.applies ? 'tone-danger' : 'tone-muted') + '">' + (r.applies ? '-' + fmt(r.d293Tax) : 'Nil') + '</span></div>'
+      + '<div class="d293-row"><span class="d293-k">Total Tax on Contributions</span><span class="d293-v tone-danger">-' + fmt(r.totalTax) + '</span></div>'
+      + '<div class="d293-row"><span class="d293-k">Effective Contribution Tax Rate</span><span class="d293-v ' + (r.effRate > 0.2 ? 'tone-danger' : 'tone-green') + '">' + (r.effRate * 100).toFixed(1) + '%</span></div>'
+      + '<div class="d293-row"><span class="d293-k">Net After-Tax Contribution</span><span class="d293-v tone-green">' + fmt(r.netContrib) + '</span></div>'
+      + '<div class="d293-sep"></div>'
       + '<div class="d293-row"><span class="d293-k">Marginal Income Tax Rate</span><span class="d293-v">' + (r.margRate * 100).toFixed(1) + '%</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Income Tax Saved vs Salary</span><span class="d293-v" style="color:var(--success)">+' + fmt(r.taxSavingVsSalary) + '</span></div>'
-      + '<div class="d293-row"><span class="d293-k">Net Benefit vs Taking as Salary</span><span class="d293-v" style="color:' + (r.netBenefitVsSalary > 0 ? 'var(--success)' : 'var(--danger)') + '">' + (r.netBenefitVsSalary >= 0 ? '+' : '') + fmt(r.netBenefitVsSalary) + '</span></div>'
-      + (r.applies ? '<div class="d293-row"><span class="d293-k">Div 293 cost FV at retirement (' + yrs + ' yrs)</span><span class="d293-v" style="color:var(--danger)">-' + fmt(annualD293FV) + '</span></div>' : '')
+      + '<div class="d293-row"><span class="d293-k">Income Tax Saved vs Salary</span><span class="d293-v tone-green">+' + fmt(r.taxSavingVsSalary) + '</span></div>'
+      + '<div class="d293-row"><span class="d293-k">Net Benefit vs Taking as Salary</span><span class="d293-v ' + (r.netBenefitVsSalary > 0 ? 'tone-green' : 'tone-danger') + '">' + (r.netBenefitVsSalary >= 0 ? '+' : '') + fmt(r.netBenefitVsSalary) + '</span></div>'
+      + (r.applies ? '<div class="d293-row"><span class="d293-k">Div 293 cost FV at retirement (' + yrs + ' yrs)</span><span class="d293-v tone-danger">-' + fmt(annualD293FV) + '</span></div>' : '')
       + '<div class="d293-callout">'
       + '<strong style="color:' + p.color + '">Summary:</strong> '
       + (r.applies

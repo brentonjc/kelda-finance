@@ -510,10 +510,10 @@ function blPeriodAmount(b) {
   return s;
 }
 function blOverviewEmptyHtml() {
-  return '<div class="card" style="text-align:center;padding:40px 22px">'
-    + '<div class="ei" style="font-size:2rem;margin-bottom:10px;color:var(--muted)">' + ICON('receipt') + '</div>'
-    + '<div style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;margin-bottom:6px">No bills yet</div>'
-    + '<div class="bl-muted" style="font-size:.82rem;max-width:440px;margin:0 auto 18px;line-height:1.5">Kelda finds recurring bills and subscriptions automatically from your transactions. Import or add some transactions, or add a bill manually to get started.</div>'
+  return '<div class="card bl-empty-card">'
+    + '<div class="ei bl-empty-ico">' + ICON('receipt') + '</div>'
+    + '<div class="bl-empty-title">No bills yet</div>'
+    + '<div class="bl-muted bl-empty-text">Kelda finds recurring bills and subscriptions automatically from your transactions. Import or add some transactions, or add a bill manually to get started.</div>'
     + '<button class="btn btn-primary btn-sm" onclick="blOpenAddModal()">＋ Add your first bill</button>'
     + '</div>';
 }
@@ -650,13 +650,13 @@ function blRenderKPIs() {
   var buffer = blTotalAnnualBuffer();
   el.innerHTML =
     '<div class="kpi"><div class="kpi-label">Monthly Commitment</div>' +
-    '<div class="kpi-value mono" style="color:var(--primary)">' + fmt(monthly) + '<span style="font-size:.68rem;font-weight:400">/mo</span></div>' +
+    '<div class="kpi-value mono tone-pink">' + fmt(monthly) + '<span class="bl-kpi-unit">/mo</span></div>' +
     '<div class="kpi-sub">' + confirmed.length + ' recurring payment' + (confirmed.length === 1 ? '' : 's') + '</div></div>' +
     '<div class="kpi"><div class="kpi-label">Due Next 30 Days</div>' +
     '<div class="kpi-value mono">' + fmt(due30) + '</div>' +
     '<div class="kpi-sub">' + due30Count + ' bill' + (due30Count === 1 ? '' : 's') + ' due</div></div>' +
     '<div class="kpi"><div class="kpi-label">Annual Buffer</div>' +
-    '<div class="kpi-value mono" style="color:var(--purple)">' + fmt(buffer) + '<span style="font-size:.68rem;font-weight:400">/mo</span></div>' +
+    '<div class="kpi-value mono tone-purple">' + fmt(buffer) + '<span class="bl-kpi-unit">/mo</span></div>' +
     (annualBills.length ? '<button class="kpi-cta" onclick="blCreateBufferGoal()">' + ICON('target') + ' Set aside</button>' : '<div class="kpi-sub">to set aside now</div>') + '</div>' +
     '<div class="kpi"><div class="kpi-label">Annual Bills</div>' +
     '<div class="kpi-value mono">' + fmt(annualTotal) + '</div>' +
@@ -752,9 +752,9 @@ function blRenderCashChart() {
 
   if (legend) {
     legend.innerHTML =
-      '<div class="legend-item"><div class="legend-dot" style="background:var(--card3)"></div>Regular bills</div>' +
-      '<div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Contains annual bill</div>' +
-      '<div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div>Heaviest period</div>';
+      '<div class="legend-item"><div class="legend-dot bl-leg-regular"></div>Regular bills</div>' +
+      '<div class="legend-item"><div class="legend-dot bl-leg-annual"></div>Contains annual bill</div>' +
+      '<div class="legend-item"><div class="legend-dot bl-leg-heavy"></div>Heaviest period</div>';
   }
 }
 
@@ -773,7 +773,7 @@ function blRenderSankey() {
   var sankSub = document.getElementById('bl-sankey-sub');
   if (sankSub) sankSub.textContent = R.label + ' · confirmed bills';
   var confirmed = blConfirmed();
-  if (!confirmed.length) { el.innerHTML = '<div class="empty" style="min-height:120px;padding:20px"><div class="ei">' + ICON('chart-bar') + '</div><p style="font-size:.78rem">No confirmed bills yet.</p></div>'; return; }
+  if (!confirmed.length) { el.innerHTML = '<div class="empty empty--chart"><div class="ei">' + ICON('chart-bar') + '</div><p>No confirmed bills yet.</p></div>'; return; }
 
   var nodes, srcLabel, srcAmt, backLink = '', drillHint = '';
   if (blSankeyDrill) {
@@ -786,7 +786,7 @@ function blRenderSankey() {
     nodes = Object.keys(subTotals).sort(function(a,b2){ return subTotals[b2]-subTotals[a]; }).map(function(s,i) {
       return { label: s, amt: subTotals[s], color: BL_SANKEY_PALETTE[i % BL_SANKEY_PALETTE.length] };
     });
-    backLink = '<div style="font-size:.7rem;color:var(--primary);cursor:pointer;margin-bottom:8px;font-weight:600" onclick="blSankeyDrill=null;blRenderSankey()">← Back to categories</div>';
+    backLink = '<div class="bl-sankey-back" onclick="blSankeyDrill=null;blRenderSankey()">← Back to categories</div>';
   } else {
     var catTotals = {};
     confirmed.forEach(function(b){ var c = b.category || 'other'; catTotals[c] = (catTotals[c]||0) + blPeriodAmount(b); });
@@ -796,9 +796,9 @@ function blRenderSankey() {
       var cat = LCATS.find(function(x){ return x.id === c; });
       return { id: c, label: cat ? cat.name : c, amt: catTotals[c], color: cat && cat.color ? cat.color : BL_SANKEY_PALETTE[i % BL_SANKEY_PALETTE.length] };
     });
-    drillHint = '<div style="font-size:.6rem;color:var(--muted);margin-top:10px">Tap a category to explore subcategories →</div>';
+    drillHint = '<div class="bl-sankey-hint">Tap a category to explore subcategories →</div>';
   }
-  if (!srcAmt) { el.innerHTML = '<div class="empty" style="min-height:120px;padding:20px"><div class="ei">' + ICON('chart-bar') + '</div><p style="font-size:.78rem">No bills fall in ' + esc(R.label.toLowerCase()) + '.</p></div>'; return; }
+  if (!srcAmt) { el.innerHTML = '<div class="empty empty--chart"><div class="ei">' + ICON('chart-bar') + '</div><p>No bills fall in ' + esc(R.label.toLowerCase()) + '.</p></div>'; return; }
 
   // Full-width geometry — a right-hand gutter reserves room for node labels so
   // nothing spills outside the viewBox as the tile grows.
@@ -826,7 +826,7 @@ function blRenderSankey() {
     var srcY1 = lY, srcY2 = lY + flowH;
     var tgtY1 = nd.y, tgtY2 = nd.y + nd.h;
     var cx = Math.round((colX1 + nodeW + colX2) / 2);
-    var clickAttr = blSankeyDrill ? '' : (' onclick="blSankeyDrill=\'' + nd.id + '\';blRenderSankey()" style="cursor:pointer"');
+    var clickAttr = blSankeyDrill ? '' : (' onclick="blSankeyDrill=\'' + nd.id + '\';blRenderSankey()" class="bl-sankey-link"');
     paths += '<path d="M' + (colX1+nodeW) + ',' + srcY1 + ' C' + cx + ',' + srcY1 + ' ' + cx + ',' + tgtY1 + ' ' + colX2 + ',' + tgtY1
       + ' L' + colX2 + ',' + tgtY2 + ' C' + cx + ',' + tgtY2 + ' ' + cx + ',' + srcY2 + ' ' + (colX1+nodeW) + ',' + srcY2 + ' Z"'
       + ' fill="' + nd.color + '" opacity="0.34"/>';
@@ -842,7 +842,7 @@ function blRenderSankey() {
     + '<text x="' + (nodeW+8) + '" y="' + (midY+12) + '" font-size="13" font-weight="700" fill="' + blToken('--primary') + '">' + fmt(srcAmt) + '</text>';
 
   el.innerHTML = backLink
-    + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">' + paths + rects + incSVG + labels + '</svg>'
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" class="bl-sankey-svg">' + paths + rects + incSVG + labels + '</svg>'
     + drillHint;
 }
 
@@ -938,10 +938,9 @@ function blRenderYoyChart() {
       var delta = d.curr - d.prev;
       var pct = d.prev ? ((delta/d.prev)*100).toFixed(1) : '0.0';
       var up = delta > 0;
-      var color = up ? 'var(--danger)' : 'var(--success)';
       var arrow = up ? '▲' : '▼';
       return '<div class="yoy-chip"><div class="yoy-chip-lbl">' + esc(labels[i]) + '</div>'
-        + '<div class="yoy-chip-val" style="color:' + color + '">' + arrow + ' ' + Math.abs(pct) + '%</div></div>';
+        + '<div class="yoy-chip-val ' + (up ? 'tone-danger' : 'tone-green') + '">' + arrow + ' ' + Math.abs(pct) + '%</div></div>';
     }).join('');
   }
 }
@@ -1007,22 +1006,22 @@ function blRenderTable() {
     // rows show a quiet "auto-tracked" tick, manual rows a plain label.
     var matchCell;
     if (pending) {
-      matchCell = '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">' +
-        '<div role="progressbar" aria-valuenow="' + conf + '" aria-valuemin="0" aria-valuemax="100" aria-label="Match confidence ' + conf + '% — pending review" style="width:48px;height:5px;background:var(--card3);border-radius:99px;overflow:hidden">' +
-        '<div style="width:' + conf + '%;height:100%;background:var(--warn);border-radius:99px"></div></div>' +
-        '<div style="font-size:.62rem;color:var(--warn);font-weight:600" aria-hidden="true">' + conf + '%</div></div>';
+      matchCell = '<div class="bl-match">' +
+        '<div role="progressbar" aria-valuenow="' + conf + '" aria-valuemin="0" aria-valuemax="100" aria-label="Match confidence ' + conf + '% — pending review" class="bl-match-track">' +
+        '<div class="bl-match-fill" style="width:' + conf + '%"></div></div>' +
+        '<div class="bl-match-pct" aria-hidden="true">' + conf + '%</div></div>';
     } else if (conf === null) {
-      matchCell = '<span class="bl-muted" style="font-size:.68rem" title="Added manually">Manual</span>';
+      matchCell = '<span class="bl-muted bl-match-manual" title="Added manually">Manual</span>';
     } else {
-      matchCell = '<span class="bl-muted" style="font-size:.9rem" title="Auto-tracked from your transactions (' + conf + '% match)" aria-label="Auto-tracked, ' + conf + '% match">' + ICON('circle-check') + '</span>';
+      matchCell = '<span class="bl-muted bl-match-auto" title="Auto-tracked from your transactions (' + conf + '% match)" aria-label="Auto-tracked, ' + conf + '% match">' + ICON('circle-check') + '</span>';
     }
 
     var actionCell;
     if (pending) {
-      actionCell = '<button class="btn btn-primary btn-sm" onclick="blOpenReviewModal()" style="white-space:nowrap;font-size:.68rem;padding:7px 11px">Review →</button>';
+      actionCell = '<button class="btn btn-primary btn-sm bl-review-cta" onclick="blOpenReviewModal()">Review →</button>';
     } else {
       var priceChip = b.pendingAmountUpdate
-        ? '<span style="font-size:.68rem;color:var(--warn);font-weight:600;background:rgba(245,158,11,.1);padding:7px 8px;border-radius:99px;white-space:nowrap;cursor:pointer" onclick="event.stopPropagation();blOpenReviewModal()" title="Price change detected — review">' + ICON('trending-up') + '</span>'
+        ? '<span class="bl-price-pill" onclick="event.stopPropagation();blOpenReviewModal()" title="Price change detected — review">' + ICON('trending-up') + '</span>'
         : '';
       actionCell = '<div class="bl-row-actions">' + priceChip +
         '<button class="bl-icon-btn" title="Edit bill" aria-label="Edit ' + esc(b.displayName||'bill') + '" onclick="blOpenEditModal(\'' + b.id + '\')">' + ICON('pencil') + '</button>' +
@@ -1030,24 +1029,23 @@ function blRenderTable() {
         '</div>';
     }
 
-    var firstTdStyle = pending ? ' style="border-left:3px solid var(--warn)"' : '';
     return '<tr class="bl-clickable' + (pending ? ' bl-row-pending' : '') + '" onclick="blOpenDetail(\'' + b.id + '\')" title="View details">' +
-      '<td class="bl-td-first" data-label="Biller"' + firstTdStyle + '>' +
+      '<td class="bl-td-first' + (pending ? ' bl-td-first--pending' : '') + '" data-label="Biller">' +
         '<div class="bl-biller-cell">' +
         '<div class="bl-biller-ico">' + iconTag(b.icon) + '</div>' +
-        '<div><div style="font-weight:600">' + esc(b.displayName||'Bill') + blPaidByBadge(b) + '</div>' +
-        '<div class="bl-muted" style="font-size:.68rem">' + esc(blFreqAmountLabel(b)) + '</div></div></div></td>' +
-      '<td class="bl-td" data-label="Type" style="position:relative">' +
+        '<div><div class="bl-biller-name">' + esc(b.displayName||'Bill') + blPaidByBadge(b) + '</div>' +
+        '<div class="bl-muted bl-freq">' + esc(blFreqAmountLabel(b)) + '</div></div></div></td>' +
+      '<td class="bl-td bl-td--type" data-label="Type">' +
         '<button class="btype-btn ' + typeCls + '" onclick="event.stopPropagation();blToggleTypeMenu(\'' + rowId + '\')">' + typeLbl + '</button>' +
         '<div class="type-dropdown" id="' + rowId + '_dd" onclick="event.stopPropagation()">' +
         '<button class="type-option" onclick="event.stopPropagation();blSelectType(\'' + b.id + '\',\'bill\',\'' + rowId + '\')">Bill</button>' +
         '<button class="type-option" onclick="event.stopPropagation();blSelectType(\'' + b.id + '\',\'subscription\',\'' + rowId + '\')">Subscription</button>' +
         '<button class="type-option" onclick="event.stopPropagation();blSelectType(\'' + b.id + '\',\'direct_debit\',\'' + rowId + '\')">Direct Debit</button>' +
-        '</div><div class="bl-muted" style="font-size:.7rem;margin-top:3px">' + esc(blSubcatOrCatLabel(b)) + '</div></td>' +
-      '<td class="bl-td bl-muted" data-label="Account" style="font-size:.76rem">' + esc(b.account || '—') + '</td>' +
-      '<td class="bl-td mono" data-label="Amount" style="text-align:right;font-weight:600">' + (b.amountType === 'variable' ? '~' : '') + fmt(b.amount) + '</td>' +
-      '<td class="bl-td mono" data-label="Next due" style="font-size:.76rem">' + (pending ? '<span class="bl-muted">—</span>' : blDateLabel(b.nextDueDate)) + '</td>' +
-      '<td class="bl-td" data-label="Match" style="text-align:center">' + matchCell + '</td>' +
+        '</div><div class="bl-muted bl-subcat">' + esc(blSubcatOrCatLabel(b)) + '</div></td>' +
+      '<td class="bl-td bl-muted bl-td--account" data-label="Account">' + esc(b.account || '—') + '</td>' +
+      '<td class="bl-td mono bl-td--amt" data-label="Amount">' + (b.amountType === 'variable' ? '~' : '') + fmt(b.amount) + '</td>' +
+      '<td class="bl-td mono bl-td--due" data-label="Next due">' + (pending ? '<span class="bl-muted">—</span>' : blDateLabel(b.nextDueDate)) + '</td>' +
+      '<td class="bl-td bl-td--match" data-label="Match">' + matchCell + '</td>' +
       '<td class="bl-td bl-th-actions" data-label="" onclick="event.stopPropagation()">' + actionCell + '</td>' +
       '</tr>';
   }).join('');
@@ -1061,7 +1059,7 @@ function blRenderTable() {
         btns += '<button class="bl-page-btn' + (p===blPage?' active':'') + '" onclick="blSetPage(' + p + ')" aria-label="Page ' + p + '"' + (p===blPage?' aria-current="page"':'') + '>' + p + '</button>';
       }
       btns += '<button class="bl-page-btn" onclick="blSetPage(' + Math.min(totalPages,blPage+1) + ')" ' + (blPage===totalPages?'disabled':'') + ' aria-label="Next page">›</button>';
-      pag.innerHTML = '<div class="bl-muted" style="font-size:.72rem">' + showing + '</div><div style="display:flex;gap:6px;flex-wrap:wrap">' + btns + '</div>';
+      pag.innerHTML = '<div class="bl-muted bl-pag-info">' + showing + '</div><div class="bl-pag-btns">' + btns + '</div>';
     }
   }
 
@@ -1071,7 +1069,7 @@ function blRenderTable() {
     if (anyPaid) {
       var p1 = (typeof getUserName === 'function' ? getUserName('brenton') : 'Person 1') || 'Person 1';
       var p2 = (typeof getUserName === 'function' ? getUserName('shelley') : 'Person 2') || 'Person 2';
-      legEl.innerHTML = '<span class="bl-muted" style="font-weight:700;letter-spacing:.04em">PAID BY</span>'
+      legEl.innerHTML = '<span class="bl-muted bl-legend-lbl">PAID BY</span>'
         + '<span class="bl-paidby p1">' + esc(p1.charAt(0).toUpperCase()) + '</span>' + esc(p1)
         + '<span class="bl-paidby p2">' + esc(p2.charAt(0).toUpperCase()) + '</span>' + esc(p2)
         + '<span class="bl-paidby joint">Joint</span>shared';
@@ -1177,13 +1175,13 @@ function blRenderReviewModal() {
       '<div class="review-meta">' + esc(BILL_FREQ_LABELS[b.frequency]||'Monthly') + ' · ~' + fmt(b.amount) + ' · confidence ' + occText + '</div>' +
       '</div>' +
       '<div class="review-actions">' +
-      '<div class="dismiss-default" style="display:flex;gap:5px">' +
+      '<div class="dismiss-default">' +
       '<button class="btn-danger-ghost" onclick="blShowDismissConfirm(\'' + rowId + '\')">Dismiss</button>' +
       '<button class="btn btn-primary btn-sm" onclick="blConfirmDetection(\'' + b.id + '\')">Confirm</button>' +
       '</div>' +
       '<div class="dismiss-confirm" id="' + rowId + '_dc">' +
-      '<div style="font-size:.7rem;color:var(--danger);font-weight:600;white-space:nowrap">Dismiss permanently?</div>' +
-      '<div style="display:flex;gap:5px">' +
+      '<div class="bl-dismiss-q">Dismiss permanently?</div>' +
+      '<div class="bl-btn-row">' +
       '<button class="btn btn-ghost btn-sm" onclick="blCancelDismiss(\'' + rowId + '\')">Cancel</button>' +
       '<button class="btn-danger-ghost" onclick="blDismissDetection(\'' + b.id + '\',\'' + rowId + '\')">Yes, dismiss</button>' +
       '</div></div>' +
@@ -1203,7 +1201,7 @@ function blRenderReviewModal() {
       '<div class="review-name">' + esc(b.displayName||'Bill') + ' <span class="badge ' + typeCls + '">' + typeLbl + '</span></div>' +
       '<div class="review-meta">Was ' + fmt(oldAmt) + ' · Now ' + fmt(newAmt) + ' · ' + pct + '% ' + dir + '</div>' +
       '</div>' +
-      '<div class="review-actions"><div style="display:flex;gap:5px">' +
+      '<div class="review-actions"><div class="bl-btn-row">' +
       '<button class="btn btn-ghost btn-sm" onclick="blKeepOldAmount(\'' + b.id + '\')">Keep old amount</button>' +
       '<button class="btn btn-primary btn-sm" onclick="blAcceptNewAmount(\'' + b.id + '\')">Accept ' + fmt(newAmt) + '</button>' +
       '</div></div></div>';
@@ -1277,12 +1275,12 @@ function blRenderAnnualSpotlight() {
     var pct = Math.max(0, Math.min(100, Math.round((monthsElapsed/12)*100)));
     var typeCls = BILL_TYPE_CLASS[b.billType] || 'btype-dd';
     var typeLbl = BILL_TYPE_LABELS[b.billType] || 'Direct Debit';
-    var priceBadge = b.pendingAmountUpdate ? ' <span class="badge" style="background:rgba(245,158,11,.15);color:var(--warn);cursor:pointer" onclick="blOpenReviewModal()">↑ price increase detected</span>' : '';
+    var priceBadge = b.pendingAmountUpdate ? ' <span class="badge bl-badge-price" onclick="blOpenReviewModal()">↑ price increase detected</span>' : '';
     return '<div class="annual-item">' +
-      '<div style="flex:1"><div style="font-weight:600;font-size:.84rem">' + esc(b.displayName||'Bill') + '</div>' +
-      '<div style="font-size:.7rem;color:var(--muted)">Due ' + blDateLabel(b.nextDueDate) + ' · ' + days + ' days · <span class="badge ' + typeCls + '">' + typeLbl + '</span>' + priceBadge + '</div>' +
-      '<div class="buffer-bar" style="width:160px;margin-top:5px"><div class="buffer-fill" style="width:' + pct + '%"></div></div></div>' +
-      '<div class="mono" style="font-size:.86rem;font-weight:600;margin-left:12px">' + fmt(b.amount) + '</div></div>';
+      '<div class="bl-annual-main"><div class="bl-annual-name">' + esc(b.displayName||'Bill') + '</div>' +
+      '<div class="bl-annual-sub">Due ' + blDateLabel(b.nextDueDate) + ' · ' + days + ' days · <span class="badge ' + typeCls + '">' + typeLbl + '</span>' + priceBadge + '</div>' +
+      '<div class="buffer-bar bl-annual-bar"><div class="buffer-fill" style="width:' + pct + '%"></div></div></div>' +
+      '<div class="mono bl-annual-amt">' + fmt(b.amount) + '</div></div>';
   }).join('');
 }
 
@@ -1313,9 +1311,9 @@ function blRenderTimeline() {
     var typeCls = BILL_TYPE_CLASS[b.billType] || 'btype-dd';
     var typeLbl = BILL_TYPE_LABELS[b.billType] || 'Direct Debit';
     var dueSoon = blDaysBetween(today(), r.date) <= 7;
-    var badges = ' <span class="badge ' + typeCls + '" style="margin-left:5px">' + typeLbl + '</span>';
-    if (b.isAnnual || b.frequency === 'annual') badges += ' <span class="badge b-annual" style="margin-left:3px">Annual</span>';
-    if (dueSoon) badges += ' <span class="badge b-soon" style="margin-left:3px">Due Soon</span>';
+    var badges = ' <span class="badge bl-badge-gap ' + typeCls + '">' + typeLbl + '</span>';
+    if (b.isAnnual || b.frequency === 'annual') badges += ' <span class="badge b-annual bl-badge-gap-sm">Annual</span>';
+    if (dueSoon) badges += ' <span class="badge b-soon bl-badge-gap-sm">Due Soon</span>';
     return '<div class="bill-row">' +
       '<div class="bill-icon">' + iconTag(b.icon) + '</div>' +
       '<div class="bill-main"><div class="bill-name">' + esc(b.displayName||'Bill') + badges + '</div>' +
@@ -1556,41 +1554,41 @@ function blOpenDetail(id) {
   var spark = amts.length >= 2 ? blSparkline(amts, 180, 52) : '';
   var paidLabel = b.paidBy ? (b.paidBy === 'joint' ? 'Joint / shared' : ((typeof getUserName === 'function' ? getUserName(b.paidBy) : b.paidBy) || b.paidBy)) : '—';
 
-  var html = '<div class="modal-header"><div class="modal-title" style="display:flex;align-items:center;gap:10px"><span class="bl-biller-ico">' + iconTag(b.icon) + '</span>' + esc(b.displayName || 'Bill') + '</div>'
+  var html = '<div class="modal-header"><div class="modal-title bl-detail-title"><span class="bl-biller-ico">' + iconTag(b.icon) + '</span>' + esc(b.displayName || 'Bill') + '</div>'
     + '<button class="modal-close" aria-label="Close" onclick="blCloseDetail()"><i class="ti ti-x"></i></button></div>'
-    + '<div style="margin-bottom:14px"><span class="badge ' + typeCls + '">' + typeLbl + '</span> '
+    + '<div class="bl-detail-badges"><span class="badge ' + typeCls + '">' + typeLbl + '</span> '
     + ((b.isAnnual || b.frequency === 'annual') ? '<span class="badge b-annual">Annual</span> ' : '')
     + '<span class="badge btype-dd">' + (b.source === 'manual' ? 'Manual' : 'Auto-detected') + '</span></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+    + '<div class="bl-detail-grid">'
     + '<div class="bl-detail-stat"><div class="l">Amount</div><div class="v">' + (b.amountType === 'variable' ? '~' : '') + fmt(b.amount) + '</div></div>'
-    + '<div class="bl-detail-stat"><div class="l">Frequency</div><div class="v" style="font-size:.86rem">' + (BILL_FREQ_LABELS[b.frequency] || 'Monthly') + '</div></div>'
-    + '<div class="bl-detail-stat"><div class="l">Next due</div><div class="v" style="font-size:.86rem">' + blDateLabel(b.nextDueDate) + '</div></div>'
+    + '<div class="bl-detail-stat"><div class="l">Frequency</div><div class="v v--md">' + (BILL_FREQ_LABELS[b.frequency] || 'Monthly') + '</div></div>'
+    + '<div class="bl-detail-stat"><div class="l">Next due</div><div class="v v--md">' + blDateLabel(b.nextDueDate) + '</div></div>'
     + '<div class="bl-detail-stat"><div class="l">Per month</div><div class="v">' + fmt(blMonthlyEquivalent(b)) + '</div></div>'
-    + '<div class="bl-detail-stat"><div class="l">Category</div><div class="v" style="font-size:.82rem">' + esc(blSubcatOrCatLabel(b)) + '</div></div>'
-    + '<div class="bl-detail-stat"><div class="l">Paid by</div><div class="v" style="font-size:.82rem">' + esc(paidLabel) + '</div></div>'
+    + '<div class="bl-detail-stat"><div class="l">Category</div><div class="v v--sm">' + esc(blSubcatOrCatLabel(b)) + '</div></div>'
+    + '<div class="bl-detail-stat"><div class="l">Paid by</div><div class="v v--sm">' + esc(paidLabel) + '</div></div>'
     + '</div>';
 
   if (spark) {
-    html += '<div class="section-label" style="margin-bottom:6px">Amount history</div>' + spark
-      + '<div class="bl-muted" style="font-size:.68rem;margin:4px 0 14px">' + amts.length + ' charges · ' + fmt(Math.min.apply(null, amts)) + ' – ' + fmt(Math.max.apply(null, amts)) + '</div>';
+    html += '<div class="section-label bl-detail-sl">Amount history</div>' + spark
+      + '<div class="bl-muted bl-detail-note">' + amts.length + ' charges · ' + fmt(Math.min.apply(null, amts)) + ' – ' + fmt(Math.max.apply(null, amts)) + '</div>';
   }
   if (nextDs) {
-    html += '<div class="section-label" style="margin-bottom:6px">This occurrence (' + blDateLabel(nextDs) + ')</div>'
-      + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">'
-      + '<input type="number" id="bl-occ-override" placeholder="' + (Number(b.amount) || 0) + '" value="' + overrideVal + '" step="0.01" inputmode="decimal" class="bl-search-input" style="flex:1;width:auto" aria-label="One-off amount for this occurrence"/>'
+    html += '<div class="section-label bl-detail-sl">This occurrence (' + blDateLabel(nextDs) + ')</div>'
+      + '<div class="bl-occ-row">'
+      + '<input type="number" id="bl-occ-override" placeholder="' + (Number(b.amount) || 0) + '" value="' + overrideVal + '" step="0.01" inputmode="decimal" class="bl-search-input bl-occ-input" aria-label="One-off amount for this occurrence"/>'
       + '<button class="btn btn-ghost btn-sm" onclick="blSaveOccurrenceOverride(\'' + b.id + '\',\'' + nextDs + '\')">Set one-off</button></div>';
   }
   if (txs.length) {
     var recent = txs.slice(-8).reverse();
-    html += '<div class="section-label" style="margin-bottom:6px">Detected charges</div>'
-      + recent.map(function(t){ return '<div class="bl-txrow"><span class="bl-muted">' + blDateLabel(t.date) + '</span><span class="mono" style="font-weight:600">' + fmt(Math.abs(Number(t.amount))) + '</span></div>'; }).join('');
+    html += '<div class="section-label bl-detail-sl">Detected charges</div>'
+      + recent.map(function(t){ return '<div class="bl-txrow"><span class="bl-muted">' + blDateLabel(t.date) + '</span><span class="mono bl-txrow-amt">' + fmt(Math.abs(Number(t.amount))) + '</span></div>'; }).join('');
   }
   if (occ.length) {
-    html += '<div class="section-label" style="margin:16px 0 6px">Upcoming</div>'
+    html += '<div class="section-label bl-detail-sl bl-detail-sl--gap">Upcoming</div>'
       + occ.map(function(ds){ return '<div class="bl-txrow"><span>' + blDateLabel(ds) + '</span><span class="mono">' + (b.amountType === 'variable' ? '~' : '') + fmt(blOccurrenceAmount(b, ds)) + '</span></div>'; }).join('');
   }
-  html += '<div class="modal-actions" style="margin-top:18px">'
-    + '<button class="btn-danger-ghost" onclick="blCloseDetail();blOpenEditModal(\'' + b.id + '\',true)" style="margin-right:auto"><i class="ti ti-trash"></i> Delete</button>'
+  html += '<div class="modal-actions bl-detail-actions">'
+    + '<button class="btn-danger-ghost bl-detail-del" onclick="blCloseDetail();blOpenEditModal(\'' + b.id + '\',true)"><i class="ti ti-trash"></i> Delete</button>'
     + '<button class="btn btn-ghost" onclick="blCloseDetail()">Close</button>'
     + '<button class="btn btn-primary" onclick="blCloseDetail();blOpenEditModal(\'' + b.id + '\')"><i class="ti ti-pencil"></i> Edit</button></div>';
 
@@ -1676,12 +1674,12 @@ function blShowCalDay(ds) {
   var bills = blConfirmed().filter(function(b){ return blOccurrencesInRange(b, ds, ds).length; });
   if (!bills.length) { dl.innerHTML = ''; return; }
   var total = bills.reduce(function(s,b){ return s + blOccurrenceAmount(b, ds); }, 0);
-  dl.innerHTML = '<div class="bl-cal-daypanel" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'
-    + '<div class="section-label" style="margin-bottom:10px">' + blDateLabel(ds) + ' · ' + fmt(total) + '</div>'
+  dl.innerHTML = '<div class="bl-cal-daypanel">'
+    + '<div class="section-label bl-daypanel-sl">' + blDateLabel(ds) + ' · ' + fmt(total) + '</div>'
     + bills.map(function(b) {
         return '<div class="bl-txrow bl-clickable" onclick="blOpenDetail(\'' + b.id + '\')">'
-          + '<div style="display:flex;align-items:center;gap:9px"><span class="bl-biller-ico">' + iconTag(b.icon) + '</span><div><div style="font-weight:600">' + esc(b.displayName || 'Bill') + blPaidByBadge(b) + '</div><div class="bl-muted" style="font-size:.68rem">' + esc(BILL_FREQ_LABELS[b.frequency] || 'Monthly') + '</div></div></div>'
-          + '<div class="mono" style="font-weight:600">' + (b.amountType === 'variable' ? '~' : '') + fmt(blOccurrenceAmount(b, ds)) + '</div></div>';
+          + '<div class="bl-dayrow-main"><span class="bl-biller-ico">' + iconTag(b.icon) + '</span><div><div class="bl-biller-name">' + esc(b.displayName || 'Bill') + blPaidByBadge(b) + '</div><div class="bl-muted bl-freq">' + esc(BILL_FREQ_LABELS[b.frequency] || 'Monthly') + '</div></div></div>'
+          + '<div class="mono bl-txrow-amt">' + (b.amountType === 'variable' ? '~' : '') + fmt(blOccurrenceAmount(b, ds)) + '</div></div>';
       }).join('') + '</div>';
   var panel = dl.querySelector('.bl-cal-daypanel');
   if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
@@ -1732,10 +1730,10 @@ function blRenderSubscriptions() {
   var annual = subs.reduce(function(s,b){ return s + blAnnualizedAmount(b); }, 0);
   var creep = subs.filter(function(b){ return blSubFlag(b) === 'creep'; }).length;
   var dormant = subs.filter(function(b){ return blSubFlag(b) === 'dormant'; }).length;
-  var head = '<div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">'
-    + '<div class="kpi"><div class="kpi-label">Per Month</div><div class="kpi-value mono" style="color:var(--primary)">' + fmt(monthly) + '</div><div class="kpi-sub">' + subs.length + ' subscription' + (subs.length===1?'':'s') + '</div></div>'
+  var head = '<div class="kpi-row kpi-row--3">'
+    + '<div class="kpi"><div class="kpi-label">Per Month</div><div class="kpi-value mono tone-pink">' + fmt(monthly) + '</div><div class="kpi-sub">' + subs.length + ' subscription' + (subs.length===1?'':'s') + '</div></div>'
     + '<div class="kpi"><div class="kpi-label">Per Year</div><div class="kpi-value mono">' + fmt(annual) + '</div><div class="kpi-sub">annualised</div></div>'
-    + '<div class="kpi"><div class="kpi-label">Needs a Look</div><div class="kpi-value mono" style="color:' + ((creep+dormant) ? 'var(--warn)' : 'var(--success)') + '">' + (creep + dormant) + '</div><div class="kpi-sub">' + creep + ' price rise · ' + dormant + ' dormant</div></div>'
+    + '<div class="kpi"><div class="kpi-label">Needs a Look</div><div class="kpi-value mono ' + ((creep+dormant) ? 'tone-amber' : 'tone-green') + '">' + (creep + dormant) + '</div><div class="kpi-sub">' + creep + ' price rise · ' + dormant + ' dormant</div></div>'
     + '</div>';
   var rows = subs.slice().sort(function(a,b){ return blMonthlyEquivalent(b) - blMonthlyEquivalent(a); }).map(function(b) {
     var f = blSubFlag(b);
@@ -1743,14 +1741,14 @@ function blRenderSubscriptions() {
     var flagCls = { creep:'bl-flag-creep', dormant:'bl-flag-dormant', ok:'bl-flag-ok' }[f];
     return '<div class="bl-sub-card">'
       + '<span class="bl-biller-ico">' + iconTag(b.icon) + '</span>'
-      + '<div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(b.displayName || 'Subscription') + blPaidByBadge(b) + '</div>'
-      + '<div class="bl-muted" style="font-size:.72rem">' + esc(BILL_FREQ_LABELS[b.frequency] || 'Monthly') + ' · ' + fmt(b.amount) + ' · ' + fmt(blMonthlyEquivalent(b)) + '/mo</div></div>'
+      + '<div class="bl-sub-main"><div class="bl-biller-name">' + esc(b.displayName || 'Subscription') + blPaidByBadge(b) + '</div>'
+      + '<div class="bl-muted bl-sub-meta">' + esc(BILL_FREQ_LABELS[b.frequency] || 'Monthly') + ' · ' + fmt(b.amount) + ' · ' + fmt(blMonthlyEquivalent(b)) + '/mo</div></div>'
       + '<span class="bl-sub-flag ' + flagCls + '">' + flagLbl + '</span>'
       + '<button class="bl-icon-btn" title="View details" aria-label="View ' + esc(b.displayName || '') + '" onclick="blOpenDetail(\'' + b.id + '\')">' + ICON('eye') + '</button>'
       + '<button class="bl-icon-btn danger" title="Cancel / delete" aria-label="Delete ' + esc(b.displayName || '') + '" onclick="blOpenEditModal(\'' + b.id + '\',true)">' + ICON('trash') + '</button>'
       + '</div>';
   }).join('');
-  el.innerHTML = head + '<div style="margin-top:4px">' + rows + '</div>';
+  el.innerHTML = head + '<div class="bl-subs-list">' + rows + '</div>';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1804,8 +1802,8 @@ function blRenderDueSoonBanner() {
   var soon = due[0];
   var extra = due.length > 1 ? ' · +' + (due.length - 1) + ' more' : '';
   el.innerHTML = '<div class="bl-duesoon">' + ICON('bell')
-    + '<div style="flex:1"><div style="font-weight:600;font-size:.86rem">' + due.length + ' bill' + (due.length===1?'':'s') + ' due in the next ' + p.days + ' days · ' + fmt(total) + '</div>'
-    + '<div class="bl-muted" style="font-size:.72rem">Next: ' + esc(soon.bill.displayName || 'Bill') + ' on ' + blDateLabel(soon.date) + ' — ' + fmt(blOccurrenceAmount(soon.bill, soon.date)) + extra + '</div></div>'
+    + '<div class="bl-duesoon-main"><div class="bl-duesoon-title">' + due.length + ' bill' + (due.length===1?'':'s') + ' due in the next ' + p.days + ' days · ' + fmt(total) + '</div>'
+    + '<div class="bl-muted bl-sub-meta">Next: ' + esc(soon.bill.displayName || 'Bill') + ' on ' + blDateLabel(soon.date) + ' — ' + fmt(blOccurrenceAmount(soon.bill, soon.date)) + extra + '</div></div>'
     + '<button class="bl-duesoon-x" aria-label="Dismiss reminder" onclick="blDismissDueSoon()">' + ICON('x') + '</button></div>';
   blMaybeNotify();
 }
@@ -1885,7 +1883,7 @@ function blRenderDismissedBar() {
     var name = (typeof makeDisplayMerchant === 'function') ? makeDisplayMerchant(k) : k;
     return '<span class="bl-chip">' + esc(name) + '<button title="Restore" aria-label="Restore ' + esc(name) + '" onclick="blRestoreDismissedIdx(' + i + ')">' + ICON('rotate') + '</button></span>';
   }).join('');
-  el.innerHTML = '<div class="bl-dismissed-inner"><div class="bl-muted" style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Dismissed billers — won’t be detected</div>' + chips + '</div>';
+  el.innerHTML = '<div class="bl-dismissed-inner"><div class="bl-muted bl-dismissed-hd">Dismissed billers — won’t be detected</div>' + chips + '</div>';
 }
 function blRestoreDismissedIdx(i) {
   var key = BILLS_DISMISSED[i];

@@ -63,12 +63,11 @@ const EMOJI_TO_ICON_KEY = {
 };
 
 // Tabler icon key → default render. Everything routes through here so
-// color/size can be controlled from one place.
+// colour/size come from CSS classes (opts.cls).
 function ICON(key, opts) {
   opts = opts || {};
   var cls = 'ti ti-' + key + (opts.cls ? ' ' + opts.cls : '');
-  var style = opts.style || '';
-  return '<i class="' + cls + '"' + (style ? ' style="' + style + '"' : '') + '></i>';
+  return '<i class="' + cls + '"></i>';
 }
 
 // Given a value that might be a legacy emoji OR an already-migrated
