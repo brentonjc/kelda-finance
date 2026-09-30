@@ -212,7 +212,8 @@ function detectTransfers(txArray, options) {
 // ── runDetection ──────────────────────────────────────────────
 var _trUndoTimer = null;
 
-function runDetection(rerunAll) {
+// silent: skip the completion toast (used by the automatic run on unlock).
+function runDetection(rerunAll, silent) {
   var btn = document.getElementById('tr-rerun-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Running…'; }
 
@@ -248,7 +249,7 @@ function runDetection(rerunAll) {
         }
         _applyDetectionResults(result, true);
       } else {
-        _applyDetectionResults(result, false);
+        _applyDetectionResults(result, false, silent);
       }
     } catch(e) {
       console.warn('runDetection error', e);
@@ -257,7 +258,7 @@ function runDetection(rerunAll) {
   }, 10);
 }
 
-function _applyDetectionResults(result, fullReplace) {
+function _applyDetectionResults(result, fullReplace, silent) {
   var btn = document.getElementById('tr-rerun-btn');
   try {
     if (fullReplace) {
@@ -289,7 +290,7 @@ function _applyDetectionResults(result, fullReplace) {
     try { save(K.transfersPending, TRANSFERS_PENDING); } catch(e) {}
     try { localStorage.setItem('kf_transfer_lastrun', new Date().toISOString()); } catch(e) {}
     renderTransfers();
-    toast('Detection complete — ' + result.newPairs + ' new, ' + result.updatedPairs + ' updated');
+    if (!silent) toast('Detection complete — ' + result.newPairs + ' new, ' + result.updatedPairs + ' updated');
   } catch(e) {
     console.warn('_applyDetectionResults error', e);
   }
@@ -1473,7 +1474,7 @@ function _trBulkClearModal() {
 function renderTransfersPage() { renderTransfers(); }
 
 function autoDetectTransfers() {
-  runDetection(false);
+  runDetection(false, true);
 }
 
 // ── Dashboard stat (unchanged) ────────────────────────────────
