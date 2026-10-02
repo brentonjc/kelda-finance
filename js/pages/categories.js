@@ -18,7 +18,7 @@ var _LEGACY_CAT_MAP = {
   'family':          'children',
   'tax':             'business',
   'income':          'salary',
-  'pet':             'pippen',
+  'pet':             'pets',
   'education':       'business',
   // capitalisation variants
   'Other':           'other',
@@ -40,8 +40,9 @@ var _LEGACY_CAT_MAP = {
   'Children Expenses':       'children',
   'Business Costs':          'business',
   'Capital Gains':           'capital_gains',
-  'Pippen':                  'pippen',
-  'Pets':                    'pippen',
+  'Pippen':                  'pets',
+  'Pets':                    'pets',
+  'pippen':                  'pets',     // old id of the Pets category — keeps old exports importing
   // Sports & Fitness → fitness
   'sports_fitness':          'fitness',
   'sport_fitness':           'fitness',
@@ -80,7 +81,7 @@ var _SUBCAT_FULL_MAP = {
   'other food expenses':            { catId:'food_eating_out', subcat:'' },
   // ── Food wrongly used for other categories — move them ──────
   'pharmacies':                     { catId:'health_beauty',   subcat:'Pharmacy' },
-  'pet food':                       { catId:'pippen',          subcat:'Pet Food' },
+  'pet food':                       { catId:'pets',            subcat:'Pet Food' },
   'charities':                      { catId:'shopping',        subcat:'Donations' },
   'parking & tolls':                { catId:'car_transport',   subcat:'Tolls' },
   'public transit':                 { catId:'car_transport',   subcat:'Public Transport' },
@@ -122,7 +123,7 @@ var _SUBCAT_FULL_MAP = {
   'dry cleaning':                   { catId:'home',            subcat:'House Cleaning' },
   'furnishings':                    { catId:'shopping',        subcat:'Home Shopping' },
   // ── Pets — fix daycare misassignment ────────────────────────
-  'dog daycare':                    { catId:'pippen',          subcat:'Pet Supplies' },
+  'dog daycare':                    { catId:'pets',            subcat:'Pet Supplies' },
   // ── Transfers ────────────────────────────────────────────────
   'transfers':                      { catId:'transfers',       subcat:'Between Accounts' },
   // ── → Uncategorised (no matching standard category) ─────────
@@ -161,9 +162,9 @@ var _CAT_NAME_TO_CAT = {
   'children expenses':              'children',
   'kids':                           'children',
   'family':                         'children',
-  'pet':                            'pippen',
-  'pets':                           'pippen',
-  'pippen':                         'pippen',
+  'pet':                            'pets',
+  'pets':                           'pets',
+  'pippen':                         'pets',
   'business costs':                 'business',
   'capital gains':                  'capital_gains',
 };
@@ -1437,7 +1438,7 @@ var _BANK_MAP = [
   ['fitness',          'Fitness',           'Health & Personal Care',  'Health & Fitness',     'Health',             'Health',             'Health & Beauty',    'Fitness',            'Health',             '07 Health'],
   ['food_eating_out',  'Food & Eating Out', 'Groceries + Dining',      'Groceries + Dining',   'Food',               'Food & Drink',       'Food & Drink',       'Groceries + Eating Out', 'Supermarkets + Dining', '01 Food & Non-alcoholic Beverages'],
   ['children',         'Children',          'Family',                  'Family',               'Family',             'Family',             '—',                  'Family & Children',  '—',                  '10 Education (partial)'],
-  ['pippen',           'Pets',              'Animals & Pets',          'Pets',                 'Personal',           'Personal',           '—',                  'Pets',               '—',                  '09 Recreation (partial)'],
+  ['pets',             'Pets',              'Animals & Pets',          'Pets',                 'Personal',           'Personal',           '—',                  'Pets',               '—',                  '09 Recreation (partial)'],
   ['insurance_utilities','Insurance',       'Insurance',               'Insurance',            'Insurance',          'Insurance',          'Insurance',          '—',                  'Insurance',          '12 Insurance & Financial Services'],
   ['utilities',        'Utilities',         'Home & Utilities',        'Bills & Payments',     'Bills',              'Bills & Utilities',  'Bills',              'Bills & Utilities',  '—',                  '05 Household Utilities'],
   ['tax',              'Tax Payments',      'Taxes',                   '—',                    'Tax',                '—',                  'Tax',                '—',                  '—',                  '12 Insurance & Financial Services'],
