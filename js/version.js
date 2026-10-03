@@ -14,11 +14,20 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.1';
+var APP_VERSION = '2.5.2';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.2',
+    date: '2026-10-03',
+    title: 'Pets category tidy-up',
+    notes: [
+      'The Pets category has a cleaner internal name. Your pet transactions, budgets and rules move across automatically',
+      'Older backups and exports still import into Pets',
+    ],
+  },
   {
     version: '2.5.1',
     date: '2026-10-01',
