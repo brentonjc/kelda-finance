@@ -14,11 +14,22 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.0';
+var APP_VERSION = '2.5.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.1',
+    date: '2026-10-01',
+    title: 'Smarter built-in categories',
+    notes: [
+      'Built-in categorisation rules now cover national brands only, so new users don’t inherit one household’s local cafes and providers. Rules already saved on your device are kept as they are',
+      'BPAY payments to the Australian Tax Office are filed as Income Tax',
+      'Fewer false matches: “velvet” no longer counts as a vet, or “Toyota” as a toy',
+      'For new setups: a few dollars at BP is filed as coffee and snacks, Coles and Woolworths are always Groceries, and Apple charges are Apple Subscriptions',
+    ],
+  },
   {
     version: '2.5.0',
     date: '2026-10-01',
