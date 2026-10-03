@@ -230,13 +230,15 @@ function lodgementWarnings(res, today) {
 
 // Banner for 'unsure': before the agent cutoff, a countdown; after it, a prompt to choose.
 // Dismissal is per FY, but it comes back within 14 days of the self-lodge date.
+// No banner for a FY whose agent cutoff the ATO hasn't published.
 function unsureBanner(res, today) {
   if (res.lodgeMethod !== 'unsure') return null;
   var cut = res.defaults.agentListCutoff, selfDue = res.defaults.lodgmentDue;
+  if (!cut) return null;
   var nearSelfDue = selfDue && taxDaysBetween(today, selfDue) >= 0 &&
                     taxDaysBetween(today, selfDue) <= TAX_RULES.common.unsureReminderDays;
   if (res.bannerDismissed && !nearSelfDue) return null;
-  if (cut && today <= cut) return { kind: 'pre', days: taxDaysBetween(today, cut), cutoff: cut };
+  if (today <= cut) return { kind: 'pre', days: taxDaysBetween(today, cut), cutoff: cut };
   return { kind: 'post', cutoff: cut };
 }
 

@@ -14,11 +14,21 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.0';
+var APP_VERSION = '2.6.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.6.0',
+    date: '2026-10-04',
+    title: 'Tax (Beta), off by default',
+    notes: [
+      'New Tax (Beta) page, hidden until you turn it on in Settings › Beta features. Estimates only, not tax advice, and Kelda can’t lodge',
+      'Choose how each person lodges (yourself, a tax agent, or not sure yet) and see the matching ATO due dates, including weekend notes',
+      'Track PAYG instalments: amount or rate from your ATO notice, quarterly due dates, statuses and the payments you’ve made',
+    ],
+  },
   {
     version: '2.5.0',
     date: '2026-10-01',

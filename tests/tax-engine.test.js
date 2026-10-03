@@ -188,6 +188,11 @@ test('unsure banner: dismissed stays hidden, but returns within 14 days of the s
   assert.equal(T.unsureBanner(res, '2026-10-20').kind, 'pre');
 });
 
+test('unsure banner: none for a FY whose agent cutoff is not published', () => {
+  const res = T.resolveLodgement(cfg('brenton', { FY2027: { lodgeMethod: 'unsure' } }), 'brenton', 'FY2027');
+  assert.equal(T.unsureBanner(res, '2026-10-04'), null);
+});
+
 test('carry forward: agent in 2025–26 → 2026–27 starts as agent with its own dates', () => {
   const c = cfg('brenton', { FY2026: { lodgeMethod: 'agent' } });
   const r = T.resolveLodgement(c, 'brenton', 'FY2027');
