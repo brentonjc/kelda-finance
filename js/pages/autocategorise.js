@@ -243,8 +243,7 @@ var MERCHANT_ALIASES = {
   'ultratune':'ultra tune','ultra tune':'ultra tune',
   'bridgestone':'bridgestone','tyreright':'tyreright',
   // Specific variants
-  'ampolfoodary':'ampol foodary','toyota motor':'chatswood toyota',
-  'crystal carwash':'crystal car wash','fmc park':'fmc parking',
+  'ampolfoodary':'ampol foodary',
   'roads maritime':'roads maritime services e toll',
   'rms e-toll':'roads maritime services e toll',
   'e-toll nsw':'roads maritime services e toll',
@@ -255,33 +254,17 @@ var MERCHANT_ALIASES = {
   'wilsons parking':'wilson parking','wilson park':'wilson parking',
   // Children
   'baby bunt':'baby bunting','babybunting':'baby bunting',
-  'yoto player':'sp yoto australi','yoto ':'sp yoto australi',
-  // Fitness
-  'ezi*fit':'ezi*fit health club','ezifit':'ezi*fit health club',
-  'ezi fit':'ezi*fit health club',
-  'body fit training':'from body fit trainin','bft fitness':'from body fit trainin',
-  'bft ':'from body fit trainin','fit health club':'from fit health club',
-  // Home variants
-  'deft payment':'deft strata','deft insure':'deft insurance',
-  'red energy pty':'red energy',
+  'yoto player':'yoto','yoto ':'yoto',
   // Insurance variants
-  'metlife':'from metlife','met life':'from metlife','pay stay':'paystay',
+  'metlife':'metlife','met life':'metlife',
   // Pets
   'pet barn':'petbarn','petbarn au':'petbarn','pet sure':'petsure',
-  'scratch pet':'scratch dog food','scratchpetfood':'scratch dog food',
-  'pawtion':'sp pawtion pet food','the dog parlour':'sq *the dog parlour',
-  'dog parlour':'sq *the dog parlour',
   // Shopping
   'amazon gc':'amazon gift card','amazon gift':'amazon gift card',
-  'cancer council':'cancer council daffodil day',
-  'daffodil day':'cancer council daffodil day',
-  'haighs':"sq *haigh's chatswood","haigh's chocolates":"sq *haigh's chatswood",
-  "sq *haighs":"sq *haigh's chatswood",
-  'lifeline au':'lifeline harbour',
+  'cancer council':'cancer council','daffodil day':'cancer council',
   'jb gift card':'jb hi-fi gift card','jbhifi gift':'jb hi-fi gift card',
   'vinnies':'st vincent de paul','st vinnies':'st vincent de paul',
   'st vincents de paul':'st vincent de paul',
-  'tennis aus':'tennis australia','tennis aust':'tennis australia',
   'uber eats gc':'uber eats gift card','uber gift':'uber eats gift card',
   // Woolworths variants
   'woolworths everyday':'woolworths everyday extra',
@@ -292,7 +275,7 @@ var MERCHANT_ALIASES = {
   'blooms pharmacy':'blooms chemist','medicare aust':'medicare benefits',
   // Travel variants
   '1cover':'1cover com au','1cover travel':'1cover com au',
-  'airbnb.com':'airbnb','air bnb':'airbnb',
+  'air bnb':'airbnb',
   // Tax
   'bpay ato':'bpay tax office','tax office bpay':'bpay tax office',
   // Payment processor prefixes (strip and re-match remainder)
@@ -327,31 +310,22 @@ function resolveAlias(preprocessed) {
   return preprocessed;
 }
 
-// ── Seed rules from real transaction data ─────────────────────
+// ── Built-in seed rules ───────────────────────────────────────
+// National brands only. The repo is public and every user gets these, so no local businesses or
+// anything specific to one household — a user's own merchants become rules when they categorise.
+// Keys shorter than 4 characters must be 'exact': 'contains' keys need at least 4 (see lruleHit).
 var SEED_VERSION = '2026-09-27-v1';
 
 var SEED_LRULES = {
   // Business Costs
-  'apple':                        { catId:'business',          subcat:'Website and Digital',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   'godaddy':                      { catId:'business',          subcat:'Website and Digital',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   'google g suite':               { catId:'business',          subcat:'Website and Digital',     pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'google workspace openf sydney':{ catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sqsp* websit':                 { catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  // Bonus — employee share plan (RSU) sale proceeds are pay arriving as cash, not a capital gain
-  'from citibank morgan stanley smi':{ catId:'bonus',          subcat:'Work Bonus',             pattern:'contains', source:'manual', confidence:'HIGH' },
-  // Car & Transport
-  '7-eleven':                     { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'},{maxAmount:80,catId:'car_transport',subcat:'Petrol'}] },
+  'google workspace':             { catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
+  'squarespace':                  { catId:'business',          subcat:'Website and Digital',     pattern:'contains', source:'manual', confidence:'HIGH' },
+  // Car & Transport — a few dollars at a servo is a coffee or a snack, not fuel
+  '7-eleven':                     { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
   'ampol foodary':                { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bp':                           { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
-  'bp artarmon':                  { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bp lane cove':                 { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bp melbourne airport':         { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'bp naremburn':                 { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bp northwood':                 { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bp willoughby':                { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
-  'chatswood toyota':             { catId:'car_transport',     subcat:'Car Servicing',           pattern:'contains', source:'manual', confidence:'HIGH' },
-  'crystal car wash':             { catId:'car_transport',     subcat:'Car Cleaning',            pattern:'contains', source:'manual', confidence:'HIGH' },
-  'fmc parking':                  { catId:'car_transport',     subcat:'Car Parking',             pattern:'contains', source:'manual', confidence:'HIGH' },
+  'bp':                           { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
   'linkt':                        { catId:'car_transport',     subcat:'Tolls',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
   'nrma':                         { catId:'insurance_utilities',subcat:'Car Insurance',          pattern:'exact',    source:'manual', confidence:'HIGH' },
   'roads maritime services e toll':{ catId:'car_transport',   subcat:'Tolls',                   pattern:'contains', source:'manual', confidence:'HIGH' },
@@ -363,13 +337,7 @@ var SEED_LRULES = {
   'sydney airport parking':       { catId:'car_transport',     subcat:'Car Parking',             pattern:'exact',    source:'manual', confidence:'HIGH' },
   // Children
   'baby bunting':                 { catId:'children',          subcat:'Other Children Expenses', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'carlile swimming':             { catId:'children',          subcat:'Children Activities',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'from savings account childcare':{ catId:'children',         subcat:'Childcare',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'ku osborne park presch lane cove':{ catId:'children',       subcat:'Childcare',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'little sparrow co':            { catId:'children',          subcat:'Other Children Expenses', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sp yoto australi':             { catId:'children',          subcat:'Toys and Presents',       pattern:'contains', source:'manual', confidence:'HIGH' },
-  'to lane cove out of school inc':{ catId:'children',         subcat:'Children Activities',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'to tree of life early learning':{ catId:'children',         subcat:'Childcare',               pattern:'contains', source:'manual', confidence:'HIGH' },
+  'yoto':                         { catId:'children',          subcat:'Toys and Presents',       pattern:'contains', source:'manual', confidence:'HIGH' },
   // Entertainment
   'amazon prime':                 { catId:'entertainment',     subcat:'Amazon Prime',            pattern:'exact',    source:'manual', confidence:'HIGH' },
   'binge':                        { catId:'entertainment',     subcat:'Other Entertainment',     pattern:'exact',    source:'manual', confidence:'HIGH' },
@@ -383,171 +351,70 @@ var SEED_LRULES = {
   'stan':                         { catId:'entertainment',     subcat:'Other Entertainment',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   'youtube premium':              { catId:'entertainment',     subcat:'Other Entertainment',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   // Fitness
-  'clublinks':                    { catId:'fitness',           subcat:'Other Fitness',           pattern:'contains', source:'manual', confidence:'HIGH' },
-  'ezi*fit health club':          { catId:'fitness',           subcat:'Gym Memberships',         pattern:'contains', source:'manual', confidence:'HIGH' },
-  'from body fit trainin':        { catId:'fitness',           subcat:'Gym Memberships',         pattern:'contains', source:'manual', confidence:'HIGH' },
-  'from fit health club':         { catId:'fitness',           subcat:'Gym Memberships',         pattern:'contains', source:'manual', confidence:'HIGH' },
-  'golf start house':             { catId:'fitness',           subcat:'Other Fitness',           pattern:'contains', source:'manual', confidence:'HIGH' },
-  'northbridge golf club':        { catId:'fitness',           subcat:'Other Fitness',           pattern:'contains', source:'manual', confidence:'HIGH' },
   'personal training':            { catId:'fitness',           subcat:'Personal Training',       pattern:'contains', source:'manual', confidence:'HIGH' },
   // Food & Eating Out
-  '5 loaves 2 fish neutral bay':  { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'barrel one pty ltd lane cove': { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bathers pav bistro mosman':    { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'bellota wine bar':             { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'birdwood cafe':                { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'bws lane cove':                { catId:'food_eating_out',   subcat:'Alcohol and Bars',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'cafe reverse willoughby':      { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'coles':                        { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:15,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
-  'eat n chill cafe':             { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'eighty ate':                   { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'exact',    source:'manual', confidence:'HIGH' },
+  'coles':                        { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
   'grill d':                      { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
   'harris farm markets':          { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  "hester s cafe":                { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'kana sushi crows nest':        { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'lane cove sushi bar':          { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'lane cove thai eatery':        { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'lawson tokyo':                 { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
   'liquorland':                   { catId:'food_eating_out',   subcat:'Alcohol and Bars',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'north district cafe mater hospital':{ catId:'food_eating_out', subcat:'Cafe and Lunches',    pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'olea cafe bar bistro':         { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'public dining room':           { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'puppy tail cafe':              { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'qantas wine':                  { catId:'food_eating_out',   subcat:'Alcohol and Bars',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'qe foodstores':                { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'romeos iga food hall':         { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sp activate foods erina':      { catId:'food_eating_out',   subcat:'Other Food Expense',      pattern:'contains', source:'manual', confidence:'HIGH' },
-  'story espresso bar lane cove': { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sunset diner':                 { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sushi maru lane cove':         { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sushi naya lane cove':         { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sushi square lane cove':       { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'tamon sushi':                  { catId:'food_eating_out',   subcat:'Eating Out (Cafes, Restaurant Food)', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'the grounds coffee factory':   { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'the junction cafe lane cove':  { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'the library cafe north sydney':{ catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'the neutral bay club':         { catId:'food_eating_out',   subcat:'Alcohol and Bars',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'toby s estate coffee chippendale':{ catId:'food_eating_out',subcat:'Cafe and Lunches',        pattern:'contains', source:'manual', confidence:'HIGH' },
-  'true protein':                 { catId:'food_eating_out',   subcat:'Other Food Expense',      pattern:'exact',    source:'manual', confidence:'HIGH' },
   'uber eats':                    { catId:'food_eating_out',   subcat:'Uber Eats and Delivery',  pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'veloce espresso':              { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'willoughby fresh':             { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'woolworths':                   { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:12,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
+  'woolworths':                   { catId:'food_eating_out',   subcat:'Groceries',               pattern:'contains', source:'manual', confidence:'HIGH' },
   'woolworths everyday extra':    { catId:'food_eating_out',   subcat:'Other Food Expense',      pattern:'exact',    source:'manual', confidence:'HIGH' },
   'woolworths gift card':         { catId:'food_eating_out',   subcat:'Groceries',               pattern:'exact',    source:'manual', confidence:'HIGH' },
   'woolworths online':            { catId:'food_eating_out',   subcat:'Groceries',               pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'zkk espresso':                 { catId:'food_eating_out',   subcat:'Cafe and Lunches',        pattern:'exact',    source:'manual', confidence:'HIGH' },
   // Health & Beauty
   'adore beauty':                 { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'andrew lau dental':            { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'baipoh thai remedy':           { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'barber empire':                { catId:'health_beauty',     subcat:'Haircuts',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'beauty by rachel':             { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
   'blooms chemist':               { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH' },
   'blooms the chemist':           { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'chemist warehouse':            { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:30,catId:'health_beauty',subcat:'Pharmacy'}] },
-  'crows nest thai massag':       { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'day night chemist':            { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'freya nails and beauty':       { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'from grand united - gu health':{ catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'from gu health d/dbt':         { catId:'insurance_utilities',subcat:'Health Insurance',       pattern:'contains', source:'manual', confidence:'HIGH' },
-  'gavin starr pharmacy':         { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'lane cove medical cen':        { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'mater clinic physio':          { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'mater clnc physiotherp':       { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
+  'chemist warehouse':            { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH' },
   'medicare benefits':            { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'natural nails design':         { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'north shore radiology':        { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'nthsyd general pract':         { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'nuvo specialists':             { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'plineph chatswood':            { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'pure nail bar':                { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'spn nails bty':                { catId:'health_beauty',     subcat:'Nails, Beauty & Other Errands', pattern:'contains', source:'manual', confidence:'HIGH' },
   'star discount chemist':        { catId:'health_beauty',     subcat:'Pharmacy',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'tepid baths physio':           { catId:'health_beauty',     subcat:'Doctors, Health, Specialists', pattern:'contains', source:'manual', confidence:'HIGH' },
   'psychologist':                 { catId:'health_beauty',     subcat:'Psychologist',            pattern:'contains', source:'manual', confidence:'HIGH' },
   // Holidays & Travel
   '1cover com au':                { catId:'holidays_travel',   subcat:'Travel Insurance',        pattern:'contains', source:'manual', confidence:'HIGH' },
   'airbnb':                       { catId:'holidays_travel',   subcat:'Accommodation',           pattern:'exact',    source:'manual', confidence:'HIGH' },
   'avis':                         { catId:'holidays_travel',   subcat:'Car Rentals',             pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'exchange hotel vancouv':       { catId:'holidays_travel',   subcat:'Accommodation',           pattern:'contains', source:'manual', confidence:'HIGH' },
   'qantas':                       { catId:'holidays_travel',   subcat:'Flights',                 pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'refund from qantas mascot':    { catId:'holidays_travel',   subcat:'Flights',                 pattern:'contains', source:'manual', confidence:'HIGH' },
   // Home
-  '4paws petdoor':                { catId:'home',              subcat:'House Renovations',       pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'ajb kitchens':                 { catId:'home',              subcat:'House Renovations',       pattern:'contains', source:'manual', confidence:'HIGH' },
-  'betta industries':             { catId:'home',              subcat:'House Renovations',       pattern:'contains', source:'manual', confidence:'HIGH' },
   'bunnings':                     { catId:'home',              subcat:'Home Improvements',       pattern:'contains', source:'manual', confidence:'HIGH' },
-  'crows nest dry clean':         { catId:'home',              subcat:'House Cleaning',          pattern:'contains', source:'manual', confidence:'HIGH' },
-  'deft strata':                  { catId:'home',              subcat:'Strata Fees',             pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'from ailo pay':                { catId:'home',              subcat:'Mortgage Repayments',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'hardware & general':           { catId:'home',              subcat:'Maintenance',             pattern:'contains', source:'manual', confidence:'HIGH' },
-  'harvey norman':                { catId:'home',              subcat:'House Renovations',       pattern:'contains', source:'manual', confidence:'HIGH' },
-  'payment by authority to westpac':{ catId:'home',           subcat:'Mortgage Repayments',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'the laundry lady':             { catId:'home',              subcat:'House Cleaning',          pattern:'contains', source:'manual', confidence:'HIGH' },
-  'to red energy online payment': { catId:'utilities',         subcat:'Power Bill',              pattern:'contains', source:'manual', confidence:'HIGH' },
   'house cleaning':               { catId:'home',              subcat:'House Cleaning',          pattern:'contains', source:'manual', confidence:'HIGH' },
-  'withdrawal mobile bpay deft payme strata':{ catId:'home',  subcat:'Strata Fees',             pattern:'contains', source:'manual', confidence:'HIGH' },
+  'council rates':                { catId:'home',              subcat:'Council Rates',           pattern:'contains', source:'manual', confidence:'HIGH' },
   // Utilities (power/water/phone live here)
   'energyaustralia':              { catId:'utilities',         subcat:'Power Bill',              pattern:'exact',    source:'manual', confidence:'HIGH' },
   'red energy':                   { catId:'utilities',         subcat:'Power Bill',              pattern:'exact',    source:'manual', confidence:'HIGH' },
   'sydney water':                 { catId:'utilities',         subcat:'Water Rates',             pattern:'contains', source:'manual', confidence:'HIGH' },
   'vodafone':                     { catId:'utilities',         subcat:'Mobile Phone Bills',      pattern:'exact',    source:'manual', confidence:'HIGH' },
   // Insurance
-  'deft insurance':               { catId:'insurance_utilities', subcat:'Other Insurance',       pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'from metlife':                 { catId:'insurance_utilities', subcat:'Life & Income Insurance', pattern:'contains', source:'manual', confidence:'HIGH' },
-  'paystay':                      { catId:'insurance_utilities', subcat:'Other Insurance',       pattern:'exact',    source:'manual', confidence:'HIGH' },
+  'metlife':                      { catId:'insurance_utilities', subcat:'Life & Income Insurance', pattern:'contains', source:'manual', confidence:'HIGH' },
   // Pets
-  '4 paws vet neutral bay':       { catId:'pets',              subcat:'Vet Bills',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'advanced vet lane cove':       { catId:'pets',              subcat:'Vet Bills',               pattern:'contains', source:'manual', confidence:'HIGH' },
   'petbarn':                      { catId:'pets',              subcat:'Pet Food',                pattern:'contains', source:'manual', confidence:'HIGH' },
   'petsure':                      { catId:'pets',              subcat:'Pet Insurance',           pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'scratch dog food':             { catId:'pets',              subcat:'Pet Food',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sp pawtion pet food':          { catId:'pets',              subcat:'Pet Food',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sq *the dog parlour':          { catId:'pets',              subcat:'Dog Grooming',            pattern:'contains', source:'manual', confidence:'HIGH' },
-  // Salary
-  'salary from mastercard payro': { catId:'salary',            subcat:'Regular Pay',             pattern:'contains', source:'manual', confidence:'HIGH' },
   // Shopping
   'amazon':                       { catId:'shopping',          subcat:'Online Shopping',         pattern:'exact',    source:'manual', confidence:'HIGH' },
   'amazon gift card':             { catId:'shopping',          subcat:'Gifts',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'bridgeclimb sydney':           { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
-  'cancer council daffodil day':  { catId:'shopping',          subcat:'Donations',               pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'coffee parts':                 { catId:'shopping',          subcat:'Home Shopping',           pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'cosmos florist':               { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
+  'cancer council':               { catId:'shopping',          subcat:'Donations',               pattern:'contains', source:'manual', confidence:'HIGH' },
   'david jones':                  { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'flawless flowers':             { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
-  'heinemann duty free':          { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
-  'hot dollar':                   { catId:'shopping',          subcat:'Home Shopping',           pattern:'contains', source:'manual', confidence:'HIGH' },
+  'harvey norman':                { catId:'shopping',          subcat:'Home Shopping',           pattern:'contains', source:'manual', confidence:'HIGH' },
   'ikea':                         { catId:'shopping',          subcat:'Home Shopping',           pattern:'contains', source:'manual', confidence:'HIGH' },
   'jb hi fi':                     { catId:'shopping',          subcat:'Home Shopping',           pattern:'contains', source:'manual', confidence:'HIGH' },
   'jb hi-fi gift card':           { catId:'shopping',          subcat:'Home Shopping',           pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'kmart':                        { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'contains', source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:20,catId:'shopping',subcat:'Clothing & Shopping'}] },
-  'lifeline harbour':             { catId:'shopping',          subcat:'Donations',               pattern:'contains', source:'manual', confidence:'HIGH' },
-  'mayfarm flowers':              { catId:'shopping',          subcat:'Gifts',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
-  'odd petal florist':            { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
+  'kmart':                        { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'contains', source:'manual', confidence:'HIGH' },
   'officeworks':                  { catId:'shopping',          subcat:'Home Shopping',           pattern:'contains', source:'manual', confidence:'HIGH' },
   'rebel sport':                  { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sarah and sebastian':          { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
-  "sq *haigh's chatswood":        { catId:'shopping',          subcat:'Gifts',                   pattern:'contains', source:'manual', confidence:'HIGH' },
-  'sq *rotary club':              { catId:'shopping',          subcat:'Donations',               pattern:'contains', source:'manual', confidence:'HIGH' },
   'st vincent de paul':           { catId:'shopping',          subcat:'Donations',               pattern:'contains', source:'manual', confidence:'HIGH' },
   'target':                       { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'tennis australia':             { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'exact',    source:'manual', confidence:'HIGH' },
   'the iconic':                   { catId:'shopping',          subcat:'Online Shopping',         pattern:'exact',    source:'manual', confidence:'HIGH' },
   'uber eats gift card':          { catId:'shopping',          subcat:'Gifts',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
   'uniqlo':                       { catId:'shopping',          subcat:'Clothing & Shopping',     pattern:'contains', source:'manual', confidence:'HIGH' },
-  'watermark books cafe':         { catId:'shopping',          subcat:'Gifts',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
   // Tax
+  'australian tax office':        { catId:'tax',               subcat:'Income Tax',              pattern:'contains', source:'manual', confidence:'HIGH' },
   'bpay tax office':              { catId:'tax',               subcat:'Income Tax',              pattern:'contains', source:'manual', confidence:'HIGH' },
+  'tax office':                   { catId:'tax',               subcat:'Income Tax',              pattern:'contains', source:'manual', confidence:'HIGH' },
   // BPAY billers
-  'deft':                         { catId:'home',              subcat:'Strata Fees',             pattern:'contains', source:'manual', confidence:'HIGH' },
   'origin energy bpay':           { catId:'utilities',         subcat:'Power Bill',              pattern:'contains', source:'manual', confidence:'HIGH' },
   'agl bpay':                     { catId:'utilities',         subcat:'Power Bill',              pattern:'contains', source:'manual', confidence:'HIGH' },
   'energyaustralia bpay':         { catId:'utilities',         subcat:'Power Bill',              pattern:'contains', source:'manual', confidence:'HIGH' },
   'sydney water bpay':            { catId:'utilities',         subcat:'Water Rates',             pattern:'contains', source:'manual', confidence:'HIGH' },
-  'council rates':                { catId:'home',              subcat:'Council Rates',           pattern:'contains', source:'manual', confidence:'HIGH' },
-  'tax office':                   { catId:'tax',               subcat:'Income Tax',              pattern:'contains', source:'manual', confidence:'HIGH' },
-  'ato':                          { catId:'tax',               subcat:'Income Tax',              pattern:'contains', source:'manual', confidence:'HIGH' },
   'telstra bpay':                 { catId:'utilities',         subcat:'Mobile Phone Bills',      pattern:'contains', source:'manual', confidence:'HIGH' },
   'optus bpay':                   { catId:'utilities',         subcat:'Mobile Phone Bills',      pattern:'contains', source:'manual', confidence:'HIGH' },
   'vodafone bpay':                { catId:'utilities',         subcat:'Mobile Phone Bills',      pattern:'contains', source:'manual', confidence:'HIGH' },
@@ -561,8 +428,6 @@ function seedLRulesFromCSV() {
 
   // Stale pattern cleanup
   var stalePatterns = [
-    /^from fit health club - \d/,
-    /^from body fit trainin - ezypayid_\d/,
     /^to .{3,30} funds transfer receipt number on\d/
   ];
   var rulesModified = false;
@@ -636,7 +501,7 @@ function lruleHit(text, keys) {
 // on the full text (e.g. the user's own correction) is tried before the built-in keywords, and
 // keyword exclusions are checked against the full text.
 function matchLRulesNew(canonical, context) {
-  if (!canonical || canonical.length < 3) return null;
+  if (!canonical || canonical.length < 2) return null;   // 2 so an alias like 'bp' can reach its rule
   var keys = Object.keys(LRULES);
   var hit = lruleHit(canonical, keys);
   if (!hit && context && context !== canonical) hit = lruleHit(context, keys);
@@ -1074,53 +939,6 @@ function applyTransferPairs(pairs) {
   } catch(e) {}
 }
 
-// ── Regression tests ──────────────────────────────────────────
-function runCategorizationTests() {
-  var TEST_CASES = [
-    { input:'VISA PURCHASE 123456 WOOLWORTHS 5042 SYDNEY NSW', expected:'food_eating_out' },
-    { input:'SPOTIFY P2W3X9 AU STOCKHOLM SE',                  expected:'entertainment' },
-    { input:'UBER* EATS HELP.UBER.COM',                        expected:'food_eating_out' },
-    { input:'PAYPAL *AIRBNB 402-935-7733',                     expected:'holidays_travel' },
-    { input:'MACCAS GEORGE ST SYDNEY NSW 2000',                expected:'food_eating_out' },
-    { input:'AMZN MKTP AU*1X9K2 AMAZON.COM',                  expected:'shopping' },
-    { input:'EFTPOS COLES 3421 CHATSWOOD NSW',                 expected:'food_eating_out' },
-    { input:'CARD 00-1234 COLES SUPERMARKETS',                 expected:'food_eating_out' },
-    { input:'INTERNET PURCHASE AMAZON AU',                     expected:'shopping' },
-    { input:'JB HI-FI SYDNEY NSW 2000',                       expected:'shopping' },
-    { input:'purchase from ezi*fit health club lane cove au',  expected:'fitness' },
-    { input:'from fit health club - 756391210',                expected:'fitness' },
-    { input:'withdrawal mobile 4379181 bpay deft payme strata', expected:'home' },
-    { input:'payment by authority to westpac bankcorp direct dr193549647', expected:'home' },
-    { input:'purchase at sq *story espresso bar lane cove ns', expected:'food_eating_out' },
-    { input:'purchase at blooms chemist crows nest ns',        expected:'health_beauty' },
-    { input:'bunnings (artarmon)',                             expected:'home' },
-    { input:'bunnings (chatswood)',                            expected:'home' },
-    // Broker / exchange settlements are transfers; near-miss words and super must not match
-    { input:'COMMSEC SECURITIES LTD SYDNEY',                   expected:'transfers' },
-    { input:'COINSPOT PTY LTD',                                expected:'transfers' },
-    { input:'BPAY VANGUARD PERSONAL INVESTOR',                 expected:'transfers' },
-    { input:'VANGUARD SUPER',                                  expected:null },
-    { input:'THE STAKEHOLDER CAFE',                            expected:'food_eating_out' },
-    { input:'DEFINITELY DELICIOUS BAKERY',                     expected:null }
-  ];
-
-  var passed = 0; var failed = 0;
-  console.group('Kelda categorisation tests');
-  for (var i = 0; i < TEST_CASES.length; i++) {
-    var tc = TEST_CASES[i];
-    var pre = preprocessMerchantString(tc.input);
-    if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
-    var can = resolveAlias(pre);
-    var res = matchLRulesNew(can, pre) || matchLRulesNew(pre);
-    var actual = res ? res.catId : null;
-    var ok = actual === tc.expected;
-    if (ok) { passed++; console.log('✅ ' + tc.input); }
-    else { failed++; console.warn('❌ ' + tc.input + ' → pre:"' + pre + '" can:"' + can + '" got:' + actual + ' expected:' + tc.expected); }
-  }
-  console.log('Result: ' + passed + '/' + TEST_CASES.length + ' passed, ' + failed + ' failed');
-  console.groupEnd();
-}
-
 // ══════════════════════════════════════════════════════════════
 // LEGACY AutoCat MODULE — kept for backward compatibility
 // categorise(), learn(), reprocess(), suggestion pill all intact
@@ -1147,6 +965,8 @@ var AutoCat = (function() {
     { catId:'transfers', subcat:'Investment Transfer', wholeWord:true, exclude:['super','distribution','dividend'], keywords:['vanguard','etf purchase','index fund','managed fund'] },
     { catId:'salary',  subcat:'Regular Pay',   keywords:['salary','payroll','pay credit','wages','paycheque','paycheck','pay run'], incomeOnly:true },
     { catId:'bonus',   subcat:'Work Bonus',    keywords:['bonus','performance pay','incentive payment'], incomeOnly:true },
+    // Employee share plan (RSU/ESPP) sale proceeds are pay arriving as cash, not a capital gain
+    { catId:'bonus',   subcat:'Work Bonus',    keywords:['morgan stanley smi','morgan stanley at work','shareworks','employee share','espp'], incomeOnly:true },
     { catId:'interest',subcat:'Savings Interest',keywords:['interest credit','interest earned','savings interest','term deposit interest','offset interest'], incomeOnly:true },
     { catId:'salary',  subcat:'Regular Pay',   keywords:['centrelink','services australia','family tax benefit','child care subsidy','jobkeeper','jobseeker'], incomeOnly:true },
     { catId:'food_eating_out', subcat:'Groceries', keywords:['woolworths','woolies','coles','aldi','iga','spar','harris farm','foodworks','drakes','costco','supermarket','groceries'] },
@@ -1190,8 +1010,8 @@ var AutoCat = (function() {
     { catId:'children', subcat:'Childcare',            keywords:['childcare','child care','daycare','day care','kindy','kindergarten','preschool','after school care','vacation care','oshc'] },
     { catId:'children', subcat:'School Fees',          keywords:['school fee','tuition fee','enrolment fee','excursion','school levy','school camp'] },
     { catId:'children', subcat:'Children Activities',  keywords:['swimming lesson','dancing class','music lesson','sports class','gymnastics','martial arts','little athletics'] },
-    { catId:'children', subcat:'Toys and Presents',    keywords:['baby bunting','nappies','formula','baby food','pram','stroller','cot','car seat','toy'] },
-    { catId:'pets',    subcat:'Vet Bills',    keywords:['vet','veterinary','veterinarian','animal hospital','animal clinic'] },
+    { catId:'children', subcat:'Toys and Presents',    keywords:['baby bunting','nappies','formula','baby food','pram','stroller','cot','car seat','toy','toys'] },
+    { catId:'pets',    subcat:'Vet Bills',    keywords:['vet','vets','veterinary','veterinarian','animal hospital','animal clinic'] },
     { catId:'pets',    subcat:'Pet Food',     keywords:['petbarn','petstock','pet circle','city farmers','greencross','pet food','dog food','cat food'] },
     { catId:'pets',    subcat:'Dog Grooming', keywords:['dog grooming','pet grooming','dog wash','dog bath','dog salon'] },
     { catId:'pets',    subcat:'Pet Insurance',keywords:['pet insurance','bow wow meow','petplan','medibank pet','real pet insurance'] },
@@ -1256,8 +1076,10 @@ var AutoCat = (function() {
     return { catId: result.catId, subcat: result.subcat || '', confidence: result.confidence === 'HIGH' ? CONF_HIGH : CONF_LOW };
   }
 
-  // wholeWord: the keyword can't sit inside a longer word ('stake' must not fire on 'mistake')
+  // wholeWord: the keyword can't sit inside a longer word ('stake' must not fire on 'mistake').
+  // Short keywords are always whole-word: 'vet' must not fire on 'velvet', nor 'toy' on 'toyota'.
   function hasKeyword(test, kw, wholeWord) {
+    if (kw.trim().length <= 4) { kw = kw.trim(); wholeWord = true; }
     var i = test.indexOf(kw);
     if (!wholeWord) return i !== -1;
     while (i !== -1) {

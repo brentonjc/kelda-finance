@@ -1,6 +1,7 @@
 // Unit tests for the auto-categoriser (js/pages/autocategorise.js): broker and exchange
 // settlements are transfers, not capital gains; RSU sale proceeds are bonus income; the user's
-// own rules outrank built-in keywords; and Rescan leaves hand-categorised transactions alone.
+// own rules outrank built-in keywords; the built-in seeds stay generic; and Rescan leaves
+// hand-categorised transactions alone.
 // Run: node --test "tests/**/*.test.js"
 // Every description here is made up.
 const test = require('node:test');
@@ -95,7 +96,7 @@ test('no built-in keyword files anything under Capital Gains any more', () => {
 
 test('everyday merchants are unaffected', () => {
   const app = loadApp();
-  assert.equal(categorise(app, 'EFTPOS COLES 3421 CHATSWOOD NSW', 'expense', 80).split(' › ')[0], 'food_eating_out');
+  assert.equal(categorise(app, 'EFTPOS COLES 3421 EXAMPLEVILLE NSW', 'expense', 80).split(' › ')[0], 'food_eating_out');
   assert.equal(categorise(app, 'NETFLIX.COM', 'expense', 20).split(' › ')[0], 'entertainment');
 });
 
@@ -106,21 +107,59 @@ test("the user's own rule for a description beats the built-in keywords", () => 
   assert.equal(categorise(app, 'COMMSEC SECURITIES LTD'), 'transfers › Savings Transfer');
 });
 
-test('RSU sale proceeds from Morgan Stanley are bonus income', () => {
+test('employee share plan sale proceeds are bonus income', () => {
   const app = loadApp();
-  assert.equal(categorise(app, 'FROM CITIBANK MORGAN STANLEY SMI', 'income', 15000), 'bonus › Work Bonus');
+  for (const d of ['MORGAN STANLEY SMI PROCEEDS', 'SHAREWORKS ESPP SALE', 'EMPLOYEE SHARE PLAN PAYMENT']) {
+    assert.equal(categorise(app, d, 'income', 15000), 'bonus › Work Bonus', d);
+  }
 });
 
-test('an existing install updates the seeded RSU rule, unless the user edited it', () => {
-  const KEY = 'from citibank morgan stanley smi';
-  const oldRule = { catId: 'capital_gains', subcat: 'Shares', pattern: 'contains', source: 'manual', confidence: 'HIGH' };
-  for (const userModified of [false, true]) {
-    const store = { cff_seed_version: '2026-06-28-v1', ledger_rules: JSON.stringify({ [KEY]: { ...oldRule, userModified } }) };
-    const app = loadApp({ store });
-    const rule = JSON.parse(store.ledger_rules)[KEY];
-    assert.equal(rule.catId, userModified ? 'capital_gains' : 'bonus', 'userModified=' + userModified);
-    assert.equal(categorise(app, 'FROM CITIBANK MORGAN STANLEY SMI', 'income'), userModified ? 'capital_gains › Shares' : 'bonus › Work Bonus');
+test('dropping a rule from the built-in seeds leaves an existing install\'s stored copy alone', () => {
+  const KEY = 'example local cafe';
+  const stored = { catId: 'food_eating_out', subcat: 'Cafe and Lunches', pattern: 'contains', source: 'manual',
+    confidence: 'HIGH', userModified: false };
+  const store = { cff_seed_version: '2026-09-27-v1', ledger_rules: JSON.stringify({ [KEY]: stored }) };
+  const app = loadApp({ store });
+  assert.equal(categorise(app, 'EXAMPLE LOCAL CAFE', 'expense', 9), 'food_eating_out › Cafe and Lunches');
+  assert.ok(app.LRULES[KEY]);
+});
+
+test('the built-in seeds hold no rules that could never match', () => {
+  const app = loadApp();
+  for (const [key, rule] of Object.entries(app.SEED_LRULES)) {
+    if (rule.pattern === 'contains') assert.ok(key.length >= 4, key + ' is too short for a contains rule');
   }
+});
+
+test('a few dollars at a servo is a coffee, a full tank is petrol', () => {
+  const app = loadApp();
+  assert.equal(categorise(app, 'BP EXAMPLEVILLE NSW', 'expense', 6), 'food_eating_out › Cafe and Lunches');
+  assert.equal(categorise(app, 'BP EXAMPLEVILLE NSW', 'expense', 70), 'car_transport › Petrol');
+});
+
+test('supermarkets are groceries whatever the amount', () => {
+  const app = loadApp();
+  assert.equal(categorise(app, 'COLES 1234 EXAMPLEVILLE', 'expense', 9), 'food_eating_out › Groceries');
+  assert.equal(categorise(app, 'WOOLWORTHS 1234 EXAMPLEVILLE', 'expense', 9), 'food_eating_out › Groceries');
+});
+
+test('a BPAY to the Tax Office is income tax', () => {
+  const app = loadApp();
+  assert.equal(categorise(app, 'BPAY AUSTRALIAN TAX OFFICE', 'expense', 900), 'tax › Income Tax');
+});
+
+test('short keywords only match whole words', () => {
+  const app = loadApp();
+  assert.ok(!categorise(app, 'VELVET HAIR STUDIO', 'expense', 80).startsWith('pets'));
+  assert.ok(!categorise(app, 'TOYOTA EXAMPLEVILLE SERVICE', 'expense', 400).startsWith('children'));
+  assert.equal(categorise(app, 'EXAMPLEVILLE VET CLINIC', 'expense', 120), 'pets › Vet Bills');
+});
+
+test('aliases resolve to the plain brand, not one bank\'s wording of it', () => {
+  const app = loadApp();
+  assert.equal(app.resolveAlias('yoto player'), 'yoto');
+  assert.equal(app.resolveAlias('met life insurance'), 'metlife');
+  assert.equal(categorise(app, 'METLIFE INSURANCE', 'expense', 90), 'insurance_utilities › Life & Income Insurance');
 });
 
 test('Rescan moves auto-categorised broker payments but leaves hand-categorised ones alone', () => {

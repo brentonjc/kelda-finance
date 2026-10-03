@@ -21,11 +21,22 @@ var APP_VERSION = '2.5.2';
 var APP_CHANGELOG = [
   {
     version: '2.5.2',
-    date: '2026-10-01',
+    date: '2026-10-03',
     title: 'Pets category tidy-up',
     notes: [
       'The Pets category has a cleaner internal name. Your pet transactions, budgets and rules move across automatically',
       'Older backups and exports still import into Pets',
+    ],
+  },
+  {
+    version: '2.5.1',
+    date: '2026-10-01',
+    title: 'Smarter built-in categories',
+    notes: [
+      'Built-in categorisation rules now cover national brands only, so new users don’t inherit one household’s local cafes and providers. Rules already saved on your device are kept as they are',
+      'BPAY payments to the Australian Tax Office are filed as Income Tax',
+      'Fewer false matches: “velvet” no longer counts as a vet, or “Toyota” as a toy',
+      'For new setups: a few dollars at BP is filed as coffee and snacks, Coles and Woolworths are always Groceries, and Apple charges are Apple Subscriptions',
     ],
   },
   {
