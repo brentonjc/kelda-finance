@@ -88,6 +88,9 @@ function migrateRulesToPattern() {
 }
 
 // Backfill tx fields onto the live TX array (call after TX is assigned from localStorage)
+// Tax (Beta) fields (taxDeductible, taxLabel, taxPerson, taxNote) are optional and deliberately
+// not backfilled: a transaction without them is untagged (see taxTxTag in js/tax/engine.js),
+// so turning the beta on never rewrites existing transactions.
 function migrateTxFields() {
   var txMigrated = false;
   for (var i = 0; i < TX.length; i++) {

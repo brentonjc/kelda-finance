@@ -280,3 +280,173 @@ function instalmentYear(inst, fy, today) {
              status: instalmentStatus(q.due, paid, expected === null ? Infinity : expected, today) };
   });
 }
+
+// ── Return worksheet (Phase 1b) ─────────────────────────────────
+function _taxR2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+function _taxNum(n) { var x = Number(n); return isFinite(x) && x > 0 ? x : 0; }
+
+// The deduction label for a transaction, or null when it isn't tagged.
+// taxPerson is who claims it; older or joint records fall back to the transaction's person.
+var _taxDedIds = null;
+function taxTxTag(t) {
+  if (!t || !t.taxDeductible) return null;
+  if (!_taxDedIds) {
+    _taxDedIds = {};
+    TAX_RULES.returnRules.deductionLabels.forEach(function(l) { _taxDedIds[l.id] = true; });
+  }
+  if (!_taxDedIds[t.taxLabel]) return null;
+  var who = t.taxPerson || t.person;
+  return { label: t.taxLabel, person: who === 'brenton' || who === 'shelley' ? who : null, note: String(t.taxNote || '') };
+}
+
+function _taxInFy(d, fy) {
+  var r = taxRulesFor(fy);
+  return !!r && taxIsDate(d) && d >= r.start && d <= r.end;
+}
+
+// Q10 from transactions: income in the 'interest' category for one person in one FY.
+// Joint interest counts at the equal share when includeJoint is on. Offset-account "interest"
+// is listed but not counted (an offset reduces loan interest; it isn't paid to you).
+function taxInterestFromTx(txs, person, fy, includeJoint) {
+  var share = TAX_RULES.returnRules.jointEqualShare;
+  var out = { total: 0, own: 0, joint: 0, jointCounted: 0, items: [], excluded: [] };
+  (txs || []).forEach(function(t) {
+    if (!t || t.type !== 'income' || !_taxInFy(t.date, fy)) return;
+    // Older records may carry only the category name (the app resolves catId || category)
+    if (t.catId ? t.catId !== 'interest' : String(t.category || '').trim().toLowerCase() !== 'interest') return;
+    var amt = _taxNum(t.amount);
+    if (/offset/i.test(t.subcat || '')) { out.excluded.push(t); return; }
+    if (t.person === person) { out.own += amt; out.items.push(t); }
+    else if (t.person === 'joint' || !t.person) { out.joint += amt; if (includeJoint) out.items.push(t); }
+  });
+  out.jointCounted = includeJoint ? _taxR2(out.joint * share) : 0;
+  out.own = _taxR2(out.own); out.joint = _taxR2(out.joint);
+  out.total = _taxR2(out.own + out.jointCounted);
+  return out;
+}
+
+// D1–D10 from tagged transactions: { D1: { total, items } ... } for one person in one FY.
+// Only expenses count; refunds tagged by mistake are ignored.
+function taxDeductionsFromTx(txs, person, fy) {
+  var out = {};
+  TAX_RULES.returnRules.deductionLabels.forEach(function(l) { out[l.id] = { total: 0, items: [] }; });
+  (txs || []).forEach(function(t) {
+    var tag = taxTxTag(t);
+    if (!tag || tag.person !== person || t.type !== 'expense' || !_taxInFy(t.date, fy)) return;
+    out[tag.label].total = _taxR2(out[tag.label].total + _taxNum(t.amount));
+    out[tag.label].items.push(t);
+  });
+  return out;
+}
+
+// Q18: net capital gain from a year's gains and losses (ATO 2026 instructions, steps 4–10).
+// items: [{ gain, discount }] — gain < 0 is a loss; discount = held 12 months or more.
+// Losses come off 'other' gains first, then discount gains; then the discount applies.
+function taxNetCapitalGain(items, lossesCF) {
+  var rate = TAX_RULES.returnRules.cgtDiscountIndividual;
+  var other = 0, disc = 0, loss = 0;
+  (items || []).forEach(function(x) {
+    var g = Number(x.gain) || 0;
+    if (g < 0) loss += -g;
+    else if (x.discount) disc += g;
+    else other += g;
+  });
+  var H = _taxR2(other + disc);
+  function apply(amount) {
+    var a = Math.min(amount, other); other -= a; amount -= a;
+    var b = Math.min(amount, disc); disc -= b; amount -= b;
+    return amount;
+  }
+  var lossLeft = apply(loss);
+  var cfLeft = apply(_taxNum(lossesCF));
+  var discount = _taxR2(disc * rate);
+  return {
+    H: H, A: _taxR2(other + disc - discount), discount: discount,
+    currentLosses: _taxR2(loss), lossesCF: _taxR2(_taxNum(lossesCF)),
+    carryForward: _taxR2(lossLeft + cfLeft)
+  };
+}
+
+// Q11 labels from what the user entered. S unfranked, T franked, U franking credits,
+// V TFN amounts withheld. Assessable dividend income is S + T + U.
+function taxDividends(d) {
+  d = d || {};
+  var S = _taxR2(_taxNum(d.unfranked)), T = _taxR2(_taxNum(d.franked)),
+      U = _taxR2(_taxNum(d.credits)), V = _taxR2(_taxNum(d.tfnWithheld));
+  return { S: S, T: T, U: U, V: V, assessable: _taxR2(S + T + U) };
+}
+
+// One person's return for one FY. Every input is already gathered for that person:
+// { statements:[{gross,withheld,super,rfba}], interest, dividends:{...}, ess:{D,E,F,reductionTest},
+//   deductions:{D1..D10}, cgt:{items,lossesCF}, fito, instalmentsPaid }
+// Returns income lines, taxable income, tax, Medicare, credits and the estimated
+// amount payable (negative = refund). Offsets beyond franking credits and the foreign income
+// tax offset aren't modelled.
+function taxBuildReturn(inp, fy) {
+  if (!taxRulesFor(fy)) return null;
+  inp = inp || {};
+  var st = inp.statements || [];
+  var q1 = { gross: 0, withheld: 0, super: 0, rfba: 0, count: st.length };
+  st.forEach(function(s) {
+    q1.gross += _taxNum(s.gross); q1.withheld += _taxNum(s.withheld);
+    q1.super += _taxNum(s.super); q1.rfba += _taxNum(s.rfba);
+  });
+  ['gross', 'withheld', 'super', 'rfba'].forEach(function(k) { q1[k] = _taxR2(q1[k]); });
+
+  var q10 = _taxR2(_taxNum(inp.interest));
+  var q11 = taxDividends(inp.dividends);
+  var e = inp.ess || {};
+  var q12 = essTaxableAmount({ D: e.D, E: e.E, F: e.F, incomeTest: e.reductionTest === 'yes' ? 0 : Infinity });
+  var cgt = taxNetCapitalGain((inp.cgt && inp.cgt.items) || [], inp.cgt && inp.cgt.lossesCF);
+
+  var ded = { total: 0, byLabel: {} };
+  TAX_RULES.returnRules.deductionLabels.forEach(function(l) {
+    var v = _taxR2(_taxNum(inp.deductions && inp.deductions[l.id]));
+    ded.byLabel[l.id] = v; ded.total += v;
+  });
+  ded.total = _taxR2(ded.total);
+
+  var totalIncome = _taxR2(q1.gross + q10 + q11.assessable + q12.B + cgt.A);
+  var taxable = Math.max(0, Math.floor(totalIncome - ded.total));
+  var tax = calcResidentTax(taxable, fy);
+  var medicare = calcMedicare(taxable, fy);
+  var gross = _taxR2(tax + medicare);
+
+  var fitoCap = TAX_RULES.returnRules.fitoDirectLimit;
+  var fitoIn = _taxR2(_taxNum(inp.fito));
+  var fito = _taxR2(Math.min(fitoIn, fitoCap, tax));   // non-refundable: never below zero tax
+  var franking = q11.U;
+  var instalments = _taxR2(_taxNum(inp.instalmentsPaid));
+  var credits = _taxR2(q1.withheld + q11.V + instalments);
+  var payable = _taxR2(gross - fito - franking - credits);
+
+  return {
+    fy: fy, q1: q1, q10: q10, q11: q11, q12: q12, cgt: cgt, deductions: ded,
+    totalIncome: totalIncome, taxable: taxable, tax: tax, medicare: medicare, grossTax: gross,
+    offsets: { franking: franking, fito: fito, fitoEntered: fitoIn, fitoCapped: fitoIn > fito },
+    credits: { withheld: q1.withheld, tfn: q11.V, instalments: instalments, total: credits },
+    payable: payable
+  };
+}
+
+// Readiness: which worksheet sections are done. sections: [{ id, label, ready, applies }].
+// Sections that don't apply (say, instalments when not enrolled) are left out of the count.
+function taxReadiness(sections) {
+  var list = (sections || []).filter(function(s) { return s.applies !== false; });
+  var missing = list.filter(function(s) { return !s.ready; });
+  return { ready: list.length - missing.length, total: list.length, missing: missing };
+}
+
+// CSV text from rows of cells. Text cells starting with = + - @ (or a tab/CR) get a leading
+// apostrophe so a spreadsheet can't run them as formulas; numbers stay numbers.
+function taxCsv(rows) {
+  return (rows || []).map(function(r) {
+    return r.map(function(c) {
+      if (c === null || c === undefined) return '';
+      if (typeof c === 'number') return isFinite(c) ? String(c) : '';
+      var s = String(c);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return /[",\n\r]/.test(s) || s !== s.trim() ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',');
+  }).join('\r\n');
+}

@@ -7,6 +7,9 @@
 //
 //  Phase 1a: beta opt-in, page shell, person/FY switchers, lodgement
 //  (first-run choice, chip, settings, unsure banner) and PAYG instalments.
+//  Phase 1b: income statements, Return worksheet with detail sheets,
+//  estimate and readiness on Overview, Household columns, exports and
+//  the agent pack, and the tax deduction tag on transactions.
 // ═══════════════════════════════════════════════════════════════
 
 var TAX_PEOPLE = ['brenton', 'shelley'];
@@ -162,6 +165,7 @@ function renderTaxPage() {
   h += '<div id="tax-panel" role="tabpanel" aria-labelledby="tax-tab-' + taxUi.tab + '">';
   if (taxUi.tab === 'overview') h += p === 'household' ? _taxHouseholdHtml(c, fy, today) : _taxOverviewHtml(c, p, fy, today);
   else if (taxUi.tab === 'instalments') h += _taxInstalmentsHtml(p, fy, today);
+  else if (taxUi.tab === 'return') h += _taxReturnHtml(p, fy, today);
   else h += _taxLaterHtml(taxUi.tab);
   h += '</div>';
 
@@ -266,12 +270,11 @@ function _taxComingUpRows(res, person, today) {
 
 function _taxOverviewHtml(c, person, fy, today) {
   var res = resolveLodgement(c, person, fy);
-  var h = '<div class="card mb tax-est">';
-  h += '<div class="section-label">Estimated to pay at assessment</div>';
-  h += '<p class="tax-desc">Your estimate appears here once the Return worksheet is filled in. That arrives in the next beta update.</p>';
-  h += '</div>';
+  var ws = _taxWorksheet(person, fy, today);
+  var h = _taxEstimateCard(ws);
 
   h += '<div class="card mb"><div class="section-label">Coming up</div>' + _taxComingUpRows(res, person, today) + '</div>';
+  h += _taxReadinessCard(ws);
 
   lodgementWarnings(res, today).forEach(function(w) {
     h += '<div class="' + (w.kind === 'warn' ? 'tax-warnbox' : 'tax-infobox') + '">' + esc(w.text) + '</div>';
@@ -295,29 +298,40 @@ function _taxNotModelledHtml() {
 // ── Household ───────────────────────────────────────────────────
 function _taxHouseholdHtml(c, fy, today) {
   var cols = TAX_PEOPLE.map(function(p) {
-    var res = resolveLodgement(c, p, fy);
-    var inst = _taxInst(fy, p);
-    var yr = inst.enrolled ? instalmentYear(inst, fy, today) : [];
-    var paid = yr.reduce(function(s, q) { return s + q.paid; }, 0);
-    var next = _taxNextInstalment(p, today);
-    return { p: p, res: res, enrolled: inst.enrolled, paid: paid, next: next };
+    var ws = _taxWorksheet(p, fy, today);
+    return { p: p, ws: ws, res: ws.res, r: ws.ret, next: _taxNextInstalment(p, today) };
   });
-  var h = '<div class="card mb"><table class="tax-cmp"><caption class="tax-sr">Lodgement and instalments, FY ' + esc(taxFyLabel(fy)) + '</caption>';
+  var h = '<div class="card mb"><table class="tax-cmp"><caption class="tax-sr">Each return side by side, FY ' + esc(taxFyLabel(fy)) + '. Estimates.</caption>';
   h += '<thead><tr><th scope="col"><span class="tax-sr">Item</span></th>';
   cols.forEach(function(x) { h += '<th scope="col">' + esc(_taxName(x.p)) + '</th>'; });
   h += '</tr></thead><tbody>';
-  function row(label, fn) {
-    h += '<tr><th scope="row">' + label + '</th>';
+  function row(label, fn, cls) {
+    h += '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th scope="row">' + label + '</th>';
     cols.forEach(function(x) { h += '<td>' + fn(x) + '</td>'; });
     h += '</tr>';
   }
+  row('Taxable income', function(x) { return _taxMoney(x.r.taxable); });
+  row('Tax and Medicare', function(x) { return _taxMoney(x.r.grossTax); });
+  row('Withheld', function(x) { return _taxMoney(x.r.credits.withheld); });
+  row('Instalments paid', function(x) { return _taxMoney(x.r.credits.instalments); });
+  row('Est. payable <span class="tax-k-sub">Estimated</span>', function(x) {
+    return x.r.payable < 0 ? '<span class="tax-mono">' + esc(fmt(-x.r.payable)) + '</span><span class="tax-note">refund</span>' : _taxMoney(x.r.payable);
+  }, 'tax-cmp-key');
+  row('Lodgment', function(x) {
+    return esc(TAX_METHOD_LABEL[x.res.lodgeMethod]) + (x.res.lodgmentDue ? ' · <span class="tax-mono">' + esc(taxFmtDate(x.res.lodgmentDue, false)) + '</span>' : '');
+  });
   row('Lodging', function(x) { return _taxChip(x.res); });
-  row('Lodgment due', function(x) { return x.res.lodgmentDue ? '<span class="tax-mono">' + esc(taxFmtDate(x.res.lodgmentDue)) + '</span>' : '—'; });
   row('Payment due', function(x) { return x.res.paymentDue ? '<span class="tax-mono">' + esc(taxFmtDate(x.res.paymentDue)) + '</span>' : '—'; });
-  row('Instalments paid', function(x) { return x.enrolled ? _taxMoney(x.paid) : '<span class="tax-muted">Not set up</span>'; });
   row('Next instalment', function(x) { return x.next ? '<span class="tax-mono">' + esc(taxFmtDate(x.next.due)) + '</span>' : '—'; });
+  row('Return ready', function(x) { return '<span class="tax-mono">' + x.ws.ready.ready + '/' + x.ws.ready.total + '</span>'; });
   h += '</tbody></table></div>';
-  h += '<div class="tax-infobox">Each person lodges and pays separately. Kelda never adds two people\'s tax into one figure.</div>';
+
+  // Planning roll-up: a sum of each person's own estimate, never a combined tax calculation
+  var setAside = cols.reduce(function(s, x) { return s + Math.max(0, x.r.payable); }, 0);
+  h += '<div class="card mb"><div class="section-label">Cash to set aside, both returns</div>';
+  h += '<div class="tax-big"><span class="tax-mono">' + esc(fmt(setAside)) + '</span> ' + _taxBadge('Planning sum', 'tax-b-info') + '</div>';
+  h += '<p class="tax-desc">Adds each person\'s estimated amount to pay; a refund counts as zero. It\'s a balance for planning, not a tax figure: each person lodges and pays separately.</p></div>';
+  h += '<div class="tax-infobox">Kelda never adds two people\'s income into one tax calculation.</div>';
   cols.forEach(function(x) { h += _taxBannerHtml(x.res, today).replace('<b>Heads up:</b>', '<b>' + esc(_taxName(x.p)) + ':</b>'); });
   h += _taxNotModelledHtml();
   return h;
@@ -482,10 +496,893 @@ function taxSavePayment(person) {
   toast('Payment recorded', 2400, 'success');
 }
 
+// ── Return worksheet data (K.taxinc) ────────────────────────────
+// { FY: { person: { statements:[{id,employer,gross,withheld,super,rfba}], deductions:[{id,label,desc,amount}],
+//   interest:{override,includeJoint}, dividends:{unfranked,franked,credits,tfnWithheld},
+//   ess:{D,E,F,reductionTest}, cgt:{lossesCF,includeJoint}, offsets:{fito}, checks:{id:true}, done:{section:true} } } }
+var TAX_INC_OBJS = ['interest', 'dividends', 'ess', 'cgt', 'offsets', 'checks', 'done'];
+// Fields the worksheet sheets may write: path → 'num' (0 or more), 'bool', or a list of allowed values
+var TAX_INC_FIELDS = {
+  'interest.override': 'num', 'interest.includeJoint': 'bool',
+  'dividends.unfranked': 'num', 'dividends.franked': 'num', 'dividends.credits': 'num', 'dividends.tfnWithheld': 'num',
+  'ess.D': 'num', 'ess.E': 'num', 'ess.F': 'num', 'ess.reductionTest': ['yes', 'no', 'unsure'],
+  'cgt.lossesCF': 'num', 'cgt.includeJoint': 'bool', 'offsets.fito': 'num',
+  'done.q1': 'bool', 'done.q10': 'bool', 'done.q11': 'bool', 'done.q12': 'bool', 'done.ded': 'bool', 'done.cgt': 'bool',
+  'checks.lito': 'bool', 'checks.mlr': 'bool', 'checks.mls': 'bool', 'checks.phi': 'bool', 'checks.help': 'bool', 'checks.fito': 'bool'
+};
+// Offsets and Medicare items Kelda doesn't calculate. Each one is ticked once the user has checked it.
+var TAX_CHECKS = [
+  { id: 'lito', label: 'Low income tax offset', sub: 'Not modelled. The ATO works it out from your return.' },
+  { id: 'mlr',  label: 'Medicare levy reduction or exemption', sub: 'Not modelled. Kelda uses the flat 2% levy.' },
+  { id: 'mls',  label: 'Medicare levy surcharge and private hospital cover', sub: 'Not modelled. Check your private health insurance statement.' },
+  { id: 'phi',  label: 'Private health insurance rebate', sub: 'Not modelled. Your insurer\'s statement has the figures.' },
+  { id: 'help', label: 'HELP or other study loan', sub: 'Not modelled. Compulsory repayments are added on assessment.' },
+  { id: 'fito', label: 'Foreign income tax offset', sub: 'Enter any foreign tax paid below, or tick if there was none.' }
+];
+
+function _taxIncAll() {
+  var a = load(K.taxinc);
+  return a && typeof a === 'object' ? a : {};
+}
+function _taxInc(fy, person) {
+  var all = _taxIncAll();
+  var r = (all[fy] && all[fy][person]) || {};
+  if (!Array.isArray(r.statements)) r.statements = [];
+  if (!Array.isArray(r.deductions)) r.deductions = [];
+  TAX_INC_OBJS.forEach(function(k) { if (!r[k] || typeof r[k] !== 'object') r[k] = {}; });
+  return r;
+}
+function _taxSaveInc(fy, person, rec) {
+  var all = _taxIncAll();
+  if (!all[fy] || typeof all[fy] !== 'object') all[fy] = {};
+  all[fy][person] = rec;
+  save(K.taxinc, all);
+}
+function _taxNumOr(v) { var n = Number(v); return isFinite(n) && n > 0 ? n : 0; }
+
+// Equities sales in the FY for one person, one entry per parcel sold. Joint holdings count at the
+// equal share when includeJoint is on. Cost base is the holding's cost per unit (vest price for RSUs).
+function _taxCgtSales(person, fy, includeJoint) {
+  var R = TAX_RULES[fy], share = TAX_RULES.returnRules.jointEqualShare;
+  var out = { items: [], own: [], joint: [] };
+  if (typeof EQUITIES === 'undefined' || typeof eqCostPerUnit !== 'function') return out;
+  (EQUITIES || []).forEach(function(h) {
+    var owner = h.owner || 'brenton';
+    if (owner !== person && owner !== 'joint') return;
+    (h.sales || []).forEach(function(s) {
+      if (!taxIsDate(s.date) || s.date < R.start || s.date > R.end) return;
+      var qty = parseFloat(s.qty) || 0;
+      var proceeds = qty * (parseFloat(s.price) || 0) - (parseFloat(s.costs) || 0);
+      var cost = qty * eqCostPerUnit(h);
+      var acquired = s.acquired || ((h.type === 'rsu' || h.type === 'option') ? '' : (h.purchaseDate || ''));
+      var it = { date: s.date, name: h.ticker || h.company || 'Holding', qty: qty, acquired: acquired,
+                 proceeds: Math.round(proceeds * 100) / 100, costBase: Math.round(cost * 100) / 100,
+                 gain: Math.round((proceeds - cost) * 100) / 100,
+                 discount: typeof eqHeld12Months === 'function' && eqHeld12Months(acquired, s.date),
+                 joint: owner === 'joint' };
+      if (it.joint) {
+        out.joint.push(it);
+        if (includeJoint) out.items.push({ gain: Math.round(it.gain * share * 100) / 100, discount: it.discount });
+      } else {
+        out.own.push(it);
+        out.items.push({ gain: it.gain, discount: it.discount });
+      }
+    });
+  });
+  out.own.sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+  out.joint.sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+  return out;
+}
+
+// Everything the worksheet shows for one person and FY, gathered from storage and run
+// through the engine
+function _taxWorksheet(person, fy, today) {
+  var rec = _taxInc(fy, person);
+  var txs = typeof TX !== 'undefined' && Array.isArray(TX) ? TX : [];
+  var interest = taxInterestFromTx(txs, person, fy, rec.interest.includeJoint !== false);
+  var ovr = rec.interest.override;
+  var hasOvr = typeof ovr === 'number' && isFinite(ovr) && ovr >= 0;
+  var dedTx = taxDeductionsFromTx(txs, person, fy);
+  var ded = {};
+  TAX_RULES.returnRules.deductionLabels.forEach(function(l) { ded[l.id] = dedTx[l.id].total; });
+  rec.deductions.forEach(function(d) { if (ded[d.label] !== undefined) ded[d.label] += _taxNumOr(d.amount); });
+  var sales = _taxCgtSales(person, fy, rec.cgt.includeJoint !== false);
+  var inst = _taxInst(fy, person);
+  var pays = (inst.payments || []);
+  var instPaid = pays.reduce(function(s, p) { return s + (Number(p.amount) || 0); }, 0);
+  var ret = taxBuildReturn({
+    statements: rec.statements, interest: hasOvr ? ovr : interest.total, dividends: rec.dividends,
+    ess: rec.ess, deductions: ded, cgt: { items: sales.items, lossesCF: rec.cgt.lossesCF },
+    fito: rec.offsets.fito, instalmentsPaid: instPaid
+  }, fy);
+  var ws = { person: person, fy: fy, today: today, rec: rec, interest: interest, interestOverride: hasOvr ? ovr : null,
+             dedTx: dedTx, ded: ded, sales: sales, inst: inst, pays: pays, ret: ret,
+             res: resolveLodgement(taxCfg(), person, fy) };
+  ws.sections = _taxSections(ws);
+  ws.ready = taxReadiness(ws.sections);
+  return ws;
+}
+
+function _taxHasAny(o, keys) {
+  return keys.some(function(k) { return _taxNumOr(o[k]) > 0; });
+}
+
+// Readiness sections, in worksheet order. `need` is what's missing, shown on Overview.
+function _taxSections(ws) {
+  var r = ws.rec, d = r.done;
+  var paidQ = {};
+  ws.pays.forEach(function(p) { paidQ[p.q] = true; });
+  // Only quarters already due count; a year still under way isn't missing its later quarters
+  var unpaid = quarterDueDates(ws.fy).filter(function(q) { return q.due <= ws.today && !paidQ[q.q]; })
+                                     .map(function(q) { return q.q; });
+  var checksDone = TAX_CHECKS.every(function(c) { return r.checks[c.id]; });
+  return [
+    { id: 'q1', label: 'Income statements', ready: r.statements.length > 0 || !!d.q1,
+      need: 'Add each employer\'s income statement' },
+    { id: 'q10', label: 'Interest', ready: ws.interestOverride !== null || !!d.q10,
+      need: 'Confirm interest against your bank statements' },
+    { id: 'q11', label: 'Dividends', ready: _taxHasAny(r.dividends, ['unfranked', 'franked', 'credits']) || !!d.q11,
+      need: 'Enter dividends and franking credits, or mark none' },
+    { id: 'q12', label: 'Employee share schemes', ready: _taxHasAny(r.ess, ['D', 'E', 'F']) || !!d.q12,
+      need: 'Enter your ESS statement, or mark none' },
+    { id: 'ded', label: 'Deductions', ready: !!d.ded, need: 'Review your tagged deductions' },
+    { id: 'cgt', label: 'Capital gains', ready: !!d.cgt, need: 'Review sales and losses carried forward' },
+    { id: 'offsets', label: 'Offsets and Medicare', ready: checksDone, need: 'Work through the offsets checklist' },
+    { id: 'inst', label: 'PAYG instalments', ready: !unpaid.length, applies: !!ws.inst.enrolled || ws.pays.length > 0,
+      need: 'Record payments for ' + unpaid.map(function(q) { return 'Q' + q; }).join(', ') },
+    { id: 'lodge', label: 'How you lodge', ready: ws.res.lodgeMethod !== 'unsure', need: 'Choose how you lodge' }
+  ];
+}
+
+function _taxSection(ws, id) {
+  return ws.sections.filter(function(s) { return s.id === id; })[0];
+}
+function _taxReadyBadge(ready) {
+  return ready ? '<span class="badge b-paid"><i class="ti ti-check" aria-hidden="true"></i> Ready</span>'
+               : '<span class="badge b-due"><i class="ti ti-point" aria-hidden="true"></i> Needed</span>';
+}
+function _taxPlural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+function _taxDedLabelName(id) {
+  var l = TAX_RULES.returnRules.deductionLabels.filter(function(x) { return x.id === id; })[0];
+  return l ? l.name : id;
+}
+// Signed money for credits shown as reductions
+function _taxLess(n) { return '<span class="tax-mono">−' + esc(fmt(Math.abs(n))) + '</span>'; }
+
+// ── Overview: estimate and readiness ────────────────────────────
+function _taxEstimateCard(ws) {
+  var r = ws.ret;
+  if (!ws.rec.statements.length && !ws.rec.done.q1) {
+    return '<div class="card mb tax-est"><div class="section-label">Estimated to pay at assessment</div>' +
+      '<p class="tax-desc">Add ' + esc(_taxName(ws.person)) + '\'s income statements in the Return worksheet to see an estimate.</p>' +
+      '<button class="btn btn-primary tax-full" onclick="taxSetTab(\'return\')">Open Return worksheet</button></div>';
+  }
+  var refund = r.payable < 0;
+  var h = '<div class="card mb tax-est">';
+  h += '<div class="section-label">' + (refund ? 'Estimated refund at assessment' : 'Estimated to pay at assessment') + '</div>';
+  h += '<div class="tax-big"><span class="tax-mono">' + esc(fmt(Math.abs(r.payable))) + '</span> ' + _taxBadge('Estimated', 'tax-b-info') + '</div>';
+  h += '<p class="tax-desc">Tax and Medicare <span class="tax-mono">' + esc(fmt(r.grossTax)) + '</span> less <span class="tax-mono">' +
+       esc(fmt(r.credits.withheld)) + '</span> withheld' +
+       (r.credits.instalments ? ' and <span class="tax-mono">' + esc(fmt(r.credits.instalments)) + '</span> instalments' : '') +
+       (r.offsets.franking + r.offsets.fito ? ', and <span class="tax-mono">' + esc(fmt(r.offsets.franking + r.offsets.fito)) + '</span> in offsets' : '') +
+       '. Based on what\'s in the Return worksheet so far.</p>';
+  h += '</div>';
+  return h;
+}
+
+function _taxMeter(rd) {
+  var h = '<div class="tax-meter" aria-hidden="true">';
+  for (var i = 0; i < rd.total; i++) h += '<span class="tax-meter-seg' + (i < rd.ready ? ' on' : '') + '"></span>';
+  return h + '</div>';
+}
+
+function _taxReadinessCard(ws) {
+  var rd = ws.ready;
+  var h = '<div class="card mb"><div class="section-label">Return readiness</div>';
+  h += '<p class="tax-ready-line"><b><span class="tax-mono">' + rd.ready + '</span> of <span class="tax-mono">' + rd.total + '</span> sections ready</b></p>';
+  h += _taxMeter(rd);
+  if (rd.missing.length) {
+    h += '<ul class="tax-missing" aria-label="Still needed">';
+    rd.missing.forEach(function(m) {
+      h += '<li><span>' + esc(m.label) + '<span class="tax-note">' + esc(m.need) + '</span></span>' + _taxBadge('Needed', 'b-due') + '</li>';
+    });
+    h += '</ul>';
+  } else {
+    h += '<p class="tax-desc">Every section is filled in. ' + (ws.res.viaAgent ? 'The agent pack is ready to share.' : 'You\'re ready to key it into myTax.') + '</p>';
+  }
+  h += '<button class="btn btn-primary tax-full" onclick="taxSetTab(\'return\')">Continue return worksheet</button>';
+  h += '</div>';
+  return h;
+}
+
+// ── Return tab ──────────────────────────────────────────────────
+var TAX_ROWS = [
+  { id: 'q1',      code: 'Q1',     title: 'Salary or wages' },
+  { id: 'q10',     code: 'Q10',    title: 'Gross interest' },
+  { id: 'q11',     code: 'Q11',    title: 'Dividends' },
+  { id: 'q12',     code: 'Q12',    title: 'Employee share schemes' },
+  { id: 'ded',     code: 'D1–D10', title: 'Deductions' },
+  { id: 'cgt',     code: 'Q18',    title: 'Capital gains' },
+  { id: 'offsets', code: '',       title: 'Offsets and Medicare' },
+  { id: 'inst',    code: '',       title: 'PAYG instalments credit' }
+];
+
+// Source chip text and amount for one row
+function _taxRowInfo(ws, id) {
+  var r = ws.ret, rec = ws.rec;
+  if (id === 'q1') return { src: rec.statements.length ? 'Income statement · ' + _taxPlural(rec.statements.length, 'employer') : (rec.done.q1 ? 'None this year' : 'No income statements yet'),
+                            icon: 'file-text', amt: r.q1.gross };
+  if (id === 'q10') {
+    if (ws.interestOverride !== null) return { src: 'Bank statement figure', icon: 'building-bank', amt: r.q10 };
+    var n = ws.interest.items.length;
+    return { src: n ? 'From ' + _taxPlural(n, 'transaction') : 'No interest transactions', icon: 'arrows-exchange', amt: r.q10 };
+  }
+  if (id === 'q11') {
+    var any = _taxHasAny(rec.dividends, ['unfranked', 'franked', 'credits']);
+    return { src: any ? 'Entered by hand · incl. franking credits' : (rec.done.q11 ? 'None this year' : 'Not entered'), icon: 'pencil', amt: any ? r.q11.assessable : null };
+  }
+  if (id === 'q12') {
+    var anyE = _taxHasAny(rec.ess, ['D', 'E', 'F']);
+    return { src: anyE ? 'Entered by hand · label B' : (rec.done.q12 ? 'None this year' : 'Not entered'), icon: 'pencil', amt: anyE ? r.q12.B : null };
+  }
+  if (id === 'ded') {
+    var nt = 0;
+    Object.keys(ws.dedTx).forEach(function(k) { nt += ws.dedTx[k].items.length; });
+    var parts = [_taxPlural(nt, 'tagged transaction')];
+    if (rec.deductions.length) parts.push(rec.deductions.length + ' by hand');
+    return { src: parts.join(' · '), icon: 'tag', amt: r.deductions.total };
+  }
+  if (id === 'cgt') {
+    var ns = ws.sales.own.length + (rec.cgt.includeJoint !== false ? ws.sales.joint.length : 0);
+    return { src: ns ? 'Equities sales · ' + _taxPlural(ns, 'parcel') + ' sold' : 'No equities sales this year', icon: 'chart-line', amt: r.cgt.A };
+  }
+  if (id === 'offsets') {
+    var done = TAX_CHECKS.filter(function(c) { return rec.checks[c.id]; }).length;
+    return { src: 'Checklist · ' + done + ' of ' + TAX_CHECKS.length + ' checked', icon: 'checklist', amt: null };
+  }
+  if (id === 'inst') return { src: ws.pays.length ? 'From Instalments · ' + _taxPlural(ws.pays.length, 'payment') : 'No payments recorded', icon: 'calendar-dollar', amt: r.credits.instalments };
+  return { src: '', icon: 'point', amt: null };
+}
+
+function _taxReturnHtml(person, fy, today) {
+  if (person === 'household') {
+    return '<div class="card"><div class="empty"><p>Each person has their own return worksheet.</p>' +
+      '<div class="tax-btn-row">' + TAX_PEOPLE.map(function(p) {
+        return '<button class="btn btn-ghost" onclick="taxSetPerson(\'' + p + '\')">' + esc(_taxName(p)) + '</button>';
+      }).join('') + '</div></div></div>';
+  }
+  var ws = _taxWorksheet(person, fy, today);
+  var r = ws.ret;
+  var h = '<div class="card mb">';
+  h += '<div class="section-label">Return worksheet</div>';
+  h += '<p class="tax-desc tax-desc--top">' + esc(_taxName(person)) + ' · FY ' + esc(taxFyLabel(fy)) + ' · ATO labels. ' +
+       (ws.res.viaAgent ? 'Figures for sharing with your agent.' : 'Figures for keying into myTax.') + ' Tap a line to see where it comes from.</p>';
+  h += '<ul class="tax-rows">';
+  TAX_ROWS.forEach(function(row) {
+    var info = _taxRowInfo(ws, row.id);
+    var sec = _taxSection(ws, row.id);
+    var applies = !sec || sec.applies !== false;
+    h += '<li><button class="tax-row" id="tax-row-' + row.id + '" onclick="taxOpenDetail(\'' + row.id + '\')">';
+    h += '<span class="tax-row-main"><span class="tax-row-t">' + (row.code ? '<b class="tax-row-code">' + esc(row.code) + '</b> ' : '') + esc(row.title) + '</span>';
+    h += '<span class="tax-src"><i class="ti ti-' + info.icon + '" aria-hidden="true"></i> ' + esc(info.src) + '</span></span>';
+    var done = sec && sec.ready;
+    var none = row.id === 'offsets' ? (done ? 'Checked' : 'Check') : (done ? 'None' : 'Add');
+    h += '<span class="tax-row-end">' + (info.amt === null ? '<span class="tax-muted">' + none + '</span>' : _taxMoney(info.amt)) +
+         (sec && applies ? _taxReadyBadge(sec.ready) : '') + '</span>';
+    h += '<i class="ti ti-chevron-right tax-row-chev" aria-hidden="true"></i></button></li>';
+  });
+  h += '</ul></div>';
+
+  // Summary
+  h += '<div class="card mb"><div class="section-label">Estimate</div>';
+  h += _taxDr('Total income', _taxMoney(r.totalIncome));
+  h += _taxDr('Deductions', _taxLess(r.deductions.total));
+  h += _taxDr('Taxable income', _taxMoney(r.taxable), true);
+  h += _taxDr('Tax on taxable income', _taxMoney(r.tax));
+  h += _taxDr('Medicare levy <span class="tax-k-sub">flat 2%, see checklist</span>', _taxMoney(r.medicare));
+  if (r.offsets.franking) h += _taxDr('Franking credits', _taxLess(r.offsets.franking));
+  if (r.offsets.fito) h += _taxDr('Foreign income tax offset', _taxLess(r.offsets.fito));
+  h += _taxDr('Tax withheld', _taxLess(r.credits.withheld));
+  if (r.credits.tfn) h += _taxDr('TFN amounts withheld', _taxLess(r.credits.tfn));
+  if (r.credits.instalments) h += _taxDr('PAYG instalments paid', _taxLess(r.credits.instalments));
+  h += _taxDr((r.payable < 0 ? 'Estimated refund' : 'Estimated to pay') + ' ' + _taxBadge('Estimated', 'tax-b-info'),
+              '<span class="tax-mono">' + esc(fmt(Math.abs(r.payable))) + '</span>', true);
+  h += '</div>';
+
+  h += _taxExportCard(ws);
+  return h;
+}
+
+function _taxDr(k, v, total) {
+  return '<div class="dr' + (total ? ' dr--total' : '') + '"><span class="dr-k">' + k + '</span><span class="dr-v">' + v + '</span></div>';
+}
+
+// ── Detail sheets ───────────────────────────────────────────────
+var _taxDetailId = null, _taxStEditId = null;
+
+function taxOpenDetail(id) {
+  _taxDetailId = id;
+  _taxStEditId = null;
+  // Safari doesn't focus a tapped button; focus the row so closing the sheet returns to it
+  var row = document.getElementById('tax-row-' + id);
+  if (row) row.focus();
+  _taxRenderDetail(true);
+}
+
+function _taxRenderDetail(initial) {
+  var id = _taxDetailId;
+  if (!id) return;
+  var ws = _taxWorksheet(taxUi.person, taxUi.fy, taxToday());
+  var row = TAX_ROWS.filter(function(x) { return x.id === id; })[0];
+  // Focus lands on the title, so a long sheet opens at the top rather than on its first input
+  var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title" tabindex="-1" data-autofocus>' + (row.code ? esc(row.code) + ' ' : '') + esc(row.title) + '</div>' + _taxCloseBtn() + '</div>';
+  h += '<p class="modal-sub">' + esc(_taxName(ws.person)) + ' · FY ' + esc(taxFyLabel(ws.fy)) + '</p>';
+  h += ({ q1: _taxDetQ1, q10: _taxDetQ10, q11: _taxDetQ11, q12: _taxDetQ12, ded: _taxDetDed,
+          cgt: _taxDetCgt, offsets: _taxDetOffsets, inst: _taxDetInst })[id](ws);
+  h += '<div class="modal-actions"><button class="btn btn-primary" onclick="taxCloseSheet()">Done</button></div>';
+  var ov = document.getElementById('tax-sheet');
+  if (!initial && ov && ov.classList.contains('open')) {
+    var act = document.activeElement && document.activeElement.id;
+    var box = ov.firstChild, top = box.scrollTop;
+    box.innerHTML = h;
+    box.scrollTop = top;
+    var back = act && document.getElementById(act);
+    if (back) back.focus();
+    return;
+  }
+  taxOpenSheet(h, function() { _taxDetailId = null; taxCloseSheet(); });
+}
+
+// Re-render the page behind the sheet and the sheet itself after a change
+function _taxDetailChanged() {
+  renderTaxPage();
+  _taxRenderDetail(false);
+}
+
+function _taxNumField(id, label, value, onchange, hint) {
+  return '<div><label class="lbl" for="' + id + '">' + esc(label) + '</label><input id="' + id + '" type="number" inputmode="decimal" step="0.01" min="0" value="' +
+         (typeof value === 'number' && isFinite(value) && value > 0 ? value : '') + '" onchange="' + onchange + '">' +
+         (hint ? '<div class="tax-note">' + esc(hint) + '</div>' : '') + '</div>';
+}
+function _taxIncNum(id, label, path, value, hint) {
+  return _taxNumField(id, label, value, 'taxIncSet(\'' + path + '\',this.value)', hint);
+}
+function _taxIncCheck(id, path, on, text, sub) {
+  return '<label class="tax-check"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + ' onchange="taxIncSet(\'' + path + '\',this.checked)">' +
+         _TAX_BOX + '<span>' + esc(text) + (sub ? '<span class="tax-note">' + esc(sub) + '</span>' : '') + '</span></label>';
+}
+function _taxTxLine(t, extra) {
+  return '<div class="dr"><span class="dr-k">' + esc(t.name || t.description || 'Transaction') +
+         '<span class="tax-note"><span class="tax-mono">' + esc(taxFmtDate(t.date)) + '</span>' + (extra ? ' · ' + extra : '') + '</span></span>' +
+         '<span class="dr-v">' + _taxMoney(t.amount) + '</span></div>';
+}
+
+function _taxDetQ1(ws) {
+  var rec = ws.rec, r = ws.ret;
+  var h = '<p class="tax-desc">Copy these from each income statement in ATO online services (myGov), or your payment summary. Your bank only sees net pay, so gross pay is entered here.</p>';
+  if (rec.statements.length) {
+    h += '<div class="tax-list-card">';
+    rec.statements.forEach(function(s) {
+      var idq = JSON.stringify(String(s.id)).replace(/"/g, '&quot;');
+      h += '<div class="tax-st"><div class="tax-st-main"><b>' + esc(s.employer || 'Employer') + '</b>' +
+           '<span class="tax-note">Gross ' + esc(fmt(s.gross)) + ' · withheld ' + esc(fmt(s.withheld)) +
+           (s.super ? ' · reportable super ' + esc(fmt(s.super)) : '') + (s.rfba ? ' · RFBA ' + esc(fmt(s.rfba)) : '') + '</span></div>' +
+           '<button class="tax-icon-btn" aria-label="Edit ' + esc(s.employer || 'income statement') + '" onclick="taxIncEditStatement(' + idq + ')"><i class="ti ti-pencil" aria-hidden="true"></i></button>' +
+           '<button class="tax-icon-btn" aria-label="Delete ' + esc(s.employer || 'income statement') + '" onclick="taxIncDelStatement(' + idq + ')"><i class="ti ti-trash" aria-hidden="true"></i></button></div>';
+    });
+    h += _taxDr('Q1 label C · gross payments', _taxMoney(r.q1.gross), true);
+    h += _taxDr('Tax withheld', _taxMoney(r.q1.withheld));
+    if (r.q1.super) h += _taxDr('Reportable employer super <span class="tax-k-sub">not taxable income</span>', _taxMoney(r.q1.super));
+    if (r.q1.rfba) h += _taxDr('Reportable fringe benefits <span class="tax-k-sub">not taxable income</span>', _taxMoney(r.q1.rfba));
+    h += '</div>';
+  }
+  var ed = _taxStEditId !== null ? rec.statements.filter(function(s) { return String(s.id) === String(_taxStEditId); })[0] : null;
+  h += '<fieldset class="tax-fieldset"><legend class="tax-legend">' + (ed ? 'Edit income statement' : 'Add an income statement') + '</legend>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-st-employer">Employer</label><input id="tax-st-employer" type="text" autocomplete="off" maxlength="80" value="' + esc(ed ? ed.employer : '') + '"></div></div>';
+  h += '<div class="form-grid">' +
+       _taxNumField('tax-st-gross', 'Gross payments ($)', ed ? ed.gross : null, '') +
+       _taxNumField('tax-st-withheld', 'Tax withheld ($)', ed ? ed.withheld : null, '') + '</div>';
+  h += '<div class="form-grid">' +
+       _taxNumField('tax-st-super', 'Reportable employer super ($)', ed ? ed.super : null, '', 'Optional') +
+       _taxNumField('tax-st-rfba', 'Reportable fringe benefits ($)', ed ? ed.rfba : null, '', 'Optional') + '</div>';
+  h += '<div class="tax-btn-row tax-btn-row--start">' + (ed ? '<button class="btn btn-ghost" onclick="taxIncCancelEdit()">Cancel edit</button>' : '') +
+       '<button class="btn btn-primary" onclick="taxIncSaveStatement()">' + (ed ? 'Save statement' : 'Add statement') + '</button></div></fieldset>';
+  h += _taxIncCheck('tax-done-q1', 'done.q1', rec.done.q1, 'No salary or wages this year');
+  return h;
+}
+
+function _taxDetQ10(ws) {
+  var it = ws.interest, rec = ws.rec, share = TAX_RULES.returnRules.jointEqualShare;
+  var h = '<p class="tax-desc">Kelda adds up ' + esc(_taxName(ws.person)) + '\'s transactions in the Interest category. The figure on your bank\'s annual statement is the one to use if they differ.</p>';
+  h += '<div class="tax-list-card">';
+  var own = it.items.filter(function(t) { return t.person === ws.person; });
+  if (!own.length && !it.joint) h += '<div class="empty empty--compact"><p>No interest transactions in FY ' + esc(taxFyLabel(ws.fy)) + '.</p></div>';
+  own.forEach(function(t) { h += _taxTxLine(t, esc(t.subcat || 'Interest')); });
+  h += _taxDr('From ' + esc(_taxName(ws.person)) + '\'s transactions', _taxMoney(it.own), true);
+  if (it.joint) {
+    h += _taxDr('Joint interest <span class="tax-k-sub">' + (rec.interest.includeJoint !== false ? 'counted at half' : 'not counted') + '</span>',
+                rec.interest.includeJoint !== false ? _taxMoney(it.jointCounted) : '<span class="tax-muted">' + esc(fmt(it.joint)) + '</span>');
+  }
+  h += '</div>';
+  if (it.joint) h += _taxIncCheck('tax-int-joint', 'interest.includeJoint', rec.interest.includeJoint !== false,
+    'Count half of joint interest (' + fmt(it.joint) + ')', 'The ATO says to show half if you held the account equally with one other person. Untick and use the bank figure below if your share is different.');
+  if (it.excluded.length) {
+    var ex = it.excluded.reduce(function(s, t) { return s + (Number(t.amount) || 0); }, 0);
+    h += '<div class="tax-infobox">Not counted: <span class="tax-mono">' + esc(fmt(ex)) + '</span> in "Offset Interest" transactions. An offset account usually reduces your loan interest rather than paying you interest. If it was paid to you, use the bank figure below.</div>';
+  }
+  h += '<div class="form-grid">' + _taxIncNum('tax-int-ovr', 'Bank statement total ($)', 'interest.override', ws.interestOverride,
+       'Replaces the transaction total. Leave blank to use transactions.') + '</div>';
+  h += _taxIncCheck('tax-done-q10', 'done.q10', rec.done.q10, 'I\'ve checked this against my bank statements');
+  h += '<p class="tax-desc">Q10 label L. Interest from foreign accounts and trusts goes elsewhere on the return and isn\'t included.</p>';
+  return h;
+}
+
+function _taxDetQ11(ws) {
+  var d = ws.rec.dividends, r = ws.ret.q11;
+  var h = '<p class="tax-desc">The Equities page doesn\'t record dividends, so enter the totals from your dividend statements. For shares held jointly, enter your share (half if held equally).</p>';
+  h += '<div class="form-grid">' + _taxIncNum('tax-dv-s', 'Unfranked (label S)', 'dividends.unfranked', d.unfranked) +
+       _taxIncNum('tax-dv-t', 'Franked (label T)', 'dividends.franked', d.franked) + '</div>';
+  h += '<div class="form-grid">' + _taxIncNum('tax-dv-u', 'Franking credits (label U)', 'dividends.credits', d.credits) +
+       _taxIncNum('tax-dv-v', 'TFN amounts withheld (label V)', 'dividends.tfnWithheld', d.tfnWithheld) + '</div>';
+  h += '<div class="tax-list-card">' + _taxDr('Assessable dividends (S + T + U)', _taxMoney(r.assessable), true) +
+       _taxDr('Franking credits, credited back on assessment', _taxMoney(r.U)) + '</div>';
+  h += _taxIncCheck('tax-done-q11', 'done.q11', ws.rec.done.q11, 'No dividends this year');
+  h += '<p class="tax-desc">ETF and managed fund distributions go at supplementary question 13 and aren\'t modelled. Kelda doesn\'t check the 45-day holding rule.</p>';
+  return h;
+}
+
+function _taxDetQ12(ws) {
+  var e = ws.rec.ess, r = ws.ret.q12;
+  var h = '<div class="tax-infobox">Share awards, with each RSU vest and the 30-day rule, arrive in a later beta update. Until then, copy the totals from your ESS statement.</div>';
+  h += '<div class="form-grid">' + _taxIncNum('tax-es-d', 'Taxed upfront, eligible for reduction (D)', 'ess.D', e.D) +
+       _taxIncNum('tax-es-e', 'Taxed upfront, not eligible (E)', 'ess.E', e.E) + '</div>';
+  h += '<div class="form-grid">' + _taxIncNum('tax-es-f', 'Deferral schemes (F)', 'ess.F', e.F, 'Most RSUs land here') + '</div>';
+  if (_taxNumOr(e.D) > 0) {
+    var rt = e.reductionTest || 'unsure';
+    h += '<fieldset class="tax-fieldset"><legend class="tax-legend">Is your income for the $1,000 reduction ' + esc(fmt(TAX_RULES.common.essReduction.incomeTestMax)).replace('.00', '') + ' or less?</legend><div class="tax-opts tax-opts--3">';
+    [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']].forEach(function(o) {
+      h += '<label class="tax-opt"><input type="radio" name="tax-es-rt" value="' + o[0] + '"' + (rt === o[0] ? ' checked' : '') +
+           ' onchange="taxIncSet(\'ess.reductionTest\',this.value)"><span class="tax-opt-t">' + o[1] + '</span></label>';
+    });
+    h += '</div></fieldset><p class="tax-desc">Kelda only applies the reduction when you answer Yes; the ATO\'s income test isn\'t worked out here.</p>';
+  }
+  h += '<div class="tax-list-card">' + _taxDr('Q12 label B, taxable discount', _taxMoney(r.B), true) +
+       (r.reduction ? _taxDr('Reduction applied to D', _taxLess(r.reduction)) : '') + '</div>';
+  h += _taxIncCheck('tax-done-q12', 'done.q12', ws.rec.done.q12, 'No employee share scheme income this year');
+  return h;
+}
+
+function _taxDetDed(ws) {
+  var rec = ws.rec, labels = TAX_RULES.returnRules.deductionLabels;
+  var h = '<p class="tax-desc">Tag a transaction as a deduction from its edit screen in Spending (tap the transaction on a phone, or the tax button on desktop). You can also add amounts that aren\'t transactions, like car expenses worked out per kilometre.</p>';
+  var any = false;
+  labels.forEach(function(l) {
+    var tx = ws.dedTx[l.id], man = rec.deductions.filter(function(d) { return d.label === l.id; });
+    if (!tx.items.length && !man.length) return;
+    any = true;
+    h += '<div class="tax-list-card"><div class="tax-ded-hd"><b>' + esc(l.id) + '</b> ' + esc(l.name) + '</div>';
+    tx.items.forEach(function(t) {
+      var tag = taxTxTag(t);
+      h += _taxTxLine(t, tag && tag.note ? esc(tag.note) : 'Tagged transaction');
+    });
+    man.forEach(function(d) {
+      var idq = JSON.stringify(String(d.id)).replace(/"/g, '&quot;');
+      h += '<div class="dr"><span class="dr-k">' + esc(d.desc || 'Added by hand') + '<span class="tax-note">Added by hand</span></span>' +
+           '<span class="dr-v">' + _taxMoney(d.amount) + '<button class="tax-icon-btn" aria-label="Delete ' + esc(d.desc || 'entry') + '" onclick="taxIncDelDed(' + idq + ')"><i class="ti ti-trash" aria-hidden="true"></i></button></span></div>';
+    });
+    h += _taxDr(esc(l.id) + ' total', _taxMoney(ws.ded[l.id]), true) + '</div>';
+  });
+  if (!any) h += '<div class="empty empty--compact"><p>No deductions tagged or added for FY ' + esc(taxFyLabel(ws.fy)) + ' yet.</p></div>';
+  h += '<fieldset class="tax-fieldset"><legend class="tax-legend">Add an amount by hand</legend>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-dd-label">Label</label><select id="tax-dd-label">' +
+       labels.map(function(l) { return '<option value="' + l.id + '">' + esc(l.id + ' ' + l.name) + '</option>'; }).join('') + '</select></div></div>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-dd-desc">Description</label><input id="tax-dd-desc" type="text" autocomplete="off" maxlength="80"></div>' +
+       _taxNumField('tax-dd-amt', 'Amount ($)', null, '') + '</div>';
+  h += '<div class="tax-btn-row tax-btn-row--start"><button class="btn btn-primary" onclick="taxIncAddDed()">Add deduction</button></div></fieldset>';
+  if (TAX_RULES[ws.fy] && TAX_RULES[ws.fy].standardDeduction) {
+    h += '<div class="tax-infobox">From 2026–27 there is a <span class="tax-mono">' + esc(fmt(TAX_RULES[ws.fy].standardDeduction)) + '</span> standard deduction. Kelda doesn\'t apply it yet, because its conditions haven\'t been checked.</div>';
+  }
+  h += _taxIncCheck('tax-done-ded', 'done.ded', rec.done.ded, 'I\'ve reviewed my deductions and have the records');
+  return h;
+}
+
+function _taxDetCgt(ws) {
+  var s = ws.sales, rec = ws.rec, r = ws.ret.cgt, share = TAX_RULES.returnRules.jointEqualShare;
+  var h = '<p class="tax-desc">Sales recorded on the Equities page. A parcel held 12 months or more gets the 50% discount after losses are applied. Property and share-award parcels come in later updates.</p>';
+  function line(x) {
+    return '<div class="dr"><span class="dr-k">' + esc(x.name) + ' · <span class="tax-mono">' + esc(String(x.qty)) + '</span> units' +
+           '<span class="tax-note"><span class="tax-mono">' + esc(taxFmtDate(x.date)) + '</span> · ' +
+           (x.discount ? 'held 12 months or more' : (x.acquired ? 'held under 12 months' : 'acquired date unknown, treated as under 12 months')) +
+           ' · proceeds ' + esc(fmt(x.proceeds)) + ', cost base ' + esc(fmt(x.costBase)) + '</span></span>' +
+           '<span class="dr-v"><span class="tax-mono">' + (x.gain < 0 ? '−' : '') + esc(fmt(Math.abs(x.gain))) + '</span>' + _taxBadge(x.gain < 0 ? 'Loss' : 'Gain', x.gain < 0 ? 'b-overdue' : 'b-paid') + '</span></div>';
+  }
+  h += '<div class="tax-list-card">';
+  if (!s.own.length && !s.joint.length) h += '<div class="empty empty--compact"><p>No sales in FY ' + esc(taxFyLabel(ws.fy)) + '.</p></div>';
+  s.own.forEach(function(x) { h += line(x); });
+  if (s.joint.length) {
+    h += '<div class="tax-ded-hd">Joint holdings ' + (rec.cgt.includeJoint !== false ? '<span class="tax-k-sub">counted at half</span>' : '<span class="tax-k-sub">not counted</span>') + '</div>';
+    s.joint.forEach(function(x) { h += line(x); });
+  }
+  h += '</div>';
+  if (s.joint.length) h += _taxIncCheck('tax-cgt-joint', 'cgt.includeJoint', rec.cgt.includeJoint !== false,
+    'Count half of each joint sale', 'For joint holdings held equally. Untick if your share is different.');
+  h += '<div class="form-grid">' + _taxIncNum('tax-cgt-cf', 'Net capital losses from earlier years ($)', 'cgt.lossesCF', rec.cgt.lossesCF, 'From last year\'s return, label V') + '</div>';
+  h += '<div class="tax-list-card">' + _taxDr('Total current year capital gains (H)', _taxMoney(r.H)) +
+       (r.currentLosses ? _taxDr('Capital losses this year', _taxLess(r.currentLosses)) : '') +
+       (r.lossesCF ? _taxDr('Losses from earlier years', _taxLess(r.lossesCF)) : '') +
+       (r.discount ? _taxDr('CGT discount', _taxLess(r.discount)) : '') +
+       _taxDr('Net capital gain (A)', _taxMoney(r.A), true) +
+       (r.carryForward ? _taxDr('Losses to carry forward (V)', _taxMoney(r.carryForward)) : '') + '</div>';
+  h += _taxIncCheck('tax-done-cgt', 'done.cgt', rec.done.cgt, 'I\'ve reviewed my sales and losses');
+  return h;
+}
+
+function _taxDetOffsets(ws) {
+  var rec = ws.rec, r = ws.ret;
+  var h = '<p class="tax-desc">Kelda applies franking credits and up to <span class="tax-mono">' + esc(fmt(TAX_RULES.returnRules.fitoDirectLimit)) + '</span> of foreign income tax offset. Everything else here isn\'t calculated, so tick each item once you\'ve checked it.</p>';
+  h += '<div class="tax-list-card">' + _taxDr('Medicare levy, flat 2% <span class="tax-k-sub">Estimated</span>', _taxMoney(r.medicare)) +
+       _taxDr('Franking credits <span class="tax-k-sub">from Q11</span>', _taxMoney(r.offsets.franking)) +
+       _taxDr('Foreign income tax offset <span class="tax-k-sub">label O</span>', _taxMoney(r.offsets.fito)) + '</div>';
+  h += '<div class="form-grid">' + _taxIncNum('tax-fito', 'Foreign tax paid ($)', 'offsets.fito', rec.offsets.fito) + '</div>';
+  if (r.offsets.fitoCapped) {
+    h += '<div class="tax-warnbox">Over <span class="tax-mono">' + esc(fmt(TAX_RULES.returnRules.fitoDirectLimit)) + '</span>, you either work out the full offset or claim <span class="tax-mono">' +
+         esc(fmt(TAX_RULES.returnRules.fitoDirectLimit)) + '</span> and forgo the rest. Kelda uses the capped figure' + (r.offsets.fito < TAX_RULES.returnRules.fitoDirectLimit ? ', limited to the tax on your income' : '') + '.</div>';
+  }
+  h += '<fieldset class="tax-fieldset"><legend class="tax-legend">Checklist</legend>';
+  TAX_CHECKS.forEach(function(c) { h += _taxIncCheck('tax-chk-' + c.id, 'checks.' + c.id, rec.checks[c.id], c.label, c.sub); });
+  h += '</fieldset>';
+  return h;
+}
+
+function _taxDetInst(ws) {
+  var h = '<p class="tax-desc">Instalments you\'ve paid for FY ' + esc(taxFyLabel(ws.fy)) + ' are credited against the tax on your return. Check them against ATO online services before you lodge.</p>';
+  h += '<div class="tax-list-card">';
+  if (!ws.pays.length) h += '<div class="empty empty--compact"><p>No payments recorded for this year.</p></div>';
+  ws.pays.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; }).forEach(function(p) {
+    h += _taxDr('Q' + esc(String(p.q)) + ' · <span class="tax-mono">' + esc(taxFmtDate(p.date)) + '</span>', _taxMoney(p.amount));
+  });
+  h += _taxDr('PAYG instalments credit', _taxMoney(ws.ret.credits.instalments), true) + '</div>';
+  h += '<button class="btn btn-ghost tax-full" onclick="taxCloseSheet();taxSetTab(\'instalments\')">Open Instalments</button>';
+  return h;
+}
+
+// ── Worksheet edits ─────────────────────────────────────────────
+function taxIncSet(path, value) {
+  var kind = TAX_INC_FIELDS[path];
+  if (!kind) return;
+  var parts = path.split('.');
+  var rec = _taxInc(taxUi.fy, taxUi.person);
+  var obj = rec[parts[0]];
+  if (kind === 'bool') obj[parts[1]] = !!value;
+  else if (kind === 'num') {
+    var s = String(value).trim();
+    if (s === '') { delete obj[parts[1]]; }
+    else {
+      var n = parseFloat(s);
+      if (isNaN(n) || n < 0) { toast('Enter a number of 0 or more', 2400, 'warn'); _taxRenderDetail(false); return; }
+      obj[parts[1]] = Math.round(n * 100) / 100;
+    }
+  } else if (kind.indexOf(value) !== -1) obj[parts[1]] = value;
+  else return;
+  _taxSaveInc(taxUi.fy, taxUi.person, rec);
+  _taxDetailChanged();
+}
+
+function _taxReadNum(id) {
+  var el = document.getElementById(id);
+  var s = el ? String(el.value).trim() : '';
+  if (s === '') return 0;
+  var n = parseFloat(s);
+  return isNaN(n) || n < 0 ? NaN : Math.round(n * 100) / 100;
+}
+
+function taxIncSaveStatement() {
+  var emp = (document.getElementById('tax-st-employer').value || '').trim().slice(0, 80);
+  var v = { gross: _taxReadNum('tax-st-gross'), withheld: _taxReadNum('tax-st-withheld'),
+            super: _taxReadNum('tax-st-super'), rfba: _taxReadNum('tax-st-rfba') };
+  if (Object.keys(v).some(function(k) { return isNaN(v[k]); })) { toast('Amounts must be 0 or more', 2400, 'warn'); return; }
+  if (!(v.gross > 0)) { toast('Enter the gross payments', 2400, 'warn'); return; }
+  var rec = _taxInc(taxUi.fy, taxUi.person);
+  var ed = _taxStEditId !== null ? rec.statements.filter(function(s) { return String(s.id) === String(_taxStEditId); })[0] : null;
+  if (ed) { ed.employer = emp; ed.gross = v.gross; ed.withheld = v.withheld; ed.super = v.super; ed.rfba = v.rfba; }
+  else rec.statements.push({ id: Date.now(), employer: emp, gross: v.gross, withheld: v.withheld, super: v.super, rfba: v.rfba });
+  _taxSaveInc(taxUi.fy, taxUi.person, rec);
+  _taxStEditId = null;
+  toast(ed ? 'Income statement saved' : 'Income statement added', 2400, 'success');
+  _taxDetailChanged();
+  var f = document.getElementById('tax-st-employer'); if (f) f.focus();
+}
+function taxIncEditStatement(id) {
+  _taxStEditId = id;
+  _taxRenderDetail(false);
+  var f = document.getElementById('tax-st-employer'); if (f) f.focus();
+}
+function taxIncCancelEdit() {
+  _taxStEditId = null;
+  _taxRenderDetail(false);
+}
+function taxIncDelStatement(id) {
+  var rec = _taxInc(taxUi.fy, taxUi.person);
+  var s = rec.statements.filter(function(x) { return String(x.id) === String(id); })[0];
+  if (!s || !confirm('Delete the income statement' + (s.employer ? ' from ' + s.employer : '') + '?')) return;
+  rec.statements = rec.statements.filter(function(x) { return x !== s; });
+  if (String(_taxStEditId) === String(id)) _taxStEditId = null;
+  _taxSaveInc(taxUi.fy, taxUi.person, rec);
+  toast('Income statement deleted', 2400, 'info');
+  _taxDetailChanged();
+}
+function taxIncAddDed() {
+  var label = document.getElementById('tax-dd-label').value;
+  var desc = (document.getElementById('tax-dd-desc').value || '').trim().slice(0, 80);
+  var amt = _taxReadNum('tax-dd-amt');
+  if (TAX_RULES.returnRules.deductionLabels.every(function(l) { return l.id !== label; })) return;
+  if (!(amt > 0)) { toast('Enter an amount', 2400, 'warn'); return; }
+  var rec = _taxInc(taxUi.fy, taxUi.person);
+  rec.deductions.push({ id: Date.now(), label: label, desc: desc, amount: amt });
+  _taxSaveInc(taxUi.fy, taxUi.person, rec);
+  toast('Deduction added', 2400, 'success');
+  _taxDetailChanged();
+}
+function taxIncDelDed(id) {
+  var rec = _taxInc(taxUi.fy, taxUi.person);
+  var d = rec.deductions.filter(function(x) { return String(x.id) === String(id); })[0];
+  if (!d || !confirm('Delete this ' + d.label + ' entry of ' + fmt(d.amount) + '?')) return;
+  rec.deductions = rec.deductions.filter(function(x) { return x !== d; });
+  _taxSaveInc(taxUi.fy, taxUi.person, rec);
+  toast('Deduction deleted', 2400, 'info');
+  _taxDetailChanged();
+}
+
+// ── Exports ─────────────────────────────────────────────────────
+function _taxExportFooter(ws) {
+  return 'FY ' + taxFyLabel(ws.fy) + ' · ' + _taxName(ws.person) + ' · Rules version ' + TAX_RULES_VERSION +
+         ' · Estimates only. Not tax advice. Kelda can\'t lodge your return.';
+}
+function _taxFooterRows(ws) {
+  return [[], ['FY ' + taxFyLabel(ws.fy), _taxName(ws.person), 'Rules version ' + TAX_RULES_VERSION, 'Estimates only. Not tax advice.']];
+}
+
+function _taxExportCard(ws) {
+  var agent = ws.res.viaAgent;
+  var h = '<div class="card mb"><div class="section-label">' + (agent ? 'Agent pack' : 'Export') + '</div>';
+  h += '<p class="tax-desc tax-desc--top">' + (agent
+    ? 'For sharing with your agent' + (ws.res.agentName ? ', ' + esc(ws.res.agentName) : '') + ': a printable summary, plus spreadsheets of the figures behind it.'
+    : 'For keying into myTax: the worksheet as a summary, a spreadsheet, or a printout.') + '</p>';
+  h += '<div class="tax-exp">';
+  h += '<button class="btn btn-ghost" onclick="taxViewSummary()"><i class="ti ti-eye" aria-hidden="true"></i> View summary</button>';
+  h += '<button class="btn btn-ghost" onclick="taxPrintSummary()"><i class="ti ti-printer" aria-hidden="true"></i> Print / PDF</button>';
+  if (!agent) {
+    h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'worksheet\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Worksheet CSV</button>';
+  } else {
+    h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'statements\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Income statements CSV</button>';
+    h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'instalments\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Instalments paid CSV</button>';
+    h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'deductions\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Deductions CSV</button>';
+    if (ws.sales.own.length || ws.sales.joint.length) h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'cgt\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Capital gains CSV</button>';
+  }
+  h += '</div>';
+  if (agent) h += '<p class="tax-desc">Share award vests join the pack when that section arrives.</p>';
+  h += '<p class="tax-desc">Every export is labelled with the year, person and rules version, and is an estimate only.</p></div>';
+  return h;
+}
+
+// The summary used on screen and in print. Plain tables so it prints cleanly.
+function _taxSummaryHtml(ws) {
+  var r = ws.ret, rec = ws.rec, agent = ws.res.viaAgent;
+  function tr(k, v, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th scope="row">' + k + '</th><td>' + v + '</td></tr>'; }
+  function m(n) { return '<span class="tax-mono">' + esc(fmt(n)) + '</span>'; }
+  function less(n) { return '<span class="tax-mono">−' + esc(fmt(Math.abs(n))) + '</span>'; }
+  var h = '<div class="tax-sum">';
+  h += '<h2 class="tax-sum-ttl">' + (agent ? 'Tax summary for your agent' : 'Tax return worksheet') + '</h2>';
+  h += '<p class="tax-sum-sub">' + esc(_taxName(ws.person)) + ' · FY ' + esc(taxFyLabel(ws.fy)) + ' · ' +
+       (agent ? 'For sharing with your agent' + (ws.res.agentName ? ' (' + esc(ws.res.agentName) + ')' : '') : 'For keying into myTax') + '</p>';
+  h += '<table class="tax-sum-tbl"><caption>Income</caption><tbody>';
+  h += tr('Q1 Salary or wages (C)', m(r.q1.gross));
+  h += tr('Q10 Gross interest (L)', m(r.q10) + (ws.interestOverride !== null ? ' <span class="tax-k-sub">bank statement</span>' : ''));
+  h += tr('Q11 Unfranked (S) · Franked (T) · Franking credits (U)', m(r.q11.S) + ' · ' + m(r.q11.T) + ' · ' + m(r.q11.U));
+  h += tr('Q12 Employee share schemes (B)', m(r.q12.B));
+  h += tr('Q18 Net capital gain (A)', m(r.cgt.A) + (r.cgt.carryForward ? ' <span class="tax-k-sub">losses to carry forward ' + esc(fmt(r.cgt.carryForward)) + '</span>' : ''));
+  h += tr('Total income', m(r.totalIncome), 'tax-sum-total');
+  h += '</tbody></table>';
+
+  h += '<table class="tax-sum-tbl"><caption>Deductions</caption><tbody>';
+  TAX_RULES.returnRules.deductionLabels.forEach(function(l) {
+    if (ws.ded[l.id]) h += tr(esc(l.id + ' ' + l.name), m(ws.ded[l.id]));
+  });
+  h += tr('Total deductions', m(r.deductions.total), 'tax-sum-total');
+  h += '</tbody></table>';
+
+  if (rec.statements.length) {
+    h += '<table class="tax-sum-tbl"><caption>Income statements</caption><thead><tr><th scope="col">Employer</th><th scope="col">Gross</th><th scope="col">Withheld</th><th scope="col">Super</th><th scope="col">RFBA</th></tr></thead><tbody>';
+    rec.statements.forEach(function(s) {
+      h += '<tr><th scope="row">' + esc(s.employer || 'Employer') + '</th><td>' + m(s.gross) + '</td><td>' + m(s.withheld) + '</td><td>' + m(s.super) + '</td><td>' + m(s.rfba) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+
+  h += '<table class="tax-sum-tbl"><caption>Estimate</caption><tbody>';
+  h += tr('Taxable income', m(r.taxable));
+  h += tr('Tax on taxable income', m(r.tax));
+  h += tr('Medicare levy (flat 2%)', m(r.medicare));
+  if (r.offsets.franking) h += tr('Franking credits', less(r.offsets.franking));
+  if (r.offsets.fito) h += tr('Foreign income tax offset (O)', less(r.offsets.fito));
+  h += tr('Tax withheld', less(r.credits.withheld));
+  if (r.credits.tfn) h += tr('TFN amounts withheld', less(r.credits.tfn));
+  if (r.credits.instalments) h += tr('PAYG instalments paid', less(r.credits.instalments));
+  h += tr((r.payable < 0 ? 'Estimated refund' : 'Estimated to pay'), m(Math.abs(r.payable)), 'tax-sum-total');
+  h += '</tbody></table>';
+
+  if (ws.ready.missing.length) {
+    h += '<p class="tax-sum-k">Not ready yet: ' + esc(ws.ready.missing.map(function(x) { return x.label; }).join(', ')) + '.</p>';
+  }
+  h += '<p class="tax-sum-k">Not modelled: low income tax offset, Medicare levy reduction and surcharge, private health rebate, HELP, and business income.</p>';
+  h += '<p class="tax-sum-foot">' + esc(_taxExportFooter(ws)) + '</p>';
+  h += '</div>';
+  return h;
+}
+
+function _taxCurrentWs() {
+  return _taxWorksheet(taxUi.person, taxUi.fy, taxToday());
+}
+
+function taxViewSummary() {
+  var ws = _taxCurrentWs();
+  var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title" tabindex="-1" data-autofocus>Summary</div>' + _taxCloseBtn() + '</div>';
+  h += _taxSummaryHtml(ws);
+  h += '<div class="modal-actions"><button class="btn btn-ghost" onclick="taxCloseSheet()">Close</button><button class="btn btn-primary" onclick="taxPrintSummary()">Print / PDF</button></div>';
+  taxOpenSheet(h);
+}
+
+function taxPrintSummary() {
+  var ws = _taxCurrentWs();
+  var el = document.getElementById('tax-print');
+  if (!el) { el = document.createElement('div'); el.id = 'tax-print'; document.body.appendChild(el); }
+  el.innerHTML = _taxSummaryHtml(ws);
+  document.body.classList.add('tax-printing');
+  var done = function() {
+    document.body.classList.remove('tax-printing');
+    el.innerHTML = '';
+    window.removeEventListener('afterprint', done);
+  };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+
+function _taxCsvRows(ws, kind) {
+  var r = ws.ret, rec = ws.rec;
+  if (kind === 'worksheet') {
+    var rows = [['Label', 'Item', 'Amount', 'Source']];
+    rows.push(['Q1 C', 'Salary or wages', r.q1.gross, 'Income statements (' + rec.statements.length + ')']);
+    rows.push(['Q1', 'Tax withheld', r.q1.withheld, 'Income statements']);
+    rows.push(['Q10 L', 'Gross interest', r.q10, ws.interestOverride !== null ? 'Bank statement figure' : 'Interest transactions']);
+    rows.push(['Q11 S', 'Unfranked dividends', r.q11.S, 'Entered by hand']);
+    rows.push(['Q11 T', 'Franked dividends', r.q11.T, 'Entered by hand']);
+    rows.push(['Q11 U', 'Franking credits', r.q11.U, 'Entered by hand']);
+    rows.push(['Q11 V', 'TFN amounts withheld', r.q11.V, 'Entered by hand']);
+    rows.push(['Q12 D', 'ESS taxed upfront, reduction', _taxNumOr(rec.ess.D), 'Entered by hand']);
+    rows.push(['Q12 E', 'ESS taxed upfront, no reduction', _taxNumOr(rec.ess.E), 'Entered by hand']);
+    rows.push(['Q12 F', 'ESS deferral schemes', _taxNumOr(rec.ess.F), 'Entered by hand']);
+    rows.push(['Q12 B', 'ESS discounts', r.q12.B, 'Worked out']);
+    TAX_RULES.returnRules.deductionLabels.forEach(function(l) {
+      rows.push([l.id, l.name, ws.ded[l.id], 'Tagged transactions and entries by hand']);
+    });
+    rows.push(['Q18 H', 'Total current year capital gains', r.cgt.H, 'Equities sales']);
+    rows.push(['Q18 A', 'Net capital gain', r.cgt.A, 'Worked out']);
+    rows.push(['Q18 V', 'Net capital losses carried forward', r.cgt.carryForward, 'Worked out']);
+    rows.push(['O', 'Foreign income tax offset', r.offsets.fito, 'Entered by hand, capped']);
+    rows.push(['', 'Taxable income (estimate)', r.taxable, 'Worked out']);
+    rows.push(['', 'Tax on taxable income (estimate)', r.tax, 'Worked out']);
+    rows.push(['', 'Medicare levy, flat 2% (estimate)', r.medicare, 'Worked out']);
+    rows.push(['', 'PAYG instalments paid', r.credits.instalments, 'Instalments']);
+    rows.push(['', r.payable < 0 ? 'Estimated refund' : 'Estimated to pay', Math.abs(r.payable), 'Worked out']);
+    return rows;
+  }
+  if (kind === 'statements') {
+    var s = [['Employer', 'Gross payments', 'Tax withheld', 'Reportable employer super', 'Reportable fringe benefits']];
+    rec.statements.forEach(function(x) { s.push([x.employer || '', _taxNumOr(x.gross), _taxNumOr(x.withheld), _taxNumOr(x.super), _taxNumOr(x.rfba)]); });
+    return s;
+  }
+  if (kind === 'instalments') {
+    var p = [['Quarter', 'Date paid', 'Amount']];
+    ws.pays.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; }).forEach(function(x) { p.push(['Q' + x.q, x.date, Number(x.amount) || 0]); });
+    return p;
+  }
+  if (kind === 'deductions') {
+    var d = [['Label', 'Label name', 'Date', 'Description', 'Amount', 'Note', 'Source']];
+    TAX_RULES.returnRules.deductionLabels.forEach(function(l) {
+      ws.dedTx[l.id].items.forEach(function(t) {
+        var tag = taxTxTag(t);
+        d.push([l.id, l.name, t.date, t.name || t.description || '', Number(t.amount) || 0, tag ? tag.note : '', 'Transaction']);
+      });
+      rec.deductions.filter(function(x) { return x.label === l.id; }).forEach(function(x) {
+        d.push([l.id, l.name, '', x.desc || '', _taxNumOr(x.amount), '', 'Added by hand']);
+      });
+    });
+    return d;
+  }
+  if (kind === 'cgt') {
+    var c = [['Holding', 'Sale date', 'Acquired', 'Units', 'Proceeds', 'Cost base', 'Gain or loss', 'Held 12 months', 'Ownership']];
+    ws.sales.own.concat(ws.sales.joint).forEach(function(x) {
+      c.push([x.name, x.date, x.acquired || '', x.qty, x.proceeds, x.costBase, x.gain, x.discount ? 'Yes' : 'No', x.joint ? 'Joint' : 'Own']);
+    });
+    return c;
+  }
+  return [];
+}
+
+function taxDownloadCsv(kind) {
+  var ws = _taxCurrentWs();
+  var rows = _taxCsvRows(ws, kind).concat(_taxFooterRows(ws));
+  var slug = String(_taxName(ws.person)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || ws.person;
+  if (typeof downloadFile !== 'function') return;
+  // Named with the local date (exportFilename() stamps the UTC date, a day behind on AU mornings)
+  downloadFile(taxCsv(rows), 'kelda-finance-tax-' + kind + '-' + ws.fy + '-' + slug + '-' + taxToday() + '.csv', 'text/csv;charset=utf-8');
+  toast('CSV downloaded', 2400, 'success');
+}
+
+// ── Transactions: tax deduction tag (Spending edit sheet and rows) ──
+// The fields are optional and additive: an untagged transaction has none of them, and
+// untagging deletes them, so existing records are never rewritten.
+function taxTxFormSync(t) {
+  var wrap = document.getElementById('tx-tax-wrap');
+  if (!wrap) return;
+  var type = document.getElementById('tx-type');
+  var on = taxEnabled() && (!type || type.value === 'expense');
+  wrap.hidden = !on;
+  if (!on) return;
+  var sel = document.getElementById('tx-tax-label');
+  if (sel && sel.options.length < 2) {
+    TAX_RULES.returnRules.deductionLabels.forEach(function(l) {
+      var o = document.createElement('option');
+      o.value = l.id; o.textContent = l.id + ' ' + l.name;
+      sel.appendChild(o);
+    });
+  }
+  if (t !== undefined && sel) {
+    var tag = taxTxTag(t);
+    var ap = typeof activeProfile !== 'undefined' && TAX_PEOPLE.indexOf(activeProfile) !== -1 ? activeProfile : 'brenton';
+    sel.value = tag ? tag.label : '';
+    document.getElementById('tx-tax-person').value = (tag && tag.person) || (t && TAX_PEOPLE.indexOf(t.person) !== -1 ? t.person : ap);
+    document.getElementById('tx-tax-note').value = tag ? tag.note : '';
+  }
+  taxTxLabelChanged();
+}
+function taxTxLabelChanged() {
+  var sel = document.getElementById('tx-tax-label');
+  var more = document.getElementById('tx-tax-more');
+  if (sel && more) more.hidden = !sel.value;
+}
+// Write the form's tax fields onto a transaction. Does nothing when the section is hidden
+// (flag off, or an income transaction), so other paths never touch these fields.
+function taxTxApplyForm(t) {
+  var wrap = document.getElementById('tx-tax-wrap');
+  if (!wrap || wrap.hidden || !t) return;
+  var label = document.getElementById('tx-tax-label').value;
+  var ok = TAX_RULES.returnRules.deductionLabels.some(function(l) { return l.id === label; });
+  if (!ok) { delete t.taxDeductible; delete t.taxLabel; delete t.taxPerson; delete t.taxNote; return; }
+  var who = document.getElementById('tx-tax-person').value;
+  var note = (document.getElementById('tx-tax-note').value || '').trim().slice(0, 200);
+  t.taxDeductible = true;
+  t.taxLabel = label;
+  t.taxPerson = TAX_PEOPLE.indexOf(who) !== -1 ? who : 'brenton';
+  if (note) t.taxNote = note; else delete t.taxNote;
+}
+// Badge shown on a tagged transaction's row or card (text, not colour alone)
+function taxTxBadge(t) {
+  if (!taxEnabled()) return '';
+  var tag = taxTxTag(t);
+  return tag ? ' <span class="badge tax-b-info tax-tx-badge">Tax ' + esc(tag.label) + '</span>' : '';
+}
+// Desktop rows have no tap-to-edit, so a tax button opens the edit sheet
+function taxTxRowBtn(t) {
+  if (!taxEnabled() || t.type !== 'expense') return '';
+  var tag = taxTxTag(t);
+  return '<button class="tax-tx-btn" onclick="openTxModal(' + Number(t.id) + ')" aria-label="' +
+         (tag ? 'Tax deduction ' + esc(tag.label) + '. Edit transaction' : 'Tag as a tax deduction') + '"><i class="ti ti-receipt-tax" aria-hidden="true"></i></button>';
+}
+
 // ── Later phases ────────────────────────────────────────────────
 function _taxLaterHtml(tab) {
   var txt = {
-    'return': 'The Return worksheet arrives in the next beta update: income statements, interest, dividends, deductions and an export for myTax or your agent.',
     'share':  'Share awards arrive in a later beta update: RSU vests, the 30-day rule, the tax to set aside on each vest, and CGT parcels.',
     'cgt':    'The capital gains forecast arrives in a later beta update, once the rules that start 1 July 2027 have been checked against the law.'
   }[tab] || '';
@@ -532,6 +1429,9 @@ function taxCloseSheet() {
   if (ov) { ov.classList.remove('open'); ov.firstChild.innerHTML = ''; }
   _taxSheetOnEscape = null;
   var r = _taxSheetReturn; _taxSheetReturn = null;
+  _taxDetailId = null;
+  // A re-rendered opener (a worksheet row, say) is found again by its id
+  if (r && r.id && !document.body.contains(r)) r = document.getElementById(r.id);
   if (!r || r === document.body || !document.body.contains(r)) {
     // The opener was re-rendered, or the browser never focused it (Safari doesn't focus clicked buttons)
     r = document.querySelector('#page-tax.active .tax-chip') || document.querySelector('#page-tax.active .tax-seg-btn.on');

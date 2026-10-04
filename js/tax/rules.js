@@ -18,8 +18,16 @@ var TAX_SRC = {
   weekend:    'https://www.ato.gov.au/businesses-and-organisations/preparing-lodging-and-paying/reports-and-returns/due-dates-for-lodging-and-paying',
   instalDue:  'https://www.ato.gov.au/tax-and-super-professionals/for-tax-professionals/prepare-and-lodge/registered-agent-lodgment-program/due-dates-by-obligation-type/activity-statements',
   ess30:      'https://www.ato.gov.au/law/view/print?DocID=PAC/19970038/83A-115&PiT=99991231235958',
-  td20224:    'https://www.ato.gov.au/law/view/view.htm?docid=%22TXD%2FTD20224%2FNAT%2FATO%2F00001%22'
+  td20224:    'https://www.ato.gov.au/law/view/view.htm?docid=%22TXD%2FTD20224%2FNAT%2FATO%2F00001%22',
+  // Individual tax return instructions 2026 (NAT 2541) and supplementary (NAT 2679)
+  q10:        'https://www.ato.gov.au/forms-and-instructions/individual-tax-return-2026-instructions/income-questions-1-12-individual-tax-return-2026/10-gross-interest-2026',
+  q11:        'https://www.ato.gov.au/forms-and-instructions/individual-tax-return-2026-instructions/income-questions-1-12-individual-tax-return-2026/11-dividends-2026',
+  d1d10:      'https://www.ato.gov.au/forms-and-instructions/individual-tax-return-2026-instructions/deduction-questions-d1-d10-individual-tax-return-2026',
+  q18:        'https://www.ato.gov.au/forms-and-instructions/individual-supplementary-tax-return-2026-instructions/income-questions-13-24-supplementary-tax-return-2026/18-capital-gains-2026'
 };
+
+// Bumped whenever a rule below changes. Printed in every Tax export footer.
+var TAX_RULES_VERSION = '2026.10.05';
 
 var TAX_RULES = {
 
@@ -43,6 +51,38 @@ var TAX_RULES = {
       note: 'Checked against a business-focused ATO page; no individual-specific wording found.'
     },
     sources: [TAX_SRC.ess30, TAX_SRC.td20224], verifiedOn: '2026-10-04', verified: true
+  },
+
+  // Return worksheet (Phase 1b). Read from the 2026 return instructions; the 2027 ones aren't
+  // published yet, so FY2027 uses these with returnRulesFy flagging where they came from.
+  returnRules: {
+    returnRulesFy: 'FY2026',
+    // Q10 and Q11: a joint account or joint shares count half each "if you held the account
+    // equally with one other person". Unequal ownership is the user's to enter.
+    jointEqualShare: 0.5,
+    // Q11: franking credits (label U) are assessable income AND a credit on assessment.
+    frankingCreditIsIncomeAndCredit: true,
+    // Q18 step 6–8: losses (current year, then earlier years) come off 'other' gains first, then
+    // discount gains; the 50% discount applies only to discount gains left after losses.
+    cgtDiscountIndividual: 0.5,
+    // Supplementary Q20 label O: foreign tax of $1,000 or less is claimed as paid; above that,
+    // either work out the full offset or claim $1,000 and forgo the rest. Kelda caps at $1,000
+    // and does not work out the full limit. Source and date from the v4 spec, section 6.1.
+    fitoDirectLimit: 1000, fitoVerifiedOn: '2026-10-03',
+    // D1–D10 labels (2026 instructions)
+    deductionLabels: [
+      { id: 'D1',  name: 'Work-related car expenses' },
+      { id: 'D2',  name: 'Work-related travel expenses' },
+      { id: 'D3',  name: 'Work clothing, laundry and dry-cleaning expenses' },
+      { id: 'D4',  name: 'Work-related self-education expenses' },
+      { id: 'D5',  name: 'Other work-related expenses' },
+      { id: 'D6',  name: 'Low-value pool deduction' },
+      { id: 'D7',  name: 'Interest income deductions' },
+      { id: 'D8',  name: 'Dividend deductions' },
+      { id: 'D9',  name: 'Gifts or donations' },
+      { id: 'D10', name: 'Cost of managing tax affairs' }
+    ],
+    sources: [TAX_SRC.q10, TAX_SRC.q11, TAX_SRC.d1d10, TAX_SRC.q18], verifiedOn: '2026-10-05', verified: true
   },
 
   FY2026: {

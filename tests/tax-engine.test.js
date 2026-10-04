@@ -249,3 +249,139 @@ test('FY helpers', () => {
   assert.equal(T.taxFyLabel('FY2026'), '2025–26');
   assert.equal(T.taxPrevFy('FY2027'), 'FY2026');
 });
+
+// ── Return worksheet (Phase 1b) ─────────────────────────────────
+// Made-up people and amounts. The CGT vectors are the ATO's own worked example
+// ("Kathleen", 2026 supplementary instructions, question 18).
+test('Q18 net capital gain: ATO 2026 worked example', () => {
+  const items = [{ gain: 3000, discount: true }, { gain: 520, discount: false }, { gain: -600, discount: false }];
+  const r = plain(T.taxNetCapitalGain(items, 400));
+  assert.equal(r.H, 3520);
+  assert.equal(r.A, 1260);           // (3000 − 80 − 400) × 50%
+  assert.equal(r.carryForward, 0);
+});
+
+test('Q18: losses beyond gains carry forward; no discount on other gains', () => {
+  assert.deepEqual(plain(T.taxNetCapitalGain([{ gain: 1000, discount: true }, { gain: -1500 }], 200)),
+    { H: 1000, A: 0, discount: 0, currentLosses: 1500, lossesCF: 200, carryForward: 700 });
+  assert.equal(T.taxNetCapitalGain([{ gain: 800, discount: false }], 0).A, 800);
+  assert.equal(T.taxNetCapitalGain([], 0).A, 0);
+});
+
+test('Q11 dividends: assessable is S + T + U', () => {
+  assert.deepEqual(plain(T.taxDividends({ unfranked: 100, franked: 700, credits: 300, tfnWithheld: 0 })),
+    { S: 100, T: 700, U: 300, V: 0, assessable: 1100 });
+  assert.equal(T.taxDividends(null).assessable, 0);
+  assert.equal(T.taxDividends({ franked: -50 }).T, 0);
+});
+
+const txs = [
+  { id: 1, date: '2025-08-01', type: 'income', catId: 'interest', subcat: 'Savings Interest', amount: 40, person: 'brenton' },
+  { id: 2, date: '2025-09-01', type: 'income', catId: 'interest', subcat: 'Term Deposit', amount: 100, person: 'joint' },
+  { id: 3, date: '2025-10-01', type: 'income', catId: 'interest', subcat: 'Offset Interest', amount: 900, person: 'brenton' },
+  { id: 4, date: '2025-11-01', type: 'income', catId: 'interest', amount: 25, person: 'shelley' },
+  { id: 5, date: '2026-07-01', type: 'income', catId: 'interest', amount: 60, person: 'brenton' },       // next FY
+  { id: 6, date: '2025-12-01', type: 'expense', catId: 'shopping', amount: 120, person: 'brenton',
+    taxDeductible: true, taxLabel: 'D9', taxNote: 'Receipt in email' },
+  { id: 7, date: '2026-01-10', type: 'expense', catId: 'other', amount: 80, person: 'brenton',
+    taxDeductible: true, taxLabel: 'D5', taxPerson: 'shelley' },
+  { id: 8, date: '2026-02-10', type: 'expense', catId: 'other', amount: 55, person: 'joint',
+    taxDeductible: true, taxLabel: 'D10' },                                                            // no claimant
+  { id: 9, date: '2026-03-10', type: 'expense', catId: 'other', amount: 30, person: 'brenton',
+    taxDeductible: true, taxLabel: 'X1' },                                                             // bad label
+  { id: 10, date: '2026-03-11', type: 'income', catId: 'other', amount: 30, person: 'brenton',
+    taxDeductible: true, taxLabel: 'D5' },                                                             // refund
+  { id: 11, date: '2026-04-01', type: 'expense', catId: 'other', amount: 70, person: 'brenton' }       // untagged
+];
+
+test('Q10 from interest transactions, joint at half, offset excluded', () => {
+  const on = plain(T.taxInterestFromTx(txs, 'brenton', 'FY2026', true));
+  assert.equal(on.own, 40);
+  assert.equal(on.joint, 100);
+  assert.equal(on.jointCounted, 50);
+  assert.equal(on.total, 90);
+  assert.deepEqual(on.excluded.map((t) => t.id), [3]);
+  assert.equal(T.taxInterestFromTx(txs, 'brenton', 'FY2026', false).total, 40);
+  assert.equal(T.taxInterestFromTx(txs, 'brenton', 'FY2027', true).total, 60);
+  assert.equal(T.taxInterestFromTx(txs, 'shelley', 'FY2026', true).total, 75);
+});
+
+test('tax tag: label checked, claimant from taxPerson then person', () => {
+  assert.deepEqual(plain(T.taxTxTag(txs[5])), { label: 'D9', person: 'brenton', note: 'Receipt in email' });
+  assert.equal(T.taxTxTag(txs[6]).person, 'shelley');
+  assert.equal(T.taxTxTag(txs[7]).person, null);
+  assert.equal(T.taxTxTag(txs[8]), null);
+  assert.equal(T.taxTxTag(txs[10]), null);
+  assert.equal(T.taxTxTag({ taxDeductible: false, taxLabel: 'D5' }), null);
+});
+
+test('D1–D10 from tagged expenses only, per claimant', () => {
+  const b = plain(T.taxDeductionsFromTx(txs, 'brenton', 'FY2026'));
+  assert.equal(b.D9.total, 120);
+  assert.equal(b.D5.total, 0);         // refund ignored; the D5 expense belongs to Shelley
+  assert.equal(b.D10.total, 0);        // joint with no claimant isn't counted
+  assert.equal(T.taxDeductionsFromTx(txs, 'shelley', 'FY2026').D5.total, 80);
+  assert.equal(Object.keys(b).length, 10);
+});
+
+test('return: salary-only estimate, 2025–26', () => {
+  const r = plain(T.taxBuildReturn({
+    statements: [{ gross: 90000, withheld: 20000, super: 5000, rfba: 0 }, { gross: 10000, withheld: 2000 }],
+    instalmentsPaid: 1000
+  }, 'FY2026'));
+  assert.equal(r.q1.gross, 100000);
+  assert.equal(r.q1.count, 2);
+  assert.equal(r.taxable, 100000);
+  assert.equal(r.tax, 20788);           // 4,288 + 30% × 55,000
+  assert.equal(r.medicare, 2000);
+  assert.equal(r.credits.total, 23000);
+  assert.equal(r.payable, -212);        // refund
+});
+
+test('return: all income lines, deductions, franking and FITO', () => {
+  const r = plain(T.taxBuildReturn({
+    statements: [{ gross: 120000, withheld: 30000 }],
+    interest: 500,
+    dividends: { unfranked: 100, franked: 700, credits: 300 },
+    ess: { F: 10000 },
+    deductions: { D5: 400, D9: 100.5 },
+    cgt: { items: [{ gain: 2000, discount: true }], lossesCF: 0 },
+    fito: 1500
+  }, 'FY2026'));
+  assert.equal(r.totalIncome, 120000 + 500 + 1100 + 10000 + 1000);
+  assert.equal(r.deductions.total, 500.5);
+  assert.equal(r.taxable, 132099);      // floor(132,600 − 500.50)
+  assert.equal(r.offsets.franking, 300);
+  assert.equal(r.offsets.fito, 1000);   // capped at the direct-claim limit
+  assert.equal(r.offsets.fitoCapped, true);
+  const tax = T.calcResidentTax(132099, 'FY2026'), med = T.calcMedicare(132099, 'FY2026');
+  assert.equal(r.payable, Math.round((tax + med - 1000 - 300 - 30000) * 100) / 100);
+});
+
+test('return: ESS $1,000 reduction only when the income test answer is yes', () => {
+  assert.equal(T.taxBuildReturn({ ess: { D: 3000, reductionTest: 'yes' } }, 'FY2026').q12.B, 2000);
+  assert.equal(T.taxBuildReturn({ ess: { D: 3000, reductionTest: 'unsure' } }, 'FY2026').q12.B, 3000);
+  assert.equal(T.taxBuildReturn({}, 'FY2099'), null);
+});
+
+test('readiness counts only sections that apply', () => {
+  const r = plain(T.taxReadiness([
+    { id: 'q1', label: 'Income statements', ready: true },
+    { id: 'q10', label: 'Interest', ready: false },
+    { id: 'inst', label: 'Instalments', ready: false, applies: false }
+  ]));
+  assert.equal(r.ready, 1);
+  assert.equal(r.total, 2);
+  assert.deepEqual(r.missing.map((m) => m.id), ['q10']);
+});
+
+test('CSV: quoting and formula guard', () => {
+  assert.equal(T.taxCsv([['a', 1.5, null], ['=SUM(A1)', 'x,y', 'say "hi"'], ['-5', -5, '@x']]),
+    'a,1.5,\r\n\'=SUM(A1),"x,y","say ""hi"""\r\n\'-5,-5,\'@x');
+});
+
+test('Q10: a record with only the category name still counts', () => {
+  const r = T.taxInterestFromTx([{ date: '2025-08-01', type: 'income', category: 'Interest', amount: 12, person: 'brenton' },
+    { date: '2025-08-02', type: 'income', category: 'Salary', amount: 99, person: 'brenton' }], 'brenton', 'FY2026', true);
+  assert.equal(r.total, 12);
+});

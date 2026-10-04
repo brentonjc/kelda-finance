@@ -137,6 +137,88 @@
 .tax-sheet .modal-actions .btn{min-height:44px;}
 .tax-sheet .btn:disabled{opacity:.45;cursor:not-allowed;}
 .tax-close{min-width:44px;min-height:44px;}
+.tax-sheet .modal-title[tabindex]:focus{outline:none;}
+
+
+/* ── Phase 1b: estimate, readiness, Return worksheet ── */
+#page-tax .btn,.tax-sheet .btn{min-height:44px;}
+.tax-big{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp2);font-size:1.9rem;line-height:1.2;margin:4px 0 2px;color:var(--text);}
+.tax-big .badge{font-size:.7rem;}
+.tax-desc--top{margin:0 0 var(--sp2);}
+.tax-ready-line{margin:0 0 var(--sp2);font-size:.92rem;color:var(--text);}
+/* Readiness meter: one segment per section; the count is also in text above it */
+.tax-meter{display:flex;gap:4px;margin-bottom:var(--sp3);}
+.tax-meter-seg{flex:1;height:8px;border-radius:var(--radius-pill);background:var(--card3);}
+.tax-meter-seg.on{background:var(--success);}
+.tax-missing{list-style:none;margin:0 0 var(--sp2);padding:0;}
+.tax-missing li{display:flex;align-items:center;justify-content:space-between;gap:var(--sp2);min-height:44px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.86rem;}
+.tax-missing li:last-child{border-bottom:none;}
+
+/* Worksheet rows: each is one button that opens its detail sheet */
+.tax-rows{list-style:none;margin:0;padding:0;}
+.tax-rows li{border-bottom:1px solid var(--border);}
+.tax-rows li:last-child{border-bottom:none;}
+.tax-row{display:flex;align-items:center;gap:10px;width:100%;min-height:60px;padding:10px 0;border:none;background:transparent;
+  color:var(--text);font-family:var(--font-body);text-align:left;cursor:pointer;}
+.tax-row:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:var(--radius-sm);}
+.tax-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.tax-row-t{font-size:.9rem;font-weight:600;}
+.tax-row-code{font-family:var(--font-mono);font-weight:500;color:var(--tax-sub);margin-right:2px;}
+.tax-src{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:2px 8px;border-radius:var(--radius-pill);
+  background:var(--card2);border:1px solid var(--border);font-size:.72rem;color:var(--tax-sub);}
+.tax-row-end{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.9rem;}
+.tax-row-chev{flex:none;color:var(--tax-sub);}
+.tax-row .badge .ti,.tax-missing .badge .ti{font-size:.8rem;vertical-align:-1px;}
+
+/* Detail sheets */
+.tax-list-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px 12px;margin:var(--sp3) 0;background:var(--card2);}
+.tax-list-card .dr{min-height:44px;}
+.tax-list-card .dr-k{color:var(--tax-sub);}
+.tax-list-card .dr-v{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
+.tax-st{display:flex;align-items:center;gap:4px;padding:8px 0;border-bottom:1px solid var(--border);}
+.tax-st-main{flex:1;min-width:0;display:flex;flex-direction:column;font-size:.86rem;}
+.tax-ded-hd{padding:10px 0 2px;font-size:.84rem;}
+.tax-btn-row--start{justify-content:flex-start;flex-wrap:wrap;}
+.tax-opts--3{display:grid;grid-template-columns:repeat(3,1fr);}
+.tax-exp{display:grid;grid-template-columns:1fr;gap:var(--sp2);}
+.tax-exp .btn{justify-content:center;}
+@media (min-width:760px){ .tax-exp{grid-template-columns:repeat(2,1fr);} }
+.tax-cmp tr.tax-cmp-key th,.tax-cmp tr.tax-cmp-key td{font-weight:700;color:var(--text);}
+
+/* Summary (on screen in a sheet, and in print) */
+.tax-sum-ttl{font-family:var(--font-head);font-size:1.05rem;margin:0 0 2px;}
+.tax-sum-sub{font-size:.8rem;color:var(--tax-sub);margin:0 0 var(--sp3);}
+.tax-sum-tbl{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:var(--sp3);}
+.tax-sum-tbl caption{text-align:left;font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tax-sub);padding-bottom:4px;}
+.tax-sum-tbl th,.tax-sum-tbl td{padding:6px 4px;border-bottom:1px solid var(--border);vertical-align:top;}
+.tax-sum-tbl th{text-align:left;font-weight:500;text-transform:none;letter-spacing:0;font-size:.8rem;color:inherit;background:transparent;}
+.tax-sum-tbl td{text-align:right;}
+.tax-sum-tbl thead th{font-size:.72rem;color:var(--tax-sub);font-weight:600;}
+.tax-sum-tbl thead th:not(:first-child){text-align:right;}
+.tax-sum-total th,.tax-sum-total td{font-weight:700;}
+.tax-sum-k{font-size:.76rem;color:var(--tax-sub);margin:0 0 6px;}
+.tax-sum-foot{font-size:.72rem;color:var(--tax-sub);border-top:1px solid var(--border);padding-top:8px;margin-top:var(--sp3);}
+
+/* Print / PDF: only the summary. System colours, so it prints dark-on-white in every theme. */
+#tax-print{display:none;}
+@media print{
+  /* :not(#tax-print) carries id specificity, enough to beat the app's own display rules */
+  body.tax-printing > *:not(#tax-print){display:none;}
+  body.tax-printing{background:Canvas;}
+  body.tax-printing #tax-print{display:block;width:100%;flex:1 1 100%;color-scheme:light;color:CanvasText;background:Canvas;padding:0;}
+  #tax-print .tax-sum-sub,#tax-print .tax-sum-k,#tax-print .tax-sum-foot,#tax-print .tax-sum-tbl caption,
+  #tax-print .tax-sum-tbl thead th,#tax-print .tax-k-sub{color:GrayText;}
+  #tax-print .tax-sum-tbl th,#tax-print .tax-sum-tbl td,#tax-print .tax-sum-foot{border-color:GrayText;}
+  #tax-print .tax-sum-tbl tr{break-inside:avoid;}
+}
+
+/* Transactions: tax deduction tag */
+.tx-tax{border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px 0;margin:0 0 14px;min-width:0;}
+.tx-tax .tax-legend{padding:0 4px;margin-bottom:0;}
+.tax-tx-badge{margin-left:6px;vertical-align:1px;}
+.tax-tx-btn{min-width:44px;min-height:44px;border:none;background:transparent;color:var(--tax-sub);cursor:pointer;border-radius:var(--radius-sm);font-size:1.05rem;}
+.tax-tx-btn:hover{color:var(--primary);}
+.tax-tx-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
 
 @media (prefers-reduced-motion: reduce){
   .tax-sw::before,.tax-sw-thumb{transition:none;}

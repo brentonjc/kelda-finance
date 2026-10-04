@@ -1637,6 +1637,26 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
       </div>
+      <!-- Tax (Beta): shown for expenses only when the beta is on (js/pages/tax.js) -->
+      <fieldset class="tx-tax" id="tx-tax-wrap" hidden>
+        <legend class="tax-legend">Tax (Beta)</legend>
+        <div class="form-grid">
+          <div><label class="lbl" for="tx-tax-label">Tax deduction</label>
+            <select id="tx-tax-label" onchange="taxTxLabelChanged()"><option value="">Not a deduction</option></select>
+          </div>
+        </div>
+        <div id="tx-tax-more" hidden>
+          <div class="form-grid">
+            <div><label class="lbl" for="tx-tax-person">Claimed by</label>
+              <select id="tx-tax-person">
+                <option value="brenton" data-profile-name="brenton">Profile 1</option>
+                <option value="shelley" data-profile-name="shelley">Profile 2</option>
+              </select>
+            </div>
+            <div><label class="lbl" for="tx-tax-note">Tax note</label><input type="text" id="tx-tax-note" maxlength="200" placeholder="e.g. Receipt saved, 60% work use"/></div>
+          </div>
+        </div>
+      </fieldset>
       <div class="modal-actions">
         <button class="btn btn-danger tx-del-btn" id="tx-del-btn" onclick="txDeleteFromModal()" style="display:none"><i class="ti ti-trash"></i> Delete</button>
         <button class="btn btn-ghost" onclick="closeTxModal()">Cancel</button>
