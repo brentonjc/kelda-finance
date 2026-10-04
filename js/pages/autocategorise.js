@@ -69,7 +69,7 @@ function preprocessMerchantString(raw) {
   s = s.replace(/\s[\d\-().]{7,}/g, '');
   s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
   s = s.toLowerCase().trim().replace(/\s+/g, ' ').replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
-  if (s.length < 3) return '';
+  if (s.length < 2) return '';
   return s;
 }
 
@@ -314,7 +314,7 @@ function resolveAlias(preprocessed) {
 // National brands only. The repo is public and every user gets these, so no local businesses or
 // anything specific to one household — a user's own merchants become rules when they categorise.
 // Keys shorter than 4 characters must be 'exact': 'contains' keys need at least 4 (see lruleHit).
-var SEED_VERSION = '2026-09-27-v1';
+var SEED_VERSION = '2026-10-04-v1';
 
 var SEED_LRULES = {
   // Business Costs
@@ -325,6 +325,7 @@ var SEED_LRULES = {
   // Car & Transport — a few dollars at a servo is a coffee or a snack, not fuel
   '7-eleven':                     { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
   'ampol foodary':                { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH' },
+  'coles express':                { catId:'car_transport',     subcat:'Petrol',                  pattern:'contains', source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
   'bp':                           { catId:'car_transport',     subcat:'Petrol',                  pattern:'exact',    source:'manual', confidence:'HIGH', amountThresholds:[{maxAmount:10,catId:'food_eating_out',subcat:'Cafe and Lunches'}] },
   'linkt':                        { catId:'car_transport',     subcat:'Tolls',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
   'nrma':                         { catId:'insurance_utilities',subcat:'Car Insurance',          pattern:'exact',    source:'manual', confidence:'HIGH' },
@@ -442,6 +443,13 @@ function seedLRulesFromCSV() {
   var keys = Object.keys(SEED_LRULES);
   for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
+    // The user's exact rule on a brand stands in for the built-in 'contains' rule (one key, one rule):
+    // keep their category, but let it cover the brand's variants ("bunnings (artarmon)") as the seed would.
+    var own = LRULES[key];
+    if (own && own.userModified && own.pattern === 'exact' && SEED_LRULES[key].pattern === 'contains') {
+      own.pattern = 'contains';
+      rulesModified = true;
+    }
     var shouldSeed = !LRULES[key] || (forceReseed && LRULES[key] && !LRULES[key].userModified);
     if (shouldSeed) {
       var seed = SEED_LRULES[key];
@@ -497,14 +505,22 @@ function lruleHit(text, keys) {
   return best ? { key: best, confidence: 'MEDIUM' } : null;
 }
 
+// Of the hits on the alias-shortened text and on the full text, the more specific wins: an exact
+// rule beats a prefix rule, then the longer key. A tie goes to the shortened text.
+function betterLruleHit(a, b) {
+  if (!a || !b) return a || b;
+  if ((a.confidence === 'HIGH') !== (b.confidence === 'HIGH')) return a.confidence === 'HIGH' ? a : b;
+  return b.key.length > a.key.length ? b : a;
+}
+
 // context: the pre-alias description. Aliasing shortens "vanguard super" to "vanguard", so a rule
 // on the full text (e.g. the user's own correction) is tried before the built-in keywords, and
 // keyword exclusions are checked against the full text.
 function matchLRulesNew(canonical, context) {
   if (!canonical || canonical.length < 2) return null;   // 2 so an alias like 'bp' can reach its rule
   var keys = Object.keys(LRULES);
-  var hit = lruleHit(canonical, keys);
-  if (!hit && context && context !== canonical) hit = lruleHit(context, keys);
+  var hit = betterLruleHit(lruleHit(canonical, keys),
+    (context && context !== canonical) ? lruleHit(context, keys) : null);
 
   if (hit) {
     var matchedKey = hit.key;
@@ -1077,9 +1093,11 @@ var AutoCat = (function() {
   }
 
   // wholeWord: the keyword can't sit inside a longer word ('stake' must not fire on 'mistake').
-  // Short keywords are always whole-word: 'vet' must not fire on 'velvet', nor 'toy' on 'toyota'.
+  // Single-word keywords are always whole-word: 'vet' must not fire on 'velvet', nor 'toy' on
+  // 'toyota', nor 'shell' on 'shelley'. Only multi-word phrases may sit inside a longer text.
   function hasKeyword(test, kw, wholeWord) {
-    if (kw.trim().length <= 4) { kw = kw.trim(); wholeWord = true; }
+    var word = kw.trim();
+    if (word.length <= 4 || word.indexOf(' ') === -1) { kw = word; wholeWord = true; }
     var i = test.indexOf(kw);
     if (!wholeWord) return i !== -1;
     while (i !== -1) {
@@ -1121,8 +1139,9 @@ var AutoCat = (function() {
     return { catId: matches[0].catId, subcat: matches[0].subcat, confidence: conf };
   }
 
+  // Amount alone says nothing about what a credit is: the old $1k-$20k guess filed transfers and
+  // reimbursements as Salary. An unrecognised credit now stays uncategorised for review.
   function amountSignal(amount, isCredit) {
-    if (isCredit && amount >= 1000 && amount <= 20000) return { catId:'salary', subcat:'Regular Pay', confidence: CONF_LOW };
     return null;
   }
 
