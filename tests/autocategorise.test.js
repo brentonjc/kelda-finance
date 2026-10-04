@@ -150,9 +150,9 @@ test('a BPAY to the Tax Office is income tax', () => {
 
 test('short keywords only match whole words', () => {
   const app = loadApp();
-  assert.ok(!categorise(app, 'VELVET HAIR STUDIO', 'expense', 80).startsWith('pippen'));
+  assert.ok(!categorise(app, 'VELVET HAIR STUDIO', 'expense', 80).startsWith('pets'));
   assert.ok(!categorise(app, 'TOYOTA EXAMPLEVILLE SERVICE', 'expense', 400).startsWith('children'));
-  assert.equal(categorise(app, 'EXAMPLEVILLE VET CLINIC', 'expense', 120), 'pippen › Vet Bills');
+  assert.equal(categorise(app, 'EXAMPLEVILLE VET CLINIC', 'expense', 120), 'pets › Vet Bills');
 });
 
 test('aliases resolve to the plain brand, not one bank\'s wording of it', () => {
