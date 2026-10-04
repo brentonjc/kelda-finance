@@ -388,8 +388,8 @@ var SEED_LRULES = {
   // Insurance
   'metlife':                      { catId:'insurance_utilities', subcat:'Life & Income Insurance', pattern:'contains', source:'manual', confidence:'HIGH' },
   // Pets
-  'petbarn':                      { catId:'pippen',            subcat:'Pet Food',                pattern:'contains', source:'manual', confidence:'HIGH' },
-  'petsure':                      { catId:'pippen',            subcat:'Pet Insurance',           pattern:'exact',    source:'manual', confidence:'HIGH' },
+  'petbarn':                      { catId:'pets',              subcat:'Pet Food',                pattern:'contains', source:'manual', confidence:'HIGH' },
+  'petsure':                      { catId:'pets',              subcat:'Pet Insurance',           pattern:'exact',    source:'manual', confidence:'HIGH' },
   // Shopping
   'amazon':                       { catId:'shopping',          subcat:'Online Shopping',         pattern:'exact',    source:'manual', confidence:'HIGH' },
   'amazon gift card':             { catId:'shopping',          subcat:'Gifts',                   pattern:'exact',    source:'manual', confidence:'HIGH' },
@@ -1027,10 +1027,10 @@ var AutoCat = (function() {
     { catId:'children', subcat:'School Fees',          keywords:['school fee','tuition fee','enrolment fee','excursion','school levy','school camp'] },
     { catId:'children', subcat:'Children Activities',  keywords:['swimming lesson','dancing class','music lesson','sports class','gymnastics','martial arts','little athletics'] },
     { catId:'children', subcat:'Toys and Presents',    keywords:['baby bunting','nappies','formula','baby food','pram','stroller','cot','car seat','toy','toys'] },
-    { catId:'pippen',  subcat:'Vet Bills',    keywords:['vet','vets','veterinary','veterinarian','animal hospital','animal clinic'] },
-    { catId:'pippen',  subcat:'Pet Food',     keywords:['petbarn','petstock','pet circle','city farmers','greencross','pet food','dog food','cat food'] },
-    { catId:'pippen',  subcat:'Dog Grooming', keywords:['dog grooming','pet grooming','dog wash','dog bath','dog salon'] },
-    { catId:'pippen',  subcat:'Pet Insurance',keywords:['pet insurance','bow wow meow','petplan','medibank pet','real pet insurance'] },
+    { catId:'pets',    subcat:'Vet Bills',    keywords:['vet','vets','veterinary','veterinarian','animal hospital','animal clinic'] },
+    { catId:'pets',    subcat:'Pet Food',     keywords:['petbarn','petstock','pet circle','city farmers','greencross','pet food','dog food','cat food'] },
+    { catId:'pets',    subcat:'Dog Grooming', keywords:['dog grooming','pet grooming','dog wash','dog bath','dog salon'] },
+    { catId:'pets',    subcat:'Pet Insurance',keywords:['pet insurance','bow wow meow','petplan','medibank pet','real pet insurance'] },
     { catId:'business',subcat:'Website and Digital', keywords:['adobe','microsoft 365','office 365','dropbox','notion','slack','zoom','google workspace','canva','figma','atlassian','github','aws','azure','digital ocean','cloudflare','godaddy','namecheap','domain registration'] },
     { catId:'tax',     subcat:'Income Tax',    keywords:['ato payment','income tax','tax instalment','pay as you go','payg','bas payment','gst payment','business activity'] }
   ];

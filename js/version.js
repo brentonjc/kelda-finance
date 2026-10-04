@@ -14,13 +14,13 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.2';
+var APP_VERSION = '2.5.3';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
-    version: '2.5.2',
+    version: '2.5.3',
     date: '2026-10-04',
     title: 'More accurate categories',
     notes: [
@@ -28,6 +28,15 @@ var APP_CHANGELOG = [
       'Large deposits are no longer guessed to be Salary. Ones the app can’t recognise are left for you to categorise',
       'Fewer false matches: “Shelley” no longer counts as Shell petrol, or “hospitality” as a hospital',
       'Uber Eats is filed as food delivery, not a taxi, and Coles Express as petrol',
+    ],
+  },
+  {
+    version: '2.5.2',
+    date: '2026-10-03',
+    title: 'Pets category tidy-up',
+    notes: [
+      'The Pets category has a cleaner internal name. Your pet transactions, budgets and rules move across automatically',
+      'Older backups and exports still import into Pets',
     ],
   },
   {
