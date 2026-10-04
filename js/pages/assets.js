@@ -53,14 +53,15 @@ function renderAssets() {
   var months   = ctAllMonths();
   var lm       = months.length ? months[months.length - 1] : null;
   var bankRows = CT_ACCTS.map(function(a) {
-    var b = lm ? ((CT[a.id] || {})[lm] || 0) : 0;
-    return { label: ctLabel(a), icon: a.icon, value: b };
+    var bal = lm ? ctBalanceAt(a.id, lm) : { value: 0, carried: false, month: null };
+    return { label: ctLabel(a), icon: a.icon, value: bal.value, carriedFrom: bal.carried ? bal.month : null };
   });
   var bankTotal = bankRows.reduce(function(s, r) { return s + r.value; }, 0);
 
   document.getElementById('assets-bank').innerHTML =
     bankRows.map(function(r) {
-      return '<div class="dr"><span class="dr-k">' + iconTag(r.icon) + ' ' + r.label + '</span><span class="dr-v">' + fmt(r.value) + '</span></div>';
+      var carried = r.carriedFrom ? '<span class="dr-carried">as of ' + esc(ctMonthLabel(r.carriedFrom)) + '</span>' : '';
+      return '<div class="dr"><span class="dr-k">' + iconTag(r.icon) + ' ' + r.label + carried + '</span><span class="dr-v">' + fmt(r.value) + '</span></div>';
     }).join('')
     + '<div class="dr dr--total">'
     + '<span class="dr-k">Total Bank</span>'
@@ -432,7 +433,7 @@ function renderNetWorthHistory() {
   var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
     ? CT_ACCTS.map(function(a){ return a.id; }) : ['offset','home','sav1','sav2'];
   function bankForMonth(mo) {
-    return ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[mo]||0); }, 0);
+    return ctBankTotal(mo, ctAcctsIds);
   }
 
   // ── Build union of all months ─────────────────────────────────

@@ -2617,6 +2617,11 @@ window.addEventListener('unhandledrejection',function(e){
               <tbody id="csv-map-body"></tbody>
             </table>
           </div>
+          <div class="bs-acct" id="csv-bal-acct-wrap" hidden>
+            <label for="csv-bal-acct" class="bs-acct-lbl"><i class="ti ti-building-bank"></i> Which account is this file for?</label>
+            <select id="csv-bal-acct" class="bs-acct-sel"></select>
+            <p class="bs-acct-hint">Your file has a running balance, so Kelda can update this account's balance for you.</p>
+          </div>
           <div class="up-tip">
             <i class="ti ti-bulb"></i> <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
             Negative amounts are treated as expenses automatically.
@@ -2629,11 +2634,12 @@ window.addEventListener('unhandledrejection',function(e){
 
         <!-- STEP 3: Preview -->
         <div class="csv-panel" id="csv-p3">
+          <div class="bs-wrap" id="csv-bal" aria-live="polite" hidden></div>
           <div class="imp-stats" id="csv-imp-stats"></div>
           <div class="up-legend-bar">
             <div class="up-legend"><i class="ti ti-circle-filled up-dot--dup"></i> Yellow = possible duplicate &nbsp;·&nbsp; <i class="ti ti-circle-filled up-dot--err"></i> Red = skipped (missing data)</div>
             <label class="up-skip">
-              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview()"/>
+              <input type="checkbox" id="csv-skip-dupes" checked onchange="csvRefreshPreview();if(typeof _bsCheck!=='undefined'&&_bsCheck)bsRenderPanel(true)"/>
               Skip duplicates
             </label>
           </div>
@@ -2643,7 +2649,7 @@ window.addEventListener('unhandledrejection',function(e){
               <tbody id="csv-prev-body"></tbody>
             </table>
           </div>
-          <div class="up-actions up-actions--wrap">
+          <div class="up-actions up-actions--wrap" id="csv-import-actions">
             <button class="btn btn-ghost" onclick="csvGoStep(2)">← Back</button>
             <button class="btn btn-primary" onclick="csvConfirmImport()"><i class="ti ti-circle-check-filled"></i> Import Transactions</button>
           </div>
@@ -3435,6 +3441,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script defer src="js/pages/super.js"></script>
 <script defer src="js/pages/assets.js"></script>
 <script defer src="js/pages/export.js"></script>
+<script defer src="js/pages/balancesync.js"></script>
 <script defer src="js/pages/autocategorise.js"></script>
 <script defer src="js/pages/categories.js"></script>
 <script defer src="js/pages/bva.js"></script>

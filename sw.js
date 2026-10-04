@@ -50,6 +50,7 @@ const SHELL = [
   './js/pages/super.js',
   './js/pages/assets.js',
   './js/pages/export.js',
+  './js/pages/balancesync.js',
   './js/pages/autocategorise.js',
   './js/pages/categories.js',
   './js/pages/bva.js',

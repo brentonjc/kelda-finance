@@ -201,7 +201,7 @@ function fc2PullBalance() {
     var months = typeof ctAllMonths === 'function' ? ctAllMonths() : [];
     if (months.length) {
       var lm = months[months.length - 1];
-      var total = CT_ACCTS.reduce(function(s,a){ return s + ((CT[a.id]||{})[lm]||0); }, 0);
+      var total = ctBankTotal(lm);
       if (total !== 0) bal = total;
     }
   } catch(e) { console.warn('fc2PullBalance error', e); }

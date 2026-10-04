@@ -345,7 +345,8 @@ function syncOffsetSlider(){
 function getLatestCTOffset(){
   const months=ctAllMonths();
   const lm=months.length?months[months.length-1]:null;
-  return{balance:lm?((CT['offset']||{})[lm]||0):0, month:lm};
+  const bal=lm?ctBalanceAt('offset',lm):{value:0,month:null};
+  return{balance:bal.value, month:bal.month};
 }
 
 function syncOffsetToMortgage(){
