@@ -187,6 +187,7 @@ function lockApp(){
   GOALS = []; CT = {}; LRECURRING = []; TRANSFERS = []; EQUITIES = [];
   LIABILITIES = []; BUDGETS = {}; LBUDGETS = {}; LRULES = {};
   SUPER_MONTHLY = {}; LIAB_MONTHLY = {}; EQ_MONTHLY = {};
+  if (typeof resetRuleIndex === 'function') resetRuleIndex();
 
   // Reset all rendered content so data isn't visible in the DOM
   ['db-cashflow','db-spending','db-networth','db-accounts','db-cat-breakdown',

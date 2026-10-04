@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════════════════════════
 // AUTO-CATEGORISATION ENGINE v2.0
-// Pipeline: preprocess → BPAY → exact-LRULES → alias → matchLRules → keyword → fuzzy
+// Pipeline: preprocess → BPAY → exact-LRULES → alias → matchLRules → keyword → fuzzy,
+// then, only if nothing matched, the same again on the merchant name without bank wording
 // CatIds match LCATS in data.js (slugs, not display names)
 // ══════════════════════════════════════════════════════════════
 
@@ -71,6 +72,25 @@ function preprocessMerchantString(raw) {
   s = s.toLowerCase().trim().replace(/\s+/g, ' ').replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
   if (s.length < 2) return '';
   return s;
+}
+
+// ── Bank wording ──────────────────────────────────────────────
+// Takes preprocessed text and returns just the merchant or payee: "purchase at example cafe
+// exampleville ns" -> "example cafe exampleville", "to j example - receipt number" -> "j example".
+// Only the fallback lookup uses it, after the full text found no category, so callers of
+// preprocessMerchantString (bills, liabilities) are unaffected. Returns the input unchanged if
+// stripping would leave nothing.
+function stripBankWording(pre) {
+  if (!pre) return '';
+  var s = pre.replace(/^(online purchase from|purchase from|purchase at|online payment to)\s+/, '');
+  var m = s.match(/^to\s+(.+?)(?:\s+-|\s+receipt number|\s+funds transfer|\s+payment description|\s+internal transfer|$)/);
+  if (m && m[1]) s = m[1];
+  m = s.match(/^from\s+(.+?)(?:\s+-|\s+credit to account|\s+d\/dbt|$)/);
+  if (m && m[1]) s = m[1];
+  // a trailing state or country code: banks shorten NSW to "ns", VIC to "vi", and so on
+  s = s.replace(/\s(ns|vi|ql|sa|wa|ta|nt|ac|au|nz|nsw)$/, '').replace(/\s(ns|vi|ql|sa|wa|ta|nt|ac|au|nz)$/, '');
+  s = s.trim();
+  return s || pre;
 }
 
 // ── BPAY biller extraction ────────────────────────────────────
@@ -515,8 +535,9 @@ function betterLruleHit(a, b) {
 
 // context: the pre-alias description. Aliasing shortens "vanguard super" to "vanguard", so a rule
 // on the full text (e.g. the user's own correction) is tried before the built-in keywords, and
-// keyword exclusions are checked against the full text.
-function matchLRulesNew(canonical, context) {
+// keyword exclusions are checked against the full text. fullText, if given, overrides the text
+// the exclusions are checked against (the stripped-text lookup passes the unstripped text).
+function matchLRulesNew(canonical, context, fullText) {
   if (!canonical || canonical.length < 2) return null;   // 2 so an alias like 'bp' can reach its rule
   var keys = Object.keys(LRULES);
   var hit = betterLruleHit(lruleHit(canonical, keys),
@@ -534,14 +555,16 @@ function matchLRulesNew(canonical, context) {
 
   // Pass 3: keyword fallback (existing engine)
   var kwResult = (typeof AutoCat !== 'undefined' && AutoCat.matchKeywords)
-    ? AutoCat.matchKeywords(canonical, false, context) : null;
+    ? AutoCat.matchKeywords(canonical, false, fullText || context) : null;
   if (kwResult) return { catId: kwResult.catId, subcat: kwResult.subcat, matchedKey: null, confidence: 'LOW' };
 
   // Pass 4: fuzzy Levenshtein (exact rules only, >6 chars)
   if (canonical.length > 6) {
     for (var k = 0; k < keys.length; k++) {
       var fkey = keys[k];
-      if (LRULES[fkey].pattern === 'exact' && fkey.length > 6 && levenshtein(canonical, fkey) <= 2) {
+      // the distance is at least the length difference, so skip the slow comparison when that's > 2
+      if (LRULES[fkey].pattern === 'exact' && fkey.length > 6 && Math.abs(fkey.length - canonical.length) <= 2 &&
+          levenshtein(canonical, fkey) <= 2) {
         LRULES[fkey].matchCount = (LRULES[fkey].matchCount || 0) + 1;
         scheduleRulesPersist();
         return { catId: LRULES[fkey].catId, subcat: LRULES[fkey].subcat, matchedKey: fkey, confidence: 'LOW' };
@@ -565,6 +588,115 @@ function applyAmountThresholds(result, amount) {
     }
   }
   return result;
+}
+
+// ── Rule pass on the full description ─────────────────────────
+// What both AutoCat.categorise() and Rescan try first: rules (then keywords and fuzzy) on the
+// preprocessed description, after BPAY extraction and alias resolution.
+function matchFullText(raw) {
+  var pre = preprocessMerchantString(raw);
+  if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
+  var can = resolveAlias(pre);
+  // the second call only differs when aliasing changed the text (the fuzzy pass is slow)
+  return matchLRulesNew(can, pre) || (can !== pre ? matchLRulesNew(pre) : null);
+}
+
+// ── Learned rules through the same stripping ──────────────────
+// A rule learned from a whole bank description ("purchase at example cafe exampleville ns"), or
+// one whose key holds what preprocessing removes ("*", a trailing ")", reference numbers), can
+// never equal the text it's compared with. The index files each rule under its key preprocessed
+// and stripped the same way. The user's own rules win over built-in ones; a key that two rules of
+// the same kind file under different categories is left out. Rebuilt whenever LRULES changes.
+var _ruleKeyNorm = Object.create(null);
+var _ruleIndex = null, _ruleIndexSig = null;
+
+// Locking scrubs LRULES; the index and key cache hold merchant names too
+function resetRuleIndex() {
+  _ruleKeyNorm = Object.create(null);
+  _ruleIndex = null; _ruleIndexSig = null;
+}
+
+function normaliseRuleKey(key) {
+  if (!(key in _ruleKeyNorm)) {
+    _ruleKeyNorm[key] = stripBankWording(preprocessMerchantString(key) || String(key).toLowerCase().trim());
+  }
+  return _ruleKeyNorm[key];
+}
+
+function ruleIndex() {
+  var parts = [];
+  for (var k in LRULES) {
+    if (!LRULES.hasOwnProperty(k) || !LRULES[k] || typeof LRULES[k] !== 'object') continue;
+    var r = LRULES[k];
+    parts.push(k, r.catId, r.subcat, r.pattern, r.userModified ? 1 : 0);
+  }
+  var sig = parts.join('\u0001');
+  if (_ruleIndex && sig === _ruleIndexSig) return _ruleIndex;
+
+  var byKey = Object.create(null);
+  for (var key in LRULES) {
+    if (!LRULES.hasOwnProperty(key) || !LRULES[key] || typeof LRULES[key] !== 'object') continue;
+    var rule = LRULES[key];
+    var nk = normaliseRuleKey(key);
+    if (nk.length < 3) continue;
+    var user = !!rule.userModified;
+    var e = byKey[nk];
+    if (!e || (user && !e.user)) { byKey[nk] = { key: key, rule: rule, user: user, ambiguous: false }; continue; }
+    if (user !== e.user) continue;   // a built-in rule doesn't compete with the user's own
+    if (rule.catId !== e.rule.catId) e.ambiguous = true;
+    else if (rule.pattern === 'contains' && e.rule.pattern !== 'contains') { e.key = key; e.rule = rule; }
+  }
+  var exact = Object.create(null), prefixes = [];
+  for (var n in byKey) {
+    if (byKey[n].ambiguous) continue;
+    exact[n] = byKey[n];
+    if (byKey[n].rule.pattern === 'contains' && n.length >= 4) prefixes.push(n);
+  }
+  prefixes.sort(function(a, b) { return b.length - a.length; });
+  _ruleIndex = { exact: exact, prefixes: prefixes };
+  _ruleIndexSig = sig;
+  return _ruleIndex;
+}
+
+// Exact rules must equal the text; 'contains' rules match as a prefix, longest first
+function ruleIndexHit(text) {
+  var idx = ruleIndex();
+  var e = idx.exact[text] || null;
+  if (!e) {
+    for (var i = 0; i < idx.prefixes.length; i++) {
+      if (text.indexOf(idx.prefixes[i]) === 0) { e = idx.exact[idx.prefixes[i]]; break; }
+    }
+  }
+  if (!e) return null;
+  e.rule.matchCount = (e.rule.matchCount || 0) + 1;
+  e.rule.lastMatchedAt = new Date().toISOString().slice(0, 10);
+  scheduleRulesPersist();
+  return { catId: e.rule.catId, subcat: e.rule.subcat, matchedKey: e.key,
+           confidence: e.rule.pattern === 'exact' ? 'HIGH' : 'MEDIUM',
+           amountThresholds: e.rule.amountThresholds || null };
+}
+
+// The second try both entry points make, only after the full description found no category: the
+// same rule, alias and keyword lookup on the merchant name alone, then learned rules through the
+// index. Keyword exclusions still see the full text. Returns null when there's no bank wording.
+function matchStrippedText(raw, amount) {
+  var pre = preprocessMerchantString(raw);
+  if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
+  var stripped = stripBankWording(pre);
+  if (stripped === pre || stripped.length < 3) return null;
+  var s = preprocessMerchantString(stripped) || stripped;
+  if (s.indexOf('bpay') === 0) s = extractBpayBiller(s);
+  var can = resolveAlias(s);
+  var r = matchLRulesNew(can, s, pre) || (can !== s ? matchLRulesNew(s, null, pre) : null) || ruleIndexHit(stripped);
+  return r ? applyAmountThresholds(r, amount) : null;
+}
+
+// Whether a rule key covers a description the way the engine looks it up: on the full text, or on
+// the merchant name without bank wording
+function ruleCoversText(pre, key, pattern) {
+  var stripped = stripBankWording(pre);
+  function hit(t) { return pattern === 'exact' ? t === key : t.indexOf(key) === 0; }
+  return hit(pre) || (stripped !== pre && hit(stripped));
 }
 
 // ── Full categorisation pipeline ──────────────────────────────
@@ -656,7 +788,7 @@ function flagPastTransactions(ruleKey, newCatId, newSubcat, pattern, excludeTxId
     if (excludeTxId && tx.id === excludeTxId) continue;
     var raw = tx.rawDescription || tx.name || '';
     var preprocessed = preprocessMerchantString(raw);
-    var matches = (pattern === 'exact') ? (preprocessed === ruleKey) : (preprocessed.indexOf(ruleKey) === 0);
+    var matches = ruleCoversText(preprocessed, ruleKey, pattern);
     if (matches && (tx.catId !== newCatId || tx.subcat !== newSubcat)) {
       var alreadyFlagged = false;
       for (var j = 0; j < pendingReviews.length; j++) {
@@ -704,17 +836,19 @@ function onManualCategorySave(tx, newCatId, newSubcat) {
     localStorage.setItem('cff_pending_reviews', JSON.stringify(reviews));
   } catch(e) {}
 
-  // Rule conflict / update logic
-  var existing = LRULES[preprocessed];
-  if (existing && existing.userModified && existing.catId === newCatId && existing.subcat === newSubcat) {
-    // same — no rule change needed
-  } else if (existing && existing.userModified && (existing.catId !== newCatId || existing.subcat !== newSubcat)) {
-    // conflict — update anyway (user intent wins)
-    upgradeRule(preprocessed, newCatId, newSubcat);
-  } else if (existing && !existing.userModified) {
-    upgradeRule(preprocessed, newCatId, newSubcat);
-  } else if (!existing) {
-    writeExactRule(preprocessed, newCatId, newSubcat);
+  // The rule goes on the merchant name without the bank's wording ("purchase at", the state), so it
+  // also covers the other ways a bank words that merchant, and generalisation offers the merchant
+  // rather than "purchase". Never the key of a 'contains' rule: one correction must not change
+  // what a whole brand ("bunnings") is filed under.
+  var stripped = stripBankWording(preprocessed);
+  var onStripped = LRULES[stripped];
+  var ruleKey = (stripped.length >= 3 && !(onStripped && onStripped.pattern === 'contains')) ? stripped : preprocessed;
+  saveCorrectionRule(ruleKey, newCatId, newSubcat);
+  // The merchant name is only looked up when the full description finds nothing. If the full text
+  // still lands somewhere else (a built-in keyword, an older rule), keep a rule on it as well, as
+  // before, so this description gets the category the user chose.
+  if (ruleKey !== preprocessed && !categorisedAs(raw, tx, newCatId, newSubcat)) {
+    saveCorrectionRule(preprocessed, newCatId, newSubcat);
   }
 
   // Update transaction
@@ -727,7 +861,29 @@ function onManualCategorySave(tx, newCatId, newSubcat) {
   try { localStorage.setItem(K.rules, JSON.stringify(LRULES)); } catch(e) {}
 
   // Offer generalisation (async, non-blocking)
-  setTimeout(function() { offerGeneralisation(preprocessed, newCatId, newSubcat, tx.id); }, 0);
+  setTimeout(function() { offerGeneralisation(ruleKey, newCatId, newSubcat, tx.id); }, 0);
+}
+
+// Rule conflict / update logic for one key
+function saveCorrectionRule(key, catId, subcat) {
+  var existing = LRULES[key];
+  if (existing && existing.userModified && existing.catId === catId && existing.subcat === subcat) {
+    // same — no rule change needed
+  } else if (existing) {
+    // a built-in rule, or the user's own with another category: user intent wins
+    upgradeRule(key, catId, subcat);
+  } else {
+    writeExactRule(key, catId, subcat);
+  }
+}
+
+// Whether the description now gets this category on both import (AutoCat.categorise) and Rescan,
+// which tries the rule pass on the full text before AutoCat.categorise()
+function categorisedAs(raw, tx, catId, subcat) {
+  function same(r) { return !!r && r.catId === catId && (r.subcat || '') === (subcat || ''); }
+  var viaImport = AutoCat.categorise(raw, '', tx.amount, tx.type);
+  var viaRescan = matchFullText(raw) || viaImport;
+  return same(viaImport) && same(viaRescan);
 }
 
 // ── Generalisation engine ─────────────────────────────────────
@@ -793,7 +949,7 @@ function offerGeneralisation(preprocessed, catId, subcat, excludeTxId) {
   for (var ti = 0; ti < TX.length; ti++) {
     var raw = TX[ti].rawDescription || TX[ti].name || '';
     var pre = preprocessMerchantString(raw);
-    if (pre.indexOf(candidateKey) === 0 && TX[ti].id !== excludeTxId) variantCount++;
+    if (TX[ti].id !== excludeTxId && ruleCoversText(pre, candidateKey, 'contains')) variantCount++;
   }
 
   if (variantCount < 1) {
@@ -1158,7 +1314,8 @@ var AutoCat = (function() {
     return false;
   }
 
-  function categorise(name, desc, amount, txType) {
+  // The full description only, without the bank-wording fallback
+  function categoriseFullText(name, desc, amount, txType) {
     var raw = name || desc || '';
     var cleaned = clean(raw);
     var isCredit = (txType === 'income');
@@ -1168,10 +1325,7 @@ var AutoCat = (function() {
     }
 
     // Use new pipeline — try via resolveAlias + matchLRulesNew
-    var pre = preprocessMerchantString(raw);
-    if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
-    var canonical = resolveAlias(pre);
-    var newResult = matchLRulesNew(canonical, pre) || matchLRulesNew(pre);
+    var newResult = matchFullText(raw);
     if (newResult) {
       newResult = applyAmountThresholds(newResult, amount);
       return { catId: newResult.catId, subcat: newResult.subcat || '',
@@ -1186,6 +1340,20 @@ var AutoCat = (function() {
     if (fromAmt) return Object.assign({}, fromAmt, { source: 'amount' });
 
     return { catId:'other', subcat:'', confidence: CONF_NONE, source:'none' };
+  }
+
+  // A match on the full description always stands; the merchant name without bank wording is
+  // only tried when that found nothing
+  function categorise(name, desc, amount, txType) {
+    var full = categoriseFullText(name, desc, amount, txType);
+    if (full.confidence !== CONF_NONE) return full;
+    return strippedResult(matchStrippedText(name || desc || '', amount)) || full;
+  }
+
+  function strippedResult(r) {
+    if (!r) return null;
+    return { catId: r.catId, subcat: r.subcat || '',
+             confidence: r.confidence === 'HIGH' ? CONF_HIGH : CONF_LOW, source: 'rule' };
   }
 
   function learn() {} // kept for API compat — learning now handled by onManualCategorySave
@@ -1206,11 +1374,9 @@ var AutoCat = (function() {
         var t = txList[idx];
         if (t.userSet || t.correctionSource === 'user') continue;
         var raw = t.rawDescription || t.name || '';
-        var pre = preprocessMerchantString(raw);
-        if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
-        var can = resolveAlias(pre);
-        var res = matchLRulesNew(can, pre) || matchLRulesNew(pre);
-        if (!res) res = categorise(t.name, t.description, t.amount, t.type);
+        var res = matchFullText(raw);
+        if (!res) res = categoriseFullText(t.name, t.description, t.amount, t.type);
+        if (res.confidence === CONF_NONE) res = strippedResult(matchStrippedText(raw, t.amount)) || res;
         if (!res || res.confidence === CONF_NONE || res.catId === 'other') continue;
         var catObj = (typeof LCATS !== 'undefined') ? LCATS.find(function(c) { return c.id === res.catId; }) : null;
         if (!catObj) continue;
@@ -1300,7 +1466,7 @@ var AutoCat = (function() {
     clean: clean, isTransfer: isTransfer, transferSubcat: transferSubcat,
     matchLRules: matchLRules, matchKeywords: matchKeywords,
     amountSignal: amountSignal, isDuplicate: isDuplicate,
-    categorise: categorise, learn: learn,
+    categorise: categorise, categoriseFullText: categoriseFullText, learn: learn,
     reprocess: reprocess, undoReprocess: undoReprocess,
     onNameInput: onNameInput, showSuggestion: showSuggestion,
     hideSuggestion: hideSuggestion, applySuggestion: applySuggestion
