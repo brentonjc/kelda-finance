@@ -329,3 +329,10 @@ test('locking clears the rule index along with the rules', () => {
   assert.equal(vm.runInContext('_ruleIndex', app), null);
   assert.equal(Object.keys(vm.runInContext('_ruleKeyNorm', app)).length, 0);
 });
+
+test('a learned key holding a reference number matches a description with no bank wording', () => {
+  const app = loadApp({ rules: { 'example rentals on0000123456': userRule('home', 'Strata Fees') } });
+  assert.equal(app.AutoCat.categoriseFullText('EXAMPLE RENTALS ON0000987654', '', 40, 'expense').confidence, app.AutoCat.CONF_NONE);
+  assert.equal(cat(app, 'EXAMPLE RENTALS ON0000987654'), 'home › Strata Fees');
+  assert.equal(rescan(app, 'EXAMPLE RENTALS ON0000987654'), 'home › Strata Fees');
+});

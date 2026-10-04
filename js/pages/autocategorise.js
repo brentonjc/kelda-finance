@@ -678,16 +678,21 @@ function ruleIndexHit(text) {
 
 // The second try both entry points make, only after the full description found no category: the
 // same rule, alias and keyword lookup on the merchant name alone, then learned rules through the
-// index. Keyword exclusions still see the full text. Returns null when there's no bank wording.
+// index. Keyword exclusions still see the full text. Text with no bank wording skips the repeat
+// lookup but still tries the index: a learned key holding "*" or a reference number can match it.
 function matchStrippedText(raw, amount) {
   var pre = preprocessMerchantString(raw);
   if (pre.indexOf('bpay') === 0) pre = extractBpayBiller(pre);
   var stripped = stripBankWording(pre);
-  if (stripped === pre || stripped.length < 3) return null;
-  var s = preprocessMerchantString(stripped) || stripped;
-  if (s.indexOf('bpay') === 0) s = extractBpayBiller(s);
-  var can = resolveAlias(s);
-  var r = matchLRulesNew(can, s, pre) || (can !== s ? matchLRulesNew(s, null, pre) : null) || ruleIndexHit(stripped);
+  if (stripped.length < 3) return null;
+  var r = null;
+  if (stripped !== pre) {
+    var s = preprocessMerchantString(stripped) || stripped;
+    if (s.indexOf('bpay') === 0) s = extractBpayBiller(s);
+    var can = resolveAlias(s);
+    r = matchLRulesNew(can, s, pre) || (can !== s ? matchLRulesNew(s, null, pre) : null);
+  }
+  r = r || ruleIndexHit(stripped);
   return r ? applyAmountThresholds(r, amount) : null;
 }
 
