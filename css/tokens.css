@@ -14,9 +14,9 @@
   /* ── 13 source colour tokens: seeded with Kelda-dark so the app still
         renders if the attributes are ever missing (FOUC / no-JS fallback) ── */
   --n950:#080C18; --card:#111830; --card2:#18213E; --card3:#1E2A4A;
-  --primary:#F0538A; --primary-text:#FFFFFF; --purple:#818CF8;
+  --primary:#F0538A; --primary-text:#080C18; --purple:#818CF8;
   --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-  --text:#E8EDF5; --muted:#6278A0; --border:rgba(98,120,160,0.2);
+  --text:#E8EDF5; --muted:#8094B8; --border:rgba(98,120,160,0.2);
 
   /* ── Legacy navy scale now DERIVES from the semantic tokens above, so the
         handful of components still referencing --n### follow the palette ── */
@@ -35,6 +35,13 @@
   --success-bg:color-mix(in srgb, var(--success) 15%, transparent);
   --warn-bg:color-mix(in srgb, var(--warn) 15%, transparent);
   --danger-bg:color-mix(in srgb, var(--danger) 15%, transparent);
+  /* Status text that sits on those tints. The raw status colour falls
+     under 4.5:1 on its own tint in most palettes, so mix it toward --text. */
+  --success-ink:color-mix(in srgb, var(--success) 60%, var(--text));
+  --warn-ink:color-mix(in srgb, var(--warn) 60%, var(--text));
+  --danger-ink:color-mix(in srgb, var(--danger) 60%, var(--text));
+  --purple-bg:color-mix(in srgb, var(--purple) 15%, transparent);
+  --purple-ink:color-mix(in srgb, var(--purple) 50%, var(--text));
 
   /* ── Prototype aliases (onboarding + dashboard redesign) ── */
   --pink:var(--primary); --green:var(--success); --amber:var(--warn);
@@ -77,14 +84,16 @@
    ══════════════════════════════════════════════════════════════════ */
 
 /* KELDA — dark = exact current shipped default. Baseline every other palette
-   is judged against. Do NOT alter without explicit sign-off. */
+   is judged against. Do NOT alter without explicit sign-off.
+   2.5.6 contrast pass: --primary-text, --muted and --pink-dark changed so
+   labels on the pink fill and muted text reach WCAG AA (4.5:1). */
 [data-palette="kelda"][data-mode="dark"]{
   --n950:#080C18; --card:#111830; --card2:#18213E; --card3:#1E2A4A;
-  --primary:#F0538A; --primary-text:#FFFFFF;
+  --primary:#F0538A; --primary-text:#080C18;
   --purple:#818CF8; --success:#00C896; --warn:#F59E0B; --danger:#EF4444;
-  --text:#E8EDF5; --muted:#6278A0; --border:rgba(98,120,160,.2);
+  --text:#E8EDF5; --muted:#8094B8; --border:rgba(98,120,160,.2);
   /* baseline-exact overrides so the shipped dark look is byte-identical */
-  --nav-bg:#0D1225; --pink-light:#F56CA0; --pink-dark:#c73a6a; --success-lt:#22D9A9;
+  --nav-bg:#0D1225; --pink-light:#F56CA0; --pink-dark:#DE4A7E; --success-lt:#22D9A9;
 }
 [data-palette="kelda"][data-mode="light"]{
   --n950:#FBF7F9; --card:#FFFFFF; --card2:#F7EEF2; --card3:#F0E1E8;
@@ -100,7 +109,7 @@
   --n950:#0A0E1A; --card:#111B34; --card2:#16213E; --card3:#1C2A4C;
   --primary:#635BFF; --primary-text:#FFFFFF;
   --purple:#8B85FF; --success:#00C896; --warn:#F5A623; --danger:#EF4444;
-  --text:#EAF0FA; --muted:#8291AD; --border:rgba(107,124,153,.22);
+  --text:#EAF0FA; --muted:#8695B0; --border:rgba(107,124,153,.22);
 }
 [data-palette="fintech"][data-mode="light"]{
   --n950:#F6F9FC; --card:#FFFFFF; --card2:#F0F3F9; --card3:#E7ECF5;
@@ -134,13 +143,13 @@
   --n950:#171F29; --card:#1F2A37; --card2:#283443; --card3:#323F4F;
   --primary:#6BAED6; --primary-text:#0D1D28;
   --purple:#8FA3B8; --success:#4ADE80; --warn:#FBBF24; --danger:#E15C4F;
-  --text:#F4F1EC; --muted:#8FA0B0; --border:rgba(112,128,144,.25);
+  --text:#F4F1EC; --muted:#9FADBA; --border:rgba(112,128,144,.25);
 }
 [data-palette="slate"][data-mode="light"]{
   --n950:#F4F1EC; --card:#FFFFFF; --card2:#EAE6DE; --card3:#DCD6CA;
   --primary:#3A7CA5; --primary-text:#FFFFFF;
   --purple:#5C6B7A; --success:#1D9A56; --warn:#B4780F; --danger:#C4392E;
-  --text:#1F2A37; --muted:#5C6B7A; --border:rgba(31,42,55,.14);
+  --text:#1F2A37; --muted:#4F5D6B; --border:rgba(31,42,55,.14);
 }
 
 /* HARVEST — sourced from 5 user hexes: #264653 Dark Teal, #2A9D8F Persian Green

@@ -4,11 +4,10 @@
    Desktop: split gradient brand panel + auth panel. <760px: form only.
    ══════════════════════════════════════════════════════════════ */
 
-/* AA-passing text variant of --muted.
-   NOTE for design-system owner: --muted (#6278A0) fails 4.5:1 on --bg/--card
-   for readable small text. Using a local lighter variant here; promote to
-   tokens.css if the audit confirms it system-wide. */
-#login-screen { --kl-muted-text:#7C8FB2; }
+/* Muted text on the login screen. Since 2.5.6, --muted reaches 4.5:1 on
+   --bg and --card through --card3 in every palette, so the login screen no
+   longer needs its own lighter value. */
+#login-screen { --kl-muted-text:var(--muted); }
 
 .kl-shell { display:flex; min-height:100%; width:100%; }
 
@@ -21,7 +20,7 @@
   font-family:var(--font-mono);
   font-size:.72rem;
   letter-spacing:.02em;
-  color:rgba(232,237,245,.4);
+  color:var(--kl-muted-text);
   pointer-events:none;
   user-select:none;
 }
@@ -279,8 +278,8 @@
 .kl-insight-meta.danger { color:var(--danger); }
 .kl-insight .btn { flex-shrink:0; }
 /* Ghost by default; emphasise only when there's something to do. */
-.kl-insight .btn.kl-emph { background:var(--primary); border-color:var(--primary); color:#fff; }
-.kl-insight .btn.kl-emph:hover { background:var(--pink-dark); color:#fff; }
+.kl-insight .btn.kl-emph { background:var(--primary); border-color:var(--primary); color:var(--primary-text); }
+.kl-insight .btn.kl-emph:hover { background:var(--pink-dark); color:var(--primary-text); }
 .kl-continue { width:100%; margin-top:8px; }
 
 /* ── Responsive: collapse to form-only below 760px ── */

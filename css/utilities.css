@@ -13,4 +13,4 @@
 .tone-purple{color:var(--purple);}
 .tone-danger{color:var(--danger);}
 .tone-pink-soft{color:#f48cb2;}   /* dashboard due-soon pink (kept from the old inline value) */
-.tone-faint{color:#3D4D70;}       /* dashboard "nothing overdue" (kept from the old inline value) */
+.tone-faint{color:var(--muted);}  /* dashboard "nothing overdue" */

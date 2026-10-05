@@ -190,8 +190,7 @@
 .ob-helper { font-size: 12px; color: var(--n300); margin-top: 6px; line-height: 1.5; }
 
 .ob-btn-primary {
-  width: 100%; background: var(--pink); color: var(--white); border: none; border-radius: 999px;
-  /* 19px + 700 qualifies as WCAG "large text" (3:1), so white-on-pink brand CTA passes AA */
+  width: 100%; background: var(--pink); color: var(--primary-text); border: none; border-radius: 999px;
   padding: 14px 24px; font-family: var(--font-body); font-size: 19px; font-weight: 700; cursor: pointer;
   transition: opacity .15s, transform .1s; margin-top: 8px; min-height: 48px;
 }
@@ -252,7 +251,7 @@
   padding: 5px 10px; cursor: pointer; font-family: var(--font-body); user-select: none;
   -webkit-tap-highlight-color: transparent; transition: background .12s, color .12s, border-color .12s;
 }
-.ob-pill.selected { background: var(--pink); border-color: var(--pink); color: #fff; }
+.ob-pill.selected { background: var(--pink); border-color: var(--pink); color: var(--primary-text); }
 
 /* Divider */
 .ob-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 6px; }
@@ -4035,7 +4034,7 @@ function showSwUpdatePrompt(reg){
   .sw-update-bar.show{ transform:translateX(-50%) translateY(0); }
   .sw-update-text{ font-size:.85rem; color:var(--text,#E8EDF5); }
   .sw-update-btn{
-    background:var(--primary,#F0538A); color:#fff; border:none; border-radius:999px;
+    background:var(--primary,#F0538A); color:var(--primary-text); border:none; border-radius:999px;
     padding:9px 18px; font-size:.82rem; font-weight:600; cursor:pointer; white-space:nowrap;
     font-family:var(--font-body,'DM Sans',sans-serif); min-height:40px;
   }

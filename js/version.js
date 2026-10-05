@@ -14,11 +14,21 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.2';
+var APP_VERSION = '2.5.6';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.6',
+    date: '2026-10-05',
+    title: 'Easier-to-read text and badges',
+    notes: [
+      'Paid, Due, Overdue and other status badges use stronger text colours, so they’re readable in every theme',
+      'Buttons and toggles filled with the theme colour use a label colour that stands out from it. In the Kelda dark theme, those labels are now dark',
+      'Form labels and other secondary text in the Kelda dark theme are a little lighter',
+    ],
+  },
   {
     version: '2.5.2',
     date: '2026-10-03',
