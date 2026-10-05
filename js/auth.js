@@ -195,7 +195,7 @@ function lockApp(){
     if (el) el.innerHTML = '';
   });
 
-  if (typeof taxCloseSheet === 'function') taxCloseSheet();
+  if (typeof taxOnLock === 'function') taxOnLock();
   document.getElementById('login-screen').classList.remove('gone');
   // Back on the landing screen — force dark regardless of saved preference.
   if (typeof applyThemeForContext === 'function') applyThemeForContext();

@@ -176,6 +176,15 @@ function renderTaxPage() {
 }
 
 function taxSetPerson(v) { taxUi.person = v; renderTaxPage(); }
+// Locking closes any sheet, drops the printable copy and forgets the person, year and tab,
+// so the next sign-in opens on that profile's own Overview
+function taxOnLock() {
+  taxCloseSheet();
+  var pr = document.getElementById('tax-print');
+  if (pr) pr.innerHTML = '';
+  document.body.classList.remove('tax-printing');
+  taxUi = { person: null, fy: null, tab: 'overview' };
+}
 function taxSetFy(v) { taxUi.fy = v; renderTaxPage(); }
 function taxSetTab(id) {
   taxUi.tab = id;
