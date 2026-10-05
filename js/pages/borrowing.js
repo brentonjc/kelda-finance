@@ -261,7 +261,7 @@ function bcClassifyExpense(cid, sub, text){
     if(has('toy')||has('present')||has('gift')) return 'other';
     return 'childcare';                                     // childcare, school fees, nannies, activities
   }
-  if(cid==='pippen') return 'other';                        // pets
+  if(cid==='pets') return 'other';                          // pets
   if(cid==='insurance_utilities') return 'insurance';
   if(cid==='utilities'){
     if(has('internet')||has('broadband')||has('mobile')||has('phone')) return 'comms';
