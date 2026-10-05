@@ -14,11 +14,19 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.2';
+var APP_VERSION = '2.5.5';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.5',
+    date: '2026-10-05',
+    title: 'Import fix',
+    notes: [
+      'The Skip duplicates checkbox on the import preview is visible again and easy to tap',
+    ],
+  },
   {
     version: '2.5.2',
     date: '2026-10-03',

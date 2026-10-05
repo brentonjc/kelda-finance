@@ -659,8 +659,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .up-legend{font-size:.76rem;color:var(--muted);}
 .up-dot--dup{color:#eab308;}
 .up-dot--err{color:#ef4444;}
-.up-skip{display:flex;align-items:center;gap:7px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text);}
-.up-skip input{width:auto;padding:0;border:none;background:none;box-shadow:none;}
+.up-skip{display:flex;align-items:center;gap:7px;min-height:44px;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--text);}
+.up-skip input{width:22px;height:22px;padding:0;margin:0;border:none;background:none;box-shadow:none;flex-shrink:0;cursor:pointer;-webkit-appearance:auto;appearance:auto;accent-color:var(--primary);}
+.up-skip input:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
 .map-tbl .up-map-col{font-weight:600;}
 .map-tbl .up-map-sample{color:var(--muted);font-size:.76rem;}
 .up-map-sel{min-width:190px;}
