@@ -7,10 +7,10 @@
 /* Text tones */
 .tone-text{color:var(--text);}
 .tone-muted{color:var(--muted);}
-.tone-green{color:var(--green);}
-.tone-amber{color:var(--amber);}
-.tone-pink{color:var(--pink);}
-.tone-purple{color:var(--purple);}
-.tone-danger{color:var(--danger);}
-.tone-pink-soft{color:#f48cb2;}   /* dashboard due-soon pink (kept from the old inline value) */
+.tone-green{color:var(--success-ink);}
+.tone-amber{color:var(--warn-ink);}
+.tone-pink{color:var(--primary-ink);}
+.tone-purple{color:var(--purple-ink);}
+.tone-danger{color:var(--danger-ink);}
+.tone-pink-soft{color:var(--pink-soft);}   /* dashboard due-soon pink */
 .tone-faint{color:var(--muted);}  /* dashboard "nothing overdue" */

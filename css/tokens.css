@@ -25,13 +25,13 @@
 
   /* ── Page + surface + nav + input (follow the palette) ── */
   --bg:var(--n950);
-  --nav-bg:var(--card); --nav-text:var(--muted); --nav-active:var(--primary);
+  --nav-bg:var(--card); --nav-text:var(--muted); --nav-active:var(--primary-ink);
   --input-bg:var(--card2); --input-border:var(--border);
 
   /* ── Accent derivations. Semantic tint backgrounds use color-mix so they
         follow the palette in both modes (target browsers: iOS Safari 16.2+,
         Chrome/Safari desktop) ── */
-  --pink-light:var(--primary); --pink-dark:var(--primary); --success-lt:var(--success);
+  --pink-light:var(--primary-ink); --pink-dark:var(--primary); --success-lt:var(--success);
   --success-bg:color-mix(in srgb, var(--success) 15%, transparent);
   --warn-bg:color-mix(in srgb, var(--warn) 15%, transparent);
   --danger-bg:color-mix(in srgb, var(--danger) 15%, transparent);
@@ -42,6 +42,12 @@
   --danger-ink:color-mix(in srgb, var(--danger) 60%, var(--text));
   --purple-bg:color-mix(in srgb, var(--purple) 15%, transparent);
   --purple-ink:color-mix(in srgb, var(--purple) 50%, var(--text));
+  /* Primary as text (links, active labels). Light modes pull it toward
+     --text and Fintech dark sets a lighter blurple; fills keep --primary. */
+  --primary-ink:var(--primary);
+  --pink-soft:var(--primary-ink);
+  /* Hover fill for primary buttons whose label is --primary-text. */
+  --primary-fill-hover:var(--pink-light);
 
   /* ── Prototype aliases (onboarding + dashboard redesign) ── */
   --pink:var(--primary); --green:var(--success); --amber:var(--warn);
@@ -67,11 +73,18 @@
 
 /* ── Shadows depend on MODE only (dark needs heavier depth than light) ── */
 [data-mode="dark"]{
+  /* Raw success/warn already read at 6:1+ on dark cards, so dark mode uses
+     them as they are. Danger keeps the mix: raw red falls under 4.5:1 on
+     several dark cards. */
+  --success-ink:var(--success); --warn-ink:var(--warn);
   --shadow-sm:0 2px 8px rgba(0,0,0,.35);
   --shadow:0 8px 32px rgba(0,0,0,.45);
   --shadow-lg:0 16px 48px rgba(0,0,0,.55);
 }
 [data-mode="light"]{
+  /* Light primaries sit at 3.7-4.4:1 on --card2 and the pink tints, so
+     primary text is pulled a little toward --text. */
+  --primary-ink:color-mix(in srgb, var(--primary) 80%, var(--text));
   --shadow-sm:0 2px 8px rgba(0,0,0,.08);
   --shadow:0 4px 24px rgba(0,0,0,.12);
   --shadow-lg:0 16px 48px rgba(0,0,0,.16);
@@ -94,6 +107,7 @@
   --text:#E8EDF5; --muted:#8094B8; --border:rgba(98,120,160,.2);
   /* baseline-exact overrides so the shipped dark look is byte-identical */
   --nav-bg:#0D1225; --pink-light:#F56CA0; --pink-dark:#DE4A7E; --success-lt:#22D9A9;
+  --pink-soft:#F48CB2;
 }
 [data-palette="kelda"][data-mode="light"]{
   --n950:#FBF7F9; --card:#FFFFFF; --card2:#F7EEF2; --card3:#F0E1E8;
@@ -110,6 +124,9 @@
   --primary:#635BFF; --primary-text:#FFFFFF;
   --purple:#8B85FF; --success:#00C896; --warn:#F5A623; --danger:#EF4444;
   --text:#EAF0FA; --muted:#8695B0; --border:rgba(107,124,153,.22);
+  /* #635BFF is 3.6:1 on --card, so text uses a lighter blurple (5.4:1+ on
+     every card). Fills stay #635BFF so white labels keep their contrast. */
+  --primary-ink:#9A94FF; --primary-fill-hover:var(--primary);
 }
 [data-palette="fintech"][data-mode="light"]{
   --n950:#F6F9FC; --card:#FFFFFF; --card2:#F0F3F9; --card3:#E7ECF5;
@@ -123,7 +140,7 @@
   --n950:#081410; --card:#0B1913; --card2:#0F2018; --card3:#14291F;
   --primary:#2FBF8F; --primary-text:#052014;
   --purple:#6FB98C; --success:#3ED598; --warn:#E8B44A; --danger:#E15B5B;
-  --text:#E5F2EB; --muted:#6E9583; --border:rgba(94,138,117,.22);
+  --text:#E5F2EB; --muted:#769D8B; --border:rgba(94,138,117,.22);
 }
 [data-palette="emerald"][data-mode="light"]{
   --n950:#F4FAF6; --card:#FFFFFF; --card2:#EBF5EF; --card3:#DEEEE4;
@@ -150,6 +167,8 @@
   --primary:#3A7CA5; --primary-text:#FFFFFF;
   --purple:#5C6B7A; --success:#1D9A56; --warn:#B4780F; --danger:#C4392E;
   --text:#1F2A37; --muted:#4F5D6B; --border:rgba(31,42,55,.14);
+  /* Weakest light primary: primary text needs a stronger pull to pass on --card2 tints. */
+  --primary-ink:color-mix(in srgb, var(--primary) 70%, var(--text));
 }
 
 /* HARVEST — sourced from 5 user hexes: #264653 Dark Teal, #2A9D8F Persian Green
@@ -161,6 +180,8 @@
   --primary:#2A9D8F; --primary-text:#052420;
   --purple:#264653; --success:#2A9D8F; --warn:#E9C46A; --danger:#E76F51;
   --text:#F5EFE4; --muted:#A6957C; --border:rgba(166,149,124,.22);
+  /* Raw #2A9D8F is 4.5:1 on its own tint, so badges need a small lift. */
+  --success-ink:color-mix(in srgb, var(--success) 90%, var(--text));
 }
 [data-palette="harvest"][data-mode="light"]{
   --n950:#FBF8F2; --card:#FFFFFF; --card2:#F5EFE2; --card3:#EEE4D0;
@@ -182,6 +203,8 @@ body{
 }
 ::selection{background:#e8457a44;}
 img,svg{display:block;max-width:100%;}
+/* Unstyled links would otherwise get the browser's blue, unreadable on dark cards. */
+a{color:var(--primary-ink);}
 
 /* ── DM Mono for all currency amounts ── */
 .mono,.sv,.nw-val,.transfer-amt,.rsu-calculated,

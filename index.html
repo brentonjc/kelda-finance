@@ -121,7 +121,7 @@
 .ob-step-content { padding-bottom: 32px; padding-top: 1px; }
 .ob-step-label { font-size: 14px; color: var(--n300); transition: color .25s ease; line-height: 1; margin-top: 1px; }
 .ob-step-label.active { color: var(--text); }
-.ob-step-label.complete { color: var(--green); }
+.ob-step-label.complete { color: var(--success-ink); }
 
 /* Preview card */
 .ob-preview-wrap { margin-top: auto; position: relative; }
@@ -137,7 +137,7 @@
 .ob-preview-card.reveal-3 { filter: blur(0.5px); opacity: .9; }
 .ob-preview-card.reveal-4 { filter: blur(0); opacity: 1; }
 .ob-preview-label { font-size: 8px; color: var(--n300); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; }
-.ob-preview-amount { font-family: var(--font-mono); font-size: 18px; color: var(--pink); margin-bottom: 10px; }
+.ob-preview-amount { font-family: var(--font-mono); font-size: 18px; color: var(--primary-ink); margin-bottom: 10px; }
 .ob-preview-bar-wrap { margin-bottom: 10px; }
 .ob-preview-bar-label { font-size: 7px; color: var(--n300); margin-bottom: 2px; }
 .ob-preview-bar { height: 4px; border-radius: 2px; margin-bottom: 3px; }
@@ -174,7 +174,7 @@
 .ob-sub { font-size: 14px; color: color-mix(in srgb, var(--muted) 85%, var(--text)); line-height: 1.6; margin-bottom: 28px; }
 
 .ob-field { margin-bottom: 20px; }
-.ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--pink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
+.ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--primary-ink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
 .ob-input {
   width: 100%; background: var(--n700); border: 1px solid var(--n600); border-radius: 10px;
   padding: 13px 14px; font-family: var(--font-body); font-size: 16px; color: var(--text);
@@ -186,7 +186,7 @@
 .ob-input.error { border-color: var(--red); }
 .ob-input.mono { font-family: var(--font-mono); }
 .ob-input.ob-shake { animation: kfShake .3s ease; }
-.ob-error { font-size: 12px; color: var(--amber); min-height: 18px; margin-top: 5px; display: block; }
+.ob-error { font-size: 12px; color: var(--warn-ink); min-height: 18px; margin-top: 5px; display: block; }
 .ob-helper { font-size: 12px; color: var(--n300); margin-top: 6px; line-height: 1.5; }
 
 .ob-btn-primary {
@@ -326,7 +326,7 @@
 .ob-recap-sub { font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 22px; }
 .ob-recap-list { display: flex; flex-direction: column; gap: 11px; margin-bottom: 26px; }
 .ob-recap-item { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateY(6px); animation: kfRecapIn .4s ease forwards; }
-.ob-recap-ic { width: 28px; height: 28px; border-radius: 8px; background: var(--green-dim); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.ob-recap-ic { width: 28px; height: 28px; border-radius: 8px; background: var(--green-dim); color: var(--success-ink); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 .ob-recap-item b { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
 .ob-recap-item span { font-size: 12px; color: var(--n300); }
 @keyframes kfRecapIn { to { opacity: 1; transform: none; } }

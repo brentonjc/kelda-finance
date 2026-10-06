@@ -14,11 +14,21 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.6';
+var APP_VERSION = '2.5.7';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.7',
+    date: '2026-10-06',
+    title: 'Clearer amounts, links and labels',
+    notes: [
+      'Green, amber and red amounts and labels are darker in the light themes, so income, warnings and overdue figures are easier to read',
+      'Links and selected tabs in the Fintech dark theme use a lighter blue',
+      'Smart Rules, import tips, Transfers and Settings no longer show dark patches or faint text in the light themes',
+    ],
+  },
   {
     version: '2.5.6',
     date: '2026-10-05',
