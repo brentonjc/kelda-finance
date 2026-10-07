@@ -29,8 +29,8 @@ function _goalCtBalance(acctId) {
     var months = typeof ctAllMonths === 'function' ? ctAllMonths() : [];
     if (!months.length) return null;
     var lm = months[months.length - 1];
-    var bal = (CT[acctId] || {})[lm];
-    return (bal !== undefined && bal !== null) ? Number(bal) : null;
+    var bal = ctBalanceAt(acctId, lm);
+    return bal.month ? bal.value : null;
   } catch(e) { return null; }
 }
 function _goalCurrent(g) {

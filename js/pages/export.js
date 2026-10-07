@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-let _csvRaw=[], _csvHeaders=[], _csvParsed=[];
+let _csvRaw=[], _csvHeaders=[], _csvParsed=[], _csvFileName='';
 
 const CSV_FIELDS=[
   {v:'',      l:'— Ignore —'},
@@ -13,6 +13,7 @@ const CSV_FIELDS=[
   {v:'subcat',l:'Subcategory'},
   {v:'type',  l:'Type (income/expense)'},
   {v:'account',l:'Account'},
+  {v:'balance',l:'Running Balance'},
 ];
 
 // Category matching now uses LCATS dynamically
@@ -38,6 +39,7 @@ function csvGuess(h,amex){
     if(s==='extendeddetails')return'desc';
     if(!/^amount|date/.test(s))return'';
   }
+  if(typeof BalanceSync!=='undefined'&&BalanceSync.isBalanceHeader(h))return'balance';
   if(/date|day|time|posted|^trans(action)?s?$/.test(s))return'date';
   if(/debit|withdraw|charge/.test(s))return'debit';
   if(/credit|deposit/.test(s))return'credit';
@@ -181,9 +183,12 @@ function csvPosIsSpend(){
 }
 
 function csvReset(){
-  _csvRaw=[];_csvHeaders=[];_csvParsed=[];
+  _csvRaw=[];_csvHeaders=[];_csvParsed=[];_csvFileName='';
+  if(typeof _bsCheck!=='undefined')_bsCheck=null;
   csvSetPosSpend(false);
   document.getElementById('csv-file-input').value='';
+  const bw=document.getElementById('csv-bal-acct-wrap');if(bw)bw.hidden=true;
+  const bs=document.getElementById('csv-bal-acct');if(bs)bs.value='';
   csvGoStep(1);
 }
 
@@ -225,7 +230,7 @@ function csvProcess(file){
   r.onload=e=>{
     const{headers,rows}=csvParse(e.target.result);
     if(!headers.length||!rows.length){toast('⚠️ Could not read file — check the format');return;}
-    _csvHeaders=headers;_csvRaw=rows;
+    _csvHeaders=headers;_csvRaw=rows;_csvFileName=file.name;
     const amex=csvIsAmex(headers);
     csvSetPosSpend(amex);
     csvBuildMapTable(amex);csvGoStep(2);
@@ -246,14 +251,15 @@ function csvBuildMapTable(amex){
     let guess=csvGuess(h,amex);
     if(taken.has(guess))guess='';
     if(guess)taken.add(guess);
-    const opts=CSV_FIELDS.map(o=>`<option value="${o.v}"${o.v===guess?' selected':''}>${o.l}</option>`).join('');
-    html.push(`<tr>
-      <td class="up-map-col">${h}</td>
-      <td class="up-map-sample">${samples||'(empty)'}</td>
-      <td><select data-col="${h}" class="up-map-sel">${opts}</select></td>
-    </tr>`);
+    const opts=CSV_FIELDS.map(o=>'<option value="'+o.v+'"'+(o.v===guess?' selected':'')+'>'+o.l+'</option>').join('');
+    html.push('<tr>'
+      +'<td class="up-map-col">'+esc(h)+'</td>'
+      +'<td class="up-map-sample">'+(samples?esc(samples):'(empty)')+'</td>'
+      +'<td><select data-col="'+esc(h)+'" class="up-map-sel" onchange="csvBalToggle()">'+opts+'</select></td>'
+      +'</tr>');
   });
   tbody.innerHTML=html.join('');
+  if(typeof csvBalToggle==='function')csvBalToggle();
 }
 
 // ── PREVIEW ──────────────────────────────────────────────────
@@ -280,6 +286,12 @@ function csvPreview(){
       const d=csvDollar(row[map.debit]||'0');
       const c=csvDollar(row[map.credit]||'0');
       amt=(isNaN(c)?0:c)-(isNaN(d)?0:Math.abs(d));
+    }
+    // Balance files: read the amount the way the balance check does (CR/DR suffixes),
+    // so imported rows carry the same sign the running balance proves
+    if(map.balance&&typeof BalanceSync!=='undefined'){
+      const bc=BalanceSync.buildRows([row],map,csvDate)[0].amountCents;
+      if(bc!==null)amt=bc/100;
     }
     if(isNaN(amt)){r._err=r._err||'Invalid amount';amt=0;}
 
@@ -329,8 +341,11 @@ function csvPreview(){
     return r;
   });
 
+  // Balance sync runs after dedupe, so already-imported rows can't create a false gap
+  if(typeof bsPrepare==='function'&&!bsPrepare(map,_csvFileName))return;
   csvRefreshPreview();
   csvGoStep(3);
+  if(typeof bsRenderPanel==='function')bsRenderPanel();
 }
 
 function csvRefreshPreview(){
@@ -350,18 +365,18 @@ function csvRefreshPreview(){
     const skipped=(isDup&&skip)||isErr;
     if(!skipped)willImport++;
 
-    let status=isErr?`<span class="tag-err">${ICON('alert-triangle')} ${r._err||'Zero amount'}</span>`:
+    let status=isErr?'<span class="tag-err">'+ICON('alert-triangle')+' '+esc(r._err||'Zero amount')+'</span>':
       isDup?`<span class="tag-dup">Duplicate</span>`:`<span class="tag-ok">${ICON('check')} Ready</span>`;
 
     const cls=isErr?'row-err':isDup?'row-dup':'';
-    const subcatBadge=r.subcat?'<span class="up-subcat">'+r.subcat+'</span>':'—';
+    const subcatBadge=r.subcat?'<span class="up-subcat">'+esc(r.subcat)+'</span>':'—';
     html.push('<tr class="'+cls+(skipped?' row-skip':'') + '">'
       +'<td>'+(r.date||'—')+'</td>'
       +'<td><span class="badge '+(r.type==='income'?'b-income':'b-expense')+'">'+r.type+'</span></td>'
-      +'<td class="up-td-name">'+(r.name||'—')+'</td>'
-      +'<td class="up-td-cat">'+(r.category||'—')+'</td>'
+      +'<td class="up-td-name">'+(r.name?esc(r.name):'—')+'</td>'
+      +'<td class="up-td-cat">'+(r.category?esc(r.category):'—')+'</td>'
       +'<td>'+subcatBadge+'</td>'
-      +'<td class="up-td-desc">'+(r.description||'—')+'</td>'
+      +'<td class="up-td-desc">'+(r.description?esc(r.description):'—')+'</td>'
       +'<td class="up-td-amt '+(r.type==='income'?'tone-green':'tone-pink')+'">'+  (r.type==='income'?'+':'-')+fmt(r.amount)+'</td>'
       +'<td>'+status+'</td>'
       +'</tr>');
@@ -377,22 +392,35 @@ function csvRefreshPreview(){
 
 // ── CONFIRM IMPORT ───────────────────────────────────────────
 function csvConfirmImport(){
+  csvFinishImport(csvCommitRows());
+}
+
+// Adds the previewed rows to TX and saves. opts.account (an ACCOUNTS id) overrides the
+// file's account column and opts.batch tags each row; both are set by balance sync only.
+function csvCommitRows(opts){
   const skip=document.getElementById('csv-skip-dupes')?.checked;
   let count=0;
   _csvParsed.forEach(r=>{
     if(r._err||r.amount===0)return;
     if(r._dup&&skip)return;
     var catObj=LCATS.find(function(c){return c.name===r.category;});
-    TX.unshift({id:Date.now()+Math.random(),date:r.date,type:r.type,
+    var t={id:Date.now()+Math.random(),date:r.date,type:r.type,
       category:r.category,catId:r.catId||(catObj?catObj.id:'other'),
-      subcat:r.subcat||'',name:r.name||'',account:r.account||'',
-      description:r.description||'',amount:r.amount,person:activeProfile,_imported:true});
+      subcat:r.subcat||'',name:r.name||'',account:(opts&&opts.account)||r.account||'',
+      description:r.description||'',amount:r.amount,person:activeProfile,_imported:true};
+    if(opts&&opts.batch)t._batch=opts.batch;
+    TX.unshift(t);
     count++;
   });
-  save(K.tx,TX);
+  // Balance sync rolls the whole import back if this write doesn't land
+  if(!saveChecked(K.tx,TX)&&opts)throw new Error('Could not save transactions');
   // Record the CSV-import timestamp (after auto-categorisation, which runs at
   // parse time) for the data-health insight cards.
   try { save(K.lastCsvImport, today()); } catch(e) {}
+  return count;
+}
+
+function csvFinishImport(count){
   csvReset();
   renderTx();renderDashboard();
   closeCsvModal();

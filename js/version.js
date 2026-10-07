@@ -14,11 +14,22 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.12';
+var APP_VERSION = '2.5.13';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.13',
+    date: '2026-10-08',
+    title: 'Balances from your bank file',
+    notes: [
+      'When a bank CSV has a running-balance column, Kelda can fill in that account’s Cash Tracker balances for you. Pick the account on the column step',
+      'A balance check before import shows anything that doesn’t add up, and nothing is synced until you’ve reviewed it',
+      'Accounts with no balance entered for the latest month now carry their last known balance instead of counting as $0',
+      'Brenton and Shelley now see the same net worth figure',
+    ],
+  },
   {
     version: '2.5.12',
     date: '2026-10-08',

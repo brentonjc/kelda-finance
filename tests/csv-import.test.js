@@ -54,6 +54,10 @@ function loadApp({ withAutoCat = false } = {}) {
     vm.runInContext('var LRULES = load(K.rules) || {};', ctx);
     run('js/pages/autocategorise.js');
     ctx.seedLRulesFromCSV();   // as unlocking the app does
+  } else {
+    // export.js escapes CSV text with storage.js's esc(); load just that helper
+    const storageSrc = fs.readFileSync(path.join(ROOT, 'js/storage.js'), 'utf8');
+    vm.runInContext(storageSrc.match(/^function esc\(.*$/m)[0], ctx);
   }
   run('js/pages/export.js');
   ctx.toast = (m) => ctx.toasts.push(m);
