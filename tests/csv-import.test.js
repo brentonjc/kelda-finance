@@ -11,9 +11,11 @@ const vm = require('node:vm');
 const ROOT = path.join(__dirname, '..');
 
 // Load export.js as a classic script. The wizard's DOM is reduced to the mapping
-// table body, whose rendered <select>s are read back the way csvPreview reads them.
+// table body, whose rendered <select>s are read back the way csvPreview reads them,
+// and step 2's "Positive amounts are spending" checkbox.
 function loadApp({ withAutoCat = false } = {}) {
   const tbody = { innerHTML: '' };
+  const posSpend = { checked: false };
   const store = {};
   const ctx = {
     console,
@@ -30,7 +32,7 @@ function loadApp({ withAutoCat = false } = {}) {
       get length() { return Object.keys(store).length; },
     },
     document: {
-      getElementById: (id) => (id === 'csv-map-body' ? tbody : null),
+      getElementById: (id) => ({ 'csv-map-body': tbody, 'csv-pos-spend': posSpend }[id] ?? null),
       querySelectorAll: (sel) => {
         if (sel !== '#csv-map-body select') return [];
         return [...tbody.innerHTML.matchAll(/<select data-col="([^"]*)"[^>]*>([\s\S]*?)<\/select>/g)]
@@ -41,6 +43,7 @@ function loadApp({ withAutoCat = false } = {}) {
       },
     },
   };
+  ctx.posSpend = posSpend;
   ctx.window = ctx;
   vm.createContext(ctx);
   const run = (file) => vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
@@ -59,11 +62,13 @@ function loadApp({ withAutoCat = false } = {}) {
 }
 
 // Run a file through the wizard: read, guess the mapping, preview.
-function importText(ctx, text) {
+// `onStep2` runs between them, where the user would change the mapping step.
+function importText(ctx, text, onStep2 = () => {}) {
   ctx.FileReader = function () {
     this.readAsText = () => this.onload({ target: { result: text } });
   };
   ctx.csvProcess({ name: 'activity.csv' });
+  onStep2(ctx);
   ctx.csvPreview();
   return { map: mappingOf(ctx), rows: JSON.parse(JSON.stringify(vm.runInContext('_csvParsed', ctx))) };
 }
@@ -146,6 +151,39 @@ test('a bank file keeps its signs: negative is spending', () => {
   const { rows } = importText(ctx, 'Date,Amount,Description\n01/09/2026,-20.00,SHOP\n02/09/2026,100.00,PAY\n');
   assert.deepEqual(rows.map((r) => [r.type, r.amount]), [['expense', 20], ['income', 100]]);
   assert.equal(ctx.toasts.length, 0);
+});
+
+test('an Amex file ticks "Positive amounts are spending"; a bank file leaves it unticked', () => {
+  const amex = loadApp();
+  importText(amex, AMEX);
+  assert.equal(amex.posSpend.checked, true);
+  const bank = loadApp();
+  bank.posSpend.checked = true;   // left over from an earlier file
+  importText(bank, 'Date,Amount,Description\n01/09/2026,-20.00,SHOP\n');
+  assert.equal(bank.posSpend.checked, false);
+});
+
+test('unticking the box on an Amex file keeps the file\'s signs', () => {
+  const ctx = loadApp();
+  const { rows } = importText(ctx, AMEX, (c) => { c.posSpend.checked = false; });
+  assert.deepEqual(rows.map((r) => [r.type, r.amount]), [['income', 12.5], ['expense', 500], ['income', 1089.95]]);
+});
+
+test('ticking the box on a card file with a single Amount column imports positive amounts as spending', () => {
+  const ctx = loadApp();
+  const { rows } = importText(ctx, 'Date,Amount,Description\n01/09/2026,45.00,SHOP\n02/09/2026,-300.00,PAYMENT THANK YOU\n',
+    (c) => { c.posSpend.checked = true; });
+  assert.deepEqual(rows.map((r) => [r.type, r.amount]), [['expense', 45], ['income', 300]]);
+});
+
+test('Debit/Credit columns ignore the box', () => {
+  const text = 'Date,Description,Debit,Credit\n01/09/2026,SHOP,45.00,\n02/09/2026,PAY,,300.00\n';
+  for (const ticked of [false, true]) {
+    const ctx = loadApp();
+    const { map, rows } = importText(ctx, text, (c) => { c.posSpend.checked = ticked; });
+    assert.deepEqual([map.debit, map.credit, map.amount], ['Debit', 'Credit', undefined]);
+    assert.deepEqual(rows.map((r) => [r.type, r.amount]), [['expense', 45], ['income', 300]]);
+  }
 });
 
 test('the first matching column keeps a field; NAB-style "Transaction" columns are not dates', () => {
