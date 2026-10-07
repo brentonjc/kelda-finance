@@ -6,3 +6,4 @@ serve.py
 Start Finance App.command
 CLAUDE.md
 .playwright-mcp/
+.audit-data/

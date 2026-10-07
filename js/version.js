@@ -14,11 +14,26 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.9';
+var APP_VERSION = '2.5.10';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.10',
+    date: '2026-10-08',
+    title: 'More accurate categories',
+    notes: [
+      'Transactions worded “Purchase at…”, “Online purchase from…” or “To… receipt number” are now matched on the shop or payee name, so more of them get a category',
+      'A category you set for one of these now also covers the same merchant when your bank words it differently, and “Apply to all” offers the shop name instead of “Purchase”',
+      'Categories you set in the past now apply to more of your transactions',
+      'Transactions that already got a category keep the same one',
+      'Your own category for a brand now covers all its stores: a rule for Bunnings applies to “Bunnings (Artarmon)” too',
+      'Large deposits are no longer guessed to be Salary. Ones the app can’t recognise are left for you to categorise',
+      'Fewer false matches: “Shelley” no longer counts as Shell petrol, or “hospitality” as a hospital',
+      'Uber Eats is filed as food delivery, not a taxi, and Coles Express as petrol',
+    ],
+  },
   {
     version: '2.5.9',
     date: '2026-10-08',
