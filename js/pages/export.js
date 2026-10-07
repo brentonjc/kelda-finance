@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-let _csvRaw=[], _csvHeaders=[], _csvParsed=[];
+let _csvRaw=[], _csvHeaders=[], _csvParsed=[], _csvAmex=false;
 
 const CSV_FIELDS=[
   {v:'',      l:'— Ignore —'},
@@ -17,10 +17,27 @@ const CSV_FIELDS=[
 
 // Category matching now uses LCATS dynamically
 
+// American Express exports list purchases as positive amounts and payments as
+// negative, the reverse of bank exports. Their "Appears On Your Statement As"
+// and "Extended Details" columns don't appear in bank files.
+function csvIsAmex(headers){
+  return headers.some(h=>{
+    const s=h.toLowerCase().replace(/[^a-z]/g,'');
+    return s==='appearsonyourstatementas'||s==='extendeddetails';
+  });
+}
+
 // Guess column mapping from header name
-function csvGuess(h){
+function csvGuess(h,amex){
   const s=h.toLowerCase().replace(/[^a-z]/g,'');
-  if(/date|day|time|posted|trans/.test(s))return'date';
+  if(amex){
+    // Amex "Description" is the merchant. Reference, Category, Account # and the
+    // address columns would otherwise be guessed as notes, category or account.
+    if(s==='description')return'name';
+    if(s==='extendeddetails')return'desc';
+    if(!/^amount|date/.test(s))return'';
+  }
+  if(/date|day|time|posted|^trans(action)?s?$/.test(s))return'date';
   if(/debit|withdraw|charge/.test(s))return'debit';
   if(/credit|deposit/.test(s))return'credit';
   if(/amount|amt|sum|total/.test(s)&&!/balance/.test(s))return'amount';
@@ -34,27 +51,41 @@ function csvGuess(h){
 }
 
 // Parse CSV text → {headers, rows}
+// Quoted cells may hold commas, line breaks (Amex addresses and extended
+// details) and "" for a literal quote. Line breaks inside a cell become spaces.
 function csvParse(text){
-  const lines=text.trim().split(/\r?\n/);
-  if(lines.length<2)return{headers:[],rows:[]};
-  function split(line){
-    const r=[];let cur='',inQ=false;
-    for(const c of line){
-      if(c==='"'){inQ=!inQ;}
-      else if(c===','&&!inQ){r.push(cur.trim());cur='';}
-      else cur+=c;
+  const recs=[];let rec=[],cur='',inQ=false;
+  text=String(text).replace(/^\uFEFF/,'');
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){if(text[i+1]==='"'){cur+='"';i++;}else inQ=false;}
+      else if(c==='\r'&&text[i+1]==='\n')continue;
+      else cur+=(c==='\r'||c==='\n')?' ':c;
     }
-    r.push(cur.trim());
-    return r;
+    else if(c==='"'&&!cur.trim())inQ=true;
+    else if(c===','){rec.push(cur.trim());cur='';}
+    else if(c==='\n'||c==='\r'){
+      if(c==='\r'&&text[i+1]==='\n')i++;
+      rec.push(cur.trim());recs.push(rec);rec=[];cur='';
+    }
+    else cur+=c;
   }
-  const headers=split(lines[0]).map(h=>h.replace(/^"|"$/g,'').trim());
-  const rows=[];
-  for(let i=1;i<lines.length;i++){
-    const v=split(lines[i]);
-    if(v.every(x=>!x))continue;
-    const obj={};headers.forEach((h,j)=>{obj[h]=(v[j]||'').replace(/^"|"$/g,'').trim();});
-    rows.push(obj);
-  }
+  rec.push(cur.trim());recs.push(rec);
+  const filled=recs.filter(v=>v.some(x=>x));
+  // Some exports put a title or account summary above the header row. Use the
+  // first row that names a date column and an amount column, else the first row.
+  let hi=filled.findIndex(v=>{
+    const g=v.map(h=>csvGuess(h));
+    return g.includes('date')&&(g.includes('amount')||g.includes('debit')||g.includes('credit'));
+  });
+  if(hi<0)hi=0;
+  if(filled.length-hi<2)return{headers:[],rows:[]};
+  const headers=filled[hi];
+  const rows=filled.slice(hi+1).map(v=>{
+    const obj={};headers.forEach((h,j)=>{obj[h]=v[j]||'';});
+    return obj;
+  });
   return{headers,rows};
 }
 
@@ -74,7 +105,16 @@ function csvDate(s){
   // Australian format DD/MM/YYYY: treat first number as day, second as month
   const parts=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
   if(parts){let[,a,b,y]=parts;if(y.length===2)y='20'+y;return`${y}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;}
-  const nd=new Date(s);if(!isNaN(nd))return nd.toISOString().split('T')[0];
+  // Month-name dates: "8 Oct 2026", "08-Oct-26", "Oct 8, 2026"
+  const mon=m=>['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m.slice(0,3).toLowerCase())+1;
+  let mn=s.match(/^(\d{1,2})[ \-]([a-z]{3,9})\.?,?[ \-](\d{2}|\d{4})$/i),d,m,y;
+  if(mn){[,d,m,y]=mn;}
+  else if((mn=s.match(/^([a-z]{3,9})\.? (\d{1,2}),? (\d{4})$/i))){[,m,d,y]=mn;}
+  if(mn&&mon(m)){if(y.length===2)y='20'+y;return`${y}-${String(mon(m)).padStart(2,'0')}-${d.padStart(2,'0')}`;}
+  // Anything else the browser can read. Use the local calendar date: toISOString()
+  // is UTC, which is the previous day for midnight in Australia.
+  const nd=new Date(s);
+  if(!isNaN(nd))return`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,'0')}-${String(nd.getDate()).padStart(2,'0')}`;
   return null;
 }
 
@@ -130,7 +170,7 @@ function csvGoStep(n){
 }
 
 function csvReset(){
-  _csvRaw=[];_csvHeaders=[];_csvParsed=[];
+  _csvRaw=[];_csvHeaders=[];_csvParsed=[];_csvAmex=false;
   document.getElementById('csv-file-input').value='';
   csvGoStep(1);
 }
@@ -173,8 +213,9 @@ function csvProcess(file){
   r.onload=e=>{
     const{headers,rows}=csvParse(e.target.result);
     if(!headers.length||!rows.length){toast('⚠️ Could not read file — check the format');return;}
-    _csvHeaders=headers;_csvRaw=rows;
+    _csvHeaders=headers;_csvRaw=rows;_csvAmex=csvIsAmex(headers);
     csvBuildMapTable();csvGoStep(2);
+    if(_csvAmex)toast('American Express file: purchases will import as expenses');
   };
   r.readAsText(file);
 }
@@ -183,9 +224,14 @@ function csvProcess(file){
 function csvBuildMapTable(){
   const tbody=document.getElementById('csv-map-body');
   const html=[];
+  // First matching column wins, so "Date Processed" or "Reference" can't
+  // replace an earlier "Date" or "Description" when the preview reads the map
+  const taken=new Set();
   _csvHeaders.forEach(h=>{
     const samples=_csvRaw.slice(0,3).map(r=>r[h]).filter(Boolean).join(', ');
-    const guess=csvGuess(h);
+    let guess=csvGuess(h,_csvAmex);
+    if(taken.has(guess))guess='';
+    if(guess)taken.add(guess);
     const opts=CSV_FIELDS.map(o=>`<option value="${o.v}"${o.v===guess?' selected':''}>${o.l}</option>`).join('');
     html.push(`<tr>
       <td class="up-map-col">${h}</td>
@@ -213,7 +259,7 @@ function csvPreview(){
 
     // Amount
     let amt=NaN;
-    if(map.amount){amt=csvDollar(row[map.amount]);}
+    if(map.amount){amt=csvDollar(row[map.amount]);if(_csvAmex)amt=-amt;}
     else{
       const d=csvDollar(row[map.debit]||'0');
       const c=csvDollar(row[map.credit]||'0');
