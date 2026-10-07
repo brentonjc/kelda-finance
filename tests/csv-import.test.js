@@ -16,6 +16,7 @@ const ROOT = path.join(__dirname, '..');
 function loadApp({ withAutoCat = false } = {}) {
   const tbody = { innerHTML: '' };
   const posSpend = { checked: false };
+  const fileInput = { value: '' };
   const store = {};
   const ctx = {
     console,
@@ -32,7 +33,7 @@ function loadApp({ withAutoCat = false } = {}) {
       get length() { return Object.keys(store).length; },
     },
     document: {
-      getElementById: (id) => ({ 'csv-map-body': tbody, 'csv-pos-spend': posSpend }[id] ?? null),
+      getElementById: (id) => ({ 'csv-map-body': tbody, 'csv-pos-spend': posSpend, 'csv-file-input': fileInput }[id] ?? null),
       querySelectorAll: (sel) => {
         if (sel !== '#csv-map-body select') return [];
         return [...tbody.innerHTML.matchAll(/<select data-col="([^"]*)"[^>]*>([\s\S]*?)<\/select>/g)]
@@ -161,6 +162,13 @@ test('an Amex file ticks "Positive amounts are spending"; a bank file leaves it 
   bank.posSpend.checked = true;   // left over from an earlier file
   importText(bank, 'Date,Amount,Description\n01/09/2026,-20.00,SHOP\n');
   assert.equal(bank.posSpend.checked, false);
+});
+
+test('starting over unticks the box', () => {
+  const ctx = loadApp();
+  importText(ctx, AMEX);
+  ctx.csvReset();
+  assert.equal(ctx.posSpend.checked, false);
 });
 
 test('unticking the box on an Amex file keeps the file\'s signs', () => {

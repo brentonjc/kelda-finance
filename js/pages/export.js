@@ -171,6 +171,10 @@ function csvGoStep(n){
 }
 
 // Step 2's "Positive amounts are spending" box, for credit card files
+function csvSetPosSpend(on){
+  const el=document.getElementById('csv-pos-spend');
+  if(el)el.checked=on;
+}
 function csvPosIsSpend(){
   const el=document.getElementById('csv-pos-spend');
   return !!(el&&el.checked);
@@ -178,8 +182,7 @@ function csvPosIsSpend(){
 
 function csvReset(){
   _csvRaw=[];_csvHeaders=[];_csvParsed=[];
-  const posSpend=document.getElementById('csv-pos-spend');
-  if(posSpend)posSpend.checked=false;
+  csvSetPosSpend(false);
   document.getElementById('csv-file-input').value='';
   csvGoStep(1);
 }
@@ -224,8 +227,7 @@ function csvProcess(file){
     if(!headers.length||!rows.length){toast('⚠️ Could not read file — check the format');return;}
     _csvHeaders=headers;_csvRaw=rows;
     const amex=csvIsAmex(headers);
-    const posSpend=document.getElementById('csv-pos-spend');
-    if(posSpend)posSpend.checked=amex;
+    csvSetPosSpend(amex);
     csvBuildMapTable(amex);csvGoStep(2);
     if(amex)toast('American Express file: “Positive amounts are spending” is ticked');
   };
