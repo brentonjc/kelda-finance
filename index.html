@@ -121,7 +121,7 @@
 .ob-step-content { padding-bottom: 32px; padding-top: 1px; }
 .ob-step-label { font-size: 14px; color: var(--n300); transition: color .25s ease; line-height: 1; margin-top: 1px; }
 .ob-step-label.active { color: var(--text); }
-.ob-step-label.complete { color: var(--green); }
+.ob-step-label.complete { color: var(--success-ink); }
 
 /* Preview card */
 .ob-preview-wrap { margin-top: auto; position: relative; }
@@ -137,7 +137,7 @@
 .ob-preview-card.reveal-3 { filter: blur(0.5px); opacity: .9; }
 .ob-preview-card.reveal-4 { filter: blur(0); opacity: 1; }
 .ob-preview-label { font-size: 8px; color: var(--n300); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; }
-.ob-preview-amount { font-family: var(--font-mono); font-size: 18px; color: var(--pink); margin-bottom: 10px; }
+.ob-preview-amount { font-family: var(--font-mono); font-size: 18px; color: var(--primary-ink); margin-bottom: 10px; }
 .ob-preview-bar-wrap { margin-bottom: 10px; }
 .ob-preview-bar-label { font-size: 7px; color: var(--n300); margin-bottom: 2px; }
 .ob-preview-bar { height: 4px; border-radius: 2px; margin-bottom: 3px; }
@@ -174,7 +174,7 @@
 .ob-sub { font-size: 14px; color: color-mix(in srgb, var(--muted) 85%, var(--text)); line-height: 1.6; margin-bottom: 28px; }
 
 .ob-field { margin-bottom: 20px; }
-.ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--pink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
+.ob-label { display: block; font-size: 11px; font-weight: 600; color: var(--primary-ink); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
 .ob-input {
   width: 100%; background: var(--n700); border: 1px solid var(--n600); border-radius: 10px;
   padding: 13px 14px; font-family: var(--font-body); font-size: 16px; color: var(--text);
@@ -186,12 +186,11 @@
 .ob-input.error { border-color: var(--red); }
 .ob-input.mono { font-family: var(--font-mono); }
 .ob-input.ob-shake { animation: kfShake .3s ease; }
-.ob-error { font-size: 12px; color: var(--amber); min-height: 18px; margin-top: 5px; display: block; }
+.ob-error { font-size: 12px; color: var(--warn-ink); min-height: 18px; margin-top: 5px; display: block; }
 .ob-helper { font-size: 12px; color: var(--n300); margin-top: 6px; line-height: 1.5; }
 
 .ob-btn-primary {
-  width: 100%; background: var(--pink); color: var(--white); border: none; border-radius: 999px;
-  /* 19px + 700 qualifies as WCAG "large text" (3:1), so white-on-pink brand CTA passes AA */
+  width: 100%; background: var(--pink); color: var(--primary-text); border: none; border-radius: 999px;
   padding: 14px 24px; font-family: var(--font-body); font-size: 19px; font-weight: 700; cursor: pointer;
   transition: opacity .15s, transform .1s; margin-top: 8px; min-height: 48px;
 }
@@ -252,7 +251,7 @@
   padding: 5px 10px; cursor: pointer; font-family: var(--font-body); user-select: none;
   -webkit-tap-highlight-color: transparent; transition: background .12s, color .12s, border-color .12s;
 }
-.ob-pill.selected { background: var(--pink); border-color: var(--pink); color: #fff; }
+.ob-pill.selected { background: var(--pink); border-color: var(--pink); color: var(--primary-text); }
 
 /* Divider */
 .ob-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 6px; }
@@ -327,7 +326,7 @@
 .ob-recap-sub { font-size: 13px; color: var(--n300); line-height: 1.5; margin-bottom: 22px; }
 .ob-recap-list { display: flex; flex-direction: column; gap: 11px; margin-bottom: 26px; }
 .ob-recap-item { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateY(6px); animation: kfRecapIn .4s ease forwards; }
-.ob-recap-ic { width: 28px; height: 28px; border-radius: 8px; background: var(--green-dim); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.ob-recap-ic { width: 28px; height: 28px; border-radius: 8px; background: var(--green-dim); color: var(--success-ink); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 .ob-recap-item b { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
 .ob-recap-item span { font-size: 12px; color: var(--n300); }
 @keyframes kfRecapIn { to { opacity: 1; transform: none; } }
@@ -2617,9 +2616,13 @@ window.addEventListener('unhandledrejection',function(e){
               <tbody id="csv-map-body"></tbody>
             </table>
           </div>
+          <label class="up-skip up-skip--p2">
+            <input type="checkbox" id="csv-pos-spend"/>
+            Positive amounts are spending (credit card statement)
+          </label>
           <div class="up-tip">
             <i class="ti ti-bulb"></i> <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
-            Negative amounts are treated as expenses automatically.
+            With a single Amount column, negative amounts are spending. Tick the box above if your card statement lists purchases as positive amounts.
           </div>
           <div class="up-actions">
             <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
@@ -4035,7 +4038,7 @@ function showSwUpdatePrompt(reg){
   .sw-update-bar.show{ transform:translateX(-50%) translateY(0); }
   .sw-update-text{ font-size:.85rem; color:var(--text,#E8EDF5); }
   .sw-update-btn{
-    background:var(--primary,#F0538A); color:#fff; border:none; border-radius:999px;
+    background:var(--primary,#F0538A); color:var(--primary-text); border:none; border-radius:999px;
     padding:9px 18px; font-size:.82rem; font-weight:600; cursor:pointer; white-space:nowrap;
     font-family:var(--font-body,'DM Sans',sans-serif); min-height:40px;
   }
