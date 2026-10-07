@@ -15,7 +15,7 @@
 .kd-pills { display: flex; gap: 5px; }
 .kd-pill { padding: 5px 13px; border-radius: 99px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; color: var(--muted); border: 0.5px solid transparent; transition: all .12s; background: none; font-family: var(--font-body); }
 .kd-pill:hover { color: var(--text); border-color: var(--border); }
-.kd-pill.active { color: var(--pink); border-color: rgba(240,83,138,0.4); background: rgba(240,83,138,0.09); }
+.kd-pill.active { color: var(--primary-ink); border-color: rgba(240,83,138,0.4); background: rgba(240,83,138,0.09); }
 
 /* ── Tile grid — flexbox: 3 per row, wrapping to 2 rows, filling the space ── */
 .kd-bodywrap { display: flex; flex-wrap: wrap; gap: 12px; align-content: stretch; flex: 1 1 auto; min-height: 0; }
@@ -24,13 +24,13 @@
 .kdt-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
 .kdt-ttl { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
 .kdt-ttl i { font-size: 12px; }
-.kdt-act { font-size: 11px; color: var(--pink); cursor: pointer; font-weight: 500; white-space: nowrap; background: none; border: none; font-family: var(--font-body); }
+.kdt-act { font-size: 11px; color: var(--primary-ink); cursor: pointer; font-weight: 500; white-space: nowrap; background: none; border: none; font-family: var(--font-body); }
 .kdt-act:hover { color: var(--pink-light); }
-.kd-pillbadge { font-size: 9.5px; background: rgba(240,83,138,0.1); color: var(--pink-light); border: 0.5px solid rgba(240,83,138,0.25); border-radius: 99px; padding: 2px 8px; font-weight: 600; }
+.kd-pillbadge { font-size: 9.5px; background: var(--pink-dim); color: var(--pink-light); border: 0.5px solid rgba(240,83,138,0.25); border-radius: 99px; padding: 2px 8px; font-weight: 600; }
 
 /* Net worth tile */
 .kd-nw-big { font-family: var(--font-mono); font-size: 28px; font-weight: 500; color: var(--text); letter-spacing: -0.02em; line-height: 1; margin-bottom: 2px; }
-.kd-nw-delta { font-size: 11px; color: var(--green); margin-bottom: 10px; }
+.kd-nw-delta { font-size: 11px; color: var(--success-ink); margin-bottom: 10px; }
 .kd-sep { height: 0.5px; background: var(--border); margin: 0 0 10px; }
 .kd-cflbl { font-size: 9px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .kd-cf3 { display: flex; gap: 14px; margin-bottom: 10px; }
@@ -60,13 +60,13 @@
 .kd-acc2-spark { flex: 0 1 96px; min-width: 40px; height: 40px; margin-left: auto; opacity: .95; }
 .kd-acc2-r { text-align: right; flex-shrink: 0; min-width: 74px; }
 .kd-acc2-delta { font-family: var(--font-mono); font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
-.kd-acc2-delta.up { color: var(--green); }
-.kd-acc2-delta.down { color: var(--amber); }
+.kd-acc2-delta.up { color: var(--success-ink); }
+.kd-acc2-delta.down { color: var(--warn-ink); }
 .kd-acc2-bal { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 3px; }
 
 .kd-acc-total { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; border-top: 0.5px solid var(--border); }
 .kd-acc-total-l { font-size: 10px; color: var(--muted); }
-.kd-acc-total-v { font-family: var(--font-mono); font-size: 13px; color: var(--green); font-weight: 500; }
+.kd-acc-total-v { font-family: var(--font-mono); font-size: 13px; color: var(--success-ink); font-weight: 500; }
 
 /* Stat chips + chart area (budget / forecast) */
 .kd-bud-top { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -93,10 +93,10 @@
 .kd-bill-due { font-size: 9.5px; margin-top: 1px; }
 .kd-bill-r { margin-left: auto; text-align: right; flex-shrink: 0; }
 .kd-bill-amt { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; color: var(--text); }
-.kd-bill-pay { font-size: 9.5px; color: var(--pink); cursor: pointer; font-weight: 600; margin-top: 2px; }
+.kd-bill-pay { font-size: 9.5px; color: var(--primary-ink); cursor: pointer; font-weight: 600; margin-top: 2px; }
 .kd-bill--link { cursor: pointer; }
 .kd-bill-ic--pink { background: color-mix(in srgb, var(--pink) 12%, transparent); }
-.kd-bill-ic--pink i { color: var(--pink); }
+.kd-bill-ic--pink i { color: var(--primary-ink); }
 
 /* Forecast note (tile 6) */
 .kd-fc-note { display: flex; align-items: center; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 0.5px solid var(--border); font-size: 11.5px; color: var(--muted); line-height: 1.4; }
@@ -114,7 +114,7 @@
 .notif-item-lbl { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
 .notif-item-title { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
 .notif-item-desc { font-size: 12px; color: var(--muted); line-height: 1.4; margin-bottom: 6px; }
-.notif-item-link { font-size: 11.5px; color: var(--pink); font-weight: 600; text-decoration: none; }
+.notif-item-link { font-size: 11.5px; color: var(--primary-ink); font-weight: 600; text-decoration: none; }
 .notif-item-status { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
 .notif-nudge { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; font-size: 12.5px; color: var(--text); line-height: 1.5; }
 .notif-nudge-ic { font-size: 15px; flex-shrink: 0; }
@@ -148,12 +148,11 @@
 /* ── Dashboard bits that were inline styles ── */
 .kd-spark-svg { display: block; }
 .kd-donut-svg { flex-shrink: 0; }
-.kd-empty-link { color: var(--pink); cursor: pointer; padding-block: 14px; }
+.kd-empty-link { color: var(--primary-ink); cursor: pointer; padding-block: 14px; }
 .kdt-hd-r { display: flex; align-items: center; gap: 10px; }
 .kdt-hd-r--tight { gap: 7px; }
 .notif-section-lbl--gap { margin-top: 16px; }
 /* Show/hide accounts modal */
 .acctvis-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; }
-.acctvis-row input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--primary); }
 .acctvis-name { flex: 1; font-size: .85rem; color: var(--text); }
 .acctvis-bal { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); }
