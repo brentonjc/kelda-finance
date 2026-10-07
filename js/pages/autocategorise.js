@@ -952,7 +952,7 @@ var AutoCat = (function() {
   // ── Keyword rules ─────────────────────────────────────────
   var KEYWORD_RULES = [
     { catId:'transfers', subcat:'Loan Repayment',    keywords:['home loan','mortgage repayment','loan repayment','hl repay'] },
-    { catId:'transfers', subcat:'Credit Card Payment',keywords:['credit card payment','visa payment','mastercard payment','amex payment','pay off credit','card payment'] },
+    { catId:'transfers', subcat:'Credit Card Payment',keywords:['credit card payment','visa payment','mastercard payment','amex payment','pay off credit','card payment','payment received - thank you','payment received thank you'] },
     { catId:'transfers', subcat:'Savings Transfer',  keywords:['savings transfer','savings account transfer','high interest savings'] },
     { catId:'transfers', subcat:'Mortgage Offset',   keywords:['offset account','offset transfer'] },
     { catId:'transfers', subcat:'Between Accounts',  keywords:['transfer to','transfer from','trf to','trf from','tfr to','tfr from','int transfer','internal transfer','own account'] },
