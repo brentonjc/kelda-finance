@@ -473,7 +473,7 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
   /* Forms */
   .form-grid{flex-direction:column!important;gap:10px;}
   .form-grid>*{flex:1 1 100%!important;}
-  input,select,textarea{font-size:16px!important;border-radius:12px;padding:12px 14px;}
+  input:where(:not([type=checkbox],[type=radio])),select,textarea{font-size:16px!important;border-radius:12px;padding:12px 14px;}
   label.lbl{font-size:.72rem;margin-bottom:5px;}
 
   /* Buttons */
@@ -632,7 +632,11 @@ body:has(.eq-modal-overlay.open) #fab-overlay{display:none!important;}
   .del-btn,.modal-close,.dash-nav-btn,.bl-duesoon-x,.sw-update-dismiss,
   .g-icon-opt,#cat-icon-picker>div{min-width:44px;min-height:44px;}
   .g-icon-opt{display:inline-flex;align-items:center;justify-content:center;}
-  .tx-check{width:22px;height:22px;}
+  .tx-check,.tr-pend-tools .tr-cb,.tr-tbl .tr-cb{width:22px;height:22px;}
+  /* Checkbox rows: the whole row, or the label beside the box, is the 44px target */
+  .up-skip,.bva-showall,.cr-apply,.cr-ov-item,.tr-pend-tools,.acctvis-row{min-height:44px;}
+  .fc2-ongoing-lbl,.liab-m-bills-lbl,.tr-sa-lbl{min-height:44px;display:flex;align-items:center;}
+  .liab-m-bills{padding-top:0;padding-bottom:0;}
   /* Inline text links ("Details", "View …", "Add →") get a 44px hit area without
      changing the layout: grow the box, pull it back with negative margin */
   .kdt-act,.tile-link{display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;margin:-14px 0;}

@@ -14,11 +14,20 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.11';
+var APP_VERSION = '2.5.12';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.12',
+    date: '2026-10-08',
+    title: 'Checkboxes look like checkboxes',
+    notes: [
+      'Checkboxes and option buttons across the app use your device’s own style, tinted with the theme colour, instead of showing as blank boxes',
+      'On phones, the label beside each checkbox can be tapped too',
+    ],
+  },
   {
     version: '2.5.11',
     date: '2026-10-08',
