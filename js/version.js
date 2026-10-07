@@ -14,31 +14,42 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.4';
+var APP_VERSION = '2.5.10';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
-    version: '2.5.4',
-    date: '2026-10-05',
-    title: 'Fewer uncategorised transactions',
+    version: '2.5.10',
+    date: '2026-10-08',
+    title: 'More accurate categories',
     notes: [
       'Transactions worded “Purchase at…”, “Online purchase from…” or “To… receipt number” are now matched on the shop or payee name, so more of them get a category',
       'A category you set for one of these now also covers the same merchant when your bank words it differently, and “Apply to all” offers the shop name instead of “Purchase”',
       'Categories you set in the past now apply to more of your transactions',
       'Transactions that already got a category keep the same one',
-    ],
-  },
-  {
-    version: '2.5.3',
-    date: '2026-10-04',
-    title: 'More accurate categories',
-    notes: [
       'Your own category for a brand now covers all its stores: a rule for Bunnings applies to “Bunnings (Artarmon)” too',
       'Large deposits are no longer guessed to be Salary. Ones the app can’t recognise are left for you to categorise',
       'Fewer false matches: “Shelley” no longer counts as Shell petrol, or “hospitality” as a hospital',
       'Uber Eats is filed as food delivery, not a taxi, and Coles Express as petrol',
+    ],
+  },
+  {
+    version: '2.5.9',
+    date: '2026-10-08',
+    title: 'Credit card CSV signs',
+    notes: [
+      'New “Positive amounts are spending” box on the column step, for card statements that list purchases as positive amounts. It is ticked for American Express files and can be unticked',
+    ],
+  },
+  {
+    version: '2.5.8',
+    date: '2026-10-08',
+    title: 'American Express CSV import',
+    notes: [
+      'American Express CSV files now import. Purchases come in as expenses, and card repayments are filed under Transfers › Credit Card Payment',
+      'Cells that run over several lines, such as Amex addresses, no longer split a transaction into broken rows',
+      'Title rows above the column headings are skipped, and dates like “8 Oct 2026” are read correctly',
     ],
   },
   {
