@@ -14,29 +14,55 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.7';
+var APP_VERSION = '2.5.11';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
-    version: '2.5.7',
-    date: '2026-10-06',
-    title: 'Clearer amounts, links and labels',
+    version: '2.5.11',
+    date: '2026-10-08',
+    title: 'Easier-to-read text in every theme',
     notes: [
+      'Paid, Due, Overdue and other status badges use stronger text colours, so they’re readable in every theme',
+      'Buttons and toggles filled with the theme colour use a label colour that stands out from it. In the Kelda dark theme, those labels are now dark',
+      'Form labels and other secondary text in the Kelda dark theme are a little lighter',
       'Green, amber and red amounts and labels are darker in the light themes, so income, warnings and overdue figures are easier to read',
       'Links and selected tabs in the Fintech dark theme use a lighter blue',
       'Smart Rules, import tips, Transfers and Settings no longer show dark patches or faint text in the light themes',
     ],
   },
   {
-    version: '2.5.6',
-    date: '2026-10-05',
-    title: 'Easier-to-read text and badges',
+    version: '2.5.10',
+    date: '2026-10-08',
+    title: 'More accurate categories',
     notes: [
-      'Paid, Due, Overdue and other status badges use stronger text colours, so they’re readable in every theme',
-      'Buttons and toggles filled with the theme colour use a label colour that stands out from it. In the Kelda dark theme, those labels are now dark',
-      'Form labels and other secondary text in the Kelda dark theme are a little lighter',
+      'Transactions worded “Purchase at…”, “Online purchase from…” or “To… receipt number” are now matched on the shop or payee name, so more of them get a category',
+      'A category you set for one of these now also covers the same merchant when your bank words it differently, and “Apply to all” offers the shop name instead of “Purchase”',
+      'Categories you set in the past now apply to more of your transactions',
+      'Transactions that already got a category keep the same one',
+      'Your own category for a brand now covers all its stores: a rule for Bunnings applies to “Bunnings (Artarmon)” too',
+      'Large deposits are no longer guessed to be Salary. Ones the app can’t recognise are left for you to categorise',
+      'Fewer false matches: “Shelley” no longer counts as Shell petrol, or “hospitality” as a hospital',
+      'Uber Eats is filed as food delivery, not a taxi, and Coles Express as petrol',
+    ],
+  },
+  {
+    version: '2.5.9',
+    date: '2026-10-08',
+    title: 'Credit card CSV signs',
+    notes: [
+      'New “Positive amounts are spending” box on the column step, for card statements that list purchases as positive amounts. It is ticked for American Express files and can be unticked',
+    ],
+  },
+  {
+    version: '2.5.8',
+    date: '2026-10-08',
+    title: 'American Express CSV import',
+    notes: [
+      'American Express CSV files now import. Purchases come in as expenses, and card repayments are filed under Transfers › Credit Card Payment',
+      'Cells that run over several lines, such as Amex addresses, no longer split a transaction into broken rows',
+      'Title rows above the column headings are skipped, and dates like “8 Oct 2026” are read correctly',
     ],
   },
   {

@@ -2616,9 +2616,13 @@ window.addEventListener('unhandledrejection',function(e){
               <tbody id="csv-map-body"></tbody>
             </table>
           </div>
+          <label class="up-skip up-skip--p2">
+            <input type="checkbox" id="csv-pos-spend"/>
+            Positive amounts are spending (credit card statement)
+          </label>
           <div class="up-tip">
             <i class="ti ti-bulb"></i> <strong>Tip:</strong> If your bank has separate Debit/Credit columns, map both — we'll combine them.
-            Negative amounts are treated as expenses automatically.
+            With a single Amount column, negative amounts are spending. Tick the box above if your card statement lists purchases as positive amounts.
           </div>
           <div class="up-actions">
             <button class="btn btn-ghost" onclick="csvReset()">← Back</button>
