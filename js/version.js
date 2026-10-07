@@ -14,11 +14,19 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.8';
+var APP_VERSION = '2.5.9';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.9',
+    date: '2026-10-08',
+    title: 'Credit card CSV signs',
+    notes: [
+      'New “Positive amounts are spending” box on the column step, for card statements that list purchases as positive amounts. It is ticked for American Express files and can be unticked',
+    ],
+  },
   {
     version: '2.5.8',
     date: '2026-10-08',

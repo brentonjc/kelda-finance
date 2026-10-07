@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-let _csvRaw=[], _csvHeaders=[], _csvParsed=[], _csvAmex=false;
+let _csvRaw=[], _csvHeaders=[], _csvParsed=[];
 
 const CSV_FIELDS=[
   {v:'',      l:'— Ignore —'},
@@ -18,7 +18,8 @@ const CSV_FIELDS=[
 // Category matching now uses LCATS dynamically
 
 // American Express exports list purchases as positive amounts and payments as
-// negative, the reverse of bank exports. Their "Appears On Your Statement As"
+// negative, the reverse of bank exports, so step 2's "Positive amounts are
+// spending" box starts ticked for them. Their "Appears On Your Statement As"
 // and "Extended Details" columns don't appear in bank files.
 function csvIsAmex(headers){
   return headers.some(h=>{
@@ -169,8 +170,19 @@ function csvGoStep(n){
   document.getElementById('csv-cancel-btn').style.display=n===1?'none':'';
 }
 
+// Step 2's "Positive amounts are spending" box, for credit card files
+function csvSetPosSpend(on){
+  const el=document.getElementById('csv-pos-spend');
+  if(el)el.checked=on;
+}
+function csvPosIsSpend(){
+  const el=document.getElementById('csv-pos-spend');
+  return !!(el&&el.checked);
+}
+
 function csvReset(){
-  _csvRaw=[];_csvHeaders=[];_csvParsed=[];_csvAmex=false;
+  _csvRaw=[];_csvHeaders=[];_csvParsed=[];
+  csvSetPosSpend(false);
   document.getElementById('csv-file-input').value='';
   csvGoStep(1);
 }
@@ -213,15 +225,17 @@ function csvProcess(file){
   r.onload=e=>{
     const{headers,rows}=csvParse(e.target.result);
     if(!headers.length||!rows.length){toast('⚠️ Could not read file — check the format');return;}
-    _csvHeaders=headers;_csvRaw=rows;_csvAmex=csvIsAmex(headers);
-    csvBuildMapTable();csvGoStep(2);
-    if(_csvAmex)toast('American Express file: purchases will import as expenses');
+    _csvHeaders=headers;_csvRaw=rows;
+    const amex=csvIsAmex(headers);
+    csvSetPosSpend(amex);
+    csvBuildMapTable(amex);csvGoStep(2);
+    if(amex)toast('American Express file: “Positive amounts are spending” is ticked');
   };
   r.readAsText(file);
 }
 
 // ── MAPPING TABLE ────────────────────────────────────────────
-function csvBuildMapTable(){
+function csvBuildMapTable(amex){
   const tbody=document.getElementById('csv-map-body');
   const html=[];
   // First matching column wins, so "Date Processed" or "Reference" can't
@@ -229,7 +243,7 @@ function csvBuildMapTable(){
   const taken=new Set();
   _csvHeaders.forEach(h=>{
     const samples=_csvRaw.slice(0,3).map(r=>r[h]).filter(Boolean).join(', ');
-    let guess=csvGuess(h,_csvAmex);
+    let guess=csvGuess(h,amex);
     if(taken.has(guess))guess='';
     if(guess)taken.add(guess);
     const opts=CSV_FIELDS.map(o=>`<option value="${o.v}"${o.v===guess?' selected':''}>${o.l}</option>`).join('');
@@ -250,6 +264,8 @@ function csvPreview(){
   if(!map.date){toast('⚠️ Please map a Date column');return;}
   if(!map.amount&&!map.debit&&!map.credit){toast('⚠️ Please map an Amount, Debit or Credit column');return;}
 
+  // Only a single Amount column is flipped; Debit/Credit columns carry their own direction
+  const flip=!!map.amount&&csvPosIsSpend();
   _csvParsed=_csvRaw.map((row,idx)=>{
     const r={_idx:idx,_err:null,_dup:false};
 
@@ -259,7 +275,7 @@ function csvPreview(){
 
     // Amount
     let amt=NaN;
-    if(map.amount){amt=csvDollar(row[map.amount]);if(_csvAmex)amt=-amt;}
+    if(map.amount){amt=csvDollar(row[map.amount]);if(flip)amt=-amt;}
     else{
       const d=csvDollar(row[map.debit]||'0');
       const c=csvDollar(row[map.credit]||'0');
