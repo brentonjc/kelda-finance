@@ -14,11 +14,24 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.10';
+var APP_VERSION = '2.5.11';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.5.11',
+    date: '2026-10-08',
+    title: 'Easier-to-read text in every theme',
+    notes: [
+      'Paid, Due, Overdue and other status badges use stronger text colours, so they’re readable in every theme',
+      'Buttons and toggles filled with the theme colour use a label colour that stands out from it. In the Kelda dark theme, those labels are now dark',
+      'Form labels and other secondary text in the Kelda dark theme are a little lighter',
+      'Green, amber and red amounts and labels are darker in the light themes, so income, warnings and overdue figures are easier to read',
+      'Links and selected tabs in the Fintech dark theme use a lighter blue',
+      'Smart Rules, import tips, Transfers and Settings no longer show dark patches or faint text in the light themes',
+    ],
+  },
   {
     version: '2.5.10',
     date: '2026-10-08',

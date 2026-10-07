@@ -490,9 +490,9 @@ function insRenderCompareChart() {
 
   if (deltasEl) {
     const chips = [
-      { label: 'Income',   cur: curInc,  prev: prevInc, color: '#52d68a' },
-      { label: 'Expenses', cur: curExp,  prev: prevExp, color: '#e8457a' },
-      { label: 'Net',      cur: curNet,  prev: prevNet, color: '#a29bfe' },
+      { label: 'Income',   cur: curInc,  prev: prevInc, tone: 'tone-green' },
+      { label: 'Expenses', cur: curExp,  prev: prevExp, tone: 'tone-pink' },
+      { label: 'Net',      cur: curNet,  prev: prevNet, tone: 'tone-purple' },
     ];
     deltasEl.innerHTML = '<div class="ins-cmp-row">'
       + chips.map(c => {
@@ -504,7 +504,7 @@ function insRenderCompareChart() {
                       : (delta > 0 ? 'tone-green' : 'tone-danger');
           return '<div class="ins-cmp">'
             + '<div class="ins-cmp-lbl">' + c.label + '</div>'
-            + '<div class="ins-cmp-val" style="color:' + c.color + '">' + fmt(c.cur) + '</div>'
+            + '<div class="ins-cmp-val ' + c.tone + '">' + fmt(c.cur) + '</div>'
             + '<div class="ins-cmp-delta ' + dTone + '">'
             + arrow + ' ' + fmt(Math.abs(delta)) + (pct !== null ? ' (' + pct + '%)' : '')
             + ' <span class="ins-cmp-vs">vs ' + prevLabel + '</span></div>'
