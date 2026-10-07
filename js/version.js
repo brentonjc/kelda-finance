@@ -42,6 +42,16 @@ var APP_CHANGELOG = [
     ],
   },
   {
+    version: '2.5.8',
+    date: '2026-10-08',
+    title: 'American Express CSV import',
+    notes: [
+      'American Express CSV files now import. Purchases come in as expenses, and card repayments are filed under Transfers › Credit Card Payment',
+      'Cells that run over several lines, such as Amex addresses, no longer split a transaction into broken rows',
+      'Title rows above the column headings are skipped, and dates like “8 Oct 2026” are read correctly',
+    ],
+  },
+  {
     version: '2.5.2',
     date: '2026-10-03',
     title: 'Pets category tidy-up',
