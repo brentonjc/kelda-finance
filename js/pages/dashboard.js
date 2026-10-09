@@ -24,7 +24,7 @@ function computeCurrentNetWorth() {
   var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
     ? CT_ACCTS.map(function(a){ return a.id; })
     : ['offset','home','sav1','sav2'];
-  var bank = lm ? ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[lm]||0); }, 0) : 0;
+  var bank = lm ? ctBankTotal(lm, ctAcctsIds) : 0;
   bank += _nwUnreconciledCashflow(lm);
 
   // Super: use multi-account totals if available, fall back to legacy SUPER fields
@@ -56,10 +56,12 @@ function _nwUnreconciledCashflow(lastCtMonth) {
   try {
     var nowMonth = _nwCurrentMonth();
     if (!lastCtMonth || lastCtMonth >= nowMonth) return 0;
-    var txns = (typeof activeTX === 'function') ? activeTX() : (TX || []);
+    // Balances are household-wide, so every profile's transactions count;
+    // activeTX() would give Brenton and Shelley different net worths.
     var net = 0;
-    txns.forEach(function(t) {
+    (TX || []).forEach(function(t) {
       if (!t.date || t.date.slice(0,7) <= lastCtMonth) return;
+      if (typeof isTransfer === 'function' && isTransfer(t)) return;
       if (t.catId === 'transfers' || (t.category||'').toLowerCase() === 'transfers') return;
       if (t.type === 'income') net += Number(t.amount) || 0;
       else if (t.type === 'expense') net -= Number(t.amount) || 0;
@@ -133,50 +135,7 @@ function _nwBackfillFromCT(existingHist) {
     var ctMonths = (typeof ctAllMonths === 'function') ? ctAllMonths() : [];
     if (!ctMonths.length) return;
 
-    var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
-      ? CT_ACCTS.map(function(a){ return a.id; }) : ['offset','home','sav1','sav2'];
-
-    // Current fallback values (used when no per-month entry exists)
-    var currentNW     = computeCurrentNetWorth();
-    var fallbackSuper = currentNW.super_;
-    var fallbackProp  = currentNW.property;
-    var fallbackEq    = currentNW.equities;
-    var fallbackLiab  = currentNW.liabilities;
-
-    // ── Earliest legitimate month for each date-bound component ───
-    // Property, equities and liabilities must NOT be back-filled into months
-    // before they existed, or the history shows debt/assets that predate the
-    // mortgage/holding. Bank and super are always present so need no guard.
-    var propAcqMo = null;
-    if (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length) {
-      MORTGAGE.properties.forEach(function(p) {
-        if (p.acquiredDate) { var d = p.acquiredDate.slice(0,7); if (!propAcqMo || d < propAcqMo) propAcqMo = d; }
-      });
-    }
-    if (!propAcqMo && MORTGAGE && MORTGAGE.acquiredDate) propAcqMo = MORTGAGE.acquiredDate.slice(0,7);
-
-    var eqStartMo = null;
-    if (typeof EQUITIES !== 'undefined' && EQUITIES.length) {
-      EQUITIES.forEach(function(h) {
-        var d = (h.purchaseDate || h.grantDate || '').slice(0,7);
-        if (d && (!eqStartMo || d < eqStartMo)) eqStartMo = d;
-      });
-    }
-
-    // Load component histories
-    var superHist = {}; try { superHist    = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
-    var mortHist  = {}; try { mortHist     = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
-    var eqHist    = {}; try { eqHist       = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
-    var liabHist  = {}; try { liabHist     = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
-
-    var liabStartMo = propAcqMo;
-    if (typeof LIABILITIES !== 'undefined') {
-      LIABILITIES.forEach(function(l) {
-        var d = (l.openedDate || l.startDate || '').slice(0,7);
-        if (d && (!liabStartMo || d < liabStartMo)) liabStartMo = d;
-      });
-    }
-    Object.keys(liabHist).forEach(function(d) { if (!liabStartMo || d < liabStartMo) liabStartMo = d; });
+    var ctx = _nwMonthContext();
 
     // Build month→existing entry map
     var moMap = {};
@@ -185,37 +144,7 @@ function _nwBackfillFromCT(existingHist) {
     var changed = false;
     ctMonths.forEach(function(mo) {
       if (moMap[mo]) return; // already have an entry for this month
-
-      // Bank from CT
-      var bank = ctAcctsIds.reduce(function(s,a){ return s + ((CT[a]||{})[mo]||0); }, 0);
-
-      // Super
-      var sh     = superHist[mo];
-      var super_ = sh ? ((sh.brenton||0) + (sh.shelley||0)) : fallbackSuper;
-
-      // Property — nothing before acquisition month
-      var mh       = mortHist[mo];
-      var property = (propAcqMo && mo < propAcqMo) ? 0 : (mh ? (mh.homeValue||0) : fallbackProp);
-
-      // Equities — nothing before earliest holding
-      var equities = (eqStartMo && mo < eqStartMo) ? 0
-        : ((typeof eqHist[mo] !== 'undefined') ? eqHist[mo] : fallbackEq);
-
-      // Liabilities (includes mortgage balance) — nothing before debt existed
-      var liabilities = (liabStartMo && mo < liabStartMo) ? 0
-        : ((typeof liabHist[mo] !== 'undefined') ? liabHist[mo] : fallbackLiab);
-
-      var netWorth = bank + super_ + property + equities - liabilities;
-
-      // Use last day of the month as the date
-      var yr = parseInt(mo.slice(0,4)), m = parseInt(mo.slice(5,7));
-      var lastDay = new Date(yr, m, 0).getDate();
-      var dateStr = mo + '-' + String(lastDay).padStart(2,'0');
-
-      existingHist.push({ date: dateStr, netWorth: Math.round(netWorth*100)/100,
-        bank: Math.round(bank), super_: Math.round(super_), property: Math.round(property),
-        equities: Math.round(equities), liabilities: Math.round(liabilities),
-        _backfilled: true });
+      existingHist.push(_nwEntryForMonth(mo, ctx));
       changed = true;
     });
 
@@ -225,6 +154,109 @@ function _nwBackfillFromCT(existingHist) {
       try { localStorage.setItem('cff_networth_history', JSON.stringify(existingHist)); } catch(e) {}
     }
   } catch(e) { console.warn('_nwBackfillFromCT error', e); }
+}
+
+// Everything _nwEntryForMonth needs that doesn't change month to month.
+function _nwMonthContext() {
+  var ctAcctsIds = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS && CT_ACCTS.length)
+    ? CT_ACCTS.map(function(a){ return a.id; }) : ['offset','home','sav1','sav2'];
+
+  // Current fallback values (used when no per-month entry exists)
+  var currentNW = computeCurrentNetWorth();
+
+  // ── Earliest legitimate month for each date-bound component ───
+  // Property, equities and liabilities must NOT be back-filled into months
+  // before they existed, or the history shows debt/assets that predate the
+  // mortgage/holding. Bank and super are always present so need no guard.
+  var propAcqMo = null;
+  if (MORTGAGE && MORTGAGE.properties && MORTGAGE.properties.length) {
+    MORTGAGE.properties.forEach(function(p) {
+      if (p.acquiredDate) { var d = p.acquiredDate.slice(0,7); if (!propAcqMo || d < propAcqMo) propAcqMo = d; }
+    });
+  }
+  if (!propAcqMo && MORTGAGE && MORTGAGE.acquiredDate) propAcqMo = MORTGAGE.acquiredDate.slice(0,7);
+
+  var eqStartMo = null;
+  if (typeof EQUITIES !== 'undefined' && EQUITIES.length) {
+    EQUITIES.forEach(function(h) {
+      var d = (h.purchaseDate || h.grantDate || '').slice(0,7);
+      if (d && (!eqStartMo || d < eqStartMo)) eqStartMo = d;
+    });
+  }
+
+  // Load component histories
+  var superHist = {}; try { superHist    = JSON.parse(localStorage.getItem('cff_super_history')    || '{}') || {}; } catch(e) {}
+  var mortHist  = {}; try { mortHist     = JSON.parse(localStorage.getItem('cff_mortgage_history') || '{}') || {}; } catch(e) {}
+  var eqHist    = {}; try { eqHist       = JSON.parse(localStorage.getItem('cff_eq_history')       || '{}') || {}; } catch(e) {}
+  var liabHist  = {}; try { liabHist     = JSON.parse(localStorage.getItem('cff_liab_history')     || '{}') || {}; } catch(e) {}
+
+  var liabStartMo = propAcqMo;
+  if (typeof LIABILITIES !== 'undefined') {
+    LIABILITIES.forEach(function(l) {
+      var d = (l.openedDate || l.startDate || '').slice(0,7);
+      if (d && (!liabStartMo || d < liabStartMo)) liabStartMo = d;
+    });
+  }
+  Object.keys(liabHist).forEach(function(d) { if (!liabStartMo || d < liabStartMo) liabStartMo = d; });
+
+  return { ctAcctsIds: ctAcctsIds,
+    fallbackSuper: currentNW.super_, fallbackProp: currentNW.property,
+    fallbackEq: currentNW.equities, fallbackLiab: currentNW.liabilities,
+    propAcqMo: propAcqMo, eqStartMo: eqStartMo, liabStartMo: liabStartMo,
+    superHist: superHist, mortHist: mortHist, eqHist: eqHist, liabHist: liabHist };
+}
+
+// One month-end history entry, tagged _backfilled so it can be regenerated.
+function _nwEntryForMonth(mo, ctx) {
+  // Bank from CT; an account with no entry this month carries its last balance
+  var bank = ctBankTotal(mo, ctx.ctAcctsIds);
+
+  // Super
+  var sh     = ctx.superHist[mo];
+  var super_ = sh ? ((sh.brenton||0) + (sh.shelley||0)) : ctx.fallbackSuper;
+
+  // Property — nothing before acquisition month
+  var mh       = ctx.mortHist[mo];
+  var property = (ctx.propAcqMo && mo < ctx.propAcqMo) ? 0 : (mh ? (mh.homeValue||0) : ctx.fallbackProp);
+
+  // Equities — nothing before earliest holding
+  var equities = (ctx.eqStartMo && mo < ctx.eqStartMo) ? 0
+    : ((typeof ctx.eqHist[mo] !== 'undefined') ? ctx.eqHist[mo] : ctx.fallbackEq);
+
+  // Liabilities (includes mortgage balance) — nothing before debt existed
+  var liabilities = (ctx.liabStartMo && mo < ctx.liabStartMo) ? 0
+    : ((typeof ctx.liabHist[mo] !== 'undefined') ? ctx.liabHist[mo] : ctx.fallbackLiab);
+
+  var netWorth = bank + super_ + property + equities - liabilities;
+
+  // Use last day of the month as the date
+  var yr = parseInt(mo.slice(0,4)), m = parseInt(mo.slice(5,7));
+  var lastDay = new Date(yr, m, 0).getDate();
+  var dateStr = mo + '-' + String(lastDay).padStart(2,'0');
+
+  return { date: dateStr, netWorth: Math.round(netWorth*100)/100,
+    bank: Math.round(bank), super_: Math.round(super_), property: Math.round(property),
+    equities: Math.round(equities), liabilities: Math.round(liabilities),
+    _backfilled: true };
+}
+
+// Regenerate the month-end entries for the given past months after their Cash
+// Tracker balances changed (e.g. a balance sync). Snapshots recorded on a real
+// day are kept; other months are left alone. The current month is covered by
+// recordNetWorthSnapshot(), which rewrites today's entry.
+function nwRefreshMonths(months) {
+  var hist = load('cff_networth_history') || [];
+  var ctx = _nwMonthContext();
+  var cur = _nwCurrentMonth();
+  (months || []).forEach(function(mo) {
+    if (mo >= cur) return;
+    hist = hist.filter(function(e) { return !(e._backfilled && e.date && e.date.slice(0,7) === mo); });
+    hist.push(_nwEntryForMonth(mo, ctx));
+  });
+  hist.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  if (hist.length > 730) hist = hist.slice(hist.length - 730);
+  if (!saveChecked('cff_networth_history', hist)) throw new Error('Could not save net worth history');
+  recordNetWorthSnapshot();
 }
 
 // ── Save per-component monthly values ─────────────────────────
@@ -953,7 +985,7 @@ function renderAcctVisModal() {
   if (!accts.length) { el.innerHTML = '<div class="kd-empty">No accounts yet.</div>'; return; }
   el.innerHTML = accts.map(function(a) {
     var nm = (typeof ctLabel === 'function') ? ctLabel(a) : a.id;
-    var bal = lm ? ((CT[a.id]||{})[lm] || 0) : 0;
+    var bal = lm ? ctBalanceAt(a.id, lm).value : 0;
     var isHidden = hidden.indexOf(a.id) !== -1;
     return '<label class="acctvis-row">'
       + '<input type="checkbox" ' + (isHidden ? '' : 'checked') + ' onchange="kdToggleAcctVisible(\'' + a.id + '\')"/>'
@@ -1121,7 +1153,7 @@ function kdRenderDashboard() {
   var prevM = months.length >= 2 ? months[months.length - 2] : null;
   var last6 = months.slice(-6);
   var accts = (typeof CT_ACCTS !== 'undefined' && CT_ACCTS) ? CT_ACCTS : [];
-  function bal(id, m) { return (typeof CT !== 'undefined' && CT[id] ? CT[id] : {})[m] || 0; }
+  function bal(id, m) { return ctBalanceAt(id, m).value; }
   var cash = accts.reduce(function(s, a) { return s + (lm ? bal(a.id, lm) : 0); }, 0);
   var prevCash = accts.reduce(function(s, a) { return s + (prevM ? bal(a.id, prevM) : 0); }, 0);
 

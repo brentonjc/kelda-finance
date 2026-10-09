@@ -52,6 +52,30 @@ function ctAllMonths(){
   return[...s].sort();
 }
 
+// An account's balance for a month. A month the account has no entry for carries
+// its most recent earlier balance forward (carried:true) rather than counting as $0,
+// so one account getting a newer month doesn't zero the others.
+function ctBalanceAt(acctId, mo, ct) {
+  var data = (ct || CT)[acctId] || {};
+  if (data[mo] !== undefined && data[mo] !== null) return { value: Number(data[mo]) || 0, carried: false, month: mo };
+  var best = null;
+  Object.keys(data).forEach(function(m) {
+    if (m < mo && data[m] !== null && (best === null || m > best)) best = m;
+  });
+  return best ? { value: Number(data[best]) || 0, carried: true, month: best } : { value: 0, carried: false, month: null };
+}
+// Total of every Cash Tracker account for a month, carrying each forward as above.
+function ctBankTotal(mo, ids) {
+  ids = ids || CT_ACCTS.map(function(a) { return a.id; });
+  return ids.reduce(function(s, id) { return s + ctBalanceAt(id, mo).value; }, 0);
+}
+
+// 'YYYY-MM' → 'Sep 2026'
+function ctMonthLabel(mo) {
+  var d = new Date(Number(mo.slice(0, 4)), Number(mo.slice(5, 7)) - 1, 1);
+  return d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+}
+
 // Local YYYY-MM string — avoids the toISOString() UTC timezone trap
 // (e.g. in AEST +10, midnight May 1 = April 30 UTC → wrong month stored)
 function ctYM(d) {
@@ -293,7 +317,7 @@ function ctRenderSummary(){
   const el=document.getElementById('ct-summary');if(!el)return;
   const months=ctAllMonths();
   const lm=months.length?months[months.length-1]:null;
-  const tots=CT_ACCTS.map(a=>lm?((CT[a.id]||{})[lm]||0):0);
+  const tots=CT_ACCTS.map(a=>lm?ctBalanceAt(a.id,lm).value:0);
   const grand=tots.reduce((s,v)=>s+v,0);
   // Dynamic breakdown by owner: sum all accounts, then by owner type
   const byOwner={shared:0,brenton:0,shelley:0,other:0};
@@ -318,7 +342,7 @@ function ctRenderChart(){
     data:months.map(m=>(CT[a.id]||{})[m]!==undefined?(CT[a.id]||{})[m]:null),
     borderColor:a.color,backgroundColor:a.color+'22',pointRadius:4,tension:.3,fill:false,spanGaps:true
   }));
-  const combined=months.map(m=>CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[m]||0),0));
+  const combined=months.map(m=>ctBankTotal(m));
   datasets.push({label:'Combined',data:combined,borderColor:'#fff',borderDash:[6,3],borderWidth:2.5,
     backgroundColor:'transparent',pointRadius:3,tension:.3,fill:false,spanGaps:true});
 
@@ -328,7 +352,7 @@ function ctRenderChart(){
     const mTarget=goalFreq==='annual'?goalAmt/12:goalAmt;
     const startM=goalStart&&months.includes(goalStart)?goalStart:months[0];
     const startIdx=months.indexOf(startM);
-    const startBal=CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[startM]||0),0);
+    const startBal=ctBankTotal(startM);
     datasets.push({
       label:`${goalFreq==='annual'?fmt(goalAmt)+'/yr':fmt(mTarget)+'/mo'} Goal`,
       data:months.map((_,i)=>i<startIdx?null:startBal+(i-startIdx)*mTarget),
@@ -356,12 +380,12 @@ function ctGoalStatus(){
   if(!goalAmt){el.textContent='Set a target to see progress';return;}
   const months=ctAllMonths();if(!months.length){el.textContent='';return;}
   const lm=months[months.length-1];
-  const combined=CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[lm]||0),0);
+  const combined=ctBankTotal(lm);
   const annualTarget=goalFreq==='annual'?goalAmt:goalAmt*12;
   const gap=annualTarget-combined;
   if(gap<=0){el.innerHTML='<span class="ct-goal-ok">'+ICON('circle-check-filled')+' Goal reached! '+fmt(combined)+'</span>';return;}
   const prevM=months.length>1?months[months.length-2]:null;
-  const prevCombined=prevM?CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[prevM]||0),0):0;
+  const prevCombined=prevM?ctBankTotal(prevM):0;
   const mGrowth=prevM?(combined-prevCombined):0;
   const eta=mGrowth>0?Math.ceil(gap/mGrowth):null;
   const etaStr=eta?'· ETA ~'+(eta<12?eta+'mo':Math.round(eta/12*10)/10+'yrs'):'';
@@ -377,12 +401,14 @@ function ctRenderNet(){
   let grandNow=0,grandPrev=0;
   let rows='';
   CT_ACCTS.forEach(a=>{
-    const now=(CT[a.id]||{})[lm]||0;
-    const prev=pm?((CT[a.id]||{})[pm]||0):null;
+    const nowBal=ctBalanceAt(a.id,lm);
+    const now=nowBal.value;
+    const prev=pm?ctBalanceAt(a.id,pm).value:null;
+    const carried=nowBal.carried?'<span class="dr-carried">as of '+esc(ctMonthLabel(nowBal.month))+'</span>':'';
     grandNow+=now;if(prev!==null)grandPrev+=prev;
     const diff=prev!==null?now-prev:null;
     const ds=diff===null?'—':`<span class="ct-diff ${diff>=0?'tone-green':'tone-danger'}">${diff>=0?'+':''}${fmt(diff)}</span>`;
-    rows+=`<div class="dr"><div class="dr-k">${iconTag(a.icon)} ${ctLabel(a)}</div><div class="ct-net-r"><div class="dr-v">${fmt(now)}</div><div class="ct-net-diff">${ds}</div></div></div>`;
+    rows+='<div class="dr"><div class="dr-k">'+iconTag(a.icon)+' '+ctLabel(a)+carried+'</div><div class="ct-net-r"><div class="dr-v">'+fmt(now)+'</div><div class="ct-net-diff">'+ds+'</div></div></div>';
   });
   const gd=grandNow-grandPrev;
   rows+=`<div class="dr ct-net-total">
@@ -408,7 +434,7 @@ function ctExportCSV(){
   const hdrs=['Month',...CT_ACCTS.map(a=>ctLabel(a)),'Combined'];
   const rows=months.map(m=>{
     const vals=CT_ACCTS.map(a=>(CT[a.id]||{})[m]||'');
-    const tot=CT_ACCTS.reduce((s,a)=>s+((CT[a.id]||{})[m]||0),0);
+    const tot=ctBankTotal(m);
     return[new Date(m+'-02').toLocaleString('default',{month:'long',year:'numeric'}),...vals,tot].join(',');
   });
   const blob=new Blob([[hdrs.join(','),...rows].join('\n')],{type:'text/csv'});
