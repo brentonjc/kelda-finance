@@ -4,7 +4,7 @@
    --muted toward --text: plain --muted on cards sits under 4.5:1 in
    some palettes.
    ══════════════════════════════════ */
-:root{--tax-sub:color-mix(in srgb, var(--muted) 55%, var(--text));--tax-purple-text:color-mix(in srgb, var(--purple) 50%, var(--text));}
+:root{--tax-sub:color-mix(in srgb, var(--muted) 55%, var(--text));}
 
 /* Nav entries stay hidden until Tax (Beta) is turned on */
 .nav-fly-item.tax-nav-off,.mob-menu-item.tax-nav-off{display:none;}
@@ -20,7 +20,7 @@
 /* Header */
 .tax-ttl{display:flex;align-items:center;gap:var(--sp2);flex-wrap:wrap;}
 .tax-beta{font-family:var(--font-body);font-size:.66rem;font-weight:700;letter-spacing:.02em;
-  background:color-mix(in srgb, var(--purple) 18%, transparent);color:var(--tax-purple-text);
+  background:color-mix(in srgb, var(--purple) 18%, transparent);color:var(--purple-ink);
   border:1px solid color-mix(in srgb, var(--purple) 40%, transparent);border-radius:var(--radius-pill);padding:2px 9px;}
 
 /* Person + FY switchers */
@@ -47,7 +47,7 @@
 .tax-warnbox,.tax-infobox{border-radius:var(--radius-sm);padding:10px 12px;font-size:.8rem;line-height:1.5;margin-bottom:var(--sp3);color:var(--text);}
 .tax-warnbox{background:var(--warn-bg);border:1px solid color-mix(in srgb, var(--warn) 45%, transparent);}
 .tax-infobox{background:color-mix(in srgb, var(--purple) 10%, transparent);border:1px solid color-mix(in srgb, var(--purple) 35%, transparent);}
-.tax-infobox a{color:var(--tax-purple-text);font-weight:600;}
+.tax-infobox a{color:var(--purple-ink);font-weight:600;}
 .tax-warn-acts{display:flex;flex-wrap:wrap;gap:var(--sp2);margin-top:var(--sp2);}
 .tax-warn-acts .btn{min-height:44px;}
 .tax-flex{display:flex;align-items:center;justify-content:space-between;gap:var(--sp2);flex-wrap:wrap;}
@@ -55,12 +55,7 @@
 .tax-details summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;}
 .tax-list{margin:4px 0 0 18px;}
 .tax-list li{margin:2px 0;}
-.tax-b-info{background:color-mix(in srgb, var(--purple) 16%, transparent);color:var(--tax-purple-text);}
-/* Status text inside Tax: the shared badge colours sit under 4.5:1 in the light modes, and
-   --purple is a dark teal in Harvest dark. Mixing each toward --text lifts it in every theme. */
-#page-tax .badge.b-paid,.tax-sheet .badge.b-paid{color:color-mix(in srgb, var(--success) 50%, var(--text));}
-#page-tax .badge.b-due,.tax-sheet .badge.b-due{color:color-mix(in srgb, var(--warn) 45%, var(--text));}
-#page-tax .badge.b-overdue,.tax-sheet .badge.b-overdue{color:color-mix(in srgb, var(--danger) 55%, var(--text));}
+.tax-b-info{background:var(--purple-bg);color:var(--purple-ink);}
 
 /* Rows */
 #tax-panel .dr{min-height:44px;}
