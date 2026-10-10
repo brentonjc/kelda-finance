@@ -168,6 +168,7 @@
   background:var(--card2);border:1px solid var(--border);font-size:.72rem;color:var(--tax-sub);}
 .tax-row-end{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.9rem;}
 .tax-row-chev{flex:none;color:var(--tax-sub);}
+.tax-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;}
 .tax-row .badge .ti,.tax-missing .badge .ti{font-size:.8rem;vertical-align:-1px;}
 
 /* Detail sheets */
@@ -219,6 +220,11 @@
 .tax-tx-btn{min-width:44px;min-height:44px;border:none;background:transparent;color:var(--tax-sub);cursor:pointer;border-radius:var(--radius-sm);font-size:1.05rem;}
 .tax-tx-btn:hover{color:var(--primary);}
 .tax-tx-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+
+.kd-nw-tax{font-size:.72rem;color:var(--tax-sub);margin-top:2px;}
+.tax-liab .dr{min-height:44px;}
+.tax-liab .dr-k{color:var(--tax-sub);}
+.tax-liab .dr-v{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
 
 @media (prefers-reduced-motion: reduce){
   .tax-sw::before,.tax-sw-thumb{transition:none;}

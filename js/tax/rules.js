@@ -27,7 +27,7 @@ var TAX_SRC = {
 };
 
 // Bumped whenever a rule below changes. Printed in every Tax export footer.
-var TAX_RULES_VERSION = '2026.10.05';
+var TAX_RULES_VERSION = '2026.10.11';
 
 var TAX_RULES = {
 
@@ -39,6 +39,10 @@ var TAX_RULES = {
     // Whether a disposal on exactly day 30 is inside the window is NOT settled by any ATO
     // page read. The engine treats it as inside and flags days 30–31 for the user to confirm.
     essThirtyDayBoundaryVerified: false,
+    // When a vest is sold within the 30-day window, Kelda values the shares sold at the sale
+    // proceeds (the market value at the shifted taxing point). No ATO page read on 11 Oct 2026
+    // says this outright, so it is shown to the user as an assumption.
+    essSaleValueIsProceeds: true, essSaleValueVerified: false,
     instalmentDueSoonDays: 14,
     vestDefaultForeignTax: 0,
     agentPriorLiabilityThreshold: 20000, // latest return liability ≥ this → earlier agent due date
