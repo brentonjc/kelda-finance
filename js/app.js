@@ -102,9 +102,9 @@ function toast(msg,dur=2400,type){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','borrowing','investment','settings','dashboard-layout','quickstart'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','borrowing','investment','settings','dashboard-layout','quickstart','tax'];
 // Short titles for the compact mobile header (the dashboard keeps the greeting instead)
-const MOB_TITLES={insights:'Graphs',transactions:'Spending',bills:'Bills',goals:'Goals',mortgage:'Mortgage',liabilities:'Liabilities',cash:'Cash',insurance:'Insurance',super:'Super',assets:'Net Worth',bva:'Budget',categories:'Categories',smartrules:'Smart Rules',export:'Export',upload:'Upload',forecast:'Forecast',transfers:'Transfers',equities:'Equities',borrowing:'Borrowing Power',investment:'Investment Property',settings:'Settings','dashboard-layout':'Dashboard Layout',quickstart:'Quick Start'};
+const MOB_TITLES={insights:'Graphs',transactions:'Spending',bills:'Bills',goals:'Goals',mortgage:'Mortgage',liabilities:'Liabilities',cash:'Cash',insurance:'Insurance',super:'Super',assets:'Net Worth',bva:'Budget',categories:'Categories',smartrules:'Smart Rules',export:'Export',upload:'Upload',forecast:'Forecast',transfers:'Transfers',equities:'Equities',borrowing:'Borrowing Power',investment:'Investment Property',settings:'Settings','dashboard-layout':'Dashboard Layout',quickstart:'Quick Start',tax:'Tax'};
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -144,6 +144,7 @@ function go(id){
     else if(id==='settings'){if(typeof renderSettings==='function')renderSettings();}
     else if(id==='dashboard-layout'){if(typeof renderDashboardLayout==='function')renderDashboardLayout();}
     else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
+    else if(id==='tax'){if(typeof renderTaxPage==='function')renderTaxPage();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar — pages without their own tab light up "More"

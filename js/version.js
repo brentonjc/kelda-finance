@@ -14,11 +14,33 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.5.13';
+var APP_VERSION = '2.7.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.7.0',
+    date: '2026-10-05',
+    title: 'Tax (Beta): return worksheet',
+    notes: [
+      'Enter each employer’s income statement, and see a return worksheet laid out by ATO label, with where every figure came from',
+      'Interest comes from your Interest transactions, capital gains from your Equities sales, and deductions from transactions you tag in Spending',
+      'Overview shows an estimate of what you’ll pay or get back, and how many sections of the return are ready',
+      'Household view puts both returns side by side; they are never added into one tax figure',
+      'Export the worksheet as a summary, CSV or printout, or as an agent pack if a tax agent lodges for you',
+    ],
+  },
+  {
+    version: '2.6.0',
+    date: '2026-10-04',
+    title: 'Tax (Beta), off by default',
+    notes: [
+      'New Tax (Beta) page, hidden until you turn it on in Settings › Beta features. Estimates only, not tax advice, and Kelda can’t lodge',
+      'Choose how each person lodges (yourself, a tax agent, or not sure yet) and see the matching ATO due dates, including weekend notes',
+      'Track PAYG instalments: amount or rate from your ATO notice, quarterly due dates, statuses and the payments you’ve made',
+    ],
+  },
   {
     version: '2.5.13',
     date: '2026-10-08',

@@ -191,11 +191,12 @@ function lockApp(){
 
   // Reset all rendered content so data isn't visible in the DOM
   ['db-cashflow','db-spending','db-networth','db-accounts','db-cat-breakdown',
-   'db-subcat-breakdown','tx-tbody','assets-stats','bva-tbody'].forEach(function(id) {
+   'db-subcat-breakdown','tx-tbody','assets-stats','bva-tbody','page-tax'].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '';
   });
 
+  if (typeof taxOnLock === 'function') taxOnLock();
   document.getElementById('login-screen').classList.remove('gone');
   // Back on the landing screen — force dark regardless of saved preference.
   if (typeof applyThemeForContext === 'function') applyThemeForContext();

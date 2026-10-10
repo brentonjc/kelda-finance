@@ -12,6 +12,13 @@ const K={
   ctdates:'cff_ct_dates',quickstart:'cff_qs_progress',superAccts:'cff_super_accts',
   billAliases:'cff_bill_aliases',billsDismissed:'cff_bills_dismissed',billsHorizon:'cff_bills_horizon',
   billsNotify:'cff_bills_notify',
+  // Tax (Beta) — see js/tax/. Off until opted in (taxcfg.betaEnabled).
+  taxcfg:    'cff_tax_cfg',     // { betaEnabled, consentAt, includeTaxInNetWorth, perPerson:{ id:{ firstRunDone, lodgement:{ FY: {...} } } } }
+  taxinc:    'cff_tax_income',  // income statement entries per FY per person
+  taxess:    'cff_tax_ess',     // { grants:[], vests:[] }
+  taxinst:   'cff_tax_inst',    // { FY: { person: { enrolled, method, amount, rate, quarterIncome, payments:[] } } }
+  taxcgt:    'cff_tax_cgt',     // scenarios, valuations30Jun2027, lossesCF
+  taxassess: 'cff_tax_assess',  // notice-of-assessment entries [{ person, fy, amount, date, paidDate }]
   // Per-component monthly histories — power the Net Worth breakdown table
   superHist:    'cff_super_history',    // { 'YYYY-MM': { brenton, shelley } }
   mortgageHist: 'cff_mortgage_history', // { 'YYYY-MM': { homeValue, balance } }

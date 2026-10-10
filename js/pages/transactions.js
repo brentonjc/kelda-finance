@@ -28,6 +28,7 @@ function txRescanCategories() {
 function togglePerson(){
   const w=document.getElementById('tx-person-wrap');
   if(w)w.style.display=document.getElementById('tx-type').value==='income'?'':'none';
+  if(typeof taxTxFormSync==='function')taxTxFormSync();   // the tax tag is for expenses only
 }
 
 // ── Add / Edit Transaction modal ─────────────────────────────────
@@ -54,6 +55,7 @@ function txFillForm(t){
   populateCatSelect();
   if(t.catId||t.category){ v('tx-cat', catIdFor(t.catId||t.category)); refreshSubcatSelect(); }
   v('tx-subcat', t.subcat||'');
+  if(typeof taxTxFormSync==='function')taxTxFormSync(t);
 }
 
 function openTxModal(id){
@@ -152,6 +154,7 @@ function addTx(){
       et.date=date; et.type=type; et.amount=amt; et.person=person; et.account=account;
       et.name=name; et.description=desc; et.subcat=subcat;
       if(cat){ et.catId=cat; et.category=catObj?catObj.name:cat; }
+      if(typeof taxTxApplyForm==='function')taxTxApplyForm(et);
       if(cat && cat!==prevCat){
         et.userSet=true;
         if(cat!=='other' && name && typeof AutoCat!=='undefined') AutoCat.learn(name, cat, subcat);
@@ -180,12 +183,14 @@ function addTx(){
   var _addTxCatName = _addTxCatObj ? _addTxCatObj.name : _resolvedCatId;
   const newTx={id:Date.now(),date,type,category:_addTxCatName,subcat:_resolvedSubcat,amount:amt,person,account,name,description:desc,catId:_resolvedCatId};
   applyAutoRules(newTx);
+  if(typeof taxTxApplyForm==='function')taxTxApplyForm(newTx);
   TX.unshift(newTx);
   save(K.tx,TX);
   document.getElementById('tx-amount').value='';
   document.getElementById('tx-desc').value='';
   const tn=document.getElementById('tx-name');if(tn)tn.value='';
   const ta=document.getElementById('tx-account');if(ta)ta.value='';
+  if(typeof taxTxFormSync==='function')taxTxFormSync({});
   closeTxModal();
   renderTx();renderDashboard();toast('✅ Transaction added');
   if(typeof qsCheckAndAutoComplete==='function')qsCheckAndAutoComplete();
@@ -345,13 +350,13 @@ function txMakeRow(t){
   tr.innerHTML='<td><input type="checkbox" class="tx-check tx-row-check" data-id="'+t.id+'"'+(_txSelected.has(t.id)?' checked':'')+' onchange="onTxRowCheck(this)" title="Select"/></td>'
     +'<td>'+dateStr+'</td>'
     +'<td><span class="badge '+(t.type==='income'?'b-income':'b-expense')+'">'+(t.type==='income'?'Income':'Expense')+'</span>'+personBadge+(isTr?' <span class="badge b-transfer">'+ICON('refresh')+'</span>':'')+'</td>'
-    +'<td class="tx-cell-clip tx-cell-name"'+(t.name?' title="'+esc(t.name)+'"':'')+'>'+(t.name||'—')+'</td>'
+    +'<td class="tx-cell-clip tx-cell-name"'+(t.name?' title="'+esc(t.name)+'"':'')+'>'+(t.name?esc(t.name):'—')+(typeof taxTxBadge==='function'?taxTxBadge(t):'')+'</td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="cat" '+lazyAttrs+' onchange="inlineAssignCat(this)"><option value="'+curCatId+'" selected>'+curCatName+'</option></select></td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="subcat" '+lazyAttrs+' onchange="inlineAssignSubcat(this)"><option value="'+curSub+'" selected>'+(curSub||'—')+'</option></select></td>'
     +'<td class="tx-desc-cell"'+(t.description?' title="'+esc(t.description)+'"':'')+'>'+(t.description||'—')+'</td>'
     +'<td><select class="tx-cat-sel" data-id="'+t.id+'" data-field="account" '+lazyAttrs+' onchange="inlineAssignAccount(this)"><option value="'+curAcct+'" selected>'+curAcctLabel+'</option></select></td>'
     +'<td class="tx-amt tx-amt--'+(t.type==='income'?'income':'expense')+'">'+amtSign+fmt(t.amount)+'</td>'
-    +'<td><button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
+    +'<td>'+(typeof taxTxRowBtn==='function'?taxTxRowBtn(t):'')+'<button class="del-btn" onclick="delTx('+t.id+')">'+ICON('trash')+'</button></td>';
   return tr;
 }
 

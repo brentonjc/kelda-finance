@@ -53,6 +53,7 @@
 <link rel="stylesheet" href="css/layout.css"/>
 <link rel="stylesheet" href="css/dashboard.css"/>
 <link rel="stylesheet" href="css/borrowing.css"/>
+<link rel="stylesheet" href="css/tax.css"/>
 <link rel="stylesheet" href="css/login.css"/>
 <link rel="stylesheet" href="css/utilities.css"/>
 
@@ -816,6 +817,7 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="mob-menu-item" onclick="goMob('smartrules')"><span><i class="ti ti-bolt"></i></span>Smart Rules</button>
       <button class="mob-menu-item" onclick="goMob('borrowing')"><span><i class="ti ti-home-dollar"></i></span>Borrowing (Beta)</button>
       <button class="mob-menu-item" onclick="goMob('investment')"><span><i class="ti ti-building-community"></i></span>Investment (Beta)</button>
+      <button class="mob-menu-item tax-nav-off" id="mob-tax" onclick="goMob('tax')"><span><i class="ti ti-receipt-tax"></i></span>Tax (Beta)</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -1138,6 +1140,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div class="nav-flyout-hd">Beta Features</div>
         <a class="nav-fly-item" id="n-borrowing" onclick="go('borrowing')" role="menuitem"><span class="ni"><i class="ti ti-home-dollar"></i></span><span>Borrowing Power (Beta)</span></a>
         <a class="nav-fly-item" id="n-investment" onclick="go('investment')" role="menuitem"><span class="ni"><i class="ti ti-building-community"></i></span><span>Investment Property (Beta)</span></a>
+        <a class="nav-fly-item tax-nav-off" id="n-tax" onclick="go('tax')" role="menuitem"><span class="ni"><i class="ti ti-receipt-tax"></i></span><span>Tax (Beta)</span></a>
       </div>
     </div>
 
@@ -1633,6 +1636,26 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
         <div><label class="lbl">Description / Notes</label><input type="text" id="tx-desc" placeholder="Optional notes..."/></div>
       </div>
+      <!-- Tax (Beta): shown for expenses only when the beta is on (js/pages/tax.js) -->
+      <fieldset class="tx-tax" id="tx-tax-wrap" hidden>
+        <legend class="tax-legend">Tax (Beta)</legend>
+        <div class="form-grid">
+          <div><label class="lbl" for="tx-tax-label">Tax deduction</label>
+            <select id="tx-tax-label" onchange="taxTxLabelChanged()"><option value="">Not a deduction</option></select>
+          </div>
+        </div>
+        <div id="tx-tax-more" hidden>
+          <div class="form-grid">
+            <div><label class="lbl" for="tx-tax-person">Claimed by</label>
+              <select id="tx-tax-person">
+                <option value="brenton" data-profile-name="brenton">Profile 1</option>
+                <option value="shelley" data-profile-name="shelley">Profile 2</option>
+              </select>
+            </div>
+            <div><label class="lbl" for="tx-tax-note">Tax note</label><input type="text" id="tx-tax-note" maxlength="200" placeholder="e.g. Receipt saved, 60% work use"/></div>
+          </div>
+        </div>
+      </fieldset>
       <div class="modal-actions">
         <button class="btn btn-danger tx-del-btn" id="tx-del-btn" onclick="txDeleteFromModal()" style="display:none"><i class="ti ti-trash"></i> Delete</button>
         <button class="btn btn-ghost" onclick="closeTxModal()">Cancel</button>
@@ -3076,6 +3099,7 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ DASHBOARD LAYOUT ═══ -->
   <div class="page" id="page-borrowing"></div>
   <div class="page" id="page-investment"></div>
+  <div class="page" id="page-tax"></div>
 
   <div class="page" id="page-dashboard-layout">
     <div class="page-title">Dashboard Layout</div>
@@ -3454,6 +3478,9 @@ window.addEventListener('unhandledrejection',function(e){
 <script defer src="js/pages/liabilities.js"></script>
 <script defer src="js/pages/borrowing.js"></script>
 <script defer src="js/pages/investment.js"></script>
+<script defer src="js/tax/rules.js"></script>
+<script defer src="js/tax/engine.js"></script>
+<script defer src="js/pages/tax.js"></script>
 <script defer src="js/pages/settings.js"></script>
 <script defer src="js/pages/quickstart.js"></script>
 <script defer src="js/wizard.js"></script>

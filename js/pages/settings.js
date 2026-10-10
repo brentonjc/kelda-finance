@@ -118,6 +118,9 @@ function renderSettings() {
   html += '</div>';
   html += '</div>';
 
+  // Beta features (Tax opt-in lives in js/pages/tax.js)
+  if (typeof taxSettingsCardHtml === 'function') html += taxSettingsCardHtml();
+
   // ════════════════════════════════════════════════════════════
   // 3E — SETUP WIZARD
   // ════════════════════════════════════════════════════════════
