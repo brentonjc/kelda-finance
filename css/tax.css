@@ -168,6 +168,7 @@
   background:var(--card2);border:1px solid var(--border);font-size:.72rem;color:var(--tax-sub);}
 .tax-row-end{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.9rem;}
 .tax-row-chev{flex:none;color:var(--tax-sub);}
+.tax-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;}
 .tax-row .badge .ti,.tax-missing .badge .ti{font-size:.8rem;vertical-align:-1px;}
 
 /* Detail sheets */

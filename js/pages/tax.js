@@ -10,6 +10,8 @@
 //  Phase 1b: income statements, Return worksheet with detail sheets,
 //  estimate and readiness on Overview, Household columns, exports and
 //  the agent pack, and the tax deduction tag on transactions.
+//  Phase 2a: Share awards (RSU vests on Equities holdings, the 30-day rule,
+//  label F, set-aside, vest cost bases for CGT, ESS export).
 // ═══════════════════════════════════════════════════════════════
 
 var TAX_PEOPLE = ['brenton', 'shelley'];
@@ -166,6 +168,7 @@ function renderTaxPage() {
   if (taxUi.tab === 'overview') h += p === 'household' ? _taxHouseholdHtml(c, fy, today) : _taxOverviewHtml(c, p, fy, today);
   else if (taxUi.tab === 'instalments') h += _taxInstalmentsHtml(p, fy, today);
   else if (taxUi.tab === 'return') h += _taxReturnHtml(p, fy, today);
+  else if (taxUi.tab === 'share') h += _taxShareHtml(p, fy, today);
   else h += _taxLaterHtml(taxUi.tab);
   h += '</div>';
 
@@ -248,8 +251,14 @@ function _taxNextInstalment(person, today) {
   return best;
 }
 
-function _taxComingUpRows(res, person, today) {
+function _taxComingUpRows(res, person, today, ws) {
   var rows = '';
+  var nv = ws ? _taxNextVest(ws) : null;
+  if (nv) {
+    rows += '<div class="dr"><span class="dr-k">Next RSU vest <span class="tax-k-sub">estimate</span>' +
+            (nv.setAside ? '<span class="tax-note">Set aside about ' + esc(fmt(nv.setAside)) + '</span>' : '') + '</span>' +
+            '<span class="dr-v"><span class="tax-mono">' + esc(taxFmtDate(nv.date)) + '</span> ' + _taxBadge(_taxDays(today, nv.date), 'tax-b-info') + '</span></div>';
+  }
   var q = _taxNextInstalment(person, today);
   if (q) {
     var st = TAX_STATUS[q.status];
@@ -282,7 +291,7 @@ function _taxOverviewHtml(c, person, fy, today) {
   var ws = _taxWorksheet(person, fy, today);
   var h = _taxEstimateCard(ws);
 
-  h += '<div class="card mb"><div class="section-label">Coming up</div>' + _taxComingUpRows(res, person, today) + '</div>';
+  h += '<div class="card mb"><div class="section-label">Coming up</div>' + _taxComingUpRows(res, person, today, ws) + '</div>';
   h += _taxReadinessCard(ws);
 
   lodgementWarnings(res, today).forEach(function(w) {
@@ -562,13 +571,14 @@ function _taxCgtSales(person, fy, includeJoint) {
       if (!taxIsDate(s.date) || s.date < R.start || s.date > R.end) return;
       var qty = parseFloat(s.qty) || 0;
       var proceeds = qty * (parseFloat(s.price) || 0) - (parseFloat(s.costs) || 0);
-      var cost = qty * eqCostPerUnit(h);
-      var acquired = s.acquired || ((h.type === 'rsu' || h.type === 'option') ? '' : (h.purchaseDate || ''));
+      var vc = _taxRsuSaleCost(h, s);
+      var cost = qty * (vc ? vc.costPerUnit : eqCostPerUnit(h));
+      var acquired = vc ? vc.acquired : (s.acquired || ((h.type === 'rsu' || h.type === 'option') ? '' : (h.purchaseDate || '')));
       var it = { date: s.date, name: h.ticker || h.company || 'Holding', qty: qty, acquired: acquired,
                  proceeds: Math.round(proceeds * 100) / 100, costBase: Math.round(cost * 100) / 100,
                  gain: Math.round((proceeds - cost) * 100) / 100,
                  discount: typeof eqHeld12Months === 'function' && eqHeld12Months(acquired, s.date),
-                 joint: owner === 'joint' };
+                 joint: owner === 'joint', vestCost: !!vc };
       if (it.joint) {
         out.joint.push(it);
         if (includeJoint) out.items.push({ gain: Math.round(it.gain * share * 100) / 100, discount: it.discount });
@@ -599,13 +609,17 @@ function _taxWorksheet(person, fy, today) {
   var inst = _taxInst(fy, person);
   var pays = (inst.payments || []);
   var instPaid = pays.reduce(function(s, p) { return s + (Number(p.amount) || 0); }, 0);
+  // Recorded vests replace the hand-entered label F; the statement figure is kept to compare
+  var ess = taxEssFromVests(_taxVestsFor(person), fy);
+  var essIn = ess.count ? { D: rec.ess.D, E: rec.ess.E, F: ess.F, reductionTest: rec.ess.reductionTest } : rec.ess;
+  var fitoSet = typeof rec.offsets.fito === 'number';
   var ret = taxBuildReturn({
     statements: rec.statements, interest: hasOvr ? ovr : interest.total, dividends: rec.dividends,
-    ess: rec.ess, deductions: ded, cgt: { items: sales.items, lossesCF: rec.cgt.lossesCF },
-    fito: rec.offsets.fito, instalmentsPaid: instPaid
+    ess: essIn, deductions: ded, cgt: { items: sales.items, lossesCF: rec.cgt.lossesCF },
+    fito: fitoSet ? rec.offsets.fito : ess.foreignTax, instalmentsPaid: instPaid
   }, fy);
   var ws = { person: person, fy: fy, today: today, rec: rec, interest: interest, interestOverride: hasOvr ? ovr : null,
-             dedTx: dedTx, ded: ded, sales: sales, inst: inst, pays: pays, ret: ret,
+             dedTx: dedTx, ded: ded, sales: sales, inst: inst, pays: pays, ret: ret, ess: ess, fitoFromVests: !fitoSet && ess.foreignTax > 0,
              res: resolveLodgement(taxCfg(), person, fy) };
   ws.sections = _taxSections(ws);
   ws.ready = taxReadiness(ws.sections);
@@ -632,8 +646,10 @@ function _taxSections(ws) {
       need: 'Confirm interest against your bank statements' },
     { id: 'q11', label: 'Dividends', ready: _taxHasAny(r.dividends, ['unfranked', 'franked', 'credits']) || !!d.q11,
       need: 'Enter dividends and franking credits, or mark none' },
-    { id: 'q12', label: 'Employee share schemes', ready: _taxHasAny(r.ess, ['D', 'E', 'F']) || !!d.q12,
-      need: 'Enter your ESS statement, or mark none' },
+    { id: 'q12', label: 'Employee share schemes',
+      ready: ws.ess.count ? ws.ess.parts.every(function(p) { return p.eval.complete && p.vest.statementMatched; })
+                          : _taxHasAny(r.ess, ['D', 'E', 'F']) || !!d.q12,
+      need: ws.ess.count ? 'Match each vest to your ESS statement in Share awards' : 'Enter your ESS statement, or mark none' },
     { id: 'ded', label: 'Deductions', ready: !!d.ded, need: 'Review your tagged deductions' },
     { id: 'cgt', label: 'Capital gains', ready: !!d.cgt, need: 'Review sales and losses carried forward' },
     { id: 'offsets', label: 'Offsets and Medicare', ready: checksDone, need: 'Work through the offsets checklist' },
@@ -731,6 +747,7 @@ function _taxRowInfo(ws, id) {
     return { src: any ? 'Entered by hand · incl. franking credits' : (rec.done.q11 ? 'None this year' : 'Not entered'), icon: 'pencil', amt: any ? r.q11.assessable : null };
   }
   if (id === 'q12') {
+    if (ws.ess.count) return { src: _taxPlural(ws.ess.count, 'vest') + ' · deferral scheme (F)', icon: 'chart-arrows', amt: r.q12.B };
     var anyE = _taxHasAny(rec.ess, ['D', 'E', 'F']);
     return { src: anyE ? 'Entered by hand · label B' : (rec.done.q12 ? 'None this year' : 'Not entered'), icon: 'pencil', amt: anyE ? r.q12.B : null };
   }
@@ -942,10 +959,25 @@ function _taxDetQ11(ws) {
 
 function _taxDetQ12(ws) {
   var e = ws.rec.ess, r = ws.ret.q12;
-  var h = '<div class="tax-infobox">Share awards, with each RSU vest and the 30-day rule, arrive in a later beta update. Until then, copy the totals from your ESS statement.</div>';
+  var h = '';
+  if (ws.ess.count) {
+    h += '<p class="tax-desc">Label F comes from the vests recorded in Share awards. Enter your ESS statement\'s label F below to check them against it.</p>';
+    h += '<div class="tax-list-card">';
+    ws.ess.parts.forEach(function(p) {
+      h += _taxDr('<span class="tax-mono">' + esc(taxFmtDate(p.part.date)) + '</span> · <span class="tax-mono">' + esc(String(p.part.units)) + '</span> units' +
+                  (p.part.shifted ? '<span class="tax-note">Taxed at the sale date (sold within 30 days)</span>' : '') +
+                  (p.vest.statementMatched ? '' : '<span class="tax-note">Not matched to your ESS statement yet</span>'), _taxMoney(p.part.amount));
+    });
+    h += _taxDr('Label F from vests', _taxMoney(ws.ess.F), true) + '</div>';
+    var diff = _taxNumOr(e.F) > 0 ? Math.round((_taxNumOr(e.F) - ws.ess.F) * 100) / 100 : null;
+    if (diff) h += '<div class="tax-warnbox">Your ESS statement says <span class="tax-mono">' + esc(fmt(e.F)) + '</span>, <span class="tax-mono">' + esc(fmt(Math.abs(diff))) + '</span> ' + (diff > 0 ? 'more' : 'less') + ' than the vests. Check the vest values and exchange rates; the statement is what the ATO has.</div>';
+    h += '<button class="btn btn-ghost tax-full" onclick="taxCloseSheet();taxSetTab(\'share\')">Open Share awards</button>';
+  } else {
+    h += '<div class="tax-infobox">RSU vests recorded in Share awards fill label F. Without them, copy the totals from your ESS statement.</div>';
+  }
   h += '<div class="form-grid">' + _taxIncNum('tax-es-d', 'Taxed upfront, eligible for reduction (D)', 'ess.D', e.D) +
        _taxIncNum('tax-es-e', 'Taxed upfront, not eligible (E)', 'ess.E', e.E) + '</div>';
-  h += '<div class="form-grid">' + _taxIncNum('tax-es-f', 'Deferral schemes (F)', 'ess.F', e.F, 'Most RSUs land here') + '</div>';
+  h += '<div class="form-grid">' + _taxIncNum('tax-es-f', ws.ess.count ? 'Label F on your ESS statement' : 'Deferral schemes (F)', 'ess.F', e.F, ws.ess.count ? 'Used only to check the vests' : 'Most RSUs land here') + '</div>';
   if (_taxNumOr(e.D) > 0) {
     var rt = e.reductionTest || 'unsure';
     h += '<fieldset class="tax-fieldset"><legend class="tax-legend">Is your income for the $1,000 reduction ' + esc(fmt(TAX_RULES.common.essReduction.incomeTestMax)).replace('.00', '') + ' or less?</legend><div class="tax-opts tax-opts--3">';
@@ -957,7 +989,7 @@ function _taxDetQ12(ws) {
   }
   h += '<div class="tax-list-card">' + _taxDr('Q12 label B, taxable discount', _taxMoney(r.B), true) +
        (r.reduction ? _taxDr('Reduction applied to D', _taxLess(r.reduction)) : '') + '</div>';
-  h += _taxIncCheck('tax-done-q12', 'done.q12', ws.rec.done.q12, 'No employee share scheme income this year');
+  if (!ws.ess.count) h += _taxIncCheck('tax-done-q12', 'done.q12', ws.rec.done.q12, 'No employee share scheme income this year');
   return h;
 }
 
@@ -1032,7 +1064,11 @@ function _taxDetOffsets(ws) {
   h += '<div class="tax-list-card">' + _taxDr('Medicare levy, flat 2% <span class="tax-k-sub">Estimated</span>', _taxMoney(r.medicare)) +
        _taxDr('Franking credits <span class="tax-k-sub">from Q11</span>', _taxMoney(r.offsets.franking)) +
        _taxDr('Foreign income tax offset <span class="tax-k-sub">label O</span>', _taxMoney(r.offsets.fito)) + '</div>';
-  h += '<div class="form-grid">' + _taxIncNum('tax-fito', 'Foreign tax paid ($)', 'offsets.fito', rec.offsets.fito) + '</div>';
+  if (ws.ess.foreignTax > 0) {
+    h += '<div class="tax-infobox">Foreign tax withheld on vests this year: <span class="tax-mono">' + esc(fmt(ws.ess.foreignTax)) + '</span>. ' +
+         (ws.fitoFromVests ? 'Kelda uses it below until you enter a figure.' : 'You\'ve entered your own figure below; clear it to use the vests.') + '</div>';
+  }
+  h += '<div class="form-grid">' + _taxIncNum('tax-fito', 'Foreign tax paid ($)', 'offsets.fito', rec.offsets.fito, ws.fitoFromVests ? 'Blank: using the vests\' foreign tax' : '') + '</div>';
   if (r.offsets.fitoCapped) {
     h += '<div class="tax-warnbox">Over <span class="tax-mono">' + esc(fmt(TAX_RULES.returnRules.fitoDirectLimit)) + '</span>, you either work out the full offset or claim <span class="tax-mono">' +
          esc(fmt(TAX_RULES.returnRules.fitoDirectLimit)) + '</span> and forgo the rest. Kelda uses the capped figure' + (r.offsets.fito < TAX_RULES.returnRules.fitoDirectLimit ? ', limited to the tax on your income' : '') + '.</div>';
@@ -1167,9 +1203,9 @@ function _taxExportCard(ws) {
     h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'instalments\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Instalments paid CSV</button>';
     h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'deductions\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Deductions CSV</button>';
     if (ws.sales.own.length || ws.sales.joint.length) h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'cgt\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Capital gains CSV</button>';
+    if (ws.ess.count) h += '<button class="btn btn-ghost" onclick="taxDownloadCsv(\'ess\')"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Share award vests CSV</button>';
   }
   h += '</div>';
-  if (agent) h += '<p class="tax-desc">Share award vests join the pack when that section arrives.</p>';
   h += '<p class="tax-desc">Every export is labelled with the year, person and rules version, and is an estimate only.</p></div>';
   return h;
 }
@@ -1269,7 +1305,7 @@ function _taxCsvRows(ws, kind) {
     rows.push(['Q11 V', 'TFN amounts withheld', r.q11.V, 'Entered by hand']);
     rows.push(['Q12 D', 'ESS taxed upfront, reduction', _taxNumOr(rec.ess.D), 'Entered by hand']);
     rows.push(['Q12 E', 'ESS taxed upfront, no reduction', _taxNumOr(rec.ess.E), 'Entered by hand']);
-    rows.push(['Q12 F', 'ESS deferral schemes', _taxNumOr(rec.ess.F), 'Entered by hand']);
+    rows.push(['Q12 F', 'ESS deferral schemes', ws.ess.count ? ws.ess.F : _taxNumOr(rec.ess.F), ws.ess.count ? 'Share award vests (' + ws.ess.count + ')' : 'Entered by hand']);
     rows.push(['Q12 B', 'ESS discounts', r.q12.B, 'Worked out']);
     TAX_RULES.returnRules.deductionLabels.forEach(function(l) {
       rows.push([l.id, l.name, ws.ded[l.id], 'Tagged transactions and entries by hand']);
@@ -1307,6 +1343,17 @@ function _taxCsvRows(ws, kind) {
       });
     });
     return d;
+  }
+  if (kind === 'ess') {
+    var e = [['Grant', 'Vest date', 'Units', 'Market value per unit', 'Currency', 'A$ per US$', 'Value at vest (A$)',
+              'Taxing point', 'FY', 'Units at this taxing point', 'Taxable amount (A$)', 'Cost base per unit (A$)', 'Sold within 30 days', 'Foreign tax (A$)', 'Matches ESS statement']];
+    ws.ess.parts.forEach(function(p) {
+      var v = p.vest, hd = EQUITIES.filter(function(x) { return String(x.id) === String(v.holdingId); })[0];
+      e.push([hd ? (hd.ticker || hd.company || '') : '', v.date, Number(v.units) || 0, Number(v.price) || 0, v.ccy === 'AUD' ? 'AUD' : 'USD',
+              v.ccy === 'AUD' ? 1 : Number(v.audPerUsd) || 0, p.eval.value, p.part.date, taxFyLabel(p.part.fy), p.part.units, p.part.amount,
+              p.part.costBasePerUnit, p.part.shifted ? 'Yes' : 'No', p.eval.foreignTax, v.statementMatched ? 'Yes' : 'No']);
+    });
+    return e;
   }
   if (kind === 'cgt') {
     var c = [['Holding', 'Sale date', 'Acquired', 'Units', 'Proceeds', 'Cost base', 'Gain or loss', 'Held 12 months', 'Ownership']];
@@ -1389,10 +1436,347 @@ function taxTxRowBtn(t) {
          (tag ? 'Tax deduction ' + esc(tag.label) + '. Edit transaction' : 'Tag as a tax deduction') + '"><i class="ti ti-receipt-tax" aria-hidden="true"></i></button>';
 }
 
+// ── Share awards (K.taxess) ─────────────────────────────────────
+// { grants: [], vests: [{ id, holdingId, date, units, price, ccy, audPerUsd, foreignTax,
+//   sold, saleDate, saleUnits, saleProceedsAud, statementMatched }] }
+// Each vest belongs to an RSU holding on the Equities page (decision C); its owner is the
+// holding's owner. Exchange rates are entered by hand (decision A).
+function _taxEssAll() {
+  var a = load(K.taxess);
+  if (!a || typeof a !== 'object') a = {};
+  if (!Array.isArray(a.grants)) a.grants = [];
+  if (!Array.isArray(a.vests)) a.vests = [];
+  return a;
+}
+function _taxRsuHoldings(person) {
+  if (typeof EQUITIES === 'undefined' || !Array.isArray(EQUITIES)) return [];
+  return EQUITIES.filter(function(h) { return h.type === 'rsu' && (h.owner || 'brenton') === person; });
+}
+function _taxHoldingName(h) {
+  return h ? (h.ticker || h.company || 'RSU grant') + (h.grantDate ? ' · granted ' + taxFmtDate(h.grantDate) : '') : 'RSU grant';
+}
+// A person's recorded vests (only those whose holding still exists and is theirs)
+function _taxVestsFor(person) {
+  var ids = {};
+  _taxRsuHoldings(person).forEach(function(h) { ids[String(h.id)] = h; });
+  return _taxEssAll().vests.filter(function(v) { return ids[String(v.holdingId)]; });
+}
+// Past vest dates from a holding's schedule, as local YYYY-MM-DD
+function _taxScheduledVests(h) {
+  if (typeof eqVestCalc !== 'function') return [];
+  var today = taxToday();
+  return eqVestCalc(h).schedule.map(function(s) {
+    var d = typeof eqIsoDate === 'function' ? eqIsoDate(s.date) : taxToday(s.date);
+    return { date: d, units: s.units };
+  }).filter(function(s) { return s.date <= today; });
+}
+// The A$ per US$ rate last used on the Equities price sheet, if any
+function _taxEqFx() {
+  var fx = load('cff_eq_fx');
+  return fx && Number(fx.usdAud) > 0 ? Number(fx.usdAud) : null;
+}
+
+// Income for the set-aside sum: this FY's taxable income without vest income; if no income
+// statement has been entered for the FY yet, last FY's. Returns { base, fromFy }.
+function _taxSetAsideBase(ws) {
+  var base = Math.max(0, ws.ret.taxable - (ws.ess.count ? ws.ess.F : 0));
+  if (ws.rec.statements.length || ws.rec.done.q1) return { base: base, fromFy: ws.fy };
+  var prev = taxPrevFy(ws.fy);
+  if (!taxRulesFor(prev)) return { base: base, fromFy: ws.fy };
+  var pws = _taxWorksheet(ws.person, prev, ws.today);
+  if (!pws.rec.statements.length) return { base: base, fromFy: ws.fy };
+  return { base: Math.max(0, pws.ret.taxable - (pws.ess.count ? pws.ess.F : 0)), fromFy: prev };
+}
+
+// The next scheduled vest for a person, valued at the holding's current price (A$), with the
+// tax to set aside on top of this FY's other income
+function _taxNextVest(ws) {
+  var best = null, today = ws.today;
+  _taxRsuHoldings(ws.person).forEach(function(h) {
+    if (typeof eqVestCalc !== 'function') return;
+    var c = eqVestCalc(h);
+    if (!c.nextVestDate || !c.nextVestQty) return;
+    var d = typeof eqIsoDate === 'function' ? eqIsoDate(c.nextVestDate) : '';
+    if (!taxIsDate(d) || d < today) return;
+    if (!best || d < best.date) best = { date: d, units: c.nextVestQty, h: h, value: Math.round(c.nextVestQty * (Number(h.currentPrice) || 0) * 100) / 100 };
+  });
+  if (!best || !best.value) return best;
+  var fy = taxFyOf(best.date);
+  if (!taxRulesFor(fy)) return best;
+  var w = fy === ws.fy ? ws : _taxWorksheet(ws.person, fy, today);
+  var b = _taxSetAsideBase(w);
+  var already = w.ess.count ? w.ess.F : 0;
+  var est = estimateVestTax(b.base + already, best.value, fy);
+  best.setAside = est ? est.total : null;
+  best.fromFy = b.fromFy;
+  return best;
+}
+
+function _taxShareHtml(person, fy, today) {
+  if (person === 'household') {
+    return '<div class="card"><div class="empty"><p>Share awards are recorded for each person.</p>' +
+      '<div class="tax-btn-row">' + TAX_PEOPLE.map(function(p) {
+        return '<button class="btn btn-ghost" onclick="taxSetPerson(\'' + p + '\')">' + esc(_taxName(p)) + '</button>';
+      }).join('') + '</div></div></div>';
+  }
+  var holdings = _taxRsuHoldings(person);
+  if (!holdings.length) {
+    return '<div class="card"><div class="empty"><p>' + esc(_taxName(person)) + ' has no RSU grants on the Equities page. Add the grant there (type RSU), and its vests show up here.</p>' +
+      '<button class="btn btn-primary" onclick="go(\'equities\')">Open Equities</button></div></div>';
+  }
+  var ws = _taxWorksheet(person, fy, today);
+  var sa = _taxSetAsideBase(ws);
+  var aside = taxVestSetAside(ws.ess.parts.map(function(p) { return { amount: p.part.amount, id: p.vest.id, date: p.part.date }; }), sa.base, fy);
+  var asideById = {};
+  aside.list.forEach(function(a) { asideById[a.id + '|' + a.date] = a.setAside; });
+
+  var h = '<div class="card mb tax-est"><div class="section-label">Taxable ESS income · FY ' + esc(taxFyLabel(fy)) + '</div>';
+  h += '<div class="tax-big"><span class="tax-mono">' + esc(fmt(ws.ess.F)) + '</span> ' + _taxBadge('Label F', 'tax-b-info') + '</div>';
+  h += '<p class="tax-desc">From ' + _taxPlural(ws.ess.count, 'vest') + '. Estimated tax on them: <span class="tax-mono">' + esc(fmt(aside.total)) + '</span>, worked out on top of ' +
+       (sa.fromFy === fy ? 'this year\'s other income' : 'FY ' + esc(taxFyLabel(sa.fromFy)) + ' income, until this year\'s income statement is in') + '.</p>';
+  h += '<p class="tax-desc">No tax is withheld on many foreign RSU vests, so set this aside.</p></div>';
+
+  var next = _taxNextVest(ws);
+  if (next) {
+    h += '<div class="card mb"><div class="section-label">Next vest (estimate)</div>';
+    h += _taxDr(esc(_taxHoldingName(next.h)) + '<span class="tax-note"><span class="tax-mono">' + esc(String(next.units)) + '</span> units at today\'s price on the Equities page</span>',
+                '<span class="tax-mono">' + esc(taxFmtDate(next.date)) + '</span>');
+    h += _taxDr('Value', next.value ? _taxMoney(next.value) : '<span class="tax-muted">Set a price on Equities</span>');
+    if (next.setAside !== null && next.setAside !== undefined) {
+      h += _taxDr('Set aside ' + _taxBadge('Estimated', 'tax-b-info') +
+                  (next.fromFy !== taxFyOf(next.date) ? '<span class="tax-note">Using FY ' + esc(taxFyLabel(next.fromFy)) + ' income until FY ' + esc(taxFyLabel(taxFyOf(next.date))) + '\'s income statement is in</span>' : ''),
+                  _taxMoney(next.setAside), true);
+    }
+    h += '</div>';
+  }
+
+  var warn = [];
+  _taxVestsFor(person).forEach(function(v) {
+    var ev = taxVestEval(v);
+    if (!ev.parts.some(function(p) { return p.fy === fy; }) && taxFyOf(v.date) !== fy) return;
+    if (ev.movedFy) warn.push({ kind: 'warn', text: 'The ' + taxFmtDate(v.date) + ' vest was sold within 30 days, after 30 June, so its income moves to FY ' + taxFyLabel(ev.parts[ev.parts.length - 1].fy) + '. Your employer should issue an amended ESS statement.' });
+    else if (ev.shifted) warn.push({ kind: 'info', text: 'The ' + taxFmtDate(v.date) + ' vest was sold within 30 days, so it\'s taxed at the sale date instead. Check this against your ESS statement.' });
+    if (ev.boundary) warn.push({ kind: 'warn', text: 'The ' + taxFmtDate(v.date) + ' vest was sold ' + ev.daysToSale + ' days later. Whether day 30 itself is inside the 30-day window hasn\'t been confirmed; check with the ATO or your agent.' });
+  });
+  warn.forEach(function(w) { h += '<div class="' + (w.kind === 'warn' ? 'tax-warnbox' : 'tax-infobox') + '" role="status">' + esc(w.text) + '</div>'; });
+  if (_taxVestsFor(person).some(function(v) { return taxVestEval(v).shifted; })) {
+    h += '<div class="tax-infobox">For shares sold within 30 days, Kelda uses the sale proceeds as their value at the sale date. That treatment hasn\'t been confirmed against an ATO source.</div>';
+  }
+
+  var R = TAX_RULES[fy];
+  holdings.forEach(function(hd) {
+    var recorded = _taxEssAll().vests.filter(function(v) { return String(v.holdingId) === String(hd.id); });
+    var sched = _taxScheduledVests(hd);
+    var rows = [];
+    sched.forEach(function(s) {
+      var rec = recorded.filter(function(v) { return v.date === s.date; })[0];
+      rows.push({ date: s.date, units: s.units, rec: rec || null });
+    });
+    recorded.forEach(function(v) { if (!rows.some(function(r) { return r.rec === v; })) rows.push({ date: v.date, units: v.units, rec: v }); });
+    rows = rows.filter(function(r) {
+      if (r.date >= R.start && r.date <= R.end) return true;
+      return r.rec && taxVestEval(r.rec).parts.some(function(p) { return p.fy === fy; });
+    }).sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+
+    h += '<div class="card mb"><div class="section-label">' + esc(_taxHoldingName(hd)) + '</div>';
+    if (!rows.length) h += '<div class="empty empty--compact"><p>No vests in FY ' + esc(taxFyLabel(fy)) + '.</p></div>';
+    h += '<ul class="tax-rows">';
+    rows.forEach(function(r) {
+      var ev = r.rec ? taxVestEval(r.rec) : null;
+      var key = r.rec ? JSON.stringify(String(r.rec.id)).replace(/"/g, '&quot;') : 'null';
+      var badges = '';
+      if (!r.rec || !ev.complete) badges += _taxBadge('Needs details', 'b-due');
+      else {
+        if (r.rec.statementMatched) badges += _taxBadge('Statement matched', 'b-paid');
+        if (ev.shifted) badges += _taxBadge(ev.movedFy ? 'Sold in 30 days · next FY' : 'Sold in 30 days', 'b-due');
+      }
+      var sub = '<span class="tax-mono">' + esc(String(r.units)) + '</span> units';
+      if (ev && ev.complete) sub += ' · ' + (r.rec.ccy === 'AUD' ? 'A$' : 'US$') + '<span class="tax-mono">' + esc(Number(r.rec.price).toFixed(2)) + '</span>' +
+        (r.rec.ccy === 'AUD' ? '' : ' at <span class="tax-mono">' + esc(String(ev.rate)) + '</span>');
+      var amt = ev && ev.complete ? ev.parts.filter(function(p) { return p.fy === fy; }).reduce(function(s, p) { return s + p.amount; }, 0) : null;
+      var setA = ev && ev.complete ? ev.parts.filter(function(p) { return p.fy === fy; }).reduce(function(s, p) { return s + (asideById[r.rec.id + '|' + p.date] || 0); }, 0) : null;
+      h += '<li><button class="tax-row" onclick="taxOpenVest(\'' + esc(String(hd.id)) + '\',\'' + r.date + '\',' + key + ')" aria-label="Vest on ' + esc(taxFmtDate(r.date)) + (r.rec ? '' : ', details needed') + '">';
+      h += '<span class="tax-row-main"><span class="tax-row-t tax-mono">' + esc(taxFmtDate(r.date)) + '</span><span class="tax-note">' + sub + '</span>' +
+           (badges ? '<span class="tax-badges">' + badges + '</span>' : '') + '</span>';
+      var moved = ev && ev.complete && !ev.parts.some(function(p) { return p.fy === fy; });
+      h += '<span class="tax-row-end">' + (amt === null ? '<span class="tax-muted">Add</span>' :
+             moved ? '<span class="tax-muted">In FY ' + esc(taxFyLabel(ev.parts[ev.parts.length - 1].fy)) + '</span>' : _taxMoney(amt)) +
+           (setA ? '<span class="tax-note">set aside ' + esc(fmt(setA)) + '</span>' : '') + '</span>';
+      h += '<i class="ti ti-chevron-right tax-row-chev" aria-hidden="true"></i></button></li>';
+    });
+    h += '</ul>';
+    h += '<button class="btn btn-ghost tax-full" onclick="taxOpenVest(\'' + esc(String(hd.id)) + '\',\'\',null)"><i class="ti ti-plus" aria-hidden="true"></i> Add a vest that isn\'t on the schedule</button>';
+    h += '</div>';
+  });
+  h += '<p class="tax-desc">Vest dates come from each grant\'s schedule on the Equities page. Enter the market value on the vest date from your employer\'s statement, and the exchange rate you used.</p>';
+  return h;
+}
+
+// ── Vest sheet ──────────────────────────────────────────────────
+var _taxVestDraft = null;
+
+function taxOpenVest(holdingId, date, vestId) {
+  var hd = (typeof EQUITIES !== 'undefined' ? EQUITIES : []).filter(function(x) { return String(x.id) === String(holdingId); })[0];
+  if (!hd) return;
+  var v = vestId !== null ? _taxEssAll().vests.filter(function(x) { return String(x.id) === String(vestId); })[0] : null;
+  var sched = date ? _taxScheduledVests(hd).filter(function(s) { return s.date === date; })[0] : null;
+  var fx = _taxEqFx();
+  _taxVestDraft = v ? JSON.parse(JSON.stringify(v)) : {
+    id: null, holdingId: hd.id, date: date || '', units: sched ? sched.units : '', price: '', ccy: 'USD',
+    audPerUsd: fx || '', foreignTax: '', sold: false, saleDate: '', saleUnits: '', saleProceedsAud: '', statementMatched: false
+  };
+  _taxVestDraft._fxFromEq = !v && !!fx;
+  _taxRenderVest(true);
+}
+
+function _taxVestSync() {
+  var d = _taxVestDraft;
+  if (!d) return;
+  function val(id) { var el = document.getElementById(id); return el ? el.value : null; }
+  function chk(id) { var el = document.getElementById(id); return el ? el.checked : null; }
+  var v;
+  if ((v = val('tax-vs-date')) !== null) d.date = v;
+  if ((v = val('tax-vs-units')) !== null) d.units = v;
+  if ((v = val('tax-vs-price')) !== null) d.price = v;
+  var c = document.querySelector('input[name="tax-vs-ccy"]:checked'); if (c) d.ccy = c.value;
+  if ((v = val('tax-vs-rate')) !== null) d.audPerUsd = v;
+  if ((v = val('tax-vs-ftax')) !== null) d.foreignTax = v;
+  if ((v = chk('tax-vs-sold')) !== null) d.sold = v;
+  if ((v = val('tax-vs-sdate')) !== null) d.saleDate = v;
+  if ((v = val('tax-vs-sunits')) !== null) d.saleUnits = v;
+  if ((v = val('tax-vs-sproc')) !== null) d.saleProceedsAud = v;
+  if ((v = chk('tax-vs-match')) !== null) d.statementMatched = v;
+}
+
+// The draft as a vest record the engine can read (numbers parsed; sale only when ticked)
+function _taxVestRecord(d) {
+  function n(x) { var f = parseFloat(x); return isFinite(f) && f >= 0 ? Math.round(f * 1e6) / 1e6 : 0; }
+  var r = { id: d.id, holdingId: d.holdingId, date: d.date, units: n(d.units), price: n(d.price),
+            ccy: d.ccy === 'AUD' ? 'AUD' : 'USD', audPerUsd: d.ccy === 'AUD' ? 1 : n(d.audPerUsd),
+            foreignTax: n(d.foreignTax), statementMatched: !!d.statementMatched, sold: !!d.sold };
+  if (d.sold) { r.saleDate = d.saleDate; r.saleUnits = n(d.saleUnits); r.saleProceedsAud = n(d.saleProceedsAud); }
+  return r;
+}
+
+function _taxRenderVest(initial) {
+  var d = _taxVestDraft;
+  var hd = EQUITIES.filter(function(x) { return String(x.id) === String(d.holdingId); })[0];
+  var rec = _taxVestRecord(d);
+  var ev = taxVestEval(rec);
+  var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title" tabindex="-1" data-autofocus>' +
+          (d.id ? 'Vest · ' + esc(taxFmtDate(d.date)) : 'Vest details') + '</div>' + _taxCloseBtn() + '</div>';
+  h += '<p class="modal-sub">' + esc(_taxHoldingName(hd)) + ' · ' + esc(_taxName(hd.owner || 'brenton')) + '</p>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-vs-date">Vest date</label><input id="tax-vs-date" type="date" value="' + esc(d.date) + '" onchange="_taxVestSync();_taxRenderVest()"></div>' +
+       '<div><label class="lbl" for="tax-vs-units">Units vested</label><input id="tax-vs-units" type="number" inputmode="decimal" step="any" min="0" value="' + esc(String(d.units)) + '" onchange="_taxVestSync();_taxRenderVest()"></div></div>';
+  h += '<fieldset class="tax-fieldset"><legend class="tax-legend">Market value is in</legend><div class="tax-opts tax-opts--2">';
+  [['USD', 'US dollars'], ['AUD', 'Australian dollars']].forEach(function(o) {
+    h += '<label class="tax-opt"><input type="radio" name="tax-vs-ccy" value="' + o[0] + '"' + (d.ccy === o[0] ? ' checked' : '') + ' onchange="_taxVestSync();_taxRenderVest()"><span class="tax-opt-t">' + o[1] + '</span></label>';
+  });
+  h += '</div></fieldset>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-vs-price">Market value per unit (' + (d.ccy === 'AUD' ? 'A$' : 'US$') + ')</label><input id="tax-vs-price" type="number" inputmode="decimal" step="any" min="0" value="' + esc(String(d.price)) + '" onchange="_taxVestSync();_taxRenderVest()"><div class="tax-note">On the vest date, from your ESS statement or broker</div></div>';
+  if (d.ccy !== 'AUD') {
+    h += '<div><label class="lbl" for="tax-vs-rate">A$ per US$1</label><input id="tax-vs-rate" type="number" inputmode="decimal" step="any" min="0" value="' + esc(String(d.audPerUsd)) + '" onchange="_taxVestSync();_taxVestDraft._fxFromEq=false;_taxRenderVest()">' +
+         '<div class="tax-note">' + (d._fxFromEq ? 'Filled from your last Equities price update. Use the rate for the vest date.' : 'The rate on the vest date, entered by hand') + '</div></div>';
+  }
+  h += '</div>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-vs-ftax">Foreign tax withheld (A$)</label><input id="tax-vs-ftax" type="number" inputmode="decimal" step="0.01" min="0" value="' + esc(String(d.foreignTax || '')) + '" onchange="_taxVestSync();_taxRenderVest()"><div class="tax-note">Usually none on these vests</div></div></div>';
+
+  h += '<label class="tax-check"><input type="checkbox" id="tax-vs-sold"' + (d.sold ? ' checked' : '') + ' onchange="_taxVestSync();_taxRenderVest()">' + _TAX_BOX + '<span>I sold some or all of these shares, including sold to cover</span></label>';
+  if (d.sold) {
+    h += '<div class="form-grid"><div><label class="lbl" for="tax-vs-sdate">Sale date</label><input id="tax-vs-sdate" type="date" value="' + esc(d.saleDate || '') + '" onchange="_taxVestSync();_taxRenderVest()"></div>' +
+         '<div><label class="lbl" for="tax-vs-sunits">Units sold</label><input id="tax-vs-sunits" type="number" inputmode="decimal" step="any" min="0" value="' + esc(String(d.saleUnits || '')) + '" onchange="_taxVestSync();_taxRenderVest()"><div class="tax-note">Blank means all of them</div></div></div>';
+    h += '<div class="form-grid"><div><label class="lbl" for="tax-vs-sproc">Sale proceeds (A$)</label><input id="tax-vs-sproc" type="number" inputmode="decimal" step="0.01" min="0" value="' + esc(String(d.saleProceedsAud || '')) + '" onchange="_taxVestSync();_taxRenderVest()"><div class="tax-note">Before brokerage, for the units sold</div></div></div>';
+    if (ev.daysToSale !== null && ev.daysToSale < 0) h += '<div class="tax-warnbox">The sale date is before the vest date.</div>';
+  }
+
+  // What this vest comes to
+  h += '<div class="tax-list-card">';
+  if (!ev.complete) h += '<div class="empty empty--compact"><p>Enter the units, market value' + (d.ccy === 'AUD' ? '' : ' and exchange rate') + ' to see the taxable amount.</p></div>';
+  else {
+    h += _taxDr('Value on the vest date', _taxMoney(ev.value));
+    ev.parts.forEach(function(p) {
+      h += _taxDr((p.shifted ? 'Taxed at the sale date' : 'Taxed at the vest date') + ' <span class="tax-k-sub">FY ' + esc(taxFyLabel(p.fy)) + ' · <span class="tax-mono">' + esc(String(p.units)) + '</span> units</span>', _taxMoney(p.amount), true);
+      h += _taxDr('Cost base for CGT, per unit', _taxMoney(p.costBasePerUnit));
+    });
+  }
+  h += '</div>';
+  if (ev.shifted) h += '<div class="' + (ev.movedFy ? 'tax-warnbox' : 'tax-infobox') + '">Sold within 30 days of vesting, so the sale date is the taxing point' + (ev.movedFy ? ', which moves this income into the next financial year. Your employer should issue an amended ESS statement.' : '.') + ' Kelda values the shares sold at the sale proceeds; that hasn\'t been confirmed against an ATO source.</div>';
+  if (ev.boundary) h += '<div class="tax-warnbox">Sold ' + ev.daysToSale + ' days after vesting. Whether day 30 counts as inside the window hasn\'t been confirmed; check with the ATO or your agent.</div>';
+  if (ev.foreignTax > 0) h += '<div class="tax-infobox">Foreign tax was withheld, so you may be able to claim a foreign income tax offset. Kelda adds it to the Offsets and Medicare line on the Return (up to <span class="tax-mono">' + esc(fmt(TAX_RULES.returnRules.fitoDirectLimit)) + '</span>).</div>';
+
+  h += '<label class="tax-check"><input type="checkbox" id="tax-vs-match"' + (d.statementMatched ? ' checked' : '') + ' onchange="_taxVestSync()">' + _TAX_BOX + '<span>Matches my ESS statement</span></label>';
+  h += '<div class="modal-actions">' + (d.id ? '<button class="btn btn-danger" onclick="taxDeleteVest()"><i class="ti ti-trash" aria-hidden="true"></i> Delete</button>' : '') +
+       '<button class="btn btn-ghost" onclick="taxCloseSheet()">Cancel</button><button class="btn btn-primary" onclick="taxSaveVest()">Save vest</button></div>';
+
+  var ov = document.getElementById('tax-sheet');
+  if (!initial && ov && ov.classList.contains('open')) {
+    var act = document.activeElement && document.activeElement.id;
+    var box = ov.firstChild, top = box.scrollTop;
+    box.innerHTML = h;
+    box.scrollTop = top;
+    var back = act && document.getElementById(act);
+    if (back) back.focus();
+    return;
+  }
+  taxOpenSheet(h);
+}
+
+function taxSaveVest() {
+  _taxVestSync();
+  var d = _taxVestDraft;
+  if (!d) return;
+  var r = _taxVestRecord(d);
+  if (!taxIsDate(r.date)) { toast('Enter the vest date', 2400, 'warn'); return; }
+  if (!(r.units > 0)) { toast('Enter the units vested', 2400, 'warn'); return; }
+  if (r.sold) {
+    if (!taxIsDate(r.saleDate)) { toast('Enter the sale date, or untick the sale', 2400, 'warn'); return; }
+    if (r.saleDate < r.date) { toast('The sale date can\'t be before the vest date', 2400, 'warn'); return; }
+    if (r.saleUnits > r.units) { toast('You can\'t sell more units than vested', 2400, 'warn'); return; }
+  }
+  var all = _taxEssAll();
+  if (!r.id) {
+    if (all.vests.some(function(v) { return String(v.holdingId) === String(r.holdingId) && v.date === r.date; })) {
+      toast('This grant already has a vest on that date', 2400, 'warn'); return;
+    }
+    r.id = Date.now();
+    all.vests.push(r);
+  } else {
+    all.vests = all.vests.map(function(v) { return String(v.id) === String(r.id) ? r : v; });
+  }
+  save(K.taxess, all);
+  _taxVestDraft = null;
+  renderTaxPage();
+  taxCloseSheet();
+  toast('Vest saved', 2400, 'success');
+}
+
+function taxDeleteVest() {
+  var d = _taxVestDraft;
+  if (!d || !d.id || !confirm('Delete the details for the ' + taxFmtDate(d.date) + ' vest?')) return;
+  var all = _taxEssAll();
+  all.vests = all.vests.filter(function(v) { return String(v.id) !== String(d.id); });
+  save(K.taxess, all);
+  _taxVestDraft = null;
+  renderTaxPage();
+  taxCloseSheet();
+  toast('Vest deleted', 2400, 'info');
+}
+
+// CGT cost base for an RSU sale: the recorded vest's value per unit at its taxing point, so a
+// sale within 30 days has a cost base equal to its proceeds. Null when no vest matches.
+function _taxRsuSaleCost(h, sale) {
+  if (h.type !== 'rsu' || !taxIsDate(sale.acquired)) return null;
+  var v = _taxEssAll().vests.filter(function(x) { return String(x.holdingId) === String(h.id) && x.date === sale.acquired; })[0];
+  if (!v) return null;
+  var ev = taxVestEval(v);
+  if (!ev.complete || !ev.parts.length) return null;
+  var p = ev.shifted && v.saleDate === sale.date ? ev.parts[ev.parts.length - 1] : ev.parts[0];
+  return { costPerUnit: p.costBasePerUnit, acquired: p.date };
+}
+
 // ── Later phases ────────────────────────────────────────────────
 function _taxLaterHtml(tab) {
   var txt = {
-    'share':  'Share awards arrive in a later beta update: RSU vests, the 30-day rule, the tax to set aside on each vest, and CGT parcels.',
     'cgt':    'The capital gains forecast arrives in a later beta update, once the rules that start 1 July 2027 have been checked against the law.'
   }[tab] || '';
   return '<div class="card"><div class="empty"><p>' + esc(txt) + '</p></div></div>';

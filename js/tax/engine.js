@@ -450,3 +450,74 @@ function taxCsv(rows) {
     }).join(',');
   }).join('\r\n');
 }
+
+// ── Share awards (Phase 2a) ─────────────────────────────────────
+// One RSU vest's ESS income, split by taxing point.
+// v: { date, units, price, ccy: 'USD'|'AUD', audPerUsd, saleDate, saleUnits, saleProceedsAud, foreignTax }
+// Units sold within 30 days after the vest are taxed at the sale date, valued at the sale
+// proceeds (TAX_RULES.common.essSaleValueIsProceeds, unverified); the rest stay at the vest
+// date and value. Each part is one CGT parcel with its own cost base per unit.
+function taxVestEval(v) {
+  v = v || {};
+  var units = _taxNum(v.units);
+  var rate = v.ccy === 'AUD' ? 1 : _taxNum(v.audPerUsd);
+  var val = essVestValue(units, v.price, rate);
+  var out = { units: units, rate: rate, valuePerUnit: val.costBasePerUnit, value: val.taxable,
+              parts: [], shifted: false, movedFy: false, boundary: false, daysToSale: null,
+              foreignTax: _taxR2(_taxNum(v.foreignTax)), complete: units > 0 && _taxNum(v.price) > 0 && rate > 0 };
+  var sale = taxIsDate(v.saleDate) && taxIsDate(v.date) ? applyThirtyDayRule(v.date, v.saleDate) : null;
+  var sold = 0;
+  if (sale) {
+    sold = Math.min(units, _taxNum(v.saleUnits) || units);
+    out.daysToSale = sale.daysToSale;
+    out.boundary = sale.boundary;
+  }
+  if (sale && sale.shifted && sold > 0) {
+    var proceeds = _taxR2(_taxNum(v.saleProceedsAud));
+    if (units - sold > 0) {
+      out.parts.push({ date: v.date, fy: taxFyOf(v.date), units: units - sold, shifted: false,
+                       amount: _taxR2((units - sold) * val.costBasePerUnit), costBasePerUnit: val.costBasePerUnit });
+    }
+    out.parts.push({ date: sale.taxingPoint, fy: sale.fy, units: sold, shifted: true, amount: proceeds,
+                     costBasePerUnit: sold ? _taxR2(proceeds / sold) : 0 });
+    out.shifted = true;
+    out.movedFy = sale.movedFy;
+  } else if (taxIsDate(v.date)) {
+    out.parts.push({ date: v.date, fy: taxFyOf(v.date), units: units, shifted: false,
+                     amount: val.taxable, costBasePerUnit: val.costBasePerUnit });
+  }
+  return out;
+}
+
+// Q12 label F for one FY from a person's vests: { F, parts:[{vest, part, eval}], foreignTax, count }.
+// A vest whose income moved out of this FY under the 30-day rule contributes nothing here.
+function taxEssFromVests(vests, fy) {
+  var out = { F: 0, parts: [], foreignTax: 0, count: 0 };
+  (vests || []).forEach(function(v) {
+    var ev = taxVestEval(v);
+    var mine = ev.parts.filter(function(p) { return p.fy === fy; });
+    if (mine.length) out.count++;
+    mine.forEach(function(p) { out.F = _taxR2(out.F + p.amount); out.parts.push({ vest: v, part: p, eval: ev }); });
+    // Foreign tax belongs to the FY the vest was taxed in (its first part)
+    if (ev.parts.length && ev.parts[0].fy === fy) out.foreignTax = _taxR2(out.foreignTax + ev.foreignTax);
+  });
+  out.parts.sort(function(a, b) { return a.part.date < b.part.date ? -1 : a.part.date > b.part.date ? 1 : 0; });
+  return out;
+}
+
+// Tax to set aside for each ESS amount in date order: each one adds incrementally on top of the
+// base income and the amounts before it. amounts: [{ amount, ... }]. Returns the same list with
+// setAside added, and the total.
+function taxVestSetAside(amounts, baseIncome, fy) {
+  var running = _taxNum(baseIncome), total = 0;
+  var list = (amounts || []).map(function(a) {
+    var est = estimateVestTax(running, _taxNum(a.amount), fy);
+    running += _taxNum(a.amount);
+    var setAside = est ? est.total : null;
+    if (setAside !== null) total += setAside;
+    var o = {}; for (var k in a) o[k] = a[k];
+    o.setAside = setAside;
+    return o;
+  });
+  return { list: list, total: _taxR2(total) };
+}

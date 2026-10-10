@@ -385,3 +385,67 @@ test('Q10: a record with only the category name still counts', () => {
     { date: '2025-08-02', type: 'income', category: 'Salary', amount: 99, person: 'brenton' }], 'brenton', 'FY2026', true);
   assert.equal(r.total, 12);
 });
+
+// ── Share awards (Phase 2a) — spec section 10 vectors, made-up vests ──
+test('vest value: 100 units at USD 500.00, rate 1.55', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55 }));
+  assert.equal(e.value, 77500);
+  assert.equal(e.valuePerUnit, 775);
+  assert.deepEqual(e.parts, [{ date: '2025-08-15', fy: 'FY2026', units: 100, shifted: false, amount: 77500, costBasePerUnit: 775 }]);
+  assert.equal(e.complete, true);
+});
+
+test('AUD-priced vest uses a rate of 1', () => {
+  assert.equal(T.taxVestEval({ date: '2025-08-15', units: 10, price: 40, ccy: 'AUD' }).value, 400);
+});
+
+test('30-day rule: vest 15 Aug 2025, sold 10 Sep 2025 → taxed 10 Sep at the proceeds', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55,
+    saleDate: '2025-09-10', saleProceedsAud: 80000 }));
+  assert.equal(e.shifted, true);
+  assert.equal(e.movedFy, false);
+  assert.deepEqual(e.parts, [{ date: '2025-09-10', fy: 'FY2026', units: 100, shifted: true, amount: 80000, costBasePerUnit: 800 }]);
+});
+
+test('30-day rule moves the income into the next FY and out of this one', () => {
+  const v = { date: '2026-06-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55, saleDate: '2026-07-05', saleProceedsAud: 76000 };
+  const e = T.taxVestEval(v);
+  assert.equal(e.movedFy, true);
+  assert.equal(T.taxEssFromVests([v], 'FY2026').F, 0);
+  assert.equal(T.taxEssFromVests([v], 'FY2027').F, 76000);
+});
+
+test('sold after 31 days: taxing point stays at the vest', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55,
+    saleDate: '2025-09-15', saleProceedsAud: 90000 }));
+  assert.equal(e.shifted, false);
+  assert.equal(e.daysToSale, 31);
+  assert.equal(e.boundary, true);   // day 31 is flagged while the boundary is unverified
+  assert.equal(e.parts[0].amount, 77500);
+});
+
+test('partial sale within 30 days splits the vest into two parcels', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55,
+    saleDate: '2025-08-20', saleUnits: 40, saleProceedsAud: 31000 }));
+  assert.deepEqual(e.parts.map((p) => [p.date, p.units, p.amount, p.costBasePerUnit]),
+    [['2025-08-15', 60, 46500, 775], ['2025-08-20', 40, 31000, 775]]);
+});
+
+test('label F sums vests in the FY; foreign tax follows the vest', () => {
+  const vs = [
+    { date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55, foreignTax: 300 },
+    { date: '2025-11-15', units: 100, price: 480, ccy: 'USD', audPerUsd: 1.55 },
+    { date: '2026-08-15', units: 100, price: 520, ccy: 'USD', audPerUsd: 1.5 }
+  ];
+  const r = T.taxEssFromVests(vs, 'FY2026');
+  assert.equal(r.F, 151900);            // 77,500 + 74,400
+  assert.equal(r.count, 2);
+  assert.equal(r.foreignTax, 300);
+});
+
+test('set-aside: spec vector, then stacking a second vest on top', () => {
+  const one = plain(T.taxVestSetAside([{ amount: 77500 }], 212400, 'FY2026'));
+  assert.equal(one.total, 36425);
+  const two = plain(T.taxVestSetAside([{ amount: 77500 }, { amount: 74400 }], 212400, 'FY2026'));
+  assert.equal(two.list[1].setAside, Math.round((74400 * 0.45 + 74400 * 0.02) * 100) / 100);
+});
