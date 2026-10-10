@@ -12,6 +12,8 @@
 //  the agent pack, and the tax deduction tag on transactions.
 //  Phase 2a: Share awards (RSU vests on Equities holdings, the 30-day rule,
 //  label F, set-aside, vest cost bases for CGT, ESS export).
+//  Phase 2b: estimated tax payable in Liabilities, net worth and borrowing
+//  power (getDerivedTaxLiabilities), and notice of assessment entry.
 // ═══════════════════════════════════════════════════════════════
 
 var TAX_PEOPLE = ['brenton', 'shelley'];
@@ -290,6 +292,7 @@ function _taxOverviewHtml(c, person, fy, today) {
   var res = resolveLodgement(c, person, fy);
   var ws = _taxWorksheet(person, fy, today);
   var h = _taxEstimateCard(ws);
+  h += _taxAssessCard(person, fy, today);
 
   h += '<div class="card mb"><div class="section-label">Coming up</div>' + _taxComingUpRows(res, person, today, ws) + '</div>';
   h += _taxReadinessCard(ws);
@@ -476,6 +479,7 @@ function taxInstDelPay(person, id) {
   inst.payments = inst.payments.filter(function(x) { return x !== pm; });
   _taxSaveInst(taxUi.fy, person, inst);
   toast('Payment deleted', 2400, 'info');
+  _taxNwChanged();
   renderTaxPage();
 }
 
@@ -509,6 +513,7 @@ function taxSavePayment(person) {
   if (!Array.isArray(inst.payments)) inst.payments = [];
   inst.payments.push({ id: Date.now(), date: date, amount: Math.round(amt * 100) / 100, q: q });
   _taxSaveInst(taxUi.fy, person, inst);
+  _taxNwChanged();
   renderTaxPage();
   taxCloseSheet();
   toast('Payment recorded', 2400, 'success');
@@ -861,6 +866,7 @@ function _taxRenderDetail(initial) {
 
 // Re-render the page behind the sheet and the sheet itself after a change
 function _taxDetailChanged() {
+  _taxNwChanged();
   renderTaxPage();
   _taxRenderDetail(false);
 }
@@ -1557,6 +1563,15 @@ function _taxShareHtml(person, fy, today) {
     if (ev.movedFy) warn.push({ kind: 'warn', text: 'The ' + taxFmtDate(v.date) + ' vest was sold within 30 days, after 30 June, so its income moves to FY ' + taxFyLabel(ev.parts[ev.parts.length - 1].fy) + '. Your employer should issue an amended ESS statement.' });
     else if (ev.shifted) warn.push({ kind: 'info', text: 'The ' + taxFmtDate(v.date) + ' vest was sold within 30 days, so it\'s taxed at the sale date instead. Check this against your ESS statement.' });
     if (ev.boundary) warn.push({ kind: 'warn', text: 'The ' + taxFmtDate(v.date) + ' vest was sold ' + ev.daysToSale + ' days later. Whether day 30 itself is inside the 30-day window hasn\'t been confirmed; check with the ATO or your agent.' });
+    // A sale of this vest recorded on Equities within 30 days, but not on the vest itself
+    if (!v.sold) {
+      var hd = EQUITIES.filter(function(x) { return String(x.id) === String(v.holdingId); })[0];
+      var early = ((hd && hd.sales) || []).filter(function(sl) {
+        var n = taxIsDate(sl.date) ? taxDaysBetween(v.date, sl.date) : -1;
+        return sl.acquired === v.date && n >= 0 && n <= TAX_RULES.common.essThirtyDays;
+      })[0];
+      if (early) warn.push({ kind: 'warn', text: 'Equities shows a sale of the ' + taxFmtDate(v.date) + ' vest on ' + taxFmtDate(early.date) + ', within 30 days. Add the sale to the vest so the taxing point moves to the sale date.' });
+    }
   });
   warn.forEach(function(w) { h += '<div class="' + (w.kind === 'warn' ? 'tax-warnbox' : 'tax-infobox') + '" role="status">' + esc(w.text) + '</div>'; });
   if (_taxVestsFor(person).some(function(v) { return taxVestEval(v).shifted; })) {
@@ -1654,13 +1669,15 @@ function _taxVestRecord(d) {
   var r = { id: d.id, holdingId: d.holdingId, date: d.date, units: n(d.units), price: n(d.price),
             ccy: d.ccy === 'AUD' ? 'AUD' : 'USD', audPerUsd: d.ccy === 'AUD' ? 1 : n(d.audPerUsd),
             foreignTax: n(d.foreignTax), statementMatched: !!d.statementMatched, sold: !!d.sold };
-  if (d.sold) { r.saleDate = d.saleDate; r.saleUnits = n(d.saleUnits); r.saleProceedsAud = n(d.saleProceedsAud); }
+  // Units sold: blank means all of them (null); an entered 0 stays 0 and is rejected on save
+  if (d.sold) { r.saleDate = d.saleDate; r.saleUnits = String(d.saleUnits).trim() === '' ? null : n(d.saleUnits); r.saleProceedsAud = n(d.saleProceedsAud); }
   return r;
 }
 
 function _taxRenderVest(initial) {
   var d = _taxVestDraft;
-  var hd = EQUITIES.filter(function(x) { return String(x.id) === String(d.holdingId); })[0];
+  var hd = (typeof EQUITIES !== 'undefined' ? EQUITIES : []).filter(function(x) { return String(x.id) === String(d.holdingId); })[0];
+  if (!hd) { _taxVestDraft = null; taxCloseSheet(); toast('That RSU grant is no longer on the Equities page', 2400, 'warn'); return; }
   var rec = _taxVestRecord(d);
   var ev = taxVestEval(rec);
   var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title" tabindex="-1" data-autofocus>' +
@@ -1731,13 +1748,14 @@ function taxSaveVest() {
   if (r.sold) {
     if (!taxIsDate(r.saleDate)) { toast('Enter the sale date, or untick the sale', 2400, 'warn'); return; }
     if (r.saleDate < r.date) { toast('The sale date can\'t be before the vest date', 2400, 'warn'); return; }
+    if (r.saleUnits === 0) { toast('Enter the units sold, or leave it blank for all of them', 2400, 'warn'); return; }
     if (r.saleUnits > r.units) { toast('You can\'t sell more units than vested', 2400, 'warn'); return; }
   }
   var all = _taxEssAll();
+  if (all.vests.some(function(v) { return String(v.holdingId) === String(r.holdingId) && v.date === r.date && String(v.id) !== String(r.id); })) {
+    toast('This grant already has a vest on that date', 2400, 'warn'); return;
+  }
   if (!r.id) {
-    if (all.vests.some(function(v) { return String(v.holdingId) === String(r.holdingId) && v.date === r.date; })) {
-      toast('This grant already has a vest on that date', 2400, 'warn'); return;
-    }
     r.id = Date.now();
     all.vests.push(r);
   } else {
@@ -1745,6 +1763,7 @@ function taxSaveVest() {
   }
   save(K.taxess, all);
   _taxVestDraft = null;
+  _taxNwChanged();
   renderTaxPage();
   taxCloseSheet();
   toast('Vest saved', 2400, 'success');
@@ -1757,6 +1776,7 @@ function taxDeleteVest() {
   all.vests = all.vests.filter(function(v) { return String(v.id) !== String(d.id); });
   save(K.taxess, all);
   _taxVestDraft = null;
+  _taxNwChanged();
   renderTaxPage();
   taxCloseSheet();
   toast('Vest deleted', 2400, 'info');
@@ -1772,6 +1792,193 @@ function _taxRsuSaleCost(h, sale) {
   if (!ev.complete || !ev.parts.length) return null;
   var p = ev.shifted && v.saleDate === sale.date ? ev.parts[ev.parts.length - 1] : ev.parts[0];
   return { costPerUnit: p.costBasePerUnit, acquired: p.date };
+}
+
+// ── Estimated tax payable (Phase 2b) ────────────────────────────
+// Derived at read time, never written to LIABILITIES (spec 3.8). Every net worth consumer
+// reads it through getDerivedTaxLiabilities / taxNetWorthDeduction. Not part of any health
+// ratio (debt-to-income, debt ratio) — decision 11.
+// K.taxassess: [{ id, person, fy, amount, date, paidDate }] — notice of assessment entries.
+var TAX_LIAB_STATUS = {
+  estimated: { text: 'Estimated', cls: 'tax-b-info' },
+  assessed:  { text: 'Assessed',  cls: 'b-due' },
+  paid:      { text: 'Paid',      cls: 'b-paid' }
+};
+
+// Re-record today's net worth snapshot after anything that changes the tax owed
+function _taxNwChanged() {
+  _taxLiabCacheClear();
+  try { if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot(); } catch (e) {}
+}
+
+function _taxAssessAll() {
+  var a = load(K.taxassess);
+  return Array.isArray(a) ? a : [];
+}
+function _taxAssessFor(person, fy) {
+  return _taxAssessAll().filter(function(x) { return x.person === person && x.fy === fy; })[0] || null;
+}
+
+// Tax on each vest part in a worksheet's FY, dated at its taxing point
+function _taxEssSetAsideDated(ws) {
+  if (!ws.ess.count) return [];
+  var b = _taxSetAsideBase(ws);
+  return taxVestSetAside(ws.ess.parts.map(function(p) { return { amount: p.part.amount, date: p.part.date }; }), b.base, ws.fy)
+    .list.map(function(x) { return { date: x.date, setAside: x.setAside }; });
+}
+
+// One row per person per FY with tax owed (or a notice entered) as of asOf. [] when the beta is off.
+// Net worth asks for this several times per render, so the result is kept until the current task
+// ends; every tax save also clears it.
+var _taxLiabCache = null;
+function _taxLiabCacheClear() { _taxLiabCache = null; }
+function getDerivedTaxLiabilities(asOf) {
+  if (!taxEnabled()) return [];
+  asOf = taxIsDate(asOf) ? asOf : taxToday();
+  if (_taxLiabCache && _taxLiabCache.asOf === asOf) return _taxLiabCache.rows.slice();
+  var rows = _taxDerivedRows(asOf);
+  _taxLiabCache = { asOf: asOf, rows: rows };
+  setTimeout(_taxLiabCacheClear, 0);
+  return rows.slice();
+}
+function _taxDerivedRows(asOf) {
+  var rows = [];
+  TAX_PEOPLE.forEach(function(p) {
+    TAX_FYS.forEach(function(fy) {
+      var R = TAX_RULES[fy];
+      if (!R || R.start > asOf) return;
+      var ws = _taxWorksheet(p, fy, asOf);
+      var assess = _taxAssessFor(p, fy);
+      var acc = taxAccrual({
+        fy: fy, asOf: asOf, payable: ws.ret.payable,
+        returnFilled: ws.rec.statements.length > 0 || !!ws.rec.done.q1,
+        essSetAside: _taxEssSetAsideDated(ws), instalments: ws.pays, assessment: assess
+      });
+      if (acc.status === 'estimated' && !(acc.amount > 0)) return;
+      rows.push({ person: p, fy: fy, status: acc.status, amount: acc.amount, isEstimated: acc.status === 'estimated',
+                  basis: acc.basis, assessment: assess });
+    });
+  });
+  return rows;
+}
+
+// What net worth subtracts: estimated and assessed rows, unless the toggle is off
+function taxNetWorthDeduction(asOf) {
+  var c = load(K.taxcfg);
+  if (!c || !c.betaEnabled || c.includeTaxInNetWorth === false) return 0;
+  return Math.round(getDerivedTaxLiabilities(asOf).reduce(function(s, r) { return s + r.amount; }, 0) * 100) / 100;
+}
+
+function _taxLiabBasisText(r) {
+  if (r.status === 'paid') return 'Paid ' + taxFmtDate(r.assessment.paidDate);
+  if (r.status === 'assessed') return 'Notice of assessment ' + taxFmtDate(r.assessment.date);
+  if (r.basis === 'return') return 'Return not yet assessed';
+  return 'Tax on RSU vests so far, less instalments';
+}
+
+// Liabilities page: the "Estimated tax payable" group (balances not editable)
+function taxRenderLiabilityGroup() {
+  var el = document.getElementById('liab-tax');
+  if (!el) return;
+  if (!taxEnabled()) { el.innerHTML = ''; return; }
+  var rows = getDerivedTaxLiabilities();
+  var c = taxCfg();
+  var counted = c.includeTaxInNetWorth !== false;
+  var total = rows.reduce(function(s, r) { return s + r.amount; }, 0);
+  var h = '<div class="card mb tax-liab"><div class="section-label">Estimated tax payable <span class="tax-beta">Beta</span></div>';
+  if (!rows.length) {
+    h += '<p class="tax-desc tax-desc--top">No tax owed on what\'s in Tax (Beta) so far.</p>';
+  } else {
+    rows.forEach(function(r) {
+      var st = TAX_LIAB_STATUS[r.status];
+      h += '<div class="dr"><span class="dr-k">' + esc(_taxName(r.person)) + ' · FY ' + esc(taxFyLabel(r.fy)) +
+           '<span class="tax-note">' + esc(_taxLiabBasisText(r)) + '</span></span>' +
+           '<span class="dr-v">' + _taxMoney(r.amount) + ' ' + _taxBadge(st.text, st.cls) + '</span></div>';
+    });
+    h += _taxDr('Total, both people', _taxMoney(total), true);
+  }
+  h += _taxSwitchRow('tax-nw-sw', 'Count estimated tax in net worth',
+    counted ? 'On. Net worth and borrowing power subtract these balances.' : 'Off. They\'re listed here but left out of net worth.', counted, 'taxToggleNetWorth()');
+  h += '<p class="tax-desc">Worked out from Tax (Beta), so they can\'t be edited here. When a notice of assessment arrives, enter it in Tax and the row switches from Estimated to Assessed until you pay it.</p>';
+  h += '<button class="btn btn-ghost tax-full" onclick="go(\'tax\')">Open in Tax</button></div>';
+  el.innerHTML = h;
+}
+
+function taxToggleNetWorth() {
+  var c = taxCfg();
+  c.includeTaxInNetWorth = c.includeTaxInNetWorth === false;
+  save(K.taxcfg, c);
+  _taxNwChanged();
+  taxRenderLiabilityGroup();
+  var sw = document.getElementById('tax-nw-sw'); if (sw) sw.focus();
+  toast(c.includeTaxInNetWorth ? 'Estimated tax counts in net worth' : 'Estimated tax left out of net worth', 2400, 'info');
+}
+
+// ── Notice of assessment (Overview card and sheet) ──────────────
+function _taxAssessCard(person, fy, today) {
+  var a = _taxAssessFor(person, fy);
+  var R = TAX_RULES[fy];
+  if (!a && R.end >= today) return '';   // nothing to assess until the year ends
+  var h = '<div class="card mb"><div class="section-label">Notice of assessment</div>';
+  if (!a) {
+    h += '<p class="tax-desc tax-desc--top">When the ATO\'s notice arrives, enter its amount. Kelda then uses it instead of the estimate.</p>';
+  } else {
+    var paid = taxIsDate(a.paidDate);
+    h += _taxDr(Number(a.amount) < 0 ? 'Refund on the notice' : 'Amount to pay on the notice', _taxMoney(Math.abs(Number(a.amount) || 0)));
+    h += _taxDr('Notice dated', '<span class="tax-mono">' + esc(taxFmtDate(a.date)) + '</span>');
+    h += _taxDr('Status', paid ? _taxBadge('Paid ' + taxFmtDate(a.paidDate), 'b-paid') : (Number(a.amount) > 0 ? _taxBadge('Assessed · not paid', 'b-due') : _taxBadge('Assessed', 'b-paid')));
+  }
+  h += '<button class="btn ' + (a ? 'btn-ghost' : 'btn-primary') + ' tax-full" onclick="taxOpenAssess(\'' + person + '\')">' + (a ? 'Edit notice' : 'Enter notice of assessment') + '</button></div>';
+  return h;
+}
+
+function taxOpenAssess(person) {
+  var fy = taxUi.fy, a = _taxAssessFor(person, fy) || {};
+  var today = taxToday();
+  var refund = Number(a.amount) < 0;
+  var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title">Notice of assessment</div>' + _taxCloseBtn() + '</div>';
+  h += '<p class="modal-sub">' + esc(_taxName(person)) + ' · FY ' + esc(taxFyLabel(fy)) + '</p>';
+  h += '<fieldset class="tax-fieldset"><legend class="tax-legend">The notice shows</legend><div class="tax-opts tax-opts--2">';
+  h += '<label class="tax-opt"><input type="radio" name="tax-as-kind" value="pay"' + (!refund ? ' checked' : '') + '><span class="tax-opt-t">An amount to pay</span></label>';
+  h += '<label class="tax-opt"><input type="radio" name="tax-as-kind" value="refund"' + (refund ? ' checked' : '') + '><span class="tax-opt-t">A refund</span></label>';
+  h += '</div></fieldset>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-as-amt">Amount ($)</label><input id="tax-as-amt" type="number" inputmode="decimal" step="0.01" min="0" value="' + (a.amount !== undefined ? Math.abs(Number(a.amount)) : '') + '"></div>' +
+       '<div><label class="lbl" for="tax-as-date">Date of the notice</label><input id="tax-as-date" type="date" max="' + today + '" value="' + esc(a.date || '') + '"></div></div>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-as-paid">Date you paid it</label><input id="tax-as-paid" type="date" max="' + today + '" value="' + esc(a.paidDate || '') + '"><div class="tax-note">Leave blank until it\'s paid</div></div></div>';
+  h += '<div class="modal-actions">' + (a.id ? '<button class="btn btn-danger" onclick="taxDeleteAssess(\'' + person + '\')"><i class="ti ti-trash" aria-hidden="true"></i> Delete</button>' : '') +
+       '<button class="btn btn-ghost" onclick="taxCloseSheet()">Cancel</button><button class="btn btn-primary" onclick="taxSaveAssess(\'' + person + '\')">Save</button></div>';
+  taxOpenSheet(h);
+}
+
+function taxSaveAssess(person) {
+  var fy = taxUi.fy, today = taxToday();
+  var amt = parseFloat(document.getElementById('tax-as-amt').value);
+  var date = document.getElementById('tax-as-date').value;
+  var paid = document.getElementById('tax-as-paid').value;
+  var kind = (document.querySelector('input[name="tax-as-kind"]:checked') || {}).value;
+  if (!(amt >= 0)) { toast('Enter the amount on the notice', 2400, 'warn'); return; }
+  if (!taxIsDate(date)) { toast('Enter the date of the notice', 2400, 'warn'); return; }
+  if (date > today || (paid && paid > today)) { toast('Dates can\'t be in the future', 2400, 'warn'); return; }
+  if (paid && !taxIsDate(paid)) paid = '';
+  var all = _taxAssessAll().filter(function(x) { return !(x.person === person && x.fy === fy); });
+  var prev = _taxAssessFor(person, fy);
+  all.push({ id: prev ? prev.id : Date.now(), person: person, fy: fy, amount: Math.round((kind === 'refund' ? -amt : amt) * 100) / 100,
+             date: date, paidDate: paid || null });
+  save(K.taxassess, all);
+  _taxNwChanged();
+  renderTaxPage();
+  taxCloseSheet();
+  toast('Notice of assessment saved', 2400, 'success');
+}
+
+function taxDeleteAssess(person) {
+  var fy = taxUi.fy;
+  if (!confirm('Delete the notice of assessment for FY ' + taxFyLabel(fy) + '? Kelda goes back to its estimate.')) return;
+  save(K.taxassess, _taxAssessAll().filter(function(x) { return !(x.person === person && x.fy === fy); }));
+  _taxNwChanged();
+  renderTaxPage();
+  taxCloseSheet();
+  toast('Notice deleted', 2400, 'info');
 }
 
 // ── Later phases ────────────────────────────────────────────────
@@ -2089,6 +2296,7 @@ function taxSetBeta(on) {
   c.betaEnabled = !!on;
   if (on) c.consentAt = taxToday();
   save(K.taxcfg, c);
+  _taxNwChanged();
   taxCloseSheet();
   taxSyncNav();
   if (typeof renderSettings === 'function') renderSettings();

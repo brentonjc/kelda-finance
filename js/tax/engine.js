@@ -521,3 +521,28 @@ function taxVestSetAside(amounts, baseIncome, fy) {
   });
   return { list: list, total: _taxR2(total) };
 }
+
+// ── Estimated tax payable (Phase 2b, decision 10 option 1) ──────
+// One person's tax owed for one FY as of a date. inp:
+//   { fy, asOf, payable, returnFilled, essSetAside: [{ date, setAside }], instalments: [{ date, amount }],
+//     assessment: { amount, date, paidDate } | null }
+// - A notice of assessment wins: Assessed at its amount, or Paid (0) once paid.
+// - A finished FY with its return filled in: the estimated amount to pay (never below 0).
+// - Otherwise (the FY under way, or a finished one without an income statement): tax on each RSU
+//   vest accrues on its taxing date, less instalments paid by asOf. Salary is assumed covered by
+//   withholding. Never below 0.
+function taxAccrual(inp) {
+  inp = inp || {};
+  var r = taxRulesFor(inp.fy);
+  var a = inp.assessment;
+  if (a && taxIsDate(a.paidDate) && a.paidDate <= inp.asOf) return { status: 'paid', amount: 0, basis: 'assessment' };
+  if (a && isFinite(Number(a.amount))) return { status: 'assessed', amount: _taxR2(Math.max(0, Number(a.amount))), basis: 'assessment' };
+  if (!r || inp.asOf < r.start) return { status: 'estimated', amount: 0, basis: 'none' };
+  if (inp.asOf > r.end && inp.returnFilled) {
+    return { status: 'estimated', amount: _taxR2(Math.max(0, Number(inp.payable) || 0)), basis: 'return' };
+  }
+  var accrued = 0, paid = 0;
+  (inp.essSetAside || []).forEach(function(x) { if (taxIsDate(x.date) && x.date <= inp.asOf) accrued += _taxNum(x.setAside); });
+  (inp.instalments || []).forEach(function(x) { if (taxIsDate(x.date) && x.date <= inp.asOf) paid += _taxNum(x.amount); });
+  return { status: 'estimated', amount: _taxR2(Math.max(0, accrued - paid)), accrued: _taxR2(accrued), instalmentsPaid: _taxR2(paid), basis: 'vests' };
+}

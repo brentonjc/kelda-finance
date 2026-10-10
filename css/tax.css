@@ -221,6 +221,11 @@
 .tax-tx-btn:hover{color:var(--primary);}
 .tax-tx-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
 
+.kd-nw-tax{font-size:.72rem;color:var(--tax-sub);margin-top:2px;}
+.tax-liab .dr{min-height:44px;}
+.tax-liab .dr-k{color:var(--tax-sub);}
+.tax-liab .dr-v{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
+
 @media (prefers-reduced-motion: reduce){
   .tax-sw::before,.tax-sw-thumb{transition:none;}
 }

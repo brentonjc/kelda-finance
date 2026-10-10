@@ -43,9 +43,14 @@ function computeCurrentNetWorth() {
   var liabilities = (typeof liabTotal === 'function') ? liabTotal()
     : mortProps.reduce(function(s,p){ return s + (Number(p.balance)||0); }, 0);
 
-  var netWorth = bank + super_ + property + equities - liabilities;
+  // Estimated tax payable from Tax (Beta): derived, kept out of `liabilities` so health
+  // ratios and the month-by-month history back-fill don't pick it up. 0 when the beta is off.
+  var tax = 0;
+  try { tax = (typeof taxNetWorthDeduction === 'function') ? taxNetWorthDeduction() : 0; } catch(e) { tax = 0; }
+
+  var netWorth = bank + super_ + property + equities - liabilities - tax;
   return { bank: Math.round(bank), super_: Math.round(super_), property: Math.round(property),
-           equities: Math.round(equities), liabilities: Math.round(liabilities),
+           equities: Math.round(equities), liabilities: Math.round(liabilities), tax: Math.round(tax),
            netWorth: Math.round(netWorth * 100) / 100 };
 }
 
@@ -96,6 +101,8 @@ function recordNetWorthSnapshot() {
     var entry = { date: todayStr, netWorth: nw.netWorth,
                   bank: nw.bank, super_: nw.super_, property: nw.property,
                   equities: nw.equities, liabilities: nw.liabilities };
+    // Estimated tax is an assumption, not a measured balance: keep it and flag the entry
+    if (nw.tax) { entry.tax = nw.tax; entry.estimated = true; }
     var idx = -1;
     for (var i = 0; i < hist.length; i++) { if (hist[i].date === todayStr) { idx = i; break; } }
     if (idx >= 0) { hist[idx] = entry; } else { hist.push(entry); }
@@ -1209,6 +1216,9 @@ function kdRenderDashboard() {
     if (!segs.length) segs = [{ label: 'Cash', value: 1, color: 'var(--pink)' }];
   }
   var segTotal = segs.reduce(function(s, y){ return s + Math.max(y.value, 0); }, 0) || 1;
+  // Label the estimated tax net worth already subtracts (Tax (Beta)), so it never reads as measured
+  var nwTaxNote = (nwTitle === 'Net worth' && nw.tax > 0)
+    ? '<div class="kd-nw-tax">After ' + fmtWhole(nw.tax) + ' estimated tax</div>' : '';
   var legend = segs.map(function(x){
     var pct = Math.round((Math.max(x.value, 0) / segTotal) * 100);
     return '<div class="kd-leg-item"><div class="kd-leg-dot" style="background:' + x.color + '"></div>' + kdEsc(x.label) + ' · ' + pct + '%</div>';
@@ -1217,6 +1227,7 @@ function kdRenderDashboard() {
     + '<div class="kdt-hd"><div class="kdt-ttl"><i class="ti ti-chart-pie"></i> ' + nwTitle + '</div><button class="kdt-act" onclick="go(\'assets\')">Details</button></div>'
     + '<div class="kd-nw-big">' + nwBig + '</div>'
     + '<div class="kd-nw-delta ' + (periodCF.surplus < 0 ? 'tone-amber' : 'tone-green') + '">' + nwDelta + '</div>'
+    + nwTaxNote
     + '<div class="kd-sep"></div>'
     + '<div class="kd-cflbl">' + kdEsc(range.label) + ' cashflow</div>'
     + '<div class="kd-cf3"><div class="kd-cfi"><label>Income</label><span class="tone-green">+' + fmtWhole(periodCF.income) + '</span></div>'

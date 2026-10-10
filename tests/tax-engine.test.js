@@ -449,3 +449,49 @@ test('set-aside: spec vector, then stacking a second vest on top', () => {
   const two = plain(T.taxVestSetAside([{ amount: 77500 }, { amount: 74400 }], 212400, 'FY2026'));
   assert.equal(two.list[1].setAside, Math.round((74400 * 0.45 + 74400 * 0.02) * 100) / 100);
 });
+
+// ── Estimated tax payable (Phase 2b) — spec section 10 liability vectors ──
+const vestAside = T.taxVestSetAside([{ amount: 77500, date: '2026-08-15' }], 212400, 'FY2026').list
+  .map((x) => ({ date: x.date, setAside: x.setAside }));
+
+test('liability: ESS-only accrual at vest', () => {
+  const r = plain(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-11', essSetAside: vestAside }));
+  assert.equal(r.status, 'estimated');
+  assert.equal(r.amount, 36425);
+});
+
+test('liability: less instalments paid, clamped at zero', () => {
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-29', essSetAside: vestAside,
+    instalments: [{ date: '2026-10-28', amount: 10000 }] }).amount, 26425);
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-29', essSetAside: vestAside,
+    instalments: [{ date: '2026-10-28', amount: 50000 }] }).amount, 0);
+  // A payment dated after asOf hasn't happened yet
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-11', essSetAside: vestAside,
+    instalments: [{ date: '2026-10-28', amount: 10000 }] }).amount, 36425);
+});
+
+test('liability: nothing accrues before the vest date', () => {
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-08-14', essSetAside: vestAside }).amount, 0);
+});
+
+test('liability: vest sold within 30 days across 30 June moves to the later FY', () => {
+  const v = { date: '2026-06-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55, saleDate: '2026-07-05', saleProceedsAud: 77500 };
+  const aside = (fy) => T.taxVestSetAside(T.taxEssFromVests([v], fy).parts.map((p) => ({ amount: p.part.amount, date: p.part.date })), 212400, fy)
+    .list.map((x) => ({ date: x.date, setAside: x.setAside }));
+  assert.equal(T.taxAccrual({ fy: 'FY2026', asOf: '2026-07-10', essSetAside: aside('FY2026') }).amount, 0);
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-07-10', essSetAside: aside('FY2027') }).amount,
+    T.estimateVestTax(212400, 77500, 'FY2027').total);
+});
+
+test('liability: finished FY uses the return estimate', () => {
+  assert.equal(T.taxAccrual({ fy: 'FY2026', asOf: '2026-10-11', returnFilled: true, payable: 4200.5 }).amount, 4200.5);
+  assert.equal(T.taxAccrual({ fy: 'FY2026', asOf: '2026-10-11', returnFilled: true, payable: -900 }).amount, 0);
+});
+
+test('liability: notice of assessment, then paid', () => {
+  const a = { amount: 5123.45, date: '2026-11-20' };
+  assert.deepEqual(plain(T.taxAccrual({ fy: 'FY2026', asOf: '2026-11-21', returnFilled: true, payable: 4200, assessment: a })),
+    { status: 'assessed', amount: 5123.45, basis: 'assessment' });
+  assert.deepEqual(plain(T.taxAccrual({ fy: 'FY2026', asOf: '2026-12-15', returnFilled: true, payable: 4200,
+    assessment: { amount: 5123.45, date: '2026-11-20', paidDate: '2026-12-10' } })), { status: 'paid', amount: 0, basis: 'assessment' });
+});
