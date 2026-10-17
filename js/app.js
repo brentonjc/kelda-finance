@@ -745,10 +745,10 @@ var _HOW_TO = {
     {icon:'calendar', h:'Frequency', b:'Set the correct frequency (monthly, fortnightly, yearly etc.) so the summary totals correctly reflect your actual commitments.'}
   ]},
   goals: { title:'Savings Goals', items:[
-    {icon:'target', h:'Creating a goal', b:'Enter a name, target amount and optional target date. Tap an emoji icon from the preset row or type your own.'},
+    {icon:'target', h:'Creating a goal', b:'Enter a name, target amount and optional target date. Pick an icon from the preset row.'},
     {icon:'link', h:'Linking to Cash Tracker', b:'Link a goal to one of your savings accounts — the goal progress will automatically reflect the live balance from your Cash Tracker.'},
     {icon:'pencil', h:'Editing a goal', b:'Tap "Edit" on any goal card to update the name, icon, target amount, current amount, date or linked account.'},
-    {icon:'chart-bar', h:'Projection', b:'The goal card shows an estimated completion date based on the gap between current and target, or the target date if you set one.'}
+    {icon:'chart-bar', h:'Projection', b:'Without a target date, the card estimates a finish date from your average monthly savings over the last 3 months, split evenly across your unfinished goals. With a target date, it shows that date.'}
   ]},
   bva: { title:'Budget vs Actuals', items:[
     {icon:'coin', h:'Setting budgets', b:'Enter a monthly limit for each spending category. Budgets persist month to month — you only need to set them once.'},

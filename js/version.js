@@ -14,11 +14,24 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.9.0';
+var APP_VERSION = '2.9.1';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.9.1',
+    date: '2026-10-18',
+    title: 'Goals fixes',
+    notes: [
+      'A goal you’ve reached now shows a green bar and a green “Goal reached”, instead of turning amber and then red as you got closer',
+      'Finish dates are now worked out from your actual average savings over the last 3 months, split across your unfinished goals, instead of assuming $500 a month',
+      'The dashboard’s Goal Projection card and the Goals page now give the same date',
+      'Two goals linked to the same account no longer count its balance twice in Total Saved, and each card says the account is shared',
+      'Deleting a goal now asks first, and you can undo it for 5 seconds',
+      'Fixed: the goals CSV export had empty Target and Saved columns',
+    ],
+  },
   {
     version: '2.9.0',
     date: '2026-10-18',

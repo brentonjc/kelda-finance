@@ -417,14 +417,11 @@ function generateActionCards() {
 
   // ── Card 1: Top Goal ─────────────────────────────────────────
   var activeGoals = (GOALS || []).filter(function(g) {
-    var tgt = Number(g.targetAmount) || Number(g.target) || 0;
-    var cur = (typeof _goalCurrent==='function') ? _goalCurrent(g) : (Number(g.currentAmount)||Number(g.saved)||0);
-    return tgt > 0 && cur < tgt;
+    var tgt = _goalTarget(g);
+    return tgt > 0 && _goalCurrent(g) < tgt;
   });
   activeGoals.sort(function(a, b) {
-    var ap = ((typeof _goalCurrent==='function'?_goalCurrent(a):(Number(a.currentAmount)||Number(a.saved)||0)) / (Number(a.targetAmount)||Number(a.target)||1));
-    var bp = ((typeof _goalCurrent==='function'?_goalCurrent(b):(Number(b.currentAmount)||Number(b.saved)||0)) / (Number(b.targetAmount)||Number(b.target)||1));
-    return bp - ap;
+    return _goalCurrent(b) / _goalTarget(b) - _goalCurrent(a) / _goalTarget(a);
   });
   if (activeGoals.length) {
     var g1   = activeGoals[0];
@@ -484,28 +481,32 @@ function generateActionCards() {
   }
 
   // ── Card 3: Months to hit top goal ───────────────────────────
-  var savArr = [];
-  for (var mi2 = 1; mi2 <= 3; mi2++) {
-    var md  = new Date(yr, mo - 1 - mi2, 1);
-    var mp2 = md.getFullYear() + '-' + String(md.getMonth()+1).padStart(2,'0');
-    var mInc = txns.filter(function(t){return t.type==='income'&&t.date&&t.date.startsWith(mp2);}).reduce(function(s,t){return s+Number(t.amount);},0);
-    var mExp = txns.filter(function(t){return t.type==='expense'&&t.date&&t.date.startsWith(mp2);}).reduce(function(s,t){return s+Number(t.amount);},0);
-    if (mInc > 0 || mExp > 0) savArr.push(mInc - mExp);
-  }
-  var avgSav = savArr.length ? savArr.reduce(function(a,b){return a+b;},0)/savArr.length : 0;
-  if (activeGoals.length && avgSav > 0) {
-    var g3   = activeGoals[activeGoals.length - 1]; // pick least-progressed goal
-    var tgt3 = Number(g3.targetAmount)||Number(g3.target)||0;
-    var cur3 = (typeof _goalCurrent==='function') ? _goalCurrent(g3) : (Number(g3.currentAmount)||Number(g3.saved)||0);
-    var mos  = Math.ceil(Math.max(0, tgt3 - cur3) / avgSav);
+  // Same maths as the Goals page (goals.js), so both show the same date
+  var avgSav = goalAvgMonthlySavings(txns, now);
+  var goalRate = goalMonthlyRate(GOALS || [], avgSav);
+  // Goals with a target date show that date on the Goals page, so project an undated one
+  var undated = activeGoals.filter(function(g) { return !g.targetDate; });
+  if (undated.length && avgSav > 0) {
+    var g3   = undated[undated.length - 1]; // least-progressed undated goal
+    var mos  = goalMonthsToTarget(_goalTarget(g3) - _goalCurrent(g3), goalRate);
     var projD = new Date(now.getFullYear(), now.getMonth() + mos, 1);
     var projS = projD.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
     cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title: g3.name + ' — ~' + mos + ' month' + (mos!==1?'s':'') + ' away',
-      body: 'At avg savings of ' + fmt(Math.round(avgSav)) + '/mo, you\'ll reach this around ' + projS + '.',
+      body: 'At avg savings of ' + fmt(Math.round(avgSav)) + '/mo'
+        + (activeGoals.length > 1 ? ' split across ' + activeGoals.length + ' goals' : '')
+        + ', you\'ll reach this around ' + projS + '.',
       status: mos <= 6 ? 'green' : mos <= 18 ? 'amber' : 'pink',
       statusTxt: mos + 'mo',
       link:"go('goals')", linkTxt:'View Goals →' });
+  } else if (activeGoals.length && avgSav > 0) {
+    // Every open goal has a target date: show the least-progressed one's date
+    var gd = activeGoals[activeGoals.length - 1];
+    var dS = new Date(gd.targetDate).toLocaleString('en-AU', { month: 'long', year: 'numeric' });
+    cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
+      title: gd.name + ' — target ' + dS,
+      body: 'All your open goals have a target date. See how each is tracking on the Goals page.',
+      status:'muted', statusTxt:'Dated', link:"go('goals')", linkTxt:'View Goals →' });
   } else if (activeGoals.length) {
     cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title:'Increase savings to project',
@@ -1279,7 +1280,7 @@ function kdRenderDashboard() {
     goalsInner = '<div class="kd-goals-grid">' + goals.map(function(g, i) {
       var cur = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
       var tgt = (typeof _goalTarget === 'function') ? _goalTarget(g) : (Number(g.targetAmount) || Number(g.target) || 0);
-      var pct = tgt ? Math.min(100, Math.round(cur / tgt * 100)) : 0;
+      var pct = tgt ? Math.min(100, Math.floor(cur / tgt * 100)) : 0;
       var color = kdCycle[i % kdCycle.length];
       return '<div class="kd-goal-card">' + kdRing(pct, color, 96)
         + '<div class="kd-goal-name">' + kdEsc(g.name || 'Goal') + '</div>'
