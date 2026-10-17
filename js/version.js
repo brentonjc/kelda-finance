@@ -14,11 +14,23 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.7.0';
+var APP_VERSION = '2.9.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.9.0',
+    date: '2026-10-18',
+    title: 'Balances for cards and loans',
+    notes: [
+      'When you import a bank file with a running balance, you can now pick a credit card, BNPL, loan or mortgage as well as a cash account',
+      'Kelda works out whether the file shows the amount owed as a positive or negative balance, then fills in that liability’s monthly balances and updates its current balance',
+      'For card and loan files you can sync balances only, so repayments already in your bank account file aren’t counted twice',
+      'Cash Tracker accounts and liabilities list every balance read from a bank file, with its date and the file it came from',
+      'Fixed: a card file with a balance column now imports purchases as spending when “Positive amounts are spending” is ticked',
+    ],
+  },
   {
     version: '2.7.0',
     date: '2026-10-05',

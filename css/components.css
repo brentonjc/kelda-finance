@@ -699,6 +699,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .bs-li-date{color:var(--text);white-space:nowrap;}
 .bs-li-name{flex:1;min-width:0;overflow-wrap:anywhere;}
 .bs-tag{font-size:.7rem;color:var(--text);border:1px solid var(--border);border-radius:var(--radius-pill);padding:1px 6px;}
+.bs-tag--warn{border-color:var(--warn);}
+.bs-hist{margin:var(--sp3) 0;border-top:1px solid var(--border);padding-top:var(--sp2);}
+.bs-hist-sum{display:flex;align-items:center;gap:var(--sp2);min-height:44px;font-size:.82rem;font-weight:600;color:var(--text);cursor:pointer;}
+.bs-hist .bs-list{margin-top:var(--sp2);}
 .bs-more{font-size:.78rem;color:var(--text);margin:0 0 var(--sp2);}
 .bs-ack{display:flex;align-items:center;gap:var(--sp3);min-height:44px;margin:var(--sp3) 0;font-size:.85rem;color:var(--text);cursor:pointer;}
 .bs-ack input{width:22px;height:22px;margin:0;}

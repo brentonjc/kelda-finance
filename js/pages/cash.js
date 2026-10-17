@@ -299,6 +299,7 @@ function ctRenderAcct(a) {
     + deleteBtn
     + '</div>'
     + '<div class="acct-body">' + rows
+    + (typeof bsHistoryHtml === 'function' ? bsHistoryHtml(a.id, false) : '')
     + '<div class="add-mo-row">'
     + '<div><label class="lbl lbl--xs">Month</label>'
     + '<select id="ct-add-m-' + a.id + '">' + ctMonthOpts(nowYM) + '</select></div>'
