@@ -201,6 +201,15 @@ function bcSync() {
     }
   } catch(e){}
 
+  // ---- ESTIMATED TAX PAYABLE — Tax (Beta), decision B: counts, labelled as an estimate ----
+  try {
+    var taxOwed = (typeof taxNetWorthDeduction==='function') ? taxNetWorthDeduction() : 0;
+    if(taxOwed>0){
+      bcLoans.push({name:'Estimated tax payable (estimate)', balance:Math.round(taxOwed), repayment:0});
+      bcImportLog.push({type:'success',msg:'Imported estimated tax payable of '+bcFmt(taxOwed)+' from Tax (Beta). It is an estimate, not an ATO figure'});
+    }
+  } catch(e){}
+
   // ---- Loan default: seed the assessment rate from an existing mortgage ----
   if(!bcST['bc_interest_rate'] && bcMorts.length && bcMorts[0].rate>0){ bcST['bc_interest_rate']=bcMorts[0].rate; }
 

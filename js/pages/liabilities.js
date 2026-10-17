@@ -563,6 +563,7 @@ function liabToggleSched(id) {
 
 function liabRenderPage() {
   liabRenderSummary();
+  if (typeof taxRenderLiabilityGroup === 'function') taxRenderLiabilityGroup();
   liabRenderMortgages();
   liabRenderList();
   renderLiabMonthlyGrid();

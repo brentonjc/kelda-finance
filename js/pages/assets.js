@@ -160,13 +160,16 @@ function renderAssets() {
   // grossAssets = full property value (hv), not net equity.
   // Mortgage is already captured in totalLiab — deducting it here would double-count.
   var grossAssets = bankTotal + supTotal + hv + eqVal;
-  var netAssets   = grossAssets - totalLiab;
+  // Estimated tax payable (Tax (Beta)) comes off net assets but not the debt ratio (decision 11)
+  var taxEst = 0;
+  try { taxEst = (typeof taxNetWorthDeduction === 'function') ? taxNetWorthDeduction() : 0; } catch(e) { taxEst = 0; }
+  var netAssets   = grossAssets - totalLiab - taxEst;
   var liabRatio   = grossAssets > 0 ? Math.min(100, (totalLiab / grossAssets) * 100) : 0;
   var netTone     = netAssets >= 0 ? 'tone-green' : 'tone-danger';
 
   // ── KPI stats ─────────────────────────────────────────────
   document.getElementById('assets-stats').innerHTML =
-    '<div class="stat stat-pink"><div class="sl">Net Assets</div><div class="sv">' + fmt(netAssets) + '</div><div class="ss">Assets minus liabilities</div></div>'
+    '<div class="stat stat-pink"><div class="sl">Net Assets</div><div class="sv">' + fmt(netAssets) + '</div><div class="ss">' + (taxEst > 0 ? 'Assets minus liabilities and estimated tax' : 'Assets minus liabilities') + '</div></div>'
     + '<div class="stat stat-rose"><div class="sl">Gross Assets</div><div class="sv">' + fmt(grossAssets) + '</div><div class="ss">Total before debt</div></div>'
     + '<div class="stat stat-purple"><div class="sl">Total Liabilities</div><div class="sv tone-danger">' + fmt(totalLiab) + '</div><div class="ss">All debt balances</div></div>'
     + '<div class="stat stat-dark"><div class="sl">Debt Ratio</div><div class="sv">' + liabRatio.toFixed(1) + '%</div><div class="ss">Liabilities / Gross assets</div></div>';
@@ -182,6 +185,7 @@ function renderAssets() {
       + '</div>'
       + '<div class="dr"><span class="dr-k">Gross Assets</span><span class="dr-v tone-green">' + fmt(grossAssets) + '</span></div>'
       + '<div class="dr"><span class="dr-k">Total Liabilities</span><span class="dr-v tone-danger">-' + fmt(totalLiab) + '</span></div>'
+      + (taxEst > 0 ? '<div class="dr"><span class="dr-k">Estimated tax payable <span class="badge tax-b-info">Estimated</span></span><span class="dr-v tone-danger">-' + fmt(taxEst) + '</span></div>' : '')
       + '<div class="dr dr--total dr--total-6">'
       + '<span class="dr-k">Net Assets</span>'
       + '<span class="dr-v dr-v--bold ' + netTone + '">' + fmt(netAssets) + '</span></div>'

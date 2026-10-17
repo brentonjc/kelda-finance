@@ -385,3 +385,113 @@ test('Q10: a record with only the category name still counts', () => {
     { date: '2025-08-02', type: 'income', category: 'Salary', amount: 99, person: 'brenton' }], 'brenton', 'FY2026', true);
   assert.equal(r.total, 12);
 });
+
+// ── Share awards (Phase 2a) — spec section 10 vectors, made-up vests ──
+test('vest value: 100 units at USD 500.00, rate 1.55', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55 }));
+  assert.equal(e.value, 77500);
+  assert.equal(e.valuePerUnit, 775);
+  assert.deepEqual(e.parts, [{ date: '2025-08-15', fy: 'FY2026', units: 100, shifted: false, amount: 77500, costBasePerUnit: 775 }]);
+  assert.equal(e.complete, true);
+});
+
+test('AUD-priced vest uses a rate of 1', () => {
+  assert.equal(T.taxVestEval({ date: '2025-08-15', units: 10, price: 40, ccy: 'AUD' }).value, 400);
+});
+
+test('30-day rule: vest 15 Aug 2025, sold 10 Sep 2025 → taxed 10 Sep at the proceeds', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55,
+    saleDate: '2025-09-10', saleProceedsAud: 80000 }));
+  assert.equal(e.shifted, true);
+  assert.equal(e.movedFy, false);
+  assert.deepEqual(e.parts, [{ date: '2025-09-10', fy: 'FY2026', units: 100, shifted: true, amount: 80000, costBasePerUnit: 800 }]);
+});
+
+test('30-day rule moves the income into the next FY and out of this one', () => {
+  const v = { date: '2026-06-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55, saleDate: '2026-07-05', saleProceedsAud: 76000 };
+  const e = T.taxVestEval(v);
+  assert.equal(e.movedFy, true);
+  assert.equal(T.taxEssFromVests([v], 'FY2026').F, 0);
+  assert.equal(T.taxEssFromVests([v], 'FY2027').F, 76000);
+});
+
+test('sold after 31 days: taxing point stays at the vest', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55,
+    saleDate: '2025-09-15', saleProceedsAud: 90000 }));
+  assert.equal(e.shifted, false);
+  assert.equal(e.daysToSale, 31);
+  assert.equal(e.boundary, true);   // day 31 is flagged while the boundary is unverified
+  assert.equal(e.parts[0].amount, 77500);
+});
+
+test('partial sale within 30 days splits the vest into two parcels', () => {
+  const e = plain(T.taxVestEval({ date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55,
+    saleDate: '2025-08-20', saleUnits: 40, saleProceedsAud: 31000 }));
+  assert.deepEqual(e.parts.map((p) => [p.date, p.units, p.amount, p.costBasePerUnit]),
+    [['2025-08-15', 60, 46500, 775], ['2025-08-20', 40, 31000, 775]]);
+});
+
+test('label F sums vests in the FY; foreign tax follows the vest', () => {
+  const vs = [
+    { date: '2025-08-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55, foreignTax: 300 },
+    { date: '2025-11-15', units: 100, price: 480, ccy: 'USD', audPerUsd: 1.55 },
+    { date: '2026-08-15', units: 100, price: 520, ccy: 'USD', audPerUsd: 1.5 }
+  ];
+  const r = T.taxEssFromVests(vs, 'FY2026');
+  assert.equal(r.F, 151900);            // 77,500 + 74,400
+  assert.equal(r.count, 2);
+  assert.equal(r.foreignTax, 300);
+});
+
+test('set-aside: spec vector, then stacking a second vest on top', () => {
+  const one = plain(T.taxVestSetAside([{ amount: 77500 }], 212400, 'FY2026'));
+  assert.equal(one.total, 36425);
+  const two = plain(T.taxVestSetAside([{ amount: 77500 }, { amount: 74400 }], 212400, 'FY2026'));
+  assert.equal(two.list[1].setAside, Math.round((74400 * 0.45 + 74400 * 0.02) * 100) / 100);
+});
+
+// ── Estimated tax payable (Phase 2b) — spec section 10 liability vectors ──
+const vestAside = T.taxVestSetAside([{ amount: 77500, date: '2026-08-15' }], 212400, 'FY2026').list
+  .map((x) => ({ date: x.date, setAside: x.setAside }));
+
+test('liability: ESS-only accrual at vest', () => {
+  const r = plain(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-11', essSetAside: vestAside }));
+  assert.equal(r.status, 'estimated');
+  assert.equal(r.amount, 36425);
+});
+
+test('liability: less instalments paid, clamped at zero', () => {
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-29', essSetAside: vestAside,
+    instalments: [{ date: '2026-10-28', amount: 10000 }] }).amount, 26425);
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-29', essSetAside: vestAside,
+    instalments: [{ date: '2026-10-28', amount: 50000 }] }).amount, 0);
+  // A payment dated after asOf hasn't happened yet
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-10-11', essSetAside: vestAside,
+    instalments: [{ date: '2026-10-28', amount: 10000 }] }).amount, 36425);
+});
+
+test('liability: nothing accrues before the vest date', () => {
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-08-14', essSetAside: vestAside }).amount, 0);
+});
+
+test('liability: vest sold within 30 days across 30 June moves to the later FY', () => {
+  const v = { date: '2026-06-15', units: 100, price: 500, ccy: 'USD', audPerUsd: 1.55, saleDate: '2026-07-05', saleProceedsAud: 77500 };
+  const aside = (fy) => T.taxVestSetAside(T.taxEssFromVests([v], fy).parts.map((p) => ({ amount: p.part.amount, date: p.part.date })), 212400, fy)
+    .list.map((x) => ({ date: x.date, setAside: x.setAside }));
+  assert.equal(T.taxAccrual({ fy: 'FY2026', asOf: '2026-07-10', essSetAside: aside('FY2026') }).amount, 0);
+  assert.equal(T.taxAccrual({ fy: 'FY2027', asOf: '2026-07-10', essSetAside: aside('FY2027') }).amount,
+    T.estimateVestTax(212400, 77500, 'FY2027').total);
+});
+
+test('liability: finished FY uses the return estimate', () => {
+  assert.equal(T.taxAccrual({ fy: 'FY2026', asOf: '2026-10-11', returnFilled: true, payable: 4200.5 }).amount, 4200.5);
+  assert.equal(T.taxAccrual({ fy: 'FY2026', asOf: '2026-10-11', returnFilled: true, payable: -900 }).amount, 0);
+});
+
+test('liability: notice of assessment, then paid', () => {
+  const a = { amount: 5123.45, date: '2026-11-20' };
+  assert.deepEqual(plain(T.taxAccrual({ fy: 'FY2026', asOf: '2026-11-21', returnFilled: true, payable: 4200, assessment: a })),
+    { status: 'assessed', amount: 5123.45, basis: 'assessment' });
+  assert.deepEqual(plain(T.taxAccrual({ fy: 'FY2026', asOf: '2026-12-15', returnFilled: true, payable: 4200,
+    assessment: { amount: 5123.45, date: '2026-11-20', paidDate: '2026-12-10' } })), { status: 'paid', amount: 0, basis: 'assessment' });
+});

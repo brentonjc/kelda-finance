@@ -14,11 +14,23 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.7.0';
+var APP_VERSION = '2.8.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.8.0',
+    date: '2026-10-11',
+    title: 'Tax (Beta): share awards and tax owed in net worth',
+    notes: [
+      'Record each RSU vest from your Equities grant: market value, the exchange rate you used, any sale and whether it matches your ESS statement',
+      'Shares sold within 30 days of vesting are taxed at the sale date, which can move the income into the next financial year',
+      'See the tax to set aside on each vest and on the next one coming up',
+      'Estimated tax owed now shows on Liabilities and comes off net worth and borrowing power, labelled as an estimate. You can turn that off',
+      'Enter your notice of assessment to replace the estimate, and mark it paid',
+    ],
+  },
   {
     version: '2.7.0',
     date: '2026-10-05',
