@@ -290,7 +290,7 @@ function csvPreview(){
     // Balance files: read the amount the way the balance check does (CR/DR suffixes),
     // so imported rows carry the same sign the running balance proves
     if(map.balance&&typeof BalanceSync!=='undefined'){
-      const bc=BalanceSync.buildRows([row],map,csvDate)[0].amountCents;
+      const bc=BalanceSync.buildRows([row],map,csvDate,{posSpend:flip})[0].amountCents;
       if(bc!==null)amt=bc/100;
     }
     if(isNaN(amt)){r._err=r._err||'Invalid amount';amt=0;}

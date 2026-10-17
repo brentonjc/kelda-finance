@@ -46,7 +46,7 @@ function liabAllMortgages() {
       balance: Number(m.balance) || 0, originalBalance: Number(m.original) || 0,
       rate: Number(m.rate) || 0, rateType: 'variable', payment: repmt,
       dueDay: 1, termMonths: n, payoffDate: payoffDate,
-      homeValue: Number(m.homeValue) || 0, readonly: true
+      homeValue: Number(m.homeValue) || 0, readonly: true, prop: m
     }];
   }
 
@@ -75,7 +75,7 @@ function liabAllMortgages() {
       balance: Number(p.balance) || 0, originalBalance: Number(p.original) || 0,
       rate: Number(p.rate) || 0, rateType: 'variable', payment: repmt,
       dueDay: 1, termMonths: n, payoffDate: payoffDate,
-      homeValue: Number(p.homeValue) || 0, readonly: true
+      homeValue: Number(p.homeValue) || 0, readonly: true, prop: p
     });
   });
   return items;
@@ -850,8 +850,9 @@ function renderLiabMonthlyGrid() {
         // For liabilities: going down = green (good), up = red (bad)
         var diffTone = diff === null ? '' : diff <= 0 ? 'tone-green' : 'tone-danger';
         var ml = new Date(m + '-02').toLocaleString('en-AU', { month: 'short', year: 'numeric' });
+        var asOf = typeof bsLiabDate === 'function' ? bsLiabDate(item.id, m) : null;
         rows += '<div class="sp-mo-row">'
-          + '<div class="sp-mo-month">' + ml + '</div>'
+          + '<div class="sp-mo-month">' + ml + (asOf ? '<span class="mo-entry-date">' + txFmtDate(asOf) + '</span>' : '') + '</div>'
           + '<input type="number" step="1000" value="' + bal + '" inputmode="decimal"'
           + ' onchange="liabMonthUpdate(\'' + item.id + '\',\'' + m + '\',this.value)"'
           + ' class="sp-mo-input"/>'
@@ -871,6 +872,7 @@ function renderLiabMonthlyGrid() {
       + '<div class="sp-mo-cur">Current: <span class="sp-mo-cur-val tone-danger">' + fmt(item.currentBalance) + '</span></div>'
       + '</div>'
       + rows
+      + (typeof bsHistoryHtml === 'function' ? bsHistoryHtml('liab:' + item.id, true) : '')
       + '<div class="sp-mo-add">'
       + '<div class="sp-field"><label class="sp-mo-lbl">Month</label>'
       + '<select id="liab-mo-inp-' + item.id + '" class="sp-mo-sel">' + _liabMonthlyMonthOpts(curMo) + '</select></div>'

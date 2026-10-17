@@ -46,12 +46,15 @@ var BalanceSync = (function() {
 
   // CSV rows → [{ fileIndex, line, date, amountCents, balanceCents }].
   // Sign follows the import: a mapped Type column decides income vs expense,
-  // otherwise the amount's own sign does. dateFn is the import's date parser.
-  function buildRows(rawRows, map, dateFn) {
+  // otherwise the amount's own sign does (flipped when opts.posSpend says a single
+  // Amount column lists spending as positive). dateFn is the import's date parser.
+  function buildRows(rawRows, map, dateFn, opts) {
+    var flip = !!(opts && opts.posSpend) && !!map.amount;
     return rawRows.map(function(row, i) {
       var amt;
       if (map.amount) {
         amt = parseCents(row[map.amount]);
+        if (flip && amt) amt = -amt;
       } else {
         var d = parseCents(row[map.debit]) || 0;
         var c = parseCents(row[map.credit]) || 0;
@@ -67,7 +70,8 @@ var BalanceSync = (function() {
         line: i + 2, // header is line 1
         date: dateFn(row[map.date]) || null,
         amountCents: amt,
-        balanceCents: parseCents(row[map.balance])
+        balanceCents: parseCents(row[map.balance]),
+        balanceTagged: /(CR|DR)\s*$/i.test(String(row[map.balance] || '').trim())
       };
     });
   }
@@ -139,11 +143,19 @@ var BalanceSync = (function() {
     return out;
   }
 
+  function chainScore(o) { var n = 0; for (var i = 1; i < o.length; i++) if (linkHolds(o[i - 1], o[i])) n++; return n; }
+
   // Banks export newest-first or oldest-first, and same-day rows aren't reliably
   // ordered. Try both directions, order each day so the balances chain, and keep
   // the direction with the most valid links.
-  // → { order, openingCents, closingCents, from, to, chain, brokenLines, invalidLines }
-  function deriveChain(rows) {
+  // Card and loan files often show the amount owed as a positive balance, so
+  // spending raises it. When negating every balance chains better, the balances are
+  // read that way round (balanceFlipped). Either way the result is in Kelda's sign:
+  // money you have is positive, money owed is negative. When the file can't tell
+  // (one row, or no links either way), opts.owed says it's a liability, so a
+  // positive balance is read as owed, unless the bank marked it CR or DR.
+  // → { order, openingCents, closingCents, from, to, chain, brokenLines, invalidLines, balanceFlipped }
+  function deriveChain(rows, opts) {
     var invalidLines = [];
     var usable = rows.filter(function(r) {
       var ok = r.date && r.amountCents !== null;
@@ -151,10 +163,23 @@ var BalanceSync = (function() {
       return ok;
     });
     if (!usable.length) return null;
-    var fwd = chronological(usable);
-    var rev = chronological(usable.slice().reverse());
-    function score(o) { var n = 0; for (var i = 1; i < o.length; i++) if (linkHolds(o[i - 1], o[i])) n++; return n; }
-    var order = score(rev) > score(fwd) ? rev : fwd;
+    function best(list) {
+      var fwd = chronological(list);
+      var rev = chronological(list.slice().reverse());
+      var sf = chainScore(fwd), sr = chainScore(rev);
+      return sr > sf ? { order: rev, score: sr } : { order: fwd, score: sf };
+    }
+    var asIs = best(usable);
+    var negated = best(usable.map(function(r) {
+      return Object.assign({}, r, { balanceCents: r.balanceCents === null ? null : (r.balanceCents ? -r.balanceCents : 0) });
+    }));
+    var balanceFlipped = negated.score > asIs.score;
+    if (negated.score === asIs.score && opts && opts.owed) {
+      var lastRow = null;
+      for (var q = asIs.order.length - 1; q >= 0 && !lastRow; q--) if (asIs.order[q].balanceCents !== null) lastRow = asIs.order[q];
+      balanceFlipped = !!lastRow && lastRow.balanceCents > 0 && !lastRow.balanceTagged;
+    }
+    var order = balanceFlipped ? negated.order : asIs.order;
     var brokenLines = [];
     if (order[0].balanceCents === null) brokenLines.push(order[0].line);
     for (var i = 1; i < order.length; i++) if (!linkHolds(order[i - 1], order[i])) brokenLines.push(order[i].line);
@@ -169,7 +194,8 @@ var BalanceSync = (function() {
       to: last.date,
       chain: (brokenLines.length || invalidLines.length) ? 'broken' : 'verified',
       brokenLines: brokenLines.sort(function(a, b) { return a - b; }),
-      invalidLines: invalidLines
+      invalidLines: invalidLines,
+      balanceFlipped: balanceFlipped
     };
   }
 
@@ -323,11 +349,114 @@ function bsLoadStore() {
   if (!s || typeof s !== 'object') s = {};
   if (!s.anchors) s.anchors = {};
   if (!s.log) s.log = [];
+  if (!s.liabDates) s.liabDates = {};
   s.v = 1;
   return s;
 }
 
 function bsIsCard(acct) { return !!acct && /credit/i.test(acct.acctType || ''); }
+
+// ── Sync targets ─────────────────────────────────────────────
+// A file syncs into a Cash Tracker account (key = ACCOUNTS id) or a liability
+// (key = 'liab:' + the id the Liabilities page uses, mortgages included). The prefix
+// keeps the two apart in anchors and in tx.account.
+var BS_LIAB = 'liab:';
+
+function bsLiabItems() {
+  var out = [];
+  if (typeof liabAllMortgages === 'function') {
+    liabAllMortgages().forEach(function(m) { out.push({ id: m.id, name: m.lender || 'Home Loan' }); });
+  }
+  (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).forEach(function(l) {
+    var label = typeof liabTypeInfo === 'function' ? liabTypeInfo(l.type).label : 'Liability';
+    out.push({ id: l.id, name: l.lender || label });
+  });
+  return out;
+}
+
+// key → { key, liab, id, name, acct } or null.
+function bsTarget(key) {
+  if (!key) return null;
+  if (String(key).indexOf(BS_LIAB) === 0) {
+    var id = String(key).slice(BS_LIAB.length);
+    var item = bsLiabItems().find(function(x) { return String(x.id) === id; });
+    return item ? { key: key, liab: true, id: item.id, name: item.name, acct: null } : null;
+  }
+  var acct = ACCOUNTS.find(function(a) { return a.id === key; });
+  return acct ? { key: key, liab: false, id: acct.id, name: acct.name, acct: acct } : null;
+}
+
+// The mortgage property behind a Liabilities-page mortgage id.
+function bsMortgageProp(id) {
+  if (typeof liabAllMortgages !== 'function') return null;
+  var m = liabAllMortgages().find(function(x) { return x.id === id; });
+  return m ? m.prop : null;
+}
+
+// What the liability's card shows now: { owed, asOf } (asOf = date of the file it last came from).
+function bsLiabCurrent(id) {
+  var l = (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).find(function(x) { return x.id === id; });
+  var src = l || bsMortgageProp(id);
+  return src ? { owed: Number(src.balance) || 0, asOf: src.balanceAsOf || null } : { owed: 0, asOf: null };
+}
+
+// Sets a liability's current balance. A mortgage linked to a Liabilities entry moves
+// with it, since saving the Mortgage tab copies its balance back onto the entry.
+function bsSetLiabBalance(id, owed, asOf) {
+  var l = (typeof LIABILITIES !== 'undefined' ? LIABILITIES : []).find(function(x) { return x.id === id; });
+  var prop = null;
+  if (l) {
+    l.balance = owed; l.balanceAsOf = asOf;
+    if (!saveChecked(K.liabilities, LIABILITIES)) throw new Error('Could not save liabilities');
+    prop = ((MORTGAGE && MORTGAGE.properties) || []).find(function(p) { return p.linkedLiabilityId === id; }) || null;
+  } else {
+    prop = bsMortgageProp(id);
+  }
+  if (prop) {
+    prop.balance = owed; prop.balanceAsOf = asOf;
+    if (!saveChecked(K.mortgage, MORTGAGE)) throw new Error('Could not save mortgage');
+  }
+}
+
+// The monthly tracker a target writes to, in Kelda's sign ({ month: dollars }, owed is
+// negative) so reconcile treats cash and liabilities alike.
+function bsTracker(t, store) {
+  if (!t.liab) return { ct: CT[t.id] || {}, dates: CT_DATES[t.id] || {} };
+  var src = LIAB_MONTHLY[t.id] || {}, ct = {};
+  Object.keys(src).forEach(function(mo) { if (src[mo] !== null && src[mo] !== undefined) ct[mo] = -Number(src[mo]); });
+  return { ct: ct, dates: bsLiabDates(t.id, store) };
+}
+function bsTrackerName(t) { return t && t.liab ? 'Liability balances' : 'Cash Tracker'; }
+
+// Read-only view of the store for rendering, parsed once per change.
+var _bsStoreCache = { raw: undefined, val: null };
+function bsStoreView() {
+  var raw = null;
+  try { raw = localStorage.getItem(K.balanceSync); } catch (e) {}
+  if (raw !== _bsStoreCache.raw) {
+    var v = null;
+    try { v = JSON.parse(raw || 'null'); } catch (e) {}
+    _bsStoreCache = { raw: raw, val: v };
+  }
+  return _bsStoreCache.val;
+}
+
+// liabDates[id][mo] = { date, cents }: the file date a month came from and the amount
+// owed it recorded. A month edited since (by hand or from the Mortgage tab) no longer
+// matches, so it isn't treated as dated.
+function bsLiabDates(id, store) {
+  var src = (store && store.liabDates && store.liabDates[id]) || {}, cur = LIAB_MONTHLY[id] || {}, out = {};
+  Object.keys(src).forEach(function(mo) {
+    var e = src[mo];
+    if (e && e.date && cur[mo] !== undefined && cur[mo] !== null && Math.round(Number(cur[mo]) * 100) === e.cents) out[mo] = e.date;
+  });
+  return out;
+}
+
+// The date a synced liability month came from, or null.
+function bsLiabDate(id, mo) {
+  return bsLiabDates(id, bsStoreView())[mo] || null;
+}
 function bsCents(c) { return fmt(c / 100); }
 function bsDay(iso) { return txFmtDate(iso); }
 function bsMonth(mo) { return typeof ctMonthLabel === 'function' ? ctMonthLabel(mo) : mo; }
@@ -342,9 +471,11 @@ function csvBalToggle() {
   if (on) {
     var sel = document.getElementById('csv-bal-acct');
     var cur = sel.value;
-    sel.innerHTML = '<option value="">Choose account…</option>' + ACCOUNTS.map(function(a) {
-      return '<option value="' + esc(a.id) + '"' + (a.id === cur ? ' selected' : '') + '>' + esc(a.name) + '</option>';
-    }).join('');
+    var opt = function(v, name) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(name) + '</option>'; };
+    var liabs = bsLiabItems();
+    sel.innerHTML = '<option value="">Choose account…</option>'
+      + '<optgroup label="Cash accounts">' + ACCOUNTS.map(function(a) { return opt(a.id, a.name); }).join('') + '</optgroup>'
+      + (liabs.length ? '<optgroup label="Liabilities">' + liabs.map(function(l) { return opt(BS_LIAB + l.id, l.name); }).join('') + '</optgroup>' : '');
   }
 }
 
@@ -354,19 +485,27 @@ function bsPrepare(map, fileName) {
   _bsCheck = null;
   if (!map.balance) return true;
   var acctId = (document.getElementById('csv-bal-acct') || {}).value || '';
-  if (!acctId) { toast('⚠️ Choose which account this file is for'); return false; }
-  var acct = ACCOUNTS.find(function(a) { return a.id === acctId; });
-  var base = { acctId: acctId, acct: acct, fileName: fileName || '' };
-  if (bsIsCard(acct)) { _bsCheck = Object.assign(base, { reason: 'card' }); return true; }
+  var t = bsTarget(acctId);
+  if (!t) { toast('⚠️ Choose which account this file is for'); return false; }
+  var base = { acctId: acctId, target: t, acct: t.acct, name: t.name, fileName: fileName || '' };
+  if (!t.liab && bsIsCard(t.acct)) { _bsCheck = Object.assign(base, { reason: 'card' }); return true; }
   if (BalanceSync.balanceFill(_csvRaw, map.balance) < BalanceSync.MIN_FILL) { _bsCheck = Object.assign(base, { reason: 'blank' }); return true; }
-  var chain = BalanceSync.deriveChain(BalanceSync.buildRows(_csvRaw, map, csvDate));
+  var posSpend = typeof csvPosIsSpend === 'function' && csvPosIsSpend();
+  var chain = BalanceSync.deriveChain(BalanceSync.buildRows(_csvRaw, map, csvDate, { posSpend: posSpend }), { owed: t.liab });
   if (!chain || chain.openingCents === null || chain.closingCents === null) { _bsCheck = Object.assign(base, { reason: 'blank' }); return true; }
+  var store = bsLoadStore(), tr = bsTracker(t, store);
   var rec = BalanceSync.reconcile({
     acctId: acctId, chain: chain,
-    anchors: bsLoadStore().anchors[acctId] || [],
-    tx: TX, ct: CT[acctId] || {}, ctDates: CT_DATES[acctId] || {}
+    anchors: store.anchors[acctId] || [],
+    tx: TX, ct: tr.ct, ctDates: tr.dates
   });
-  _bsCheck = Object.assign(base, { chain: chain, rec: rec });
+  // A liability's card balance follows the file unless a newer file already set it.
+  var card = null;
+  if (t.liab) {
+    var cur = bsLiabCurrent(t.id);
+    card = { owed: cur.owed, asOf: cur.asOf, newOwedCents: -chain.closingCents, apply: !cur.asOf || chain.to >= cur.asOf };
+  }
+  _bsCheck = Object.assign(base, { chain: chain, rec: rec, card: card });
   return true;
 }
 
@@ -390,14 +529,21 @@ function bsRenderPanel(keepFocus) {
   if (!_bsCheck) { box.hidden = true; box.innerHTML = ''; if (plain) plain.hidden = false; return; }
   if (plain) plain.hidden = true;
   box.hidden = false;
-  var c = _bsCheck, acctName = c.acct ? c.acct.name : c.acctId;
+  var c = _bsCheck, acctName = c.name || c.acctId;
+  var liab = !!(c.target && c.target.liab);
+  // Liabilities show the amount owed as a positive number, the way the Liabilities page does.
+  var money = liab ? function(x) { return bsCents(-x); } : bsCents;
+  var trackerName = bsTrackerName(c.target);
   var cancelBtn = '<button class="btn btn-ghost" onclick="bsCancel()">Cancel</button>';
   var txOnlyBtn = '<button class="btn btn-ghost" onclick="bsCommit(false)">Import transactions only</button>';
+  var balOnlyBtn = function(gated) {
+    return liab ? '<button class="btn btn-ghost"' + (gated ? ' id="bs-bal-only-btn" disabled' : '') + ' onclick="bsCommit(true,true)">Sync balances only</button>' : '';
+  };
   var html;
 
   if (c.reason) {
     var why = c.reason === 'card'
-      ? 'Balance sync isn\'t available for credit card accounts yet. Transactions import as usual.'
+      ? 'This is a Cash Tracker card account, which can\'t hold an amount owed. To sync the card\'s balance, add it on the Liabilities page and pick it here. Transactions import as usual.'
       : 'The balance column is mostly empty, so balances can\'t be read from this file. Transactions import as usual.';
     html = '<section class="bs-panel" aria-labelledby="bs-h">'
       + '<h3 class="bs-h" id="bs-h" tabindex="-1">' + ICON('info-circle') + ' Balances not synced</h3>'
@@ -419,20 +565,28 @@ function bsRenderPanel(keepFocus) {
   var sum = '<dl class="bs-sum">'
     + '<div><dt>Account</dt><dd>' + esc(acctName) + '</dd></div>'
     + '<div><dt>Period</dt><dd>' + period + '</dd></div>'
-    + '<div><dt>Opening → closing</dt><dd class="bs-amt">' + bsCents(ch.openingCents) + ' → ' + bsCents(ch.closingCents) + '</dd></div>'
+    + '<div><dt>' + (liab ? 'Owed: opening → closing' : 'Opening → closing') + '</dt><dd class="bs-amt">' + money(ch.openingCents) + ' → ' + money(ch.closingCents) + '</dd></div>'
     + '<div><dt>Transactions</dt><dd>' + ch.order.length + ' in file, ' + importCount + ' to import</dd></div>'
     + '</dl>';
   var months = r.ctWrites.map(function(w) {
     return esc(bsMonth(w.month)) + (w.kind === 'asOf' ? ' (as of ' + esc(bsDay(w.date)) + ')' : '');
   }).join(', ');
-  var writesNote = months ? '<p class="bs-p">Cash Tracker will record ' + months + '.</p>' : '';
+  var writesNote = months ? '<p class="bs-p">' + trackerName + ' will record ' + months + '.</p>' : '';
+  if (c.card) {
+    writesNote += c.card.apply
+      ? '<p class="bs-p">' + esc(acctName) + '\'s current balance will change from <span class="bs-amt">' + fmt(c.card.owed) + '</span> to <span class="bs-amt">' + bsCents(c.card.newOwedCents) + '</span>.</p>'
+      : '<p class="bs-p bs-muted">' + esc(acctName) + '\'s current balance stays at <span class="bs-amt">' + fmt(c.card.owed) + '</span>: it came from a newer file (' + esc(bsDay(c.card.asOf)) + ').</p>';
+  }
+  if (liab) {
+    writesNote += '<p class="bs-p bs-muted">If your bank account file already has these repayments, choose Sync balances only so they aren\'t counted twice.</p>';
+  }
   var firstNote = r.firstSync ? '<p class="bs-p bs-muted">First sync for this account: the file\'s opening balance becomes the starting point.</p>' : '';
 
   if (r.status === 'clean') {
     html = '<section class="bs-panel bs-panel--ok" aria-labelledby="bs-h">'
       + '<h3 class="bs-h" id="bs-h" tabindex="-1">' + ICON('circle-check') + ' Balances check out</h3>'
       + sum + writesNote + firstNote
-      + '<div class="up-actions up-actions--wrap">' + cancelBtn + txOnlyBtn
+      + '<div class="up-actions up-actions--wrap">' + cancelBtn + txOnlyBtn + balOnlyBtn(false)
       + '<button class="btn btn-primary" onclick="bsCommit(true)">' + ICON('circle-check-filled') + ' Import &amp; sync</button></div>'
       + '</section>';
     box.innerHTML = html;
@@ -451,10 +605,10 @@ function bsRenderPanel(keepFocus) {
   if (r.gapCents) {
     var gapHtml = '<h4 class="bs-h4">Opening balance differs by <span class="bs-amt">' + bsCents(Math.abs(r.gapCents)) + '</span></h4>'
       + '<dl class="bs-sum">'
-      + '<div><dt>File opening</dt><dd class="bs-amt">' + bsCents(ch.openingCents) + '</dd></div>'
-      + '<div><dt>Expected by Kelda</dt><dd class="bs-amt">' + bsCents(r.expectedOpeningCents) + '</dd></div>'
+      + '<div><dt>File opening</dt><dd class="bs-amt">' + money(ch.openingCents) + '</dd></div>'
+      + '<div><dt>Expected by Kelda</dt><dd class="bs-amt">' + money(r.expectedOpeningCents) + '</dd></div>'
       + '</dl>'
-      + '<p class="bs-p">Kelda\'s last synced balance was ' + bsCents(r.prior.cents) + ' on ' + esc(bsDay(r.prior.date)) + '. ';
+      + '<p class="bs-p">Kelda\'s last synced balance was ' + money(r.prior.cents) + ' on ' + esc(bsDay(r.prior.date)) + '. ';
     if (r.rolled.length) {
       gapHtml += 'These Kelda transactions on this account fall between then and the file:</p>' + bsList(r.rolled, bsTxLine);
     } else {
@@ -472,20 +626,20 @@ function bsRenderPanel(keepFocus) {
     issues.push('<h4 class="bs-h4">Disagrees with an earlier sync</h4>'
       + '<p class="bs-p bs-muted">Earlier sync → this file</p>'
       + bsList(r.conflicts, function(x) {
-        return '<span class="bs-li-date">' + esc(bsDay(x.date)) + '</span> <span class="bs-amt">' + bsCents(x.previousCents)
-          + '</span> → <span class="bs-amt">' + bsCents(x.fileCents) + '</span>';
+        return '<span class="bs-li-date">' + esc(bsDay(x.date)) + '</span> <span class="bs-amt">' + money(x.previousCents)
+          + '</span> → <span class="bs-amt">' + money(x.fileCents) + '</span>';
       }));
   }
   if (r.ctChanges.length) {
-    issues.push('<h4 class="bs-h4">Cash Tracker balances that would change</h4>'
+    issues.push('<h4 class="bs-h4">' + (liab ? 'Liability balances' : 'Cash Tracker balances') + ' that would change</h4>'
       + bsList(r.ctChanges, function(x) {
-        return '<span class="bs-li-date">' + esc(bsMonth(x.month)) + '</span> <span class="bs-amt">' + bsCents(x.existingCents) + '</span> → <span class="bs-amt">'
-          + bsCents(x.fileCents) + '</span>';
+        return '<span class="bs-li-date">' + esc(bsMonth(x.month)) + '</span> <span class="bs-amt">' + money(x.existingCents) + '</span> → <span class="bs-amt">'
+          + money(x.fileCents) + '</span>';
       }));
   }
   var skipNote = r.ctSkips.length
     ? '<p class="bs-p bs-muted">' + r.ctSkips.map(function(x) { return esc(bsMonth(x.month)); }).join(', ')
-      + ': Cash Tracker already has a newer balance, so it\'s left as is.</p>'
+      + ': ' + trackerName + ' already has a newer balance, so it\'s left as is.</p>'
     : '';
 
   html = '<section class="bs-panel bs-panel--review" aria-labelledby="bs-h">'
@@ -494,7 +648,7 @@ function bsRenderPanel(keepFocus) {
     + sum + issues.join('') + writesNote + skipNote + firstNote
     + '<label class="bs-ack"><input type="checkbox" id="bs-ack" onchange="bsAckChanged(this)"/> '
     + '<span>I\'ve checked the differences. Sync balances from this file anyway.</span></label>'
-    + '<div class="up-actions up-actions--wrap">' + cancelBtn + txOnlyBtn
+    + '<div class="up-actions up-actions--wrap">' + cancelBtn + txOnlyBtn + balOnlyBtn(true)
     + '<button class="btn btn-primary" id="bs-sync-btn" onclick="bsCommit(true)" disabled>' + ICON('circle-check-filled') + ' Import &amp; sync balances</button></div>'
     + '</section>';
   box.innerHTML = html;
@@ -506,8 +660,10 @@ function bsFocusHeading() {
   if (h) { try { h.focus({ preventScroll: false }); } catch (e) { h.focus(); } }
 }
 function bsAckChanged(cb) {
-  var b = document.getElementById('bs-sync-btn');
-  if (b) b.disabled = !cb.checked;
+  ['bs-sync-btn', 'bs-bal-only-btn'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) b.disabled = !cb.checked;
+  });
 }
 function bsCancel() {
   _bsCheck = null;
@@ -517,22 +673,25 @@ function bsCancel() {
   toast('Import cancelled. Nothing was changed.');
 }
 
-// Commits the import. syncBalances=false imports transactions only (no balance writes).
+// Commits the import. syncBalances=false imports transactions only (no balance writes);
+// balancesOnly=true (liabilities) syncs balances without adding the file's rows.
 // Everything written is snapshotted first; any failure restores all of it, and the
 // undo toast restores the same snapshot.
-function bsCommit(syncBalances) {
+function bsCommit(syncBalances, balancesOnly) {
   var c = _bsCheck;
   if (!c) return;
   if (syncBalances && (c.reason || !c.rec)) return;
+  if (balancesOnly && !(c.target && c.target.liab)) return;
   if (syncBalances && c.rec.status !== 'clean') {
     var ack = document.getElementById('bs-ack');
     if (!ack || !ack.checked) { toast('⚠️ Tick the box to confirm the differences first'); return; }
   }
+  var t = c.target || {};
   var snap = bsSnapshot();
   var batchId = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   var count = 0, months = [];
   try {
-    count = csvCommitRows({ account: c.acctId, batch: batchId });
+    if (!balancesOnly) count = csvCommitRows({ account: c.acctId, batch: batchId });
     if (syncBalances) {
       var ch = c.chain, r = c.rec;
       var store = bsLoadStore();
@@ -542,19 +701,36 @@ function bsCommit(syncBalances) {
         openingCents: ch.openingCents, closingCents: ch.closingCents,
         expectedOpeningCents: r.expectedOpeningCents, gapCents: r.gapCents,
         chain: ch.chain, brokenRows: ch.brokenLines.concat(ch.invalidLines),
-        status: r.status === 'clean' ? 'synced' : 'synced-with-gap', imported: count, at: new Date().toISOString()
+        status: r.status === 'clean' ? 'synced' : 'synced-with-gap', imported: count,
+        balancesOnly: !!balancesOnly, at: new Date().toISOString()
       });
       if (store.log.length > BS_LOG_CAP) store.log = store.log.slice(0, BS_LOG_CAP);
-      if (!saveChecked(K.balanceSync, store)) throw new Error('Could not save balance sync');
+      r.ctWrites.forEach(function(w) { months.push(w.month); });
 
-      if (!CT[c.acctId]) CT[c.acctId] = {};
-      if (!CT_DATES[c.acctId]) CT_DATES[c.acctId] = {};
-      r.ctWrites.forEach(function(w) {
-        CT[c.acctId][w.month] = w.cents / 100;
-        CT_DATES[c.acctId][w.month] = w.date;
-        months.push(w.month);
-      });
-      if (!saveChecked(K.ct, CT) || !saveChecked(K.ctdates, CT_DATES)) throw new Error('Could not save Cash Tracker');
+      if (t.liab) {
+        // Liability months hold the amount owed; the store remembers which file date each came from.
+        if (!store.liabDates[t.id]) store.liabDates[t.id] = {};
+        if (!LIAB_MONTHLY[t.id]) LIAB_MONTHLY[t.id] = {};
+        r.ctWrites.forEach(function(w) {
+          LIAB_MONTHLY[t.id][w.month] = -w.cents / 100;
+          store.liabDates[t.id][w.month] = { date: w.date, cents: -w.cents };
+        });
+        if (!saveChecked(K.balanceSync, store)) throw new Error('Could not save balance sync');
+        if (!saveChecked(K.liabMonthly, LIAB_MONTHLY)) throw new Error('Could not save liability balances');
+        if (c.card && c.card.apply) bsSetLiabBalance(t.id, c.card.newOwedCents / 100, ch.to);
+        if (typeof nwRecordLiabMonth === 'function' && typeof _liabMonthlyTotalForMonth === 'function') {
+          months.forEach(function(mo) { nwRecordLiabMonth(mo, _liabMonthlyTotalForMonth(mo)); });
+        }
+      } else {
+        if (!saveChecked(K.balanceSync, store)) throw new Error('Could not save balance sync');
+        if (!CT[c.acctId]) CT[c.acctId] = {};
+        if (!CT_DATES[c.acctId]) CT_DATES[c.acctId] = {};
+        r.ctWrites.forEach(function(w) {
+          CT[c.acctId][w.month] = w.cents / 100;
+          CT_DATES[c.acctId][w.month] = w.date;
+        });
+        if (!saveChecked(K.ct, CT) || !saveChecked(K.ctdates, CT_DATES)) throw new Error('Could not save Cash Tracker');
+      }
       if (typeof nwRefreshMonths === 'function') nwRefreshMonths(months);
     }
   } catch (e) {
@@ -568,15 +744,25 @@ function bsCommit(syncBalances) {
   if (syncBalances && c.acctId === 'offset' && typeof syncOffsetToMortgage === 'function') {
     try { syncOffsetToMortgage(); } catch (e) {}
   }
-  csvFinishImport(count);
+  if (balancesOnly) {
+    csvReset();
+    closeCsvModal();
+    try { renderDashboard(); } catch (e) {}
+    if (typeof go === 'function') go('liabilities');
+  } else {
+    csvFinishImport(count);
+  }
   if (typeof showUndoToast === 'function') {
-    var msg = syncBalances
-      ? 'Imported ' + count + ' · balances synced for ' + (c.acct ? c.acct.name : c.acctId)
-      : 'Imported ' + count + ' transaction' + (count !== 1 ? 's' : '');
+    var msg = balancesOnly
+      ? 'Balances synced for ' + c.name
+      : syncBalances
+        ? 'Imported ' + count + ' · balances synced for ' + c.name
+        : 'Imported ' + count + ' transaction' + (count !== 1 ? 's' : '');
     showUndoToast(msg, 10000, function() {
       bsRestore(snap);
       try { renderTx(); } catch (e) {}
       try { renderDashboard(); } catch (e) {}
+      if (t.liab && typeof liabRenderPage === 'function') { try { liabRenderPage(); } catch (e) {} }
       if (c.acctId === 'offset' && typeof syncOffsetToMortgage === 'function') { try { syncOffsetToMortgage(); } catch (e) {} }
       toast('Import undone');
     });
@@ -587,14 +773,43 @@ function bsCommit(syncBalances) {
 function bsSnapshot() {
   return {
     tx: JSON.stringify(TX), ct: JSON.stringify(CT), ctDates: JSON.stringify(CT_DATES),
+    liab: JSON.stringify(LIABILITIES), liabMonthly: JSON.stringify(LIAB_MONTHLY), mortgage: JSON.stringify(MORTGAGE),
     bs: JSON.stringify(load(K.balanceSync)), nw: JSON.stringify(load('cff_networth_history')),
-    lastImport: JSON.stringify(load(K.lastCsvImport))
+    liabHist: JSON.stringify(load(K.liabHist)), lastImport: JSON.stringify(load(K.lastCsvImport))
   };
 }
 function bsRestore(s) {
   TX = JSON.parse(s.tx); CT = JSON.parse(s.ct); CT_DATES = JSON.parse(s.ctDates);
+  LIABILITIES = JSON.parse(s.liab); LIAB_MONTHLY = JSON.parse(s.liabMonthly); MORTGAGE = JSON.parse(s.mortgage);
   save(K.tx, TX); save(K.ct, CT); save(K.ctdates, CT_DATES);
+  save(K.liabilities, LIABILITIES); save(K.liabMonthly, LIAB_MONTHLY); save(K.mortgage, MORTGAGE);
   save(K.balanceSync, JSON.parse(s.bs));
   save('cff_networth_history', JSON.parse(s.nw));
+  save(K.liabHist, JSON.parse(s.liabHist));
   save(K.lastCsvImport, JSON.parse(s.lastImport));
+}
+
+// ══════════════════════════════════════════════════════════════
+// Balance history: every dated balance a sync recorded for one
+// account or liability, newest first, shown under its monthly entries.
+// ══════════════════════════════════════════════════════════════
+var BS_KIND_LABEL = { open: 'Opening', monthEnd: 'Month end', close: 'Closing' };
+
+// key = sync key ('offset', 'liab:<id>'); liab = show amounts as owed.
+function bsHistoryHtml(key, liab) {
+  var store = bsStoreView();
+  var list = (store && store.anchors && store.anchors[key]) || [];
+  if (!list.length) return '';
+  var logs = {};
+  (store.log || []).forEach(function(e) { logs[e.batchId] = e; });
+  var items = list.slice().reverse().map(function(a) {
+    var e = logs[a.batchId] || {};
+    var gap = a.kind === 'open' && e.gapCents
+      ? ' <span class="bs-tag bs-tag--warn">Off by ' + bsCents(Math.abs(e.gapCents)) + '</span>' : '';
+    return '<li><span class="bs-li-date">' + esc(bsDay(a.date)) + '</span>'
+      + ' <span class="bs-li-name">' + (BS_KIND_LABEL[a.kind] || 'Balance') + (e.fileName ? ' · ' + esc(e.fileName) : '') + gap + '</span>'
+      + ' <span class="bs-amt">' + bsCents(liab ? -a.cents : a.cents) + '</span></li>';
+  }).join('');
+  return '<details class="bs-hist"><summary class="bs-hist-sum">' + ICON('history') + ' Balances from bank files (' + list.length + ')</summary>'
+    + '<ul class="bs-list">' + items + '</ul></details>';
 }

@@ -290,3 +290,190 @@ test('ctBankTotal sums every account, carrying each one\'s last balance', () => 
   assert.equal(app.ctBankTotal('2026-07', ['a', 'b']), 0);
   vm.runInContext('CT = {};', app);
 });
+
+// ── Liabilities ──────────────────────────────────────────────
+
+test('fixture 13: a card file showing the amount owed as positive is read in Kelda\'s sign', () => {
+  const ch = chainOf('13-card-owed-positive.csv');
+  assert.equal(ch.balanceFlipped, true);
+  assert.equal(ch.chain, 'verified');
+  assert.equal(ch.openingCents, -40000);
+  assert.equal(ch.closingCents, -18710);
+  assert.deepEqual(plain(BS.monthClosings(ch).map((c) => [c.month, c.cents, c.kind])),
+    [['2026-09', -12710, 'monthEnd'], ['2026-10', -18710, 'asOf']]);
+});
+
+test('fixture 14: a loan file with DR balances and split columns needs no flip', () => {
+  const ch = chainOf('14-loan-dr-split.csv');
+  assert.equal(ch.balanceFlipped, false);
+  assert.equal(ch.chain, 'verified');
+  assert.equal(ch.openingCents, -25000000);
+  assert.equal(ch.closingCents, -24961750);
+});
+
+test('a cash file never flips when its balances already chain', () => {
+  assert.equal(chainOf('01-clean-oldest-first.csv').balanceFlipped, false);
+  assert.equal(chainOf('10-overdrawn-split-columns.csv').balanceFlipped, false);
+});
+
+test('buildRows flips a single Amount column when positive amounts are spending', () => {
+  const map = { date: 'Date', amount: 'Amount', balance: 'Balance' };
+  const rows = [{ Date: '02/09/2026', Amount: '120.50', Balance: '520.50' }];
+  assert.equal(BS.buildRows(rows, map, app.csvDate)[0].amountCents, 12050);
+  assert.equal(BS.buildRows(rows, map, app.csvDate, { posSpend: true })[0].amountCents, -12050);
+  const split = { date: 'Date', debit: 'Debit', credit: 'Credit', balance: 'Balance' };
+  assert.equal(BS.buildRows([{ Date: '02/09/2026', Debit: '5', Credit: '', Balance: '1' }], split, app.csvDate, { posSpend: true })[0].amountCents, -500);
+});
+
+// The import wizard with a liability picked, using stubs for the page around it.
+function liabApp(pick, setup) {
+  const ctx = loadApp();
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/pages/liabilities.js'), 'utf8'), ctx, { filename: 'js/pages/liabilities.js' });
+  const el = () => ({ value: '', checked: false, hidden: false, disabled: false, innerHTML: '', style: {}, focus() {} });
+  const els = { 'csv-bal-acct': Object.assign(el(), { value: pick }) };
+  ctx.document = { getElementById: (id) => els[id] || (els[id] = el()), querySelectorAll: () => [] };
+  vm.runInContext(`
+    var ACCOUNTS = [{ id: 'home', name: 'Joint' }, { id: 'visa', name: 'Old Visa', acctType: 'Credit Card' }];
+    var LIABILITIES = [{ id: 'liab_1', type: 'credit_card', lender: 'Example Card', balance: 300 }];
+    var LIAB_MONTHLY = {}; var MORTGAGE = {}; var TX = []; var LCATS = []; var activeProfile = 'brenton';
+    var lastGo = null, undoFn = null;
+    function fmt(n) { return '$' + Number(n).toFixed(2); }
+    function esc(s) { return String(s); }
+    function txFmtDate(d) { return d; }
+    function toast() {}
+    function ICON() { return ''; }
+    function today() { return '2026-10-18'; }
+    function csvReset() {}
+    function closeCsvModal() {}
+    function renderDashboard() {}
+    function go(p) { lastGo = p; }
+    function showUndoToast(m, ms, fn) { undoFn = fn; }
+    ${setup || ''}
+  `, ctx);
+  return ctx;
+}
+function prepare(ctx, name) {
+  const f = fixture(name);
+  ctx._csvRaw = f.rows;
+  vm.runInContext('_csvRaw = this._csvRaw;', ctx);
+  assert.equal(ctx.bsPrepare(f.map, name), true);
+  return vm.runInContext('_bsCheck', ctx);
+}
+
+test('the picker lists liabilities after cash accounts', () => {
+  const ctx = liabApp('');
+  vm.runInContext("document.querySelectorAll = () => [{ value: 'balance' }];", ctx);
+  ctx.csvBalToggle();
+  const html = ctx.document.getElementById('csv-bal-acct').innerHTML;
+  assert.match(html, /<optgroup label="Cash accounts">.*Joint.*<\/optgroup><optgroup label="Liabilities"><option value="liab:liab_1">Example Card/);
+});
+
+test('a Cash Tracker card account is still not synced', () => {
+  const c = prepare(liabApp('visa'), '13-card-owed-positive.csv');
+  assert.equal(c.reason, 'card');
+});
+
+test('syncing balances only into a card: monthly owed, card balance, dated history, undo', () => {
+  const ctx = liabApp('liab:liab_1');
+  const c = prepare(ctx, '13-card-owed-positive.csv');
+  assert.equal(c.rec.status, 'clean');
+  assert.deepEqual(plain(c.card), { owed: 300, asOf: null, newOwedCents: 18710, apply: true });
+  ctx.bsCommit(true, true);
+  const got = plain(vm.runInContext('({ tx: TX.length, lm: LIAB_MONTHLY, l: LIABILITIES[0], go: lastGo })', ctx));
+  assert.equal(got.tx, 0);
+  assert.deepEqual(got.lm, { liab_1: { '2026-09': 127.1, '2026-10': 187.1 } });
+  assert.equal(got.l.balance, 187.1);
+  assert.equal(got.l.balanceAsOf, '2026-10-03');
+  assert.equal(got.go, 'liabilities');
+  const store = plain(vm.runInContext('load(K.balanceSync)', ctx));
+  assert.deepEqual(store.anchors['liab:liab_1'].map((a) => [a.date, a.cents, a.kind]),
+    [['2026-09-01', -40000, 'open'], ['2026-09-30', -12710, 'monthEnd'], ['2026-10-03', -18710, 'close']]);
+  assert.deepEqual(store.liabDates, { liab_1: {
+    '2026-09': { date: '2026-09-30', cents: 12710 }, '2026-10': { date: '2026-10-03', cents: 18710 } } });
+  assert.equal(ctx.bsLiabDate('liab_1', '2026-10'), '2026-10-03');
+  const hist = ctx.bsHistoryHtml('liab:liab_1', true);
+  assert.match(hist, /Balances from bank files \(3\)/);
+  assert.match(hist, /2026-10-03<\/span> <span class="bs-li-name">Closing · 13-card-owed-positive.csv<\/span> <span class="bs-amt">\$187\.10/);
+
+  vm.runInContext('undoFn()', ctx);
+  const back = plain(vm.runInContext('({ lm: LIAB_MONTHLY, l: LIABILITIES[0] })', ctx));
+  assert.deepEqual(back.lm, {});
+  assert.equal(back.l.balance, 300);
+  assert.equal(ctx.bsHistoryHtml('liab:liab_1', true), '');
+});
+
+test('import & sync into a card stamps rows with the liability key', () => {
+  const ctx = liabApp('liab:liab_1');
+  prepare(ctx, '13-card-owed-positive.csv');
+  vm.runInContext(`_csvParsed = [{ date: '2026-09-02', type: 'expense', category: 'Food', catId: 'food', subcat: '',
+    name: 'GROCER ONE', account: '', description: '', amount: 120.5 }];`, ctx);
+  ctx.csvFinishImport = () => {};
+  vm.runInContext('csvFinishImport = this.csvFinishImport;', ctx);
+  ctx.bsCommit(true);
+  assert.equal(vm.runInContext('TX[0].account', ctx), 'liab:liab_1');
+});
+
+test('a file older than the card\'s last synced balance leaves the card balance alone', () => {
+  const ctx = liabApp('liab:liab_1', "LIABILITIES[0].balanceAsOf = '2026-11-01';");
+  const c = prepare(ctx, '13-card-owed-positive.csv');
+  assert.equal(c.card.apply, false);
+  ctx.bsCommit(true, true);
+  assert.equal(vm.runInContext('LIABILITIES[0].balance', ctx), 300);
+  assert.deepEqual(plain(vm.runInContext('LIAB_MONTHLY.liab_1', ctx)), { '2026-09': 127.1, '2026-10': 187.1 });
+});
+
+test('a mortgage syncs into the Mortgage tab balance and its monthly history', () => {
+  const ctx = liabApp('liab:mortgage_primary', "MORTGAGE = { properties: [{ id: 7, name: 'Example Home', balance: 260000, rate: 6, years: 25 }] };");
+  const c = prepare(ctx, '14-loan-dr-split.csv');
+  assert.equal(c.name, 'Example Home');
+  ctx.bsCommit(true, true);
+  const got = plain(vm.runInContext('({ m: MORTGAGE.properties[0], lm: LIAB_MONTHLY })', ctx));
+  assert.equal(got.m.balance, 249617.5);
+  assert.equal(got.m.balanceAsOf, '2026-10-01');
+  assert.deepEqual(got.lm, { mortgage_primary: { '2026-08': 250000, '2026-09': 248812.4, '2026-10': 249617.5 } });
+});
+
+test('a mortgage linked to a Liabilities entry moves with it', () => {
+  const ctx = liabApp('liab:liab_1', `
+    LIABILITIES[0] = { id: 'liab_1', type: 'mortgage', lender: 'Example Loan', balance: 260000 };
+    MORTGAGE = { properties: [{ id: 7, name: 'Example Home', balance: 260000, linkedLiabilityId: 'liab_1' }] };`);
+  prepare(ctx, '14-loan-dr-split.csv');
+  ctx.bsCommit(true, true);
+  assert.equal(vm.runInContext('LIABILITIES[0].balance', ctx), 249617.5);
+  assert.equal(vm.runInContext('MORTGAGE.properties[0].balance', ctx), 249617.5);
+});
+
+test('a second card file that starts where the first ended reconciles clean', () => {
+  const ctx = liabApp('liab:liab_1');
+  prepare(ctx, '13-card-owed-positive.csv');
+  ctx.bsCommit(true, true);
+  const next = 'Date,Description,Amount,Balance\n10/10/2026,GROCER ONE,-12.90,200.00\n';
+  const { headers, rows } = app.csvParse(next);
+  const map = {}; headers.forEach((h) => { const g = app.csvGuess(h); if (g) map[g] = h; });
+  ctx._csvRaw = rows; vm.runInContext('_csvRaw = this._csvRaw;', ctx);
+  ctx.bsPrepare(map, 'next.csv');
+  const c = vm.runInContext('_bsCheck', ctx);
+  assert.equal(c.rec.gapCents, 0);
+  assert.equal(c.rec.status, 'review'); // October already holds the earlier as-of balance, which this replaces
+  assert.deepEqual(plain(c.rec.ctChanges.map((x) => [x.month, x.existingCents, x.fileCents])), [['2026-10', -18710, -20000]]);
+});
+
+test('a liability month edited by hand loses its file date', () => {
+  const ctx = liabApp('liab:liab_1');
+  prepare(ctx, '13-card-owed-positive.csv');
+  ctx.bsCommit(true, true);
+  assert.equal(ctx.bsLiabDate('liab_1', '2026-10'), '2026-10-03');
+  vm.runInContext("LIAB_MONTHLY.liab_1['2026-10'] = 150;", ctx);
+  assert.equal(ctx.bsLiabDate('liab_1', '2026-10'), null);
+  assert.equal(ctx.bsLiabDate('liab_1', '2026-09'), '2026-09-30');
+});
+
+test('a one-row liability file reads a plain positive balance as owed, but not one marked CR', () => {
+  const map = { date: 'Date', amount: 'Amount', balance: 'Balance' };
+  const one = (bal) => BS.deriveChain(BS.buildRows([{ Date: '10/10/2026', Amount: '-12.90', Balance: bal }], map, app.csvDate), { owed: true });
+  assert.equal(one('200.00').closingCents, -20000);
+  assert.equal(one('50.00 CR').closingCents, 5000);
+  assert.equal(one('-200.00').closingCents, -20000);
+  const cash = BS.deriveChain(BS.buildRows([{ Date: '10/10/2026', Amount: '-12.90', Balance: '200.00' }], map, app.csvDate));
+  assert.equal(cash.closingCents, 20000);
+});
