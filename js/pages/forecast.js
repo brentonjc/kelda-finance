@@ -809,7 +809,9 @@ function fc2RenderAdjs() {
 
 // Tax (Beta) outflows, listed under the adjustments. Read-only: they change in Tax.
 function fc2TaxAdjsHtml() {
-  var items = fc2TaxItems(fc2BuildBaseline());
+  var span = [];
+  for (var i = 0; i < 12; i++) span.push({ month: fc2YearMonth(i) });
+  var items = fc2TaxItems(span);
   if (!items.length) return '';
   return '<div class="fc2-tax"><div class="section-label">From Tax (Beta) · read-only</div>'
     + items.map(function(it) {

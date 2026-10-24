@@ -442,6 +442,7 @@ function _taxInstalmentsHtml(person, fy, today) {
 
   var yr = instalmentYear(inst, fy, today);
   var used = taxLinkedTxIds();
+  var atoTx = _taxAllTx().filter(taxIsAtoPayment);
   h += '<div class="card mb"><div class="section-label">Quarters · FY ' + esc(taxFyLabel(fy)) + '</div>';
   yr.forEach(function(q) {
     var st = TAX_STATUS[q.status];
@@ -455,7 +456,7 @@ function _taxInstalmentsHtml(person, fy, today) {
     h += '</div>';
     // The best unmatched ATO payment near the due date, offered as a one-tap match
     if (q.status !== 'paid') {
-      var c = taxMatchCandidates(_taxAllTx(), Object.assign({ person: person, expected: q.expected === null ? 0 : q.expected - q.paid }, taxQuarterWindow(q.due)), used)[0];
+      var c = taxMatchCandidates(atoTx, Object.assign({ person: person, expected: q.expected === null ? 0 : q.expected - q.paid }, taxQuarterWindow(q.due)), used)[0];
       if (c) {
         h += '<div class="tax-match"><span class="tax-match-txt"><i class="ti ti-link" aria-hidden="true"></i> Possible payment: ' + esc(c.tx.name || 'Transaction') +
              ' · <span class="tax-mono">' + esc(taxFmtDate(c.tx.date)) + '</span> · <span class="tax-mono">' + esc(fmt(c.tx.amount)) + '</span>' +
@@ -649,6 +650,11 @@ function taxOpenMatch(person) {
   var fy = taxUi.fy;
   var qs = quarterDueDates(fy);
   var from = taxQuarterWindow(qs[0].due).from, to = taxQuarterWindow(qs[qs.length - 1].due).to;
+  // A late last-quarter payment can land after its window but before next year's first window
+  // opens; it belongs to this year, so the sheet runs up to that next window
+  var nextQ1 = (+qs[0].due.slice(0, 4) + 1) + qs[0].due.slice(4);
+  var gapEnd = taxAddDays(taxQuarterWindow(nextQ1).from, -1);
+  if (gapEnd > to) to = gapEnd;
   var list = taxMatchCandidates(_taxAllTx(), { person: person, from: from, to: to, ref: from, expected: 0 }, taxLinkedTxIds())
     .sort(function(a, b) { return a.tx.date < b.tx.date ? -1 : 1; });
   var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title" tabindex="-1" data-autofocus>Match a payment</div>' + _taxCloseBtn() + '</div>';
@@ -1295,8 +1301,10 @@ function _taxDetInst(ws) {
   });
   h += _taxDr('Kelda\'s total', _taxMoney(c.kelda), true) + '</div>';
 
-  h += '<div class="form-grid">' + _taxIncNum('tax-d-instato', 'Credit in ATO online services ($)', 'instcheck.ato', c.ato,
-       'Leave blank until you\'ve checked. Once entered, the return uses this figure.') + '</div>';
+  // Not _taxIncNum: that shows 0 as blank, and here 0 is a real answer that overrides the credit
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-d-instato">Credit in ATO online services ($)</label>' +
+       '<input id="tax-d-instato" type="number" inputmode="decimal" step="0.01" min="0" value="' + (c.entered ? c.ato : '') + '" onchange="taxIncSet(\'instcheck.ato\',this.value)">' +
+       '<div class="tax-note">Leave blank until you\'ve checked. Once entered, the return uses this figure.</div></div></div>';
   if (c.entered) {
     if (c.matches) {
       h += '<div class="tax-okbox" role="status"><i class="ti ti-circle-check" aria-hidden="true"></i> Matches Kelda\'s total. The return uses <span class="tax-mono">' + esc(fmt(c.ato)) + '</span>.</div>';
@@ -2030,9 +2038,16 @@ function _taxNwChanged() {
   try { if (typeof recordNetWorthSnapshot === 'function') recordNetWorthSnapshot(); } catch (e) {}
 }
 
+// A notice paid by a matched transaction (txId) takes its paid date from that transaction, as
+// instalment payments do; if the transaction is deleted, the last copy is kept.
 function _taxAssessAll() {
   var a = load(K.taxassess);
-  return Array.isArray(a) ? a : [];
+  if (!Array.isArray(a)) return [];
+  a.forEach(function(x) {
+    var t = x.txId !== undefined && x.txId !== null ? _taxTxById(x.txId) : null;
+    if (t && taxIsDate(t.date)) x.paidDate = t.date;
+  });
+  return a;
 }
 function _taxAssessFor(person, fy) {
   return _taxAssessAll().filter(function(x) { return x.person === person && x.fy === fy; })[0] || null;
@@ -2112,9 +2127,11 @@ function taxUpcomingItems(from, to, opts) {
         if (!(ws.rec.statements.length || ws.rec.done.q1) || !(ws.ret.payable > 0)) return;
         amt = ws.ret.payable; est = true;
       }
-      if (res.paymentDue < from || res.paymentDue > to) return;
+      // Still unpaid after its due date: kept as overdue, like an instalment
+      var late = taxNextBusinessDay(res.paymentDue) < today;
+      if (!(late && opts.overdue) && (res.paymentDue < from || res.paymentDue > to)) return;
       out.push({ id: 'tax-pay-' + p + '-' + fy, date: res.paymentDue, amount: Math.round(amt * 100) / 100, person: p, fy: fy, kind: 'payment',
-                 title: _taxName(p) + ' · income tax FY ' + taxFyLabel(fy), estimated: est, overdue: false });
+                 title: _taxName(p) + ' · income tax FY ' + taxFyLabel(fy), estimated: est, overdue: late });
     });
   });
   return out.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
@@ -2190,7 +2207,7 @@ function _taxAssessCard(person, fy, today) {
   return h;
 }
 
-// The transaction picked to pay the notice in the open sheet; kept only if the paid date isn't retyped
+// The transaction picked to pay the notice in the open sheet; saved only if the paid date still matches it
 var _taxAssessTx = null;
 
 // ATO payments from the notice date (or the end of the FY) to today, offered as the payment
@@ -2236,7 +2253,7 @@ function taxOpenAssess(person) {
   h += '</div></fieldset>';
   h += '<div class="form-grid"><div><label class="lbl" for="tax-as-amt">Amount ($)</label><input id="tax-as-amt" type="number" inputmode="decimal" step="0.01" min="0" value="' + (a.amount !== undefined ? Math.abs(Number(a.amount)) : '') + '"></div>' +
        '<div><label class="lbl" for="tax-as-date">Date of the notice</label><input id="tax-as-date" type="date" max="' + today + '" value="' + esc(a.date || '') + '"></div></div>';
-  h += '<div class="form-grid"><div><label class="lbl" for="tax-as-paid">Date you paid it</label><input id="tax-as-paid" type="date" max="' + today + '" value="' + esc(a.paidDate || '') + '" oninput="_taxAssessTx=null"><div class="tax-note">Leave blank until it\'s paid</div></div></div>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-as-paid">Date you paid it</label><input id="tax-as-paid" type="date" max="' + today + '" value="' + esc(a.paidDate || '') + '"><div class="tax-note">Leave blank until it\'s paid</div></div></div>';
   h += _taxAssessMatchHtml(person, fy, a, today);
   h += '<div class="modal-actions">' + (a.id ? '<button class="btn btn-danger" onclick="taxDeleteAssess(\'' + person + '\')"><i class="ti ti-trash" aria-hidden="true"></i> Delete</button>' : '') +
        '<button class="btn btn-ghost" onclick="taxCloseSheet()">Cancel</button><button class="btn btn-primary" onclick="taxSaveAssess(\'' + person + '\')">Save</button></div>';
