@@ -14,11 +14,23 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.9.1';
+var APP_VERSION = '2.10.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.10.0',
+    date: '2026-10-25',
+    title: 'Tax (Beta): match instalment payments',
+    notes: [
+      'Match a PAYG instalment to the ATO payment in Spending. Tax suggests the likely transaction under each quarter',
+      'Year check on the Instalments tab: your forecast tax against the ATO’s instalments plus withholding',
+      'Check your instalments credit against ATO online services in the Return worksheet; the return uses the ATO figure once entered',
+      'Instalment and tax payment due dates now show on Bills (read-only) and in Forecast',
+      'Pick the payment for a notice of assessment from Spending'
+    ]
+  },
   {
     version: '2.9.1',
     date: '2026-10-18',

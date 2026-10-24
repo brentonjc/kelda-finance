@@ -14,6 +14,9 @@
 //  label F, set-aside, vest cost bases for CGT, ESS export).
 //  Phase 2b: estimated tax payable in Liabilities, net worth and borrowing
 //  power (getDerivedTaxLiabilities), and notice of assessment entry.
+//  Phase 3: instalment payments matched to transactions, year check, the
+//  credit check against ATO online services, and due dates for Bills and
+//  Forecast (taxUpcomingItems).
 // ═══════════════════════════════════════════════════════════════
 
 var TAX_PEOPLE = ['brenton', 'shelley'];
@@ -58,10 +61,35 @@ function _taxInstAll() {
   var all = load(K.taxinst);
   return all && typeof all === 'object' ? all : {};
 }
+// A payment matched to a transaction (txId) takes its date and amount from that transaction, so
+// an edit in Spending carries through. If the transaction is deleted, the last copy is kept.
 function _taxInst(fy, person) {
   var all = _taxInstAll();
-  return (all[fy] && all[fy][person]) || { enrolled: false, method: 'amount', amount: 0, rate: 0, quarterIncome: {}, payments: [] };
+  var inst = (all[fy] && all[fy][person]) || { enrolled: false, method: 'amount', amount: 0, rate: 0, quarterIncome: {}, payments: [] };
+  (Array.isArray(inst.payments) ? inst.payments : []).forEach(function(p) {
+    var t = p.txId !== undefined && p.txId !== null ? _taxTxById(p.txId) : null;
+    if (t && taxIsDate(t.date) && Number(t.amount) > 0) { p.date = t.date; p.amount = Math.round(Number(t.amount) * 100) / 100; }
+  });
+  return inst;
 }
+function _taxTxById(id) {
+  if (typeof TX === 'undefined' || !Array.isArray(TX)) return null;
+  for (var i = 0; i < TX.length; i++) if (String(TX[i].id) === String(id)) return TX[i];
+  return null;
+}
+// Every transaction already matched to an instalment or a notice of assessment: { id: true }
+function taxLinkedTxIds() {
+  var ids = {};
+  var all = _taxInstAll();
+  Object.keys(all).forEach(function(fy) {
+    Object.keys(all[fy] || {}).forEach(function(p) {
+      ((all[fy][p] && all[fy][p].payments) || []).forEach(function(pm) { if (pm.txId !== undefined && pm.txId !== null) ids[String(pm.txId)] = true; });
+    });
+  });
+  _taxAssessAll().forEach(function(a) { if (a.txId !== undefined && a.txId !== null) ids[String(a.txId)] = true; });
+  return ids;
+}
+function _taxAllTx() { return typeof TX !== 'undefined' && Array.isArray(TX) ? TX : []; }
 function _taxSaveInst(fy, person, rec) {
   var all = _taxInstAll();
   if (!all[fy]) all[fy] = {};
@@ -295,6 +323,12 @@ function _taxOverviewHtml(c, person, fy, today) {
   h += _taxAssessCard(person, fy, today);
 
   h += '<div class="card mb"><div class="section-label">Coming up</div>' + _taxComingUpRows(res, person, today, ws) + '</div>';
+  var yc = _taxYearCheck(ws);
+  if (yc && yc.material) {
+    var m = _taxYearCheckMsg(yc);
+    h += '<div class="' + m.cls + '" role="status"><b>Year check:</b> ' + m.html +
+         '<div class="tax-warn-acts"><button class="btn btn-sm btn-ghost" onclick="taxSetTab(\'instalments\')">Review the year check</button></div></div>';
+  }
   h += _taxReadinessCard(ws);
 
   lodgementWarnings(res, today).forEach(function(w) {
@@ -407,33 +441,140 @@ function _taxInstalmentsHtml(person, fy, today) {
   }
 
   var yr = instalmentYear(inst, fy, today);
+  var used = taxLinkedTxIds();
   h += '<div class="card mb"><div class="section-label">Quarters · FY ' + esc(taxFyLabel(fy)) + '</div>';
   yr.forEach(function(q) {
     var st = TAX_STATUS[q.status];
     var next = q.status !== 'paid' && yr.filter(function(x) { return x.status !== 'paid'; })[0] === q;
-    h += '<div class="tax-q">';
+    h += '<div class="tax-q-wrap"><div class="tax-q">';
     h += '<div class="tax-qn' + (q.status === 'paid' ? ' done' : next ? ' next' : '') + '" aria-hidden="true">Q' + q.q + '</div>';
     h += '<div class="tax-q-main"><b>' + esc(q.period) + '</b><span class="tax-mono tax-q-due">Due ' + esc(taxFmtDate(q.due)) + '</span>' + _taxWeekendLine(q.due) + '</div>';
     h += '<div class="tax-q-end"><div class="tax-q-amt">' + (q.expected === null ? '<span class="tax-muted">—</span>' : _taxMoney(q.expected)) +
          (q.paid > 0 && q.status !== 'paid' ? '<span class="tax-note">Paid ' + esc(fmt(q.paid)) + '</span>' : '') + '</div>';
     h += _taxBadge(st.text, st.cls) + '</div>';
     h += '</div>';
+    // The best unmatched ATO payment near the due date, offered as a one-tap match
+    if (q.status !== 'paid') {
+      var c = taxMatchCandidates(_taxAllTx(), Object.assign({ person: person, expected: q.expected === null ? 0 : q.expected - q.paid }, taxQuarterWindow(q.due)), used)[0];
+      if (c) {
+        h += '<div class="tax-match"><span class="tax-match-txt"><i class="ti ti-link" aria-hidden="true"></i> Possible payment: ' + esc(c.tx.name || 'Transaction') +
+             ' · <span class="tax-mono">' + esc(taxFmtDate(c.tx.date)) + '</span> · <span class="tax-mono">' + esc(fmt(c.tx.amount)) + '</span>' +
+             (c.exact ? '' : '<span class="tax-note">The amount differs from the instalment.</span>') + '</span>' +
+             '<button class="btn btn-sm btn-ghost" onclick="taxMatchPayment(\'' + person + '\',' + q.q + ',' + _taxJsArg(c.tx.id) + ')" aria-label="Match ' + esc(fmt(c.tx.amount)) +
+             ' paid ' + esc(taxFmtDate(c.tx.date)) + ' to Q' + q.q + '">Match</button></div>';
+      }
+    }
+    h += '</div>';
   });
   h += '</div>';
+
+  h += _taxYearCheckCard(_taxWorksheet(person, fy, today));
 
   // Payments
   var pays = (inst.payments || []).slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; });
   h += '<div class="card mb"><div class="section-label">Payments recorded</div>';
-  if (!pays.length) h += '<div class="empty empty--compact"><p>No payments yet. Record one when you pay the ATO.</p></div>';
+  if (!pays.length) h += '<div class="empty empty--compact"><p>No payments yet. Match one from your transactions, or record it by hand.</p></div>';
   pays.forEach(function(pm) {
-    h += '<div class="dr"><span class="dr-k">Q' + pm.q + ' · <span class="tax-mono">' + esc(taxFmtDate(pm.date)) + '</span></span>' +
-         '<span class="dr-v">' + _taxMoney(pm.amount) + ' <button class="tax-icon-btn" aria-label="Delete payment of ' + esc(fmt(pm.amount)) + ' on ' + esc(taxFmtDate(pm.date)) + '" onclick="taxInstDelPay(\'' + person + '\',' + JSON.stringify(String(pm.id)).replace(/"/g, '&quot;') + ')"><i class="ti ti-trash" aria-hidden="true"></i></button></span></div>';
+    var src = _taxPaySource(pm);
+    h += '<div class="dr"><span class="dr-k">Q' + pm.q + ' · <span class="tax-mono">' + esc(taxFmtDate(pm.date)) + '</span><span class="tax-note">' + src.html + '</span></span>' +
+         '<span class="dr-v">' + _taxMoney(pm.amount) + ' <button class="tax-icon-btn" aria-label="' + (src.linked ? 'Unmatch' : 'Delete') + ' payment of ' + esc(fmt(pm.amount)) + ' on ' + esc(taxFmtDate(pm.date)) +
+         '" onclick="taxInstDelPay(\'' + person + '\',' + _taxJsArg(pm.id) + ')"><i class="ti ti-' + (src.linked ? 'unlink' : 'trash') + '" aria-hidden="true"></i></button></span></div>';
   });
-  h += '<button class="btn btn-primary tax-full" onclick="taxOpenPayment(\'' + person + '\')"><i class="ti ti-plus" aria-hidden="true"></i> Record a payment</button>';
+  h += '<div class="tax-btn-pair"><button class="btn btn-primary" onclick="taxOpenMatch(\'' + person + '\')"><i class="ti ti-link" aria-hidden="true"></i> Match from transactions</button>' +
+       '<button class="btn btn-ghost" onclick="taxOpenPayment(\'' + person + '\')"><i class="ti ti-plus" aria-hidden="true"></i> Record by hand</button></div>';
+  h += '<p class="tax-desc">A matched payment stays in Spending as an expense, so budgets don\'t change. Here it only reduces the tax you owe.</p>';
   h += '</div>';
+  return h;
+}
 
-  h += '<div class="tax-infobox">If your own estimate is well above or below the ATO\'s instalments, the ATO lets you vary them. Kelda doesn\'t work out a variation or the interest on one. ' +
-       '<a href="' + TAX_ATO_INSTALMENTS_URL + '" target="_blank" rel="noopener noreferrer">PAYG instalments on ato.gov.au</a></div>';
+// An id as a JS string literal that's safe inside an onclick="" attribute
+function _taxJsArg(id) { return JSON.stringify(String(id)).replace(/"/g, '&quot;'); }
+
+// Where a recorded payment came from: { linked, html }
+function _taxPaySource(pm) {
+  if (pm.txId === undefined || pm.txId === null) return { linked: false, html: 'Entered by hand' };
+  var t = _taxTxById(pm.txId);
+  if (!t) return { linked: true, html: '<i class="ti ti-alert-triangle" aria-hidden="true"></i> Matched transaction was deleted. Kept as recorded.' };
+  return { linked: true, html: '<i class="ti ti-link" aria-hidden="true"></i> Matched · ' + esc(t.name || 'Transaction') };
+}
+
+// ── Year check ──────────────────────────────────────────────────
+// Forecast of the year's tax that withholding won't cover. With an income statement in the
+// worksheet: tax and Medicare less offsets and amounts withheld. Otherwise (the year under way):
+// tax on this FY's RSU vests, the recorded ones plus scheduled vests not yet recorded, valued at
+// today's price on Equities. Salary is assumed covered by withholding, as for the liability.
+function _taxYearForecast(ws) {
+  var r = ws.ret;
+  if (ws.rec.statements.length || ws.rec.done.q1) {
+    return { amount: Math.round((r.payable + r.credits.instalments) * 100) / 100, basis: 'return', projected: 0 };
+  }
+  var R = TAX_RULES[ws.fy];
+  var parts = ws.ess.parts.map(function(p) { return { amount: p.part.amount, date: p.part.date }; });
+  var recorded = _taxEssAll().vests;
+  var projected = 0;
+  _taxRsuHoldings(ws.person).forEach(function(h) {
+    if (typeof eqVestCalc !== 'function' || typeof eqIsoDate !== 'function') return;
+    var price = Number(h.currentPrice) || 0;
+    eqVestCalc(h).schedule.forEach(function(s) {
+      var d = eqIsoDate(s.date);
+      if (!taxIsDate(d) || d < R.start || d > R.end) return;
+      if (recorded.some(function(v) { return String(v.holdingId) === String(h.id) && v.date === d; })) return;
+      var val = Math.round((Number(s.units) || 0) * price * 100) / 100;
+      if (val > 0) { parts.push({ amount: val, date: d }); projected++; }
+    });
+  });
+  parts.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  var b = _taxSetAsideBase(ws);
+  // No vests and no income statement: nothing to forecast from, which isn't the same as no tax
+  if (!parts.length) return { amount: 0, basis: 'none', projected: 0 };
+  return { amount: taxVestSetAside(parts, b.base, ws.fy).total, basis: 'vests', projected: projected, fromFy: b.fromFy };
+}
+
+// The year check for a worksheet, or null when the person isn't paying instalments that year
+function _taxYearCheck(ws) {
+  if (!ws.inst.enrolled) return null;
+  var tot = taxInstalmentsTotal(ws.inst, ws.fy);
+  var f = _taxYearForecast(ws);
+  var chk = taxYearCheck({ taxAfterWithholding: f.amount, instalmentsYear: tot.total, complete: tot.complete });
+  chk.forecastInfo = f;
+  chk.complete = tot.complete;
+  if (f.basis === 'none') { chk.material = false; chk.direction = 'close'; }
+  return chk;
+}
+
+function _taxYearCheckMsg(chk) {
+  if (chk.forecastInfo.basis === 'none') return { cls: 'tax-infobox', html: 'Nothing to forecast this year\'s tax from yet. Record RSU vests in Share awards, or add income statements in the Return worksheet.' };
+  if (!chk.complete) return { cls: 'tax-infobox', html: 'Enter each quarter\'s instalment income to compare the whole year.' };
+  if (chk.direction === 'above') return { cls: 'tax-warnbox', html: 'Your forecast tax is well above your instalments plus withholding. Expect a bill of about ' +
+    _taxMoney(chk.gap) + ' at assessment, or set it aside now.' };
+  if (chk.direction === 'below') return { cls: 'tax-infobox', html: 'Your instalments look well above the tax you\'re forecast to owe, by about ' +
+    _taxMoney(-chk.gap) + '. Any extra comes back as a credit at assessment.' +
+    (chk.forecastInfo.basis === 'vests' ? ' The forecast only covers RSU vests, so other income the ATO based your instalments on (interest, dividends, rent) would narrow the gap.' : '') };
+  return { cls: 'tax-infobox', html: 'Your instalments and withholding look about right for this forecast.' };
+}
+
+function _taxYearCheckCard(ws) {
+  var chk = _taxYearCheck(ws);
+  if (!chk) return '';
+  var f = chk.forecastInfo;
+  var h = '<div class="card mb"><div class="section-label">Year check · FY ' + esc(taxFyLabel(ws.fy)) + '</div>';
+  if (f.basis === 'none') {
+    var mn = _taxYearCheckMsg(chk);
+    return h + _taxDr('ATO instalments for the year', _taxMoney(chk.instalments)) + '<div class="' + mn.cls + ' tax-mt" role="status">' + mn.html + '</div></div>';
+  }
+  var basis = f.basis === 'return'
+    ? 'From the Return worksheet: tax and Medicare less offsets and tax withheld.'
+    : 'Tax on this year\'s RSU vests' + (f.projected ? ', including ' + _taxPlural(f.projected, 'scheduled vest') + ' valued at today\'s price on Equities' : '') +
+      '. Salary is assumed covered by withholding.';
+  h += _taxDr('Forecast tax not covered by withholding ' + _taxBadge('Estimated', 'tax-b-info') + '<span class="tax-note">' + esc(basis) + '</span>', _taxMoney(chk.forecast));
+  h += _taxDr('ATO instalments for the year' + (chk.complete ? '' : '<span class="tax-note">Some quarters have no instalment income yet</span>'), _taxMoney(chk.instalments));
+  h += _taxDr(chk.gap >= 0 ? 'Likely to owe at assessment' : 'Likely credit at assessment', _taxMoney(Math.abs(chk.gap)), true);
+  var m = _taxYearCheckMsg(chk);
+  h += '<div class="' + m.cls + ' tax-mt" role="status">' + m.html;
+  // Varying only helps while there are instalments still to come
+  if (chk.material && TAX_RULES[ws.fy].end >= ws.today) h += ' If your own estimate differs from the ATO\'s, the ATO lets you vary your instalments. Kelda doesn\'t work out a variation or any interest on one. ' +
+    '<a href="' + TAX_ATO_INSTALMENTS_URL + '" target="_blank" rel="noopener noreferrer">PAYG instalments on ato.gov.au</a>';
+  h += '</div></div>';
   return h;
 }
 
@@ -475,12 +616,61 @@ function taxInstSetQi(person, q, value) {
 function taxInstDelPay(person, id) {
   var inst = _taxInst(taxUi.fy, person);
   var pm = (inst.payments || []).find(function(x) { return String(x.id) === String(id); });
-  if (!pm || !confirm('Delete the ' + fmt(pm.amount) + ' payment for Q' + pm.q + '?')) return;
+  if (!pm) return;
+  var linked = pm.txId !== undefined && pm.txId !== null && _taxTxById(pm.txId);
+  if (!confirm(linked ? 'Unmatch the ' + fmt(pm.amount) + ' payment from Q' + pm.q + '? The transaction stays in Spending.'
+                      : 'Delete the ' + fmt(pm.amount) + ' payment for Q' + pm.q + '?')) return;
   inst.payments = inst.payments.filter(function(x) { return x !== pm; });
   _taxSaveInst(taxUi.fy, person, inst);
-  toast('Payment deleted', 2400, 'info');
+  toast(linked ? 'Payment unmatched' : 'Payment deleted', 2400, 'info');
   _taxNwChanged();
   renderTaxPage();
+}
+
+// Match a transaction to a quarter. The payment record keeps the transaction's id; its date and
+// amount are read from the transaction each time (see _taxInst).
+function taxMatchPayment(person, q, txId) {
+  var t = _taxTxById(txId);
+  if (!t) { toast('That transaction no longer exists', 2400, 'warn'); renderTaxPage(); return; }
+  if (taxLinkedTxIds()[String(txId)]) { toast('That transaction is already matched', 2400, 'warn'); return; }
+  var inst = _taxInst(taxUi.fy, person);
+  if (!Array.isArray(inst.payments)) inst.payments = [];
+  inst.payments.push({ id: Date.now(), date: t.date, amount: Math.round(Number(t.amount) * 100) / 100, q: parseInt(q, 10), txId: t.id });
+  _taxSaveInst(taxUi.fy, person, inst);
+  _taxNwChanged();
+  var open = document.getElementById('tax-match-list');
+  renderTaxPage();
+  if (open) taxOpenMatch(person);
+  toast('Matched to Q' + q, 2400, 'success');
+}
+
+// Every unmatched ATO payment in the year's matching windows, each with a quarter picker
+function taxOpenMatch(person) {
+  var fy = taxUi.fy;
+  var qs = quarterDueDates(fy);
+  var from = taxQuarterWindow(qs[0].due).from, to = taxQuarterWindow(qs[qs.length - 1].due).to;
+  var list = taxMatchCandidates(_taxAllTx(), { person: person, from: from, to: to, ref: from, expected: 0 }, taxLinkedTxIds())
+    .sort(function(a, b) { return a.tx.date < b.tx.date ? -1 : 1; });
+  var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title" tabindex="-1" data-autofocus>Match a payment</div>' + _taxCloseBtn() + '</div>';
+  h += '<p class="modal-sub">' + esc(_taxName(person)) + ' · FY ' + esc(taxFyLabel(fy)) + '</p>';
+  h += '<p class="tax-desc tax-desc--top">Payments to the ATO in Spending between <span class="tax-mono">' + esc(taxFmtDate(from)) + '</span> and <span class="tax-mono">' + esc(taxFmtDate(to)) +
+       '</span>: anything in Tax Payments (income tax or PAYG instalments), or with "ATO" or "Tax Office" in the description.</p>';
+  h += '<div class="tax-list-card" id="tax-match-list">';
+  if (!list.length) h += '<div class="empty empty--compact"><p>No unmatched ATO payments for ' + esc(_taxName(person)) + ' in this window. Record the payment by hand instead.</p></div>';
+  list.forEach(function(c) {
+    var t = c.tx, sel = 'tax-mq-' + String(t.id).replace(/[^A-Za-z0-9_-]/g, '_');
+    var sq = taxSuggestQuarter(t.date, fy);
+    h += '<div class="tax-mrow"><div class="tax-mrow-main">' + esc(t.name || 'Transaction') +
+         '<span class="tax-note"><span class="tax-mono">' + esc(taxFmtDate(t.date)) + '</span>' + (t.person === 'joint' ? ' · Joint' : '') + '</span></div>' +
+         '<div class="tax-mrow-amt">' + _taxMoney(t.amount) + '</div>' +
+         '<div class="tax-mrow-acts"><label class="tax-sr" for="' + sel + '">Quarter for ' + esc(fmt(t.amount)) + ' on ' + esc(taxFmtDate(t.date)) + '</label>' +
+         '<select id="' + sel + '">' + qs.map(function(q) { return '<option value="' + q.q + '"' + (q.q === sq ? ' selected' : '') + '>Q' + q.q + '</option>'; }).join('') + '</select>' +
+         '<button class="btn btn-sm btn-primary" onclick="taxMatchPayment(\'' + person + '\',document.getElementById(\'' + sel + '\').value,' + _taxJsArg(t.id) + ')">Match</button></div></div>';
+  });
+  h += '</div>';
+  h += '<p class="tax-desc">Can\'t see it? Check it\'s an expense for ' + esc(_taxName(person)) + ' or Joint in Spending, or record it by hand.</p>';
+  h += '<div class="modal-actions"><button class="btn btn-primary" onclick="taxCloseSheet()">Done</button></div>';
+  taxOpenSheet(h);
 }
 
 function taxOpenPayment(person) {
@@ -522,14 +712,15 @@ function taxSavePayment(person) {
 // ── Return worksheet data (K.taxinc) ────────────────────────────
 // { FY: { person: { statements:[{id,employer,gross,withheld,super,rfba}], deductions:[{id,label,desc,amount}],
 //   interest:{override,includeJoint}, dividends:{unfranked,franked,credits,tfnWithheld},
-//   ess:{D,E,F,reductionTest}, cgt:{lossesCF,includeJoint}, offsets:{fito}, checks:{id:true}, done:{section:true} } } }
-var TAX_INC_OBJS = ['interest', 'dividends', 'ess', 'cgt', 'offsets', 'checks', 'done'];
+//   ess:{D,E,F,reductionTest}, cgt:{lossesCF,includeJoint}, offsets:{fito}, checks:{id:true}, done:{section:true},
+//   instcheck:{ato} } } }   instcheck.ato: the PAYG instalments credit ATO online services shows (Phase 3)
+var TAX_INC_OBJS = ['interest', 'dividends', 'ess', 'cgt', 'offsets', 'checks', 'done', 'instcheck'];
 // Fields the worksheet sheets may write: path → 'num' (0 or more), 'bool', or a list of allowed values
 var TAX_INC_FIELDS = {
   'interest.override': 'num', 'interest.includeJoint': 'bool',
   'dividends.unfranked': 'num', 'dividends.franked': 'num', 'dividends.credits': 'num', 'dividends.tfnWithheld': 'num',
   'ess.D': 'num', 'ess.E': 'num', 'ess.F': 'num', 'ess.reductionTest': ['yes', 'no', 'unsure'],
-  'cgt.lossesCF': 'num', 'cgt.includeJoint': 'bool', 'offsets.fito': 'num',
+  'cgt.lossesCF': 'num', 'cgt.includeJoint': 'bool', 'offsets.fito': 'num', 'instcheck.ato': 'num',
   'done.q1': 'bool', 'done.q10': 'bool', 'done.q11': 'bool', 'done.q12': 'bool', 'done.ded': 'bool', 'done.cgt': 'bool',
   'checks.lito': 'bool', 'checks.mlr': 'bool', 'checks.mls': 'bool', 'checks.phi': 'bool', 'checks.help': 'bool', 'checks.fito': 'bool'
 };
@@ -614,6 +805,8 @@ function _taxWorksheet(person, fy, today) {
   var inst = _taxInst(fy, person);
   var pays = (inst.payments || []);
   var instPaid = pays.reduce(function(s, p) { return s + (Number(p.amount) || 0); }, 0);
+  // Once the credit from ATO online services is entered, the return uses it; Kelda's total is kept to compare
+  var credit = taxCreditCheck(instPaid, typeof rec.instcheck.ato === 'number' ? rec.instcheck.ato : null);
   // Recorded vests replace the hand-entered label F; the statement figure is kept to compare
   var ess = taxEssFromVests(_taxVestsFor(person), fy);
   var essIn = ess.count ? { D: rec.ess.D, E: rec.ess.E, F: ess.F, reductionTest: rec.ess.reductionTest } : rec.ess;
@@ -621,10 +814,10 @@ function _taxWorksheet(person, fy, today) {
   var ret = taxBuildReturn({
     statements: rec.statements, interest: hasOvr ? ovr : interest.total, dividends: rec.dividends,
     ess: essIn, deductions: ded, cgt: { items: sales.items, lossesCF: rec.cgt.lossesCF },
-    fito: fitoSet ? rec.offsets.fito : ess.foreignTax, instalmentsPaid: instPaid
+    fito: fitoSet ? rec.offsets.fito : ess.foreignTax, instalmentsPaid: credit.entered ? credit.ato : instPaid
   }, fy);
   var ws = { person: person, fy: fy, today: today, rec: rec, interest: interest, interestOverride: hasOvr ? ovr : null,
-             dedTx: dedTx, ded: ded, sales: sales, inst: inst, pays: pays, ret: ret, ess: ess, fitoFromVests: !fitoSet && ess.foreignTax > 0,
+             dedTx: dedTx, ded: ded, sales: sales, inst: inst, pays: pays, credit: credit, ret: ret, ess: ess, fitoFromVests: !fitoSet && ess.foreignTax > 0,
              res: resolveLodgement(taxCfg(), person, fy) };
   ws.sections = _taxSections(ws);
   ws.ready = taxReadiness(ws.sections);
@@ -644,6 +837,7 @@ function _taxSections(ws) {
   var unpaid = quarterDueDates(ws.fy).filter(function(q) { return q.due <= ws.today && !paidQ[q.q]; })
                                      .map(function(q) { return q.q; });
   var checksDone = TAX_CHECKS.every(function(c) { return r.checks[c.id]; });
+  var fyOver = TAX_RULES[ws.fy].end < ws.today;
   return [
     { id: 'q1', label: 'Income statements', ready: r.statements.length > 0 || !!d.q1,
       need: 'Add each employer\'s income statement' },
@@ -658,8 +852,11 @@ function _taxSections(ws) {
     { id: 'ded', label: 'Deductions', ready: !!d.ded, need: 'Review your tagged deductions' },
     { id: 'cgt', label: 'Capital gains', ready: !!d.cgt, need: 'Review sales and losses carried forward' },
     { id: 'offsets', label: 'Offsets and Medicare', ready: checksDone, need: 'Work through the offsets checklist' },
-    { id: 'inst', label: 'PAYG instalments', ready: !unpaid.length, applies: !!ws.inst.enrolled || ws.pays.length > 0,
-      need: 'Record payments for ' + unpaid.map(function(q) { return 'Q' + q; }).join(', ') },
+    // Once the year is over, the credit must be checked against ATO online services
+    { id: 'inst', label: 'PAYG instalments', ready: ws.credit.entered || (!unpaid.length && !fyOver),
+      applies: !!ws.inst.enrolled || ws.pays.length > 0,
+      need: unpaid.length ? 'Record payments for ' + unpaid.map(function(q) { return 'Q' + q; }).join(', ')
+                          : 'Check the credit against ATO online services' },
     { id: 'lodge', label: 'How you lodge', ready: ws.res.lodgeMethod !== 'unsure', need: 'Choose how you lodge' }
   ];
 }
@@ -771,7 +968,10 @@ function _taxRowInfo(ws, id) {
     var done = TAX_CHECKS.filter(function(c) { return rec.checks[c.id]; }).length;
     return { src: 'Checklist · ' + done + ' of ' + TAX_CHECKS.length + ' checked', icon: 'checklist', amt: null };
   }
-  if (id === 'inst') return { src: ws.pays.length ? 'From Instalments · ' + _taxPlural(ws.pays.length, 'payment') : 'No payments recorded', icon: 'calendar-dollar', amt: r.credits.instalments };
+  if (id === 'inst') {
+    if (ws.credit.entered) return { src: 'ATO online services figure' + (ws.credit.matches ? ' · matches Kelda' : ' · differs from Kelda'), icon: ws.credit.matches ? 'circle-check' : 'alert-triangle', amt: r.credits.instalments };
+    return { src: ws.pays.length ? 'From Instalments · ' + _taxPlural(ws.pays.length, 'payment') : 'No payments recorded', icon: 'calendar-dollar', amt: r.credits.instalments };
+  }
   return { src: '', icon: 'point', amt: null };
 }
 
@@ -1086,13 +1286,27 @@ function _taxDetOffsets(ws) {
 }
 
 function _taxDetInst(ws) {
-  var h = '<p class="tax-desc">Instalments you\'ve paid for FY ' + esc(taxFyLabel(ws.fy)) + ' are credited against the tax on your return. Check them against ATO online services before you lodge.</p>';
+  var c = ws.credit;
+  var h = '<p class="tax-desc">Instalments you\'ve paid for FY ' + esc(taxFyLabel(ws.fy)) + ' are credited against the tax on your return. Before you lodge, check the total against the PAYG instalments credit in ATO online services (myGov), and enter what it shows.</p>';
   h += '<div class="tax-list-card">';
   if (!ws.pays.length) h += '<div class="empty empty--compact"><p>No payments recorded for this year.</p></div>';
   ws.pays.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; }).forEach(function(p) {
-    h += _taxDr('Q' + esc(String(p.q)) + ' · <span class="tax-mono">' + esc(taxFmtDate(p.date)) + '</span>', _taxMoney(p.amount));
+    h += _taxDr('Q' + esc(String(p.q)) + ' · <span class="tax-mono">' + esc(taxFmtDate(p.date)) + '</span><span class="tax-note">' + _taxPaySource(p).html + '</span>', _taxMoney(p.amount));
   });
-  h += _taxDr('PAYG instalments credit', _taxMoney(ws.ret.credits.instalments), true) + '</div>';
+  h += _taxDr('Kelda\'s total', _taxMoney(c.kelda), true) + '</div>';
+
+  h += '<div class="form-grid">' + _taxIncNum('tax-d-instato', 'Credit in ATO online services ($)', 'instcheck.ato', c.ato,
+       'Leave blank until you\'ve checked. Once entered, the return uses this figure.') + '</div>';
+  if (c.entered) {
+    if (c.matches) {
+      h += '<div class="tax-okbox" role="status"><i class="ti ti-circle-check" aria-hidden="true"></i> Matches Kelda\'s total. The return uses <span class="tax-mono">' + esc(fmt(c.ato)) + '</span>.</div>';
+    } else {
+      h += '<div class="tax-warnbox" role="status"><b>Differs by <span class="tax-mono">' + esc(fmt(Math.abs(c.diff))) + '</span>.</b> The ATO shows ' +
+           (c.diff > 0 ? 'more than Kelda has recorded: a payment may be missing here.' : 'less than Kelda has recorded: a payment may not have reached the ATO yet, or went to another account.') +
+           ' The return uses the ATO figure, <span class="tax-mono">' + esc(fmt(c.ato)) + '</span>.</div>';
+    }
+  }
+  h += _taxDr('PAYG instalments credit on the return', _taxMoney(ws.ret.credits.instalments), true);
   h += '<button class="btn btn-ghost tax-full" onclick="taxCloseSheet();taxSetTab(\'instalments\')">Open Instalments</button>';
   return h;
 }
@@ -1323,7 +1537,7 @@ function _taxCsvRows(ws, kind) {
     rows.push(['', 'Taxable income (estimate)', r.taxable, 'Worked out']);
     rows.push(['', 'Tax on taxable income (estimate)', r.tax, 'Worked out']);
     rows.push(['', 'Medicare levy, flat 2% (estimate)', r.medicare, 'Worked out']);
-    rows.push(['', 'PAYG instalments paid', r.credits.instalments, 'Instalments']);
+    rows.push(['', 'PAYG instalments paid', r.credits.instalments, ws.credit.entered ? 'ATO online services figure' : 'Instalments']);
     rows.push(['', r.payable < 0 ? 'Estimated refund' : 'Estimated to pay', Math.abs(r.payable), 'Worked out']);
     return rows;
   }
@@ -1333,8 +1547,13 @@ function _taxCsvRows(ws, kind) {
     return s;
   }
   if (kind === 'instalments') {
-    var p = [['Quarter', 'Date paid', 'Amount']];
-    ws.pays.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; }).forEach(function(x) { p.push(['Q' + x.q, x.date, Number(x.amount) || 0]); });
+    var p = [['Quarter', 'Date paid', 'Amount', 'Source']];
+    ws.pays.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; }).forEach(function(x) {
+      var t = x.txId !== undefined && x.txId !== null ? _taxTxById(x.txId) : null;
+      p.push(['Q' + x.q, x.date, Number(x.amount) || 0, t ? 'Matched: ' + (t.name || 'transaction') : x.txId !== undefined && x.txId !== null ? 'Matched transaction deleted' : 'Entered by hand']);
+    });
+    p.push(['Total recorded', '', ws.credit.kelda, '']);
+    if (ws.credit.entered) p.push(['Credit in ATO online services', '', ws.credit.ato, ws.credit.matches ? 'Matches' : 'Differs by ' + Math.abs(ws.credit.diff)]);
     return p;
   }
   if (kind === 'deductions') {
@@ -1862,6 +2081,45 @@ function _taxDerivedRows(asOf) {
   return rows;
 }
 
+// ── Due dates for Bills and Forecast (Phase 3) ──────────────────
+// Read-only items from Tax: each person's unpaid instalments, and the payment due on a notice of
+// assessment (or, for a finished year with its return filled in, the estimated amount to pay).
+// [{ id, date, amount, person, fy, kind: 'instalment'|'payment', title, estimated, overdue }],
+// date order. [] when the beta is off. Overdue instalments are kept when opts.overdue is set;
+// otherwise only dates in [from, to]. opts.people limits whose items are returned.
+function taxUpcomingItems(from, to, opts) {
+  if (!taxEnabled()) return [];
+  opts = opts || {};
+  var today = taxToday();
+  var people = opts.people || TAX_PEOPLE;
+  var out = [];
+  people.forEach(function(p) {
+    TAX_FYS.forEach(function(fy) {
+      taxInstalmentOutflows(_taxInst(fy, p), fy, today).forEach(function(o) {
+        var overdue = o.status === 'overdue';
+        if (!(overdue && opts.overdue) && (o.due < from || o.due > to)) return;
+        out.push({ id: 'tax-inst-' + p + '-' + fy + '-' + o.q, date: o.due, amount: o.amount, person: p, fy: fy, kind: 'instalment',
+                   title: _taxName(p) + ' · PAYG instalment Q' + o.q + ' FY ' + taxFyLabel(fy), estimated: false, overdue: overdue });
+      });
+      var R = TAX_RULES[fy];
+      if (R.end >= today) return;
+      var res = resolveLodgement(taxCfg(), p, fy);
+      if (!taxIsDate(res.paymentDue)) return;
+      var a = _taxAssessFor(p, fy), amt = 0, est = false;
+      if (a) { if (taxIsDate(a.paidDate) || !(Number(a.amount) > 0)) return; amt = Number(a.amount); }
+      else {
+        var ws = _taxWorksheet(p, fy, today);
+        if (!(ws.rec.statements.length || ws.rec.done.q1) || !(ws.ret.payable > 0)) return;
+        amt = ws.ret.payable; est = true;
+      }
+      if (res.paymentDue < from || res.paymentDue > to) return;
+      out.push({ id: 'tax-pay-' + p + '-' + fy, date: res.paymentDue, amount: Math.round(amt * 100) / 100, person: p, fy: fy, kind: 'payment',
+                 title: _taxName(p) + ' · income tax FY ' + taxFyLabel(fy), estimated: est, overdue: false });
+    });
+  });
+  return out.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+}
+
 // What net worth subtracts: estimated and assessed rows, unless the toggle is off
 function taxNetWorthDeduction(asOf) {
   var c = load(K.taxcfg);
@@ -1932,8 +2190,42 @@ function _taxAssessCard(person, fy, today) {
   return h;
 }
 
+// The transaction picked to pay the notice in the open sheet; kept only if the paid date isn't retyped
+var _taxAssessTx = null;
+
+// ATO payments from the notice date (or the end of the FY) to today, offered as the payment
+function _taxAssessMatchHtml(person, fy, a, today) {
+  var used = taxLinkedTxIds();
+  if (a.txId !== undefined && a.txId !== null) delete used[String(a.txId)];
+  var from = taxIsDate(a.date) ? a.date : TAX_RULES[fy].end;
+  var list = taxMatchCandidates(_taxAllTx(), { person: person, from: from, to: today, ref: from, expected: Number(a.amount) > 0 ? a.amount : 0 }, used).slice(0, 5);
+  if (!list.length) return '';
+  var h = '<div class="section-label">Or pick the payment from Spending</div><div class="tax-list-card">';
+  list.forEach(function(c) {
+    var on = a.txId !== undefined && String(a.txId) === String(c.tx.id);
+    h += '<div class="tax-mrow"><div class="tax-mrow-main">' + esc(c.tx.name || 'Transaction') + '<span class="tax-note"><span class="tax-mono">' + esc(taxFmtDate(c.tx.date)) + '</span>' +
+         (c.exact ? ' · same amount as the notice' : '') + '</span></div><div class="tax-mrow-amt">' + _taxMoney(c.tx.amount) + '</div>' +
+         '<div class="tax-mrow-acts"><button class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-ghost') + '" aria-pressed="' + on + '" onclick="taxAssessUseTx(this,' + _taxJsArg(c.tx.id) + ')">Use</button></div></div>';
+  });
+  return h + '</div>';
+}
+
+function taxAssessUseTx(btn, id) {
+  var t = _taxTxById(id);
+  if (!t) return;
+  _taxAssessTx = t.id;
+  var el = document.getElementById('tax-as-paid');
+  if (el) el.value = t.date;
+  var box = btn.closest('.tax-list-card');
+  if (box) box.querySelectorAll('button[aria-pressed]').forEach(function(b) {
+    var on = b === btn;
+    b.setAttribute('aria-pressed', on); b.classList.toggle('btn-primary', on); b.classList.toggle('btn-ghost', !on);
+  });
+}
+
 function taxOpenAssess(person) {
   var fy = taxUi.fy, a = _taxAssessFor(person, fy) || {};
+  _taxAssessTx = a.txId !== undefined ? a.txId : null;
   var today = taxToday();
   var refund = Number(a.amount) < 0;
   var h = '<div class="modal-header"><div class="modal-title" id="tax-sheet-title">Notice of assessment</div>' + _taxCloseBtn() + '</div>';
@@ -1944,7 +2236,8 @@ function taxOpenAssess(person) {
   h += '</div></fieldset>';
   h += '<div class="form-grid"><div><label class="lbl" for="tax-as-amt">Amount ($)</label><input id="tax-as-amt" type="number" inputmode="decimal" step="0.01" min="0" value="' + (a.amount !== undefined ? Math.abs(Number(a.amount)) : '') + '"></div>' +
        '<div><label class="lbl" for="tax-as-date">Date of the notice</label><input id="tax-as-date" type="date" max="' + today + '" value="' + esc(a.date || '') + '"></div></div>';
-  h += '<div class="form-grid"><div><label class="lbl" for="tax-as-paid">Date you paid it</label><input id="tax-as-paid" type="date" max="' + today + '" value="' + esc(a.paidDate || '') + '"><div class="tax-note">Leave blank until it\'s paid</div></div></div>';
+  h += '<div class="form-grid"><div><label class="lbl" for="tax-as-paid">Date you paid it</label><input id="tax-as-paid" type="date" max="' + today + '" value="' + esc(a.paidDate || '') + '" oninput="_taxAssessTx=null"><div class="tax-note">Leave blank until it\'s paid</div></div></div>';
+  h += _taxAssessMatchHtml(person, fy, a, today);
   h += '<div class="modal-actions">' + (a.id ? '<button class="btn btn-danger" onclick="taxDeleteAssess(\'' + person + '\')"><i class="ti ti-trash" aria-hidden="true"></i> Delete</button>' : '') +
        '<button class="btn btn-ghost" onclick="taxCloseSheet()">Cancel</button><button class="btn btn-primary" onclick="taxSaveAssess(\'' + person + '\')">Save</button></div>';
   taxOpenSheet(h);
@@ -1962,8 +2255,11 @@ function taxSaveAssess(person) {
   if (paid && !taxIsDate(paid)) paid = '';
   var all = _taxAssessAll().filter(function(x) { return !(x.person === person && x.fy === fy); });
   var prev = _taxAssessFor(person, fy);
-  all.push({ id: prev ? prev.id : Date.now(), person: person, fy: fy, amount: Math.round((kind === 'refund' ? -amt : amt) * 100) / 100,
-             date: date, paidDate: paid || null });
+  var rec = { id: prev ? prev.id : Date.now(), person: person, fy: fy, amount: Math.round((kind === 'refund' ? -amt : amt) * 100) / 100,
+              date: date, paidDate: paid || null };
+  var t = paid && _taxAssessTx !== null ? _taxTxById(_taxAssessTx) : null;
+  if (t && t.date === paid) rec.txId = t.id;
+  all.push(rec);
   save(K.taxassess, all);
   _taxNwChanged();
   renderTaxPage();

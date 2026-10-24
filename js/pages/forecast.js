@@ -55,12 +55,13 @@ function fc2PriorYear(ym) {
 }
 
 // ── Build monthly actuals map from TX ─────────────────────────
-// Returns { 'YYYY-MM': { income, expenses, net } }
-function fc2BuildActualsMap() {
+// Returns { 'YYYY-MM': { income, expenses, net } }. excludeIds: { txId: true } to leave out.
+function fc2BuildActualsMap(excludeIds) {
   var map = {};
   var txList = typeof activeTX === 'function' ? activeTX() : TX;
   txList.forEach(function(t) {
     if (!t.date) return;
+    if (excludeIds && excludeIds[String(t.id)]) return;
     var ym = t.date.slice(0, 7);
     if (!map[ym]) map[ym] = { income: 0, expenses: 0, net: 0 };
     if (t.type === 'income')   map[ym].income   += Number(t.amount) || 0;
@@ -78,7 +79,11 @@ function fc2BuildActualsMap() {
 // For months from current month onward → look up same month last year, or avg proxy.
 function fc2BuildBaseline() {
   var actuals  = fc2BuildActualsMap();
-  var allNets  = Object.values(actuals).map(function(v) { return v.net; });
+  // Tax (Beta) adds its own instalment and tax payment outflows (fc2ApplyTax), so ATO payments
+  // matched in Tax are left out of the prior-year and average figures to avoid counting them twice
+  var linked   = fc2TaxOn() && typeof taxLinkedTxIds === 'function' ? taxLinkedTxIds() : null;
+  var proxies  = linked ? fc2BuildActualsMap(linked) : actuals;
+  var allNets  = Object.values(proxies).map(function(v) { return v.net; });
   var avgNet   = allNets.length ? allNets.reduce(function(s,v){return s+v;},0) / allNets.length : 0;
 
   // Last fully-completed month = one month before current month
@@ -107,7 +112,7 @@ function fc2BuildBaseline() {
       });
     } else {
       var pyYM      = fc2PriorYear(ym);
-      var pyData    = actuals[pyYM];
+      var pyData    = proxies[pyYM];
       var isProxy   = !pyData;
       var baseline  = pyData ? pyData.net : avgNet;
       var inc       = pyData ? pyData.income   : (avgNet >= 0 ? avgNet + Math.abs(avgNet)*0.3 : 0);
@@ -187,7 +192,36 @@ function fc2ApplyAdjustments(months, adjs) {
 function fc2GetMonths() {
   var baseline = fc2BuildBaseline();
   var adjs     = fc2Load(FC_ADJ_KEY) || [];
-  return fc2ApplyAdjustments(baseline, adjs);
+  return fc2ApplyTax(fc2ApplyAdjustments(baseline, adjs));
+}
+
+// ── Tax (Beta) outflows ───────────────────────────────────────
+function fc2TaxOn() { return typeof taxUpcomingItems === 'function' && typeof taxEnabled === 'function' && taxEnabled(); }
+
+// Tax items for the people in the active profile, in the forecast window. An overdue instalment
+// is still owed, so it lands in the current month.
+function fc2TaxItems(months) {
+  if (!fc2TaxOn() || !months.length) return [];
+  var first = months[0].month, last = months[months.length - 1].month;
+  var people = activeProfile === 'brenton' || activeProfile === 'shelley' ? [activeProfile] : null;
+  return taxUpcomingItems(first + '-01', last + '-31', { overdue: true, people: people }).map(function(it) {
+    var o = {}; for (var k in it) o[k] = it[k];
+    o.month = it.date.slice(0, 7) < first ? first : it.date.slice(0, 7);
+    return o;
+  });
+}
+
+// Read-only adjustments (idx -1): they change the forecast, not the saved adjustments list
+function fc2ApplyTax(months) {
+  fc2TaxItems(months).forEach(function(it) {
+    var m = months.filter(function(x) { return x.month === it.month && !x.isActual; })[0];
+    if (!m) return;
+    var desc = it.title + (it.overdue ? ' (overdue)' : it.estimated ? ' (estimate)' : '');
+    m.adjustments.push({ idx: -1, desc: desc, amount: -it.amount, source: 'Tax (Beta)', auto: true });
+    m.net -= it.amount;
+    m.expenses += it.amount;
+  });
+  return months;
 }
 
 // ── Cash Tracker balance sync ─────────────────────────────────
@@ -683,7 +717,7 @@ function fc2OpenMonthModal(idx) {
       ? '<div class="fc2-mm-adjs"><div class="section-label">Adjustments applied</div>'
         + adjs.map(function(a){
           return '<div class="fc2-modal-row">'
-            + '<span>' + (a.desc || 'Adjustment') + '</span>'
+            + '<span>' + esc(a.desc || 'Adjustment') + (a.auto ? ' <span class="fc2-badge fc2-badge-grey">' + esc(a.source) + '</span>' : '') + '</span>'
             + '<span class="fc2-mm-amt ' + (a.amount>=0?'tone-green':'tone-danger') + '">'
             + (a.amount>=0?'+':'') + fmt(a.amount) + '</span>'
             + '</div>';
@@ -723,8 +757,9 @@ function fc2RenderAdjs() {
   if (!wrap) return;
 
   var adjs = fc2Load(FC_ADJ_KEY) || [];
+  var taxHtml = fc2TaxAdjsHtml();
   if (!adjs.length) {
-    if (wrap) wrap.innerHTML = '<div class="empty empty--pad20"><div class="ei">' + ICON('plus') + '</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>';
+    if (wrap) wrap.innerHTML = '<div class="empty empty--pad20"><div class="ei">' + ICON('plus') + '</div><p>No adjustments yet. Add one to tweak the forecast.</p></div>' + taxHtml;
     return;
   }
 
@@ -733,7 +768,7 @@ function fc2RenderAdjs() {
       '<div class="tbl-wrap"><table class="fc2-adj-table">'
       + '<thead><tr><th>Description</th><th>Type</th><th>Month(s)</th><th>Category</th><th>Amount</th><th>Source</th><th></th></tr></thead>'
       + '<tbody id="fc2-adj-tbody"></tbody>'
-      + '</table></div>';
+      + '</table></div>' + taxHtml;
   }
 
   var tbody = document.getElementById('fc2-adj-tbody');
@@ -770,6 +805,19 @@ function fc2RenderAdjs() {
       + '</td>'
       + '</tr>';
   }).join('');
+}
+
+// Tax (Beta) outflows, listed under the adjustments. Read-only: they change in Tax.
+function fc2TaxAdjsHtml() {
+  var items = fc2TaxItems(fc2BuildBaseline());
+  if (!items.length) return '';
+  return '<div class="fc2-tax"><div class="section-label">From Tax (Beta) · read-only</div>'
+    + items.map(function(it) {
+        return '<div class="fc2-modal-row"><span>' + esc(it.title)
+          + '<span class="fc2-tax-sub">' + esc(fc2FmtMonth(it.month)) + (it.overdue ? ' · overdue' : it.estimated ? ' · estimate' : '') + '</span></span>'
+          + '<span class="fc2-mm-amt tone-danger">' + fmt(-it.amount) + '</span></div>';
+      }).join('')
+    + '<button class="btn btn-ghost btn-sm" onclick="go(\'tax\')">Open Tax</button></div>';
 }
 
 // ── Build month options HTML for the 12-month forecast window ─
