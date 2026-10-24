@@ -281,6 +281,99 @@ function instalmentYear(inst, fy, today) {
   });
 }
 
+// ── PAYG instalments: matching, year check, credit (Phase 3) ────
+// A likely payment to the ATO: an expense in Tax Payments (income tax, PAYG instalments, CGT
+// or other tax, not GST, duty, land tax or rates), or one whose description names the ATO.
+var TAX_ATO_SUBCATS = { 'income tax': true, 'payg instalments': true, 'capital gains tax': true, 'other tax': true, '': true };
+var TAX_ATO_DESC = /\b(ato|australian tax(ation)? office|tax office|payg)\b/i;
+function taxIsAtoPayment(t) {
+  if (!t || t.type !== 'expense' || !(_taxNum(t.amount) > 0) || !taxIsDate(t.date)) return false;
+  var desc = String(t.name || '') + ' ' + String(t.rawDescription || '');
+  if (TAX_ATO_DESC.test(desc)) return true;
+  var cat = t.catId || (String(t.category || '').trim().toLowerCase() === 'tax payments' ? 'tax' : '');
+  return cat === 'tax' && !!TAX_ATO_SUBCATS[String(t.subcat || '').trim().toLowerCase()];
+}
+
+// Transactions that could be the payment for one target, best first.
+// target: { person, from, to, ref, expected } — dates inclusive; ref is the date closeness is
+// measured from (the due date). usedIds: { txId: true } already matched to something.
+// Each candidate: { tx, days (from ref), exact (amount equals expected), score }.
+function taxMatchCandidates(txs, target, usedIds) {
+  usedIds = usedIds || {};
+  var exp = _taxNum(target.expected);
+  var out = [];
+  (txs || []).forEach(function(t) {
+    if (!taxIsAtoPayment(t) || usedIds[String(t.id)]) return;
+    if (t.person && t.person !== 'joint' && t.person !== target.person) return;
+    if (t.date < target.from || t.date > target.to) return;
+    var days = taxDaysBetween(target.ref, t.date);
+    var exact = exp > 0 && Math.abs(_taxNum(t.amount) - exp) < 0.005;
+    var score = (exact ? 4 : 0) + (String(t.subcat || '').toLowerCase() === 'payg instalments' ? 2 : 0) +
+                (t.person === target.person ? 1 : 0) - Math.abs(days) / 30;
+    out.push({ tx: t, days: days, exact: exact, score: Math.round(score * 1000) / 1000 });
+  });
+  return out.sort(function(a, b) { return b.score - a.score || Math.abs(a.days) - Math.abs(b.days); });
+}
+
+// The matching window for one quarter's due date (TAX_RULES.common.instalmentMatchWindow)
+function taxQuarterWindow(due) {
+  var w = TAX_RULES.common.instalmentMatchWindow;
+  return { from: taxAddDays(due, -w.before), to: taxAddDays(due, w.after), ref: due };
+}
+
+// The quarter a payment on `date` most likely belongs to: the one with the nearest due date.
+function taxSuggestQuarter(date, fy) {
+  var best = null;
+  quarterDueDates(fy).forEach(function(q) {
+    var d = Math.abs(taxDaysBetween(date, q.due));
+    if (!best || d < best.d) best = { q: q.q, d: d };
+  });
+  return best ? best.q : 1;
+}
+
+// The ATO's instalments for the whole year from one person's setup: { total, complete }.
+// complete is false when a rate-method quarter has no instalment income entered yet.
+function taxInstalmentsTotal(inst, fy) {
+  var yr = instalmentYear(inst, fy, '0000-01-01');
+  var total = 0, complete = yr.length > 0;
+  yr.forEach(function(q) { if (q.expected === null) complete = false; else total += q.expected; });
+  return { total: _taxR2(total), complete: complete };
+}
+
+// Year check: the tax withholding won't cover (forecast) against the ATO's instalments for the year.
+// inp: { taxAfterWithholding, instalmentsYear, complete }. Never computes a variation.
+// Returns { gap (forecast − instalments; > 0 means a bill at assessment), direction, material }.
+function taxYearCheck(inp) {
+  var f = _taxR2(Math.max(0, Number(inp.taxAfterWithholding) || 0));
+  var i = _taxR2(_taxNum(inp.instalmentsYear));
+  var m = TAX_RULES.common.yearCheckMaterial;
+  var gap = _taxR2(f - i);
+  var material = inp.complete !== false && Math.abs(gap) >= m.min && Math.abs(gap) > m.pct * Math.max(f, i);
+  return { forecast: f, instalments: i, gap: gap, material: material,
+           direction: !material ? 'close' : gap > 0 ? 'above' : 'below' };
+}
+
+// Credit reconciliation: Kelda's instalments total against the credit ATO online services shows.
+// ato: number or null (not entered). { entered, diff (ato − kelda), matches }.
+function taxCreditCheck(kelda, ato) {
+  var k = _taxR2(_taxNum(kelda));
+  if (ato === null || ato === undefined || ato === '' || !isFinite(Number(ato))) return { entered: false, kelda: k, ato: null, diff: null, matches: false };
+  var a = _taxR2(Math.max(0, Number(ato)));
+  var diff = _taxR2(a - k);
+  return { entered: true, kelda: k, ato: a, diff: diff, matches: Math.abs(diff) <= TAX_RULES.common.creditCheckTolerance };
+}
+
+// What's still to pay on each quarter, for Bills and Forecast: [{ q, due, amount, status }].
+// Quarters with no expected amount, or already paid, are left out.
+function taxInstalmentOutflows(inst, fy, today) {
+  if (!inst || !inst.enrolled) return [];
+  return instalmentYear(inst, fy, today).filter(function(q) {
+    return q.status !== 'paid' && q.expected !== null && q.expected - q.paid > 0.005;
+  }).map(function(q) {
+    return { q: q.q, period: q.period, due: q.due, amount: _taxR2(q.expected - q.paid), status: q.status };
+  });
+}
+
 // ── Return worksheet (Phase 1b) ─────────────────────────────────
 function _taxR2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 function _taxNum(n) { var x = Number(n); return isFinite(x) && x > 0 ? x : 0; }
