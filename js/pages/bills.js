@@ -1762,12 +1762,14 @@ function blCreateBufferGoal() {
   var due = annual.map(function(b){ return b.nextDueDate; }).filter(Boolean).sort()[0] || '';
   var existing = GOALS.find(function(g){ return g._source === 'bills_buffer'; });
   if (existing) {
-    existing.targetAmount = target;
+    existing.target = target;
     if (due) existing.targetDate = due;
     try { save(K.goals, GOALS); } catch(e) {}
     toast('✅ Updated “Annual Bills Buffer” goal to ' + fmt(target));
   } else {
-    GOALS.push({ id:Date.now(), name:'Annual Bills Buffer', icon:'target', targetAmount:target, currentAmount:0, targetDate:due, linkedAccount:'', createdAt:new Date().toISOString().split('T')[0], _source:'bills_buffer' });
+    var goal = makeGoal({ name:'Annual Bills Buffer', icon:'target', target:target, targetDate:due });
+    goal._source = 'bills_buffer';
+    GOALS.push(goal);
     try { save(K.goals, GOALS); } catch(e) {}
     toast('✅ Created “Annual Bills Buffer” savings goal');
   }

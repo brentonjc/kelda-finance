@@ -1,22 +1,38 @@
 // ══════════════════════════════════════════════════════════════
 // GOALS PAGE
 // ══════════════════════════════════════════════════════════════
+// Record shape, migration and all goal maths live in js/goals-calc.js.
+
+// Cash Tracker access and household fallback rate for js/goals-calc.js.
+// The fallback is only worked out if a goal with no contributions asks for it.
+function goalCtx() {
+  var ctx = {
+    today: goalToday(),
+    goals: GOALS,
+    balanceOf: _goalCtBalance,
+    balanceHistory: _goalCtHistory
+  };
+  var rate = null;
+  Object.defineProperty(ctx, 'fallbackRate', { get: function() {
+    if (rate === null) {
+      var txns = typeof activeTX === 'function' ? activeTX() : [];
+      rate = goalMonthlyRate(GOALS, goalAvgMonthlySavings(txns, new Date()), ctx);
+    }
+    return rate;
+  } });
+  return ctx;
+}
 
 // Build account select HTML with live CT balances as hints
 function _goalAccountSelect(selectedVal) {
-  var accts = [
-    { id: 'offset', def: 'Offset Account' },
-    { id: 'home',   def: 'Home Transaction' },
-    { id: 'sav1',   def: 'Savings Account 1' },
-    { id: 'sav2',   def: 'Savings Account 2' }
-  ];
+  var accts = typeof ACCOUNTS !== 'undefined' && ACCOUNTS ? ACCOUNTS : [];
   var html = '<select id="g-account"><option value="">— None —</option>';
   accts.forEach(function(a) {
-    var name = typeof getAccountName === 'function' ? getAccountName(a.id) : a.def;
+    var name = typeof getAccountName === 'function' ? getAccountName(a.id) : (a.name || a.id);
     var bal  = _goalCtBalance(a.id);
     var hint = bal !== null ? ' · ' + Number(bal).toLocaleString('en-AU', {style:'currency',currency:'AUD'}) : '';
     var sel  = (selectedVal === a.id) ? ' selected' : '';
-    html += '<option value="' + a.id + '"' + sel + '>' + name + hint + '</option>';
+    html += '<option value="' + esc(a.id) + '"' + sel + '>' + esc(name) + hint + '</option>';
   });
   html += '</select>';
   return html;
@@ -33,19 +49,26 @@ function _goalCtBalance(acctId) {
     return bal.month ? bal.value : null;
   } catch(e) { return null; }
 }
-function _goalCurrent(g) {
-  var ctBal = _goalCtBalance(g.linkedAccount);
-  if (ctBal !== null) return ctBal;
-  return Number(g.currentAmount) || Number(g.saved) || 0;
+// An account's balance for every Cash Tracker month it has one (carried forward)
+function _goalCtHistory(acctId) {
+  try {
+    var months = typeof ctAllMonths === 'function' ? ctAllMonths() : [];
+    return months.map(function(m) {
+      var b = ctBalanceAt(acctId, m);
+      return b.month ? { month: m, value: b.value } : null;
+    }).filter(Boolean);
+  } catch(e) { return []; }
 }
-function _goalTarget(g){ return Number(g.targetAmount)||Number(g.target)||0; }
+// Shorthands for callers outside the Goals page (dashboard, export)
+function _goalCurrent(g) { return goalCurrent(g, goalCtx()); }
+function _goalTarget(g) { return goalTarget(g); }
 
-// Linked account id, but only when it has a live Cash Tracker balance
+// Account id of a dedicated-account goal, but only when it has a live Cash Tracker balance
 function _goalLiveAccount(g) {
-  return (g.linkedAccount && _goalCtBalance(g.linkedAccount) !== null) ? g.linkedAccount : '';
+  return (g.source && g.source.kind === 'account' && _goalCtBalance(g.source.accountId) !== null) ? g.source.accountId : '';
 }
 
-// Goals grouped by the live account they read: { acctId: [goal, …] }.
+// Dedicated-account goals grouped by the live account they read: { acctId: [goal, …] }.
 // A group of 2+ means each goal shows that account's full balance.
 function _goalsByAccount(goals) {
   var by = {};
@@ -58,54 +81,26 @@ function _goalsByAccount(goals) {
 
 // Sum of goal progress, counting each shared linked account once
 function goalsTotalSaved(goals) {
-  var seen = {};
-  return goals.reduce(function(s, g) {
-    var acct = _goalLiveAccount(g);
-    if (acct) {
-      if (seen[acct]) return s;
-      seen[acct] = true;
-    }
-    return s + _goalCurrent(g);
-  }, 0);
+  return goalsTotalCurrent(goals, goalCtx());
 }
 
-// Average monthly net savings (income − expenses) over the last 3 full
-// months that have any activity. Same window as the dashboard projection.
-function goalAvgMonthlySavings(txns, now) {
-  var arr = [];
-  for (var i = 1; i <= 3; i++) {
-    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    var p = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    var inc = 0, exp = 0;
-    txns.forEach(function(t) {
-      if (!t.date || !t.date.startsWith(p)) return;
-      if (t.type === 'income') inc += Number(t.amount) || 0;
-      else if (t.type === 'expense') exp += Number(t.amount) || 0;
-    });
-    if (inc > 0 || exp > 0) arr.push(inc - exp);
+// Contributions are logged for the person using the app (Joint when in Joint)
+function _goalPerson() {
+  return typeof activeProfile !== 'undefined' && activeProfile ? activeProfile : 'joint';
+}
+
+// An account is about to be deleted: its goals keep their amount as manual goals
+function goalsAccountRemoved(acctId) {
+  if (typeof GOALS === 'undefined' || !GOALS) return;
+  if (goalsDetachAccount(GOALS, acctId, goalCtx())) {
+    try { save(K.goals, GOALS); } catch(e) {}
   }
-  return arr.length ? arr.reduce(function(a, b) { return a + b; }, 0) / arr.length : 0;
-}
-
-// Monthly savings available to each unfinished goal: the average split evenly
-function goalMonthlyRate(goals, avgSavings) {
-  var open = goals.filter(function(g) { var t = _goalTarget(g); return t > 0 && _goalCurrent(g) < t; }).length;
-  return (open && avgSavings > 0) ? avgSavings / open : 0;
-}
-
-function goalMonthsToTarget(remaining, rate) {
-  return rate > 0 ? Math.ceil(Math.max(0, remaining) / rate) : null;
-}
-
-function _goalRateNow() {
-  var txns = typeof activeTX === 'function' ? activeTX() : [];
-  return goalMonthlyRate(GOALS, goalAvgMonthlySavings(txns, new Date()));
 }
 
 function renderGoalsPage(){
   const el=document.getElementById('goals-content');if(!el)return;
   const totalSaved=goalsTotalSaved(GOALS);
-  const totalTarget=GOALS.reduce((s,g)=>s+_goalTarget(g),0);
+  const totalTarget=GOALS.reduce((s,g)=>s+goalTarget(g),0);
   el.innerHTML=`
     <div class="g3 mb">
       <div class="card goals-stat">
@@ -166,15 +161,15 @@ function renderGoalCards(){
     el.innerHTML='<div class="empty"><div class="ei">' + ICON('target') + '</div><p>No goals yet — add your first goal below.</p></div>';
     return;
   }
-  var rate = _goalRateNow();
+  var ctx = goalCtx();
   var byAcct = _goalsByAccount(GOALS);
   el.innerHTML = GOALS.map(function(g, i) {
-    var current = _goalCurrent(g);
-    var target  = _goalTarget(g);
-    var pct     = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+    var current = goalCurrent(g, ctx);
+    var target  = goalTarget(g);
+    var pct     = goalPct(g, ctx);
     var rem     = Math.max(0, target - current);
     var done    = current >= target && target > 0;
-    var proj    = _goalProjection(g, current, target, rate);
+    var proj    = _goalProjection(g, ctx);
     var acct    = _goalLiveAccount(g);
     var acctName = acct && typeof getAccountName === 'function' ? getAccountName(acct) : '';
     var shared  = acct ? byAcct[acct].filter(function(o) { return o !== g; }) : [];
@@ -191,9 +186,9 @@ function renderGoalCards(){
       + '</div>'
       + '</div>'
       + '<div class="goal-actions">'
-      + '<div class="goal-pct">' + Math.floor(pct) + '%</div>'
+      + '<div class="goal-pct">' + pct + '%</div>'
       + '<button class="btn btn-ghost btn-sm" onclick="toggleGoalEdit(' + i + ')">' + ICON('pencil') + ' Edit</button>'
-      + '<button class="del-btn" aria-label="Delete goal" onclick="delGoalItem(' + g.id + ')">' + ICON('trash') + '</button>'
+      + '<button class="del-btn" aria-label="Delete goal" onclick="delGoalItem(\'' + esc(g.id) + '\')">' + ICON('trash') + '</button>'
       + '</div>'
       + '</div>'
       + '<div class="prog-track prog-track--lg"><div class="prog-fill" data-pct="' + pct.toFixed(1) + '"></div></div>'
@@ -205,19 +200,21 @@ function renderGoalCards(){
             + ': progress shows the full ' + esc(acctName) + ' balance until buckets arrive.</div>'
           : '')
       + '<div id="goal-edit-' + i + '" class="goal-edit">'
-      + _goalEditForm(g, i)
+      + _goalEditForm(g, i, ctx)
       + '</div>'
       + '</div>';
   }).join('');
   el.querySelectorAll('.prog-fill[data-pct]').forEach(function(f) { f.style.width = f.dataset.pct + '%'; });
 }
 
-function _goalEditForm(g, i) {
-  var acctSel = _goalAccountSelect(g.linkedAccount || '').replace('id="g-account"', 'id="ge-account-' + i + '"');
+function _goalEditForm(g, i, ctx) {
+  var acctSel = _goalAccountSelect(goalAccountId(g)).replace('id="g-account"', 'id="ge-account-' + i + '"');
+  // A live account balance sets the amount, so it can't be typed over
+  var live = !!_goalLiveAccount(g);
   return '<div class="form-grid">'
-    + '<div><label class="lbl">Goal Name</label><input type="text" id="ge-name-' + i + '" value="' + (g.name || '').replace(/"/g, '&quot;') + '" placeholder="Goal name"/></div>'
+    + '<div><label class="lbl">Goal Name</label><input type="text" id="ge-name-' + i + '" value="' + esc(g.name || '') + '" placeholder="Goal name"/></div>'
     + '<div><label class="lbl">Icon</label>'
-    + '<input type="hidden" id="ge-icon-' + i + '" value="' + (g.icon || 'target') + '"/>'
+    + '<input type="hidden" id="ge-icon-' + i + '" value="' + esc(g.icon || 'target') + '"/>'
     + '<div id="ge-icon-preview-' + i + '" class="g-icon-preview">' + iconTag(g.icon || 'target') + '</div>'
     + '</div>'
     + '</div>'
@@ -227,11 +224,12 @@ function _goalEditForm(g, i) {
       }).join('')
     + '</div>'
     + '<div class="form-grid">'
-    + '<div><label class="lbl">Target Amount</label><input type="number" id="ge-target-' + i + '" value="' + (_goalTarget(g) || '') + '" placeholder="10000" min="0" step="100" inputmode="decimal"/></div>'
-    + '<div><label class="lbl">Current Amount</label><input type="number" id="ge-current-' + i + '" value="' + (Number(g.currentAmount) || Number(g.saved) || 0) + '" placeholder="0" min="0" step="100" inputmode="decimal"/></div>'
+    + '<div><label class="lbl">Target Amount</label><input type="number" id="ge-target-' + i + '" value="' + (goalTarget(g) || '') + '" placeholder="10000" min="0" step="100" inputmode="decimal"/></div>'
+    + '<div><label class="lbl">Current Amount' + (live ? ' <span class="lbl-hint">(from Cash Tracker)</span>' : '') + '</label>'
+    + '<input type="number" id="ge-current-' + i + '" value="' + Math.round(goalCurrent(g, ctx) * 100) / 100 + '" placeholder="0" min="0" step="100" inputmode="decimal"' + (live ? ' disabled' : '') + '/></div>'
     + '</div>'
     + '<div class="form-grid">'
-    + '<div><label class="lbl">Target Date (optional)</label><input type="date" id="ge-date-' + i + '" value="' + (g.targetDate || '') + '"/></div>'
+    + '<div><label class="lbl">Target Date (optional)</label><input type="date" id="ge-date-' + i + '" value="' + esc(g.targetDate || '') + '"/></div>'
     + '<div><label class="lbl">Linked Account</label>' + acctSel + '</div>'
     + '</div>'
     + '<div class="goal-edit-actions">'
@@ -253,29 +251,34 @@ function _goalPickIcon(i, key) {
 }
 
 function saveGoalEdit(i) {
-  if (!GOALS[i]) return;
+  var goal = GOALS[i];
+  if (!goal) return;
   var g = function(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
   var n = function(id) { var e = document.getElementById(id); return parseFloat((e||{}).value) || 0; };
-  GOALS[i].name          = g('ge-name-' + i)    || GOALS[i].name;
-  GOALS[i].icon          = g('ge-icon-' + i)    || 'target';
-  GOALS[i].targetAmount  = n('ge-target-' + i)  || GOALS[i].targetAmount;
-  GOALS[i].currentAmount = n('ge-current-' + i);
-  GOALS[i].targetDate    = g('ge-date-' + i);
-  GOALS[i].linkedAccount = (document.getElementById('ge-account-' + i) || {}).value || '';
+  var ctx = goalCtx();
+  goal.name       = g('ge-name-' + i)   || goal.name;
+  goal.icon       = g('ge-icon-' + i)   || 'target';
+  goal.target     = n('ge-target-' + i) || goal.target;
+  goal.targetDate = g('ge-date-' + i);
+  goalSetAccount(goal, (document.getElementById('ge-account-' + i) || {}).value || '', ctx);
+  var cur = document.getElementById('ge-current-' + i);
+  if (cur && !cur.disabled) goalSetCurrent(goal, n('ge-current-' + i), ctx, { person: _goalPerson() });
   try { save(K.goals, GOALS); } catch(e) { toast('⚠️ Could not save'); return; }
   renderGoalCards();
   if (typeof dbRenderGoals === 'function') dbRenderGoals();
   toast('✅ Goal updated');
 }
 
-// rate = this goal's share of real average monthly savings (see goalMonthlyRate)
-function _goalProjection(g, current, target, rate) {
-  if (target <= 0 || current >= target) return '';
+// Finish date at the goal's own pace (or its share of household savings
+// until it has contributions). Same maths as the dashboard's projection card.
+function _goalProjection(g, ctx) {
+  var target = goalTarget(g);
+  if (target <= 0 || goalCurrent(g, ctx) >= target) return '';
   if (g.targetDate) {
     var d = new Date(g.targetDate);
     return 'Target: ' + d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
   }
-  var months = goalMonthsToTarget(target - current, rate);
+  var months = goalEta(g, ctx);
   if (months === null) return 'Add a contribution to see a finish date';
   var now = new Date();
   var proj = new Date(now.getFullYear(), now.getMonth() + months, 1);
@@ -288,13 +291,13 @@ function fmtAUD(n){
 
 function addGoalFromPage(){
   const name=document.getElementById('g-name').value.trim();
-  const targetAmount=parseFloat(document.getElementById('g-target').value);
+  const target=parseFloat(document.getElementById('g-target').value);
   const icon=document.getElementById('g-icon').value.trim()||'target';
   const targetDate=document.getElementById('g-date').value;
-  const linkedAccount=document.getElementById('g-account').value;
-  if(!name||!targetAmount){toast('⚠️ Enter goal name and target amount');return;}
+  const accountId=document.getElementById('g-account').value;
+  if(!name||!target){toast('⚠️ Enter goal name and target amount');return;}
   try{
-    GOALS.push({id:Date.now(),name,icon,targetAmount,currentAmount:0,targetDate,linkedAccount,createdAt:new Date().toISOString().split('T')[0]});
+    GOALS.push(makeGoal({name,icon,target,targetDate,accountId,owner:_goalPerson()}));
     save(K.goals,GOALS);
   }catch(e){toast('⚠️ Could not save goal');return;}
   document.getElementById('g-name').value='';
@@ -333,7 +336,7 @@ function _goalsRefresh() {
 function openGoalModal(idx){
   const g=GOALS[idx];if(!g)return;
   document.getElementById('modal-goal-idx').value=idx;
-  document.getElementById('modal-goal-amt').value=_goalCurrent(g);
+  document.getElementById('modal-goal-amt').value=Math.round(_goalCurrent(g)*100)/100;
   document.getElementById('goal-modal').classList.add('open');
 }
 function closeModal(){document.getElementById('goal-modal').classList.remove('open');}
@@ -342,8 +345,7 @@ function updateGoal(){
   const amt=parseFloat(document.getElementById('modal-goal-amt').value)||0;
   if(!GOALS[idx])return;
   try{
-    if(GOALS[idx].targetAmount!==undefined){GOALS[idx].currentAmount=amt;}
-    else{GOALS[idx].saved=amt;}
+    goalSetCurrent(GOALS[idx],amt,goalCtx(),{person:_goalPerson()});
     save(K.goals,GOALS);
   }catch(e){toast('⚠️ Could not save');return;}
   closeModal();
