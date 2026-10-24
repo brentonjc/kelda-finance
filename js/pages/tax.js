@@ -2278,7 +2278,8 @@ function _taxIntroHtml() {
 // (taxcfg.introDismissed, shared by the household).
 function taxDashboardCardHtml() {
   var c = load(K.taxcfg);
-  if (c && (c.betaEnabled || c.introDismissed)) return '';
+  // consentAt: they've tried it before, so turning it off was a choice; don't nudge again
+  if (c && (c.betaEnabled || c.introDismissed || c.consentAt)) return '';
   return '<div class="tax-dash" id="tax-dash" role="region" aria-label="New in Kelda">' +
     '<i class="ti ti-receipt-tax tax-dash-ic" aria-hidden="true"></i>' +
     '<div class="tax-dash-txt"><b>New: Tax <span class="tax-beta">Beta</span></b>' +
