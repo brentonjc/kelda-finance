@@ -14,11 +14,23 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.9.1';
+var APP_VERSION = '2.10.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.10.0',
+    date: '2026-10-25',
+    title: 'Goals keep a history',
+    notes: [
+      'Goals now keep a history of the money added to them, ready for one-tap contributions in the next update. Your goals and amounts are unchanged',
+      'Finish dates now follow each goal’s own pace once it has contributions. A goal linked to an account counts its month-to-month balance changes',
+      'You can link a goal to any of your accounts, not only the first four',
+      'Deleting an account keeps its goals and their amounts; they just stop syncing',
+      'The goals CSV export adds Type, Owner, Status and Contributions columns'
+    ]
+  },
   {
     version: '2.9.1',
     date: '2026-10-18',
