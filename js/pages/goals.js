@@ -40,9 +40,71 @@ function _goalCurrent(g) {
 }
 function _goalTarget(g){ return Number(g.targetAmount)||Number(g.target)||0; }
 
+// Linked account id, but only when it has a live Cash Tracker balance
+function _goalLiveAccount(g) {
+  return (g.linkedAccount && _goalCtBalance(g.linkedAccount) !== null) ? g.linkedAccount : '';
+}
+
+// Goals grouped by the live account they read: { acctId: [goal, …] }.
+// A group of 2+ means each goal shows that account's full balance.
+function _goalsByAccount(goals) {
+  var by = {};
+  goals.forEach(function(g) {
+    var acct = _goalLiveAccount(g);
+    if (acct) (by[acct] = by[acct] || []).push(g);
+  });
+  return by;
+}
+
+// Sum of goal progress, counting each shared linked account once
+function goalsTotalSaved(goals) {
+  var seen = {};
+  return goals.reduce(function(s, g) {
+    var acct = _goalLiveAccount(g);
+    if (acct) {
+      if (seen[acct]) return s;
+      seen[acct] = true;
+    }
+    return s + _goalCurrent(g);
+  }, 0);
+}
+
+// Average monthly net savings (income − expenses) over the last 3 full
+// months that have any activity. Same window as the dashboard projection.
+function goalAvgMonthlySavings(txns, now) {
+  var arr = [];
+  for (var i = 1; i <= 3; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var p = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var inc = 0, exp = 0;
+    txns.forEach(function(t) {
+      if (!t.date || !t.date.startsWith(p)) return;
+      if (t.type === 'income') inc += Number(t.amount) || 0;
+      else if (t.type === 'expense') exp += Number(t.amount) || 0;
+    });
+    if (inc > 0 || exp > 0) arr.push(inc - exp);
+  }
+  return arr.length ? arr.reduce(function(a, b) { return a + b; }, 0) / arr.length : 0;
+}
+
+// Monthly savings available to each unfinished goal: the average split evenly
+function goalMonthlyRate(goals, avgSavings) {
+  var open = goals.filter(function(g) { var t = _goalTarget(g); return t > 0 && _goalCurrent(g) < t; }).length;
+  return (open && avgSavings > 0) ? avgSavings / open : 0;
+}
+
+function goalMonthsToTarget(remaining, rate) {
+  return rate > 0 ? Math.ceil(Math.max(0, remaining) / rate) : null;
+}
+
+function _goalRateNow() {
+  var txns = typeof activeTX === 'function' ? activeTX() : [];
+  return goalMonthlyRate(GOALS, goalAvgMonthlySavings(txns, new Date()));
+}
+
 function renderGoalsPage(){
   const el=document.getElementById('goals-content');if(!el)return;
-  const totalSaved=GOALS.reduce((s,g)=>s+_goalCurrent(g),0);
+  const totalSaved=goalsTotalSaved(GOALS);
   const totalTarget=GOALS.reduce((s,g)=>s+_goalTarget(g),0);
   el.innerHTML=`
     <div class="g3 mb">
@@ -104,39 +166,50 @@ function renderGoalCards(){
     el.innerHTML='<div class="empty"><div class="ei">' + ICON('target') + '</div><p>No goals yet — add your first goal below.</p></div>';
     return;
   }
+  var rate = _goalRateNow();
+  var byAcct = _goalsByAccount(GOALS);
   el.innerHTML = GOALS.map(function(g, i) {
     var current = _goalCurrent(g);
     var target  = _goalTarget(g);
     var pct     = target > 0 ? Math.min((current / target) * 100, 100) : 0;
     var rem     = Math.max(0, target - current);
-    var barCls  = pct >= 100 ? 'over' : pct >= 75 ? 'warn' : '';
-    var proj    = _goalProjection(g, current, target);
-    var isCtLinked = g.linkedAccount && _goalCtBalance(g.linkedAccount) !== null;
-    var acctName = isCtLinked && typeof getAccountName === 'function' ? getAccountName(g.linkedAccount) : '';
+    var done    = current >= target && target > 0;
+    var proj    = _goalProjection(g, current, target, rate);
+    var acct    = _goalLiveAccount(g);
+    var acctName = acct && typeof getAccountName === 'function' ? getAccountName(acct) : '';
+    var shared  = acct ? byAcct[acct].filter(function(o) { return o !== g; }) : [];
+    var note    = done
+      ? '<span class="goal-foot-note--done">' + ICON('confetti') + ' Goal reached!</span>'
+      : (rem > 0 ? '<span class="mono">' + fmtAUD(rem) + '</span> to go' : '') + (proj ? ' · ' + proj : '');
     return '<div class="goal-card" id="goal-card-' + i + '">'
       + '<div class="goal-hd">'
       + '<div>'
-      + '<div class="goal-name">' + iconTag(g.icon || 'target') + ' ' + (pct >= 100 ? ICON('circle-check-filled') + ' ' : '') + g.name + '</div>'
+      + '<div class="goal-name">' + iconTag(g.icon || 'target') + ' ' + (done ? ICON('circle-check-filled') + ' ' : '') + esc(g.name) + '</div>'
       + '<div class="goal-meta">'
       + fmtAUD(current) + ' saved of ' + fmtAUD(target)
-      + (isCtLinked ? ' · <span class="goal-linked">' + ICON('link') + ' ' + acctName + '</span>' : '')
+      + (acct ? ' · <span class="goal-linked">' + ICON('link') + ' ' + esc(acctName) + '</span>' : '')
       + '</div>'
       + '</div>'
       + '<div class="goal-actions">'
-      + '<div class="goal-pct">' + pct.toFixed(0) + '%</div>'
+      + '<div class="goal-pct">' + Math.floor(pct) + '%</div>'
       + '<button class="btn btn-ghost btn-sm" onclick="toggleGoalEdit(' + i + ')">' + ICON('pencil') + ' Edit</button>'
-      + '<button class="del-btn" onclick="delGoalItem(' + g.id + ')">' + ICON('trash') + '</button>'
+      + '<button class="del-btn" aria-label="Delete goal" onclick="delGoalItem(' + g.id + ')">' + ICON('trash') + '</button>'
       + '</div>'
       + '</div>'
-      + '<div class="prog-track prog-track--lg"><div class="prog-fill ' + barCls + '" style="width:' + pct.toFixed(0) + '%"></div></div>'
+      + '<div class="prog-track prog-track--lg"><div class="prog-fill" data-pct="' + pct.toFixed(1) + '"></div></div>'
       + '<div class="goal-foot">'
-      + '<div class="goal-foot-note">' + (pct >= 100 ? ICON('confetti') + ' Goal reached!' : (rem > 0 ? fmtAUD(rem) + ' to go' : '')) + (proj ? ' · ' + proj : '') + '</div>'
+      + '<div class="goal-foot-note">' + note + '</div>'
       + '</div>'
-      + '<div id="goal-edit-' + i + '" class="goal-edit" style="display:none">'
+      + (shared.length
+          ? '<div class="goal-shared">' + ICON('info-circle') + ' Shared with ' + shared.map(function(o) { return esc(o.name); }).join(', ')
+            + ': progress shows the full ' + esc(acctName) + ' balance until buckets arrive.</div>'
+          : '')
+      + '<div id="goal-edit-' + i + '" class="goal-edit">'
       + _goalEditForm(g, i)
       + '</div>'
       + '</div>';
   }).join('');
+  el.querySelectorAll('.prog-fill[data-pct]').forEach(function(f) { f.style.width = f.dataset.pct + '%'; });
 }
 
 function _goalEditForm(g, i) {
@@ -169,7 +242,7 @@ function _goalEditForm(g, i) {
 
 function toggleGoalEdit(i) {
   var panel = document.getElementById('goal-edit-' + i);
-  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel) panel.classList.toggle('is-open');
 }
 
 function _goalPickIcon(i, key) {
@@ -195,18 +268,18 @@ function saveGoalEdit(i) {
   toast('✅ Goal updated');
 }
 
-function _goalProjection(g,current,target){
-  if(target<=0||current>=target)return'';
-  const rem=target-current;
-  if(g.targetDate){
-    const d=new Date(g.targetDate);
-    return'Target: '+d.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
+// rate = this goal's share of real average monthly savings (see goalMonthlyRate)
+function _goalProjection(g, current, target, rate) {
+  if (target <= 0 || current >= target) return '';
+  if (g.targetDate) {
+    var d = new Date(g.targetDate);
+    return 'Target: ' + d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
   }
-  const rate=500;
-  const months=Math.ceil(rem/rate);
-  const proj=new Date();
-  proj.setMonth(proj.getMonth()+months);
-  return'On track for '+proj.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
+  var months = goalMonthsToTarget(target - current, rate);
+  if (months === null) return 'Add a contribution to see a finish date';
+  var now = new Date();
+  var proj = new Date(now.getFullYear(), now.getMonth() + months, 1);
+  return 'On track for ' + proj.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
 }
 
 function fmtAUD(n){
@@ -235,11 +308,25 @@ function addGoalFromPage(){
 }
 
 function delGoalItem(id){
-  GOALS=GOALS.filter(g=>g.id!==id);
-  try{save(K.goals,GOALS);}catch(e){}
+  var idx = GOALS.findIndex(function(g) { return g.id === id; });
+  if (idx < 0) return;
+  var goal = GOALS[idx];
+  if (!confirm('Delete ' + goal.name + '? This can\'t be undone.')) return;
+  GOALS = GOALS.filter(function(g) { return g.id !== id; });
+  try { save(K.goals, GOALS); } catch(e) {}
+  _goalsRefresh();
+  showUndoToast('Goal deleted', 5000, function() {
+    if (GOALS.some(function(g) { return g.id === id; })) return;
+    GOALS.splice(Math.min(idx, GOALS.length), 0, goal);
+    try { save(K.goals, GOALS); } catch(e) {}
+    _goalsRefresh();
+    toast('Goal restored');
+  });
+}
+
+function _goalsRefresh() {
   renderGoalsPage();
-  dbRenderGoals();
-  toast('🗑️ Removed');
+  if (typeof dbRenderGoals === 'function') dbRenderGoals();
 }
 
 // Called from goal-modal update button (index.html) and export.js

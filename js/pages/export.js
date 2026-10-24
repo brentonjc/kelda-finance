@@ -762,7 +762,7 @@ const EXPORT_SECTIONS = [
     count: () => GOALS.length + ' goals',
     exportJSON: () => { downloadFile(JSON.stringify({goals: GOALS}, null, 2), exportFilename('goals', 'json'), 'application/json'); },
     exportCSV:  () => {
-      const rows = GOALS.map(g => '"' + g.name + '",' + g.target + ',' + g.saved);
+      const rows = GOALS.map(g => '"' + String(g.name || '').replace(/"/g, '""') + '",' + _goalTarget(g) + ',' + _goalCurrent(g));
       downloadFile(['Name,Target,Saved', ...rows].join('\n'), exportFilename('goals', 'csv'), 'text/csv');
       toast('✅ Goals exported');
     },
