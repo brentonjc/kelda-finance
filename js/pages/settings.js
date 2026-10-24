@@ -630,6 +630,7 @@ function settAcctDelete(id) {
   var a = ACCOUNTS.find(function(x){ return x.id === id; });
   if (!a || a.isCore) return;
   if (!confirm('Delete "' + a.name + '"?\n\nAny balance data for this account will also be removed.')) return;
+  if (typeof goalsAccountRemoved === 'function') goalsAccountRemoved(id); // before its balances go
   ACCOUNTS = ACCOUNTS.filter(function(x){ return x.id !== id; });
   // Clean up CT balance data
   if (typeof CT !== 'undefined' && CT) {

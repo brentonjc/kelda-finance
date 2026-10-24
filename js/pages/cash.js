@@ -174,10 +174,9 @@ function ctDeleteAccount(id) {
   if (!a) return;
   if (a.isCore) { toast('⚠️ Core accounts cannot be deleted here — manage in Settings'); return; }
   if (!confirm('Delete "' + a.name + '"?\nBalance data for this account will also be removed.')) return;
+  if (typeof goalsAccountRemoved === 'function') goalsAccountRemoved(id); // before its balances go
   // Remove balance data for this account
-  for (var month in CT) {
-    if (CT[month] && CT[month][id] !== undefined) delete CT[month][id];
-  }
+  delete CT[id]; // CT is { acctId: { 'YYYY-MM': balance } }
   try { save(K.ct, CT); } catch(e) {}
   ACCOUNTS = ACCOUNTS.filter(function(x){ return x.id !== id; });
   try { save(K.accounts, ACCOUNTS); } catch(e) {}

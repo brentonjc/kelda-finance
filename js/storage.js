@@ -3,6 +3,7 @@
 // ══════════════════════════════════════════════════════════════
 const K={
   tx:'cff_tx',budgets:'cff_budgets',goals:'cff_goals',bills:'cff_bills',
+  goalsV1Backup:'cff_goals_v1_backup', // goals as they were before the v2 migration (written once)
   mortgage:'cff_mortgage',ct:'cff_ct',ctcfg:'cff_ctcfg',
   ins:'cff_ins',superdata:'cff_super',pins:'cff_pins',
   categories:'ledger_categories',lbudgets:'ledger_budgets',rules:'ledger_rules',
