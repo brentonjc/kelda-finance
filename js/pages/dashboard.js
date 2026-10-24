@@ -591,10 +591,11 @@ function generateNudges() {
   // Rule 3: Goal nearly complete
   if (nudges.length < 3) {
     var goals = GOALS || [];
+    var nctx = goalCtx();
     var bestGoal = null;
     for (var gi = 0; gi < goals.length; gi++) {
       var g      = goals[gi];
-      var cur    = _goalCurrent(g);
+      var cur    = goalCurrent(g, nctx);
       var tgt    = _goalTarget(g);
       if (!tgt) continue;
       var gPct   = cur / tgt;
@@ -703,10 +704,10 @@ function generateNudges() {
 
   // Rule 10: Goals vs spending alignment
   if (nudges.length < 3 && GOALS && GOALS.length) {
-    var totalPct = 0, goalCount = 0;
+    var totalPct = 0, goalCount = 0, actx = goalCtx();
     for (var gi2 = 0; gi2 < GOALS.length; gi2++) {
       var g2  = GOALS[gi2];
-      var cur2 = _goalCurrent(g2);
+      var cur2 = goalCurrent(g2, actx);
       var tgt2 = _goalTarget(g2);
       if (tgt2 > 0) { totalPct += (cur2/tgt2)*100; goalCount++; }
     }
@@ -1280,12 +1281,12 @@ function kdRenderDashboard() {
 
   // ── TILE 4 — Savings goals ──
   var goals = (typeof GOALS !== 'undefined' && GOALS) ? GOALS.slice(0, 4) : [];
-  var goalsInner;
+  var goalsInner, tctx = goalCtx();
   if (goals.length) {
     goalsInner = '<div class="kd-goals-grid">' + goals.map(function(g, i) {
-      var cur = _goalCurrent(g);
-      var tgt = _goalTarget(g);
-      var pct = goalPct(g, goalCtx());
+      var cur = goalCurrent(g, tctx);
+      var tgt = goalTarget(g);
+      var pct = goalPct(g, tctx);
       var color = kdCycle[i % kdCycle.length];
       return '<div class="kd-goal-card">' + kdRing(pct, color, 96)
         + '<div class="kd-goal-name">' + kdEsc(g.name || 'Goal') + '</div>'

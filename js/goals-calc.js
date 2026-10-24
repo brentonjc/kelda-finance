@@ -69,13 +69,28 @@ function goalAccountId(g) {
 // ── Migration (v1 → v2) ────────────────────────────────────────
 // Adds fields only; the old ones (targetAmount, currentAmount, saved, target,
 // linkedAccount) stay for one release so a rollback still reads them.
-// Idempotent: a v2 record is left alone.
-function goalsMigrateV2(list, today) {
+// Idempotent: a v2 record is left alone. balanceOf(acctId) (optional) gives the
+// latest Cash Tracker balance, which v1 showed for linked goals: it sets their
+// milestones, and caps shared-account buckets at the balance, oldest goal first.
+function goalsMigrateV2(list, today, balanceOf) {
   if (!Array.isArray(list)) return { goals: [], changed: false };
   today = today || goalToday();
+  var bal = function(id) { var b = typeof balanceOf === 'function' ? balanceOf(id) : null; return b === undefined ? null : b; };
+  var oldCurrent = function(g) { return Number(g.currentAmount) || Number(g.saved) || 0; };
   var users = {};
   list.forEach(function(g) {
-    if (g && g.schemaVersion !== GOAL_SCHEMA && g.linkedAccount) users[g.linkedAccount] = (users[g.linkedAccount] || 0) + 1;
+    if (g && g.schemaVersion !== GOAL_SCHEMA && g.linkedAccount) (users[g.linkedAccount] = users[g.linkedAccount] || []).push(g);
+  });
+  var capped = new Map();
+  Object.keys(users).forEach(function(id) {
+    var left = bal(id);
+    if (users[id].length < 2 || left === null) return;
+    left = Math.max(0, left);
+    users[id].slice().sort(function(a, b) { return String(a.createdAt || '') < String(b.createdAt || '') ? -1 : 1; }).forEach(function(g) {
+      var amt = Math.min(oldCurrent(g), left);
+      capped.set(g, amt);
+      left -= amt;
+    });
   });
   var changed = false;
   var goals = list.map(function(g) {
@@ -85,7 +100,7 @@ function goalsMigrateV2(list, today) {
     if (typeof n.id === 'number' || (typeof n.id === 'string' && n.id.indexOf('g_') !== 0)) n.id = 'g_' + n.id;
     if (n.id === undefined || n.id === null || n.id === '') n.id = 'g_' + _goalUid();
     var target = Number(g.targetAmount) || Number(g.target) || 0;
-    var current = Number(g.currentAmount) || Number(g.saved) || 0;
+    var current = capped.has(g) ? capped.get(g) : oldCurrent(g);
     var created = String(g.createdAt || today).slice(0, 10);
     n.schemaVersion = GOAL_SCHEMA;
     n.target = target;
@@ -95,7 +110,7 @@ function goalsMigrateV2(list, today) {
     n.type = g.type || 'save';
     n.owner = g.owner || 'joint';
     n.cycle = 1;
-    if (g.linkedAccount) n.source = { kind: users[g.linkedAccount] > 1 ? 'bucket' : 'account', accountId: g.linkedAccount };
+    if (g.linkedAccount) n.source = { kind: users[g.linkedAccount].length > 1 ? 'bucket' : 'account', accountId: g.linkedAccount };
     else n.source = { kind: 'manual' };
     // The old amount becomes an opening balance. For an account goal it only
     // shows while the account has no Cash Tracker balance.
@@ -103,9 +118,10 @@ function goalsMigrateV2(list, today) {
       ? [{ id: 'c_' + n.id.slice(2) + '_open', date: created, amount: current, person: 'joint', note: 'opening balance' }]
       : [];
     // Milestones already passed are recorded, so none celebrate after the upgrade
-    var pct = target > 0 ? Math.floor(current / target * 100) : 0;
+    var shown = n.source.kind === 'account' && bal(g.linkedAccount) !== null ? Math.max(0, bal(g.linkedAccount)) : current;
+    var pct = target > 0 ? Math.floor(shown / target * 100) : 0;
     n.milestonesHit = GOAL_MILESTONES.filter(function(m) { return pct >= m; });
-    n.status = target > 0 && current >= target ? 'achieved' : 'active';
+    n.status = target > 0 && shown >= target ? 'achieved' : 'active';
     return n;
   });
   return { goals: goals, changed: changed };
@@ -192,14 +208,21 @@ function goalPct(g, ctx) {
   return Math.max(0, Math.min(99, Math.floor(c / t * 100)));
 }
 
-// Sum of goal progress. Dedicated-account goals that point at the same
-// account count its balance once (buckets are already split, so they add up).
+// Sum of goal progress, counting each account's balance at most once.
+// Buckets are already split, so they add up, unless a dedicated-account goal
+// on the same account counts the whole balance.
 function goalsTotalCurrent(goals, ctx) {
+  var whole = {};
+  (goals || []).forEach(function(g) {
+    if (g.source && g.source.kind === 'account' && _goalBalance(ctx, g.source.accountId) !== null) whole[g.source.accountId] = true;
+  });
   var seen = {};
   return (goals || []).reduce(function(s, g) {
-    if (g.source && g.source.kind === 'account' && _goalBalance(ctx, g.source.accountId) !== null) {
-      if (seen[g.source.accountId]) return s;
-      seen[g.source.accountId] = true;
+    var acct = goalAccountId(g);
+    if (acct && whole[acct]) {
+      if (seen[acct]) return s;
+      seen[acct] = true;
+      return s + Math.max(0, _goalBalance(ctx, acct));
     }
     return s + goalCurrent(g, ctx);
   }, 0);

@@ -134,6 +134,20 @@ test('shared-account buckets never add up to more than the account balance', () 
   assert.equal(C.goalCurrent(car, empty), 0);
 });
 
+test('with live balances: linked goals take milestones from the balance, buckets are capped oldest first', () => {
+  const ct = { offset: { '2026-09': 41000 }, sav1: { '2026-09': 3200 } };
+  const balanceOf = (id) => ctxFor({ ct }).balanceOf(id);
+  const [, , house, car, bike] = C.goalsMigrateV2(v1Goals(), '2026-10-25', balanceOf).goals;
+  // House showed 41,000 of 50,000 (82%) before the upgrade, though currentAmount was 0
+  assert.deepEqual(plain(house.milestonesHit), [25, 50, 75]);
+  // Car (May) keeps its 3,000; Bike (June) gets the 200 left of the 3,200 balance
+  assert.equal(car.contributions[0].amount, 3000);
+  assert.equal(bike.contributions[0].amount, 200);
+  // an achieved linked goal is marked achieved
+  const done = C.goalsMigrateV2([{ id: 5, name: 'Full', targetAmount: 1000, currentAmount: 0, linkedAccount: 'sav2' }], '2026-10-25', () => 1200).goals[0];
+  assert.equal(done.status, 'achieved');
+});
+
 test('a record that is already v2 is left alone, numeric ids become strings', () => {
   const g = v2();
   const out = C.goalsMigrateV2([g, { id: 7, name: 'x', targetAmount: 1 }], '2026-10-25').goals;
@@ -172,6 +186,18 @@ test('total saved counts a shared dedicated account once', () => {
     v2({ id: 'g_c', contributions: [contrib('2026-02-01', 250)] }),
   ];
   assert.equal(C.goalsTotalCurrent(goals, ctxFor({ ct, goals })), 4250);
+});
+
+test('total saved never counts buckets on top of a whole-account goal for the same account', () => {
+  const ct = { sav1: { '2026-09': 10000 } };
+  const goals = [
+    v2({ id: 'g_a', source: { kind: 'bucket', accountId: 'sav1' }, contributions: [contrib('2026-02-01', 3000)] }),
+    v2({ id: 'g_b', source: { kind: 'bucket', accountId: 'sav1' }, contributions: [contrib('2026-02-01', 500)] }),
+  ];
+  const ctx = ctxFor({ ct, goals });
+  assert.equal(C.goalsTotalCurrent(goals, ctx), 3500);
+  goals.push(v2({ id: 'g_c', source: { kind: 'account', accountId: 'sav1' } }));
+  assert.equal(C.goalsTotalCurrent(goals, ctxFor({ ct, goals })), 10000);
 });
 
 // ── Pace ───────────────────────────────────────────────────────

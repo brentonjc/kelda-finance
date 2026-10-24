@@ -4,13 +4,15 @@
 // Record shape, migration and all goal maths live in js/goals-calc.js.
 
 // Cash Tracker access and household fallback rate for js/goals-calc.js.
-// The fallback is only worked out if a goal with no contributions asks for it.
+// Balances are cached for the life of one context (one render), and the
+// fallback is only worked out if a goal with no contributions asks for it.
 function goalCtx() {
+  var bals = {}, hists = {};
   var ctx = {
     today: goalToday(),
     goals: GOALS,
-    balanceOf: _goalCtBalance,
-    balanceHistory: _goalCtHistory
+    balanceOf: function(id) { return id in bals ? bals[id] : (bals[id] = _goalCtBalance(id)); },
+    balanceHistory: function(id) { return id in hists ? hists[id] : (hists[id] = _goalCtHistory(id)); }
   };
   var rate = null;
   Object.defineProperty(ctx, 'fallbackRate', { get: function() {

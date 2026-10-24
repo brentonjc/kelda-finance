@@ -81,6 +81,23 @@ test('restoring a pre-v2 backup upgrades it on the reload, keeping the first v1 
   assert.equal(store.cff_goals_v1_backup, firstCopy);
 });
 
+test('startup migration reads Cash Tracker balances for linked goals', () => {
+  const store = {
+    cff_goals: JSON.stringify([{ id: 3, name: 'House', targetAmount: 50000, currentAmount: 0, linkedAccount: 'offset' }]),
+    cff_ct: JSON.stringify({ offset: { '2026-08': 30000, '2026-09': 41000, '2026-10': null } }),
+  };
+  pageLoad(store);
+  assert.deepEqual(JSON.parse(store.cff_goals)[0].milestonesHit, [25, 50, 75]);
+});
+
+test('migrateGoalsV2 can run again later (unlock reloads GOALS from storage)', () => {
+  const store = {};
+  const ctx = pageLoad(store);
+  vm.runInContext('GOALS = ' + JSON.stringify(V1) + '; migrateGoalsV2();', ctx);
+  assert.equal(vm.runInContext('GOALS[0].schemaVersion', ctx), 2);
+  assert.equal(JSON.parse(store.cff_goals)[1].id, 'g_1712345678902');
+});
+
 test('no goals stored: nothing is written', () => {
   const store = {};
   pageLoad(store);
