@@ -1394,6 +1394,7 @@ function kdRenderDashboard() {
     + '<button class="kd-pill' + (kdPeriod==='ytd'?' active':'') + '" onclick="kdSetPeriod(\'ytd\')">Year to Date</button>'
     + '<button class="kd-pill' + (kdPeriod==='lastYear'?' active':'') + '" onclick="kdSetPeriod(\'lastYear\')">Last Year</button>'
     + '</div></div>'
+    + (typeof taxDashboardCardHtml === 'function' ? taxDashboardCardHtml() : '')
     + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
     + '</div>';
 

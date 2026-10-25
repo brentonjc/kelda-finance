@@ -31,6 +31,16 @@ var APP_CHANGELOG = [
     ]
   },
   {
+    version: '2.10.2',
+    date: '2026-10-25',
+    title: 'Tax (Beta) is easier to find',
+    notes: [
+      'Tax (Beta) is now always listed under Beta Features, with a “Try it” tag until you turn it on',
+      'Opening it shows what it does and a button to turn it on. It still needs your OK before anything changes',
+      'A one-time card on the Dashboard introduces it. Dismiss it and it won’t come back'
+    ]
+  },
+  {
     version: '2.10.1',
     date: '2026-10-25',
     title: 'Tax (Beta): match instalment payments',
