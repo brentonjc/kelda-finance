@@ -124,6 +124,7 @@ function wnDismissCard() {
   var c = document.getElementById('wn-card');
   if (c) c.remove();
   wnRefreshChrome();
+  if (typeof updateNotifDot === 'function') updateNotifDot();
 }
 function wnOpenPage() {
   wnCloseSheet();
@@ -149,7 +150,7 @@ function wnListHtml(unseenFrom, interactive) {
       var e = g.entry, t = interactive ? wnLinkTarget(e) : null;
       return '<li class="wn-rel">'
         + '<div class="wn-rel__meta">'
-        + (isNew(e) ? '<span class="wn-new-dot" aria-label="New"></span>' : '')
+        + (isNew(e) ? '<span class="wn-new-dot" role="img" aria-label="New"></span>' : '')
         + '<span class="wn-rel__ver">v' + esc(e.version) + '</span>'
         + (e.date ? '<span class="wn-rel__date">' + esc(wnFmtDate(e.date)) + '</span>' : '')
         + '</div>'
@@ -161,7 +162,7 @@ function wnListHtml(unseenFrom, interactive) {
     var anyNew = g.entries.some(isNew);
     return '<li class="wn-rel wn-rel--fixes"><details>'
       + '<summary class="wn-fixes__sum">'
-      + (anyNew ? '<span class="wn-new-dot" aria-label="New"></span>' : '')
+      + (anyNew ? '<span class="wn-new-dot" role="img" aria-label="New"></span>' : '')
       + '<span class="wn-fixes__ttl">Fixes and improvements</span>'
       + '<span class="wn-rel__ver">' + esc(wnFixesRange(g.entries)) + '</span>'
       + '<i class="ti ti-chevron-down wn-fixes__chev" aria-hidden="true"></i>'
@@ -228,7 +229,8 @@ function wnOnNavigate(page) {
     for (var i = 0; i < log.length; i++) {
       var e = log[i];
       if (e.link && e.link.page === page && wnIsHighlighted(e)) {
-        if (!s.visited[page] || wnCompareVersions(e.version, s.visited[page]) > 0) wnSetState(wnMarkVisited(s, page, e.version));
+        var next = wnMarkVisited(s, page, e.version);
+        if (next.visited[page] !== s.visited[page]) wnSetState(next);
         break; // newest first: the first match is the latest release for this page
       }
     }
@@ -241,7 +243,11 @@ function wnRefreshChrome() {
   var s = wnState();
   if (!s) return;
   var unread = wnUnseenHighlights(wnLog(), s.seen).length > 0;
-  var badges = wnActiveBadges(wnLog(), s, wnToday());
+  // A release whose beta is off links to Settings, so it badges nothing.
+  var badges = wnActiveBadges(wnLog().filter(function(e) {
+    var check = e.requires && WN_BETA_CHECKS[e.requires];
+    return !check || check();
+  }), s, wnToday());
   var inMore = unread;
 
   function add(el, cls, text) {

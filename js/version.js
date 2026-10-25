@@ -94,7 +94,7 @@ var APP_CHANGELOG = [
     title: 'Goals fixes',
     headline: 'Goal dates you can trust',
     benefits: [
-      'Finish dates use what you’ve actually saved over the last 3 months, not a guessed $500 a month',
+      'Finish dates use what you’ve actually saved over the last 3 months, not a one-size-fits-all guess',
       'Your Dashboard and Goals page now show the same finish date',
       'Deleted a goal by mistake? You have 5 seconds to undo it',
     ],
