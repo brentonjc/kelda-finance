@@ -98,6 +98,7 @@ function unlock(){
   SUPER       = load(K.superdata)    || {};
   GOALS       = load(K.goals)        || [];
   CT          = load(K.ct)           || {};
+  migrateGoalsV2(); // no-op unless storage still holds v1 goals
   LRECURRING  = load(K.recurring)    || [];
   TRANSFERS   = load(K.transfers)    || [];
   EQUITIES    = load(K.equities)     || [];

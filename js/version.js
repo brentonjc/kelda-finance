@@ -30,6 +30,30 @@ var APP_CHANGELOG = [
     ]
   },
   {
+    version: '2.10.1',
+    date: '2026-10-25',
+    title: 'Tax (Beta): match instalment payments',
+    notes: [
+      'Match a PAYG instalment to the ATO payment in Spending. Tax suggests the likely transaction under each quarter',
+      'Year check on the Instalments tab: your forecast tax against the ATO’s instalments plus withholding',
+      'Check your instalments credit against ATO online services in the Return worksheet; the return uses the ATO figure once entered',
+      'Instalment and tax payment due dates now show on Bills (read-only) and in Forecast',
+      'Pick the payment for a notice of assessment from Spending'
+    ]
+  },
+  {
+    version: '2.10.0',
+    date: '2026-10-25',
+    title: 'Goals keep a history',
+    notes: [
+      'Goals now keep a history of the money added to them, ready for one-tap contributions in the next update. Your goals and amounts are unchanged',
+      'Finish dates now follow each goal’s own pace once it has contributions. A goal linked to an account counts its month-to-month balance changes',
+      'You can link a goal to any of your accounts, not only the first four',
+      'Deleting an account keeps its goals and their amounts; they just stop syncing',
+      'The goals CSV export adds Type, Owner, Status and Contributions columns'
+    ]
+  },
+  {
     version: '2.9.1',
     date: '2026-10-18',
     title: 'Goals fixes',

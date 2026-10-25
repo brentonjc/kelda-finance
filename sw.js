@@ -37,6 +37,7 @@ const SHELL = [
   './assets/fonts/dm-mono-500-latin-ext.woff2',
   './js/version.js',
   './js/storage.js',
+  './js/goals-calc.js',
   './js/data.js',
   './js/auth.js',
   './js/app.js',

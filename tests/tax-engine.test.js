@@ -242,6 +242,92 @@ test('instalment year: rate method uses quarter income', () => {
   assert.equal(y[1].expected, null);
 });
 
+// ── Instalments: matching, year check, credit (Phase 3) ─────────
+const tx = (o) => Object.assign({ id: 't' + Math.random(), type: 'expense', person: 'brenton', name: 'Payment' }, o);
+
+test('ATO payment detection: category or description', () => {
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 6250, catId: 'tax', subcat: 'PAYG Instalments' })), true);
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 6250, catId: 'tax', subcat: 'Income Tax' })), true);
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 6250, name: 'BPAY ATO 551234' })), true);
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 6250, rawDescription: 'Australian Taxation Office' })), true);
+  // Older records with only the category name
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 6250, category: 'Tax Payments', subcat: 'PAYG Instalments' })), true);
+  // Not income tax: GST, stamp duty, council rates
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 900, catId: 'tax', subcat: 'BAS / GST' })), false);
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 900, catId: 'tax', subcat: 'Council Rates' })), false);
+  // Refunds and other words containing "ato" don't count
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 900, type: 'income', name: 'ATO refund' })), false);
+  assert.equal(T.taxIsAtoPayment(tx({ date: '2026-10-27', amount: 40, name: 'Tomato Bar' })), false);
+});
+
+test('match candidates for a quarter: exact amount first, window, person, used', () => {
+  const w = T.taxQuarterWindow('2026-10-28');
+  assert.deepEqual(plain(w), { from: '2026-09-13', to: '2026-11-27', ref: '2026-10-28' });
+  const txs = [
+    tx({ id: 'a', date: '2026-10-20', amount: 6000, catId: 'tax', subcat: 'Income Tax' }),
+    tx({ id: 'b', date: '2026-10-26', amount: 6250, name: 'BPAY ATO' }),
+    tx({ id: 'c', date: '2026-10-27', amount: 6250, name: 'BPAY ATO', person: 'shelley' }),
+    tx({ id: 'd', date: '2026-08-01', amount: 6250, name: 'BPAY ATO' }),        // outside the window
+    tx({ id: 'e', date: '2026-10-28', amount: 6250, name: 'BPAY ATO', person: 'joint' }),
+    tx({ id: 'f', date: '2026-10-28', amount: 6250, name: 'BPAY ATO' })          // already matched
+  ];
+  const c = T.taxMatchCandidates(txs, Object.assign({ person: 'brenton', expected: 6250 }, w), { f: true });
+  assert.deepEqual(plain(c.map((x) => x.tx.id)), ['b', 'e', 'a']);
+  assert.equal(c[0].exact, true);
+  assert.equal(c[0].days, -2);
+  assert.equal(c[2].exact, false);
+});
+
+test('suggested quarter is the nearest due date', () => {
+  assert.equal(T.taxSuggestQuarter('2026-10-27', 'FY2027'), 1);
+  assert.equal(T.taxSuggestQuarter('2026-11-20', 'FY2027'), 1);
+  assert.equal(T.taxSuggestQuarter('2027-02-01', 'FY2027'), 2);
+  assert.equal(T.taxSuggestQuarter('2027-07-30', 'FY2027'), 4);
+});
+
+test('instalments for the year', () => {
+  assert.deepEqual(plain(T.taxInstalmentsTotal({ method: 'amount', amount: 6250 }, 'FY2027')), { total: 25000, complete: true });
+  assert.deepEqual(plain(T.taxInstalmentsTotal({ method: 'rate', rate: 10, quarterIncome: { 1: 20000, 2: 10000 } }, 'FY2027')),
+    { total: 3000, complete: false });
+});
+
+test('year check: forecast well above instalments', () => {
+  const r = plain(T.taxYearCheck({ taxAfterWithholding: 36425, instalmentsYear: 25000, complete: true }));
+  assert.deepEqual(r, { forecast: 36425, instalments: 25000, gap: 11425, material: true, direction: 'above' });
+});
+
+test('year check: close enough, or below', () => {
+  assert.equal(T.taxYearCheck({ taxAfterWithholding: 26000, instalmentsYear: 25000 }).direction, 'close');
+  // $900 apart: under the $1,000 floor even though it's over 15% of a small figure
+  assert.equal(T.taxYearCheck({ taxAfterWithholding: 100, instalmentsYear: 1000 }).material, false);
+  const below = T.taxYearCheck({ taxAfterWithholding: 10000, instalmentsYear: 25000 });
+  assert.equal(below.direction, 'below');
+  assert.equal(below.gap, -15000);
+  // Rate method with quarters still to come: never a prompt
+  assert.equal(T.taxYearCheck({ taxAfterWithholding: 36425, instalmentsYear: 3000, complete: false }).material, false);
+  // A refund forecast counts as zero tax to cover
+  assert.equal(T.taxYearCheck({ taxAfterWithholding: -500, instalmentsYear: 0 }).forecast, 0);
+});
+
+test('credit reconciliation against ATO online services', () => {
+  assert.deepEqual(plain(T.taxCreditCheck(12500, null)), { entered: false, kelda: 12500, ato: null, diff: null, matches: false });
+  assert.equal(T.taxCreditCheck(12500, 12500).matches, true);
+  assert.equal(T.taxCreditCheck(12500, 12500.8).matches, true);
+  const off = plain(T.taxCreditCheck(12500, 6250));
+  assert.equal(off.matches, false);
+  assert.equal(off.diff, -6250);
+});
+
+test('instalment outflows: remainder of unpaid quarters only', () => {
+  const inst = { enrolled: true, method: 'amount', amount: 6250,
+    payments: [{ id: 1, date: '2026-10-27', amount: 6250, q: 1 }, { id: 2, date: '2027-02-20', amount: 2000, q: 2 }] };
+  const o = plain(T.taxInstalmentOutflows(inst, 'FY2027', '2027-02-21'));
+  assert.deepEqual(o.map((x) => [x.q, x.due, x.amount]), [[2, '2027-02-28', 4250], [3, '2027-04-28', 6250], [4, '2027-07-28', 6250]]);
+  assert.deepEqual(plain(T.taxInstalmentOutflows(Object.assign({}, inst, { enrolled: false }), 'FY2027', '2027-02-21')), []);
+  // Rate method without quarter income: nothing to forecast
+  assert.deepEqual(plain(T.taxInstalmentOutflows({ enrolled: true, method: 'rate', rate: 10 }, 'FY2027', '2026-10-01')), []);
+});
+
 // ── Dates ───────────────────────────────────────────────────────
 test('FY helpers', () => {
   assert.equal(T.taxFyOf('2026-06-30'), 'FY2026');

@@ -416,18 +416,19 @@ function generateActionCards() {
   var cards = [];
 
   // ── Card 1: Top Goal ─────────────────────────────────────────
+  var gctx = goalCtx();
   var activeGoals = (GOALS || []).filter(function(g) {
-    var tgt = _goalTarget(g);
-    return tgt > 0 && _goalCurrent(g) < tgt;
+    var tgt = goalTarget(g);
+    return tgt > 0 && goalCurrent(g, gctx) < tgt;
   });
   activeGoals.sort(function(a, b) {
-    return _goalCurrent(b) / _goalTarget(b) - _goalCurrent(a) / _goalTarget(a);
+    return goalCurrent(b, gctx) / goalTarget(b) - goalCurrent(a, gctx) / goalTarget(a);
   });
   if (activeGoals.length) {
     var g1   = activeGoals[0];
-    var tgt1 = Number(g1.targetAmount) || Number(g1.target) || 0;
-    var cur1 = (typeof _goalCurrent==='function') ? _goalCurrent(g1) : (Number(g1.currentAmount)||Number(g1.saved)||0);
-    var pct1 = Math.round((cur1/tgt1)*100);
+    var tgt1 = goalTarget(g1);
+    var cur1 = goalCurrent(g1, gctx);
+    var pct1 = goalPct(g1, gctx);
     var need1 = tgt1 - cur1;
     cards.push({
       num: 1, icon: g1.icon || 'target', label: 'SAVINGS GOAL',
@@ -481,25 +482,23 @@ function generateActionCards() {
   }
 
   // ── Card 3: Months to hit top goal ───────────────────────────
-  // Same maths as the Goals page (goals.js), so both show the same date
+  // Same maths as the Goals page (goals-calc.js goalEta), so both show the same date
   var avgSav = goalAvgMonthlySavings(txns, now);
-  var goalRate = goalMonthlyRate(GOALS || [], avgSav);
   // Goals with a target date show that date on the Goals page, so project an undated one
   var undated = activeGoals.filter(function(g) { return !g.targetDate; });
-  if (undated.length && avgSav > 0) {
-    var g3   = undated[undated.length - 1]; // least-progressed undated goal
-    var mos  = goalMonthsToTarget(_goalTarget(g3) - _goalCurrent(g3), goalRate);
+  var g3  = undated[undated.length - 1]; // least-progressed undated goal
+  var mos = g3 ? goalEta(g3, gctx) : null;
+  if (mos !== null) {
     var projD = new Date(now.getFullYear(), now.getMonth() + mos, 1);
     var projS = projD.toLocaleString('en-AU', { month: 'long', year: 'numeric' });
     cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title: g3.name + ' — ~' + mos + ' month' + (mos!==1?'s':'') + ' away',
-      body: 'At avg savings of ' + fmt(Math.round(avgSav)) + '/mo'
-        + (activeGoals.length > 1 ? ' split across ' + activeGoals.length + ' goals' : '')
+      body: 'At its current pace of ' + fmt(Math.round(goalPace(g3, gctx))) + '/mo'
         + ', you\'ll reach this around ' + projS + '.',
       status: mos <= 6 ? 'green' : mos <= 18 ? 'amber' : 'pink',
       statusTxt: mos + 'mo',
       link:"go('goals')", linkTxt:'View Goals →' });
-  } else if (activeGoals.length && avgSav > 0) {
+  } else if (activeGoals.length && !undated.length) {
     // Every open goal has a target date: show the least-progressed one's date
     var gd = activeGoals[activeGoals.length - 1];
     var dS = new Date(gd.targetDate).toLocaleString('en-AU', { month: 'long', year: 'numeric' });
@@ -507,6 +506,12 @@ function generateActionCards() {
       title: gd.name + ' — target ' + dS,
       body: 'All your open goals have a target date. See how each is tracking on the Goals page.',
       status:'muted', statusTxt:'Dated', link:"go('goals')", linkTxt:'View Goals →' });
+  } else if (activeGoals.length && avgSav > 0) {
+    // Household savings are positive, but this goal's own contributions net to nothing yet
+    cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
+      title: g3.name + ' — no finish date yet',
+      body:'Add a contribution to see a finish date.',
+      status:'muted', statusTxt:'No pace', link:"go('goals')", linkTxt:'View Goals →' });
   } else if (activeGoals.length) {
     cards.push({ num:3, icon:'calendar', label:'GOAL PROJECTION',
       title:'Increase savings to project',
@@ -586,11 +591,12 @@ function generateNudges() {
   // Rule 3: Goal nearly complete
   if (nudges.length < 3) {
     var goals = GOALS || [];
+    var nctx = goalCtx();
     var bestGoal = null;
     for (var gi = 0; gi < goals.length; gi++) {
       var g      = goals[gi];
-      var cur    = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
-      var tgt    = Number(g.targetAmount) || Number(g.target) || 0;
+      var cur    = goalCurrent(g, nctx);
+      var tgt    = _goalTarget(g);
       if (!tgt) continue;
       var gPct   = cur / tgt;
       if (gPct >= 0.80 && gPct < 1.00) {
@@ -698,11 +704,11 @@ function generateNudges() {
 
   // Rule 10: Goals vs spending alignment
   if (nudges.length < 3 && GOALS && GOALS.length) {
-    var totalPct = 0, goalCount = 0;
+    var totalPct = 0, goalCount = 0, actx = goalCtx();
     for (var gi2 = 0; gi2 < GOALS.length; gi2++) {
       var g2  = GOALS[gi2];
-      var cur2 = (typeof _goalCurrent==='function') ? _goalCurrent(g2) : (Number(g2.currentAmount)||Number(g2.saved)||0);
-      var tgt2 = Number(g2.targetAmount)||Number(g2.target)||0;
+      var cur2 = goalCurrent(g2, actx);
+      var tgt2 = _goalTarget(g2);
       if (tgt2 > 0) { totalPct += (cur2/tgt2)*100; goalCount++; }
     }
     if (goalCount > 0) {
@@ -1275,12 +1281,12 @@ function kdRenderDashboard() {
 
   // ── TILE 4 — Savings goals ──
   var goals = (typeof GOALS !== 'undefined' && GOALS) ? GOALS.slice(0, 4) : [];
-  var goalsInner;
+  var goalsInner, tctx = goalCtx();
   if (goals.length) {
     goalsInner = '<div class="kd-goals-grid">' + goals.map(function(g, i) {
-      var cur = (typeof _goalCurrent === 'function') ? _goalCurrent(g) : (Number(g.currentAmount) || Number(g.saved) || 0);
-      var tgt = (typeof _goalTarget === 'function') ? _goalTarget(g) : (Number(g.targetAmount) || Number(g.target) || 0);
-      var pct = tgt ? Math.min(100, Math.floor(cur / tgt * 100)) : 0;
+      var cur = goalCurrent(g, tctx);
+      var tgt = goalTarget(g);
+      var pct = goalPct(g, tctx);
       var color = kdCycle[i % kdCycle.length];
       return '<div class="kd-goal-card">' + kdRing(pct, color, 96)
         + '<div class="kd-goal-name">' + kdEsc(g.name || 'Goal') + '</div>'

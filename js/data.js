@@ -257,3 +257,24 @@ var ACCOUNTS = (function() {
   });
   if (changed) { try { save(K.goals, GOALS); } catch(e) {} }
 })();
+// Goals v2 (js/goals-calc.js goalsMigrateV2): adds type, owner, source and a
+// contribution history. Idempotent, and re-runs after a restore brings an old
+// backup back (restore reloads the page) and on unlock (auth.js reloads GOALS).
+// The untouched v1 list is kept once.
+function migrateGoalsV2() {
+  if (typeof goalsMigrateV2 !== 'function') return;
+  // Latest Cash Tracker balance per account (cash.js isn't loaded yet)
+  var balanceOf = function(id) {
+    var data = (CT || {})[id] || {}, best = null;
+    Object.keys(data).forEach(function(m) { if (data[m] !== null && data[m] !== undefined && (best === null || m > best)) best = m; });
+    return best === null ? null : Number(data[best]) || 0;
+  };
+  var r = goalsMigrateV2(GOALS, goalToday(), balanceOf);
+  if (!r.changed) return;
+  try {
+    if (localStorage.getItem(K.goalsV1Backup) === null) localStorage.setItem(K.goalsV1Backup, localStorage.getItem(K.goals) || '[]');
+  } catch(e) {}
+  GOALS = r.goals;
+  save(K.goals, GOALS);
+}
+migrateGoalsV2();

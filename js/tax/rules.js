@@ -27,7 +27,7 @@ var TAX_SRC = {
 };
 
 // Bumped whenever a rule below changes. Printed in every Tax export footer.
-var TAX_RULES_VERSION = '2026.10.11';
+var TAX_RULES_VERSION = '2026.10.25';
 
 var TAX_RULES = {
 
@@ -44,6 +44,14 @@ var TAX_RULES = {
     // says this outright, so it is shown to the user as an assumption.
     essSaleValueIsProceeds: true, essSaleValueVerified: false,
     instalmentDueSoonDays: 14,
+    // Kelda's own choices, not ATO rules (Phase 3):
+    // - a transaction can match an instalment if it's dated this many days before or after the due date
+    instalmentMatchWindow: { before: 45, after: 30 },
+    // - the year check prompts about the ATO's variation process when the forecast and the ATO's
+    //   instalments differ by more than this share of the larger figure, and by at least `min` dollars
+    yearCheckMaterial: { pct: 0.15, min: 1000 },
+    // - a PAYG credit from ATO online services within this many dollars of Kelda's total counts as matching
+    creditCheckTolerance: 1,
     vestDefaultForeignTax: 0,
     agentPriorLiabilityThreshold: 20000, // latest return liability ≥ this → earlier agent due date
     unsureReminderDays: 14,             // unsure banner reappears this close to the self-lodge date

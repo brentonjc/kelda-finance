@@ -229,6 +229,43 @@
 .tax-liab .dr-k{color:var(--tax-sub);}
 .tax-liab .dr-v{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
 
+/* ── Phase 3: payment matching, year check, credit check ── */
+.tax-q-wrap{border-bottom:1px solid var(--border);}
+.tax-q-wrap:last-child{border-bottom:none;}
+.tax-q-wrap .tax-q{border-bottom:none;}
+.tax-match{display:flex;align-items:center;justify-content:space-between;gap:var(--sp2);flex-wrap:wrap;margin:0 0 12px 46px;padding:8px 10px;
+  border-radius:var(--radius-sm);background:color-mix(in srgb, var(--purple) 8%, transparent);border:1px dashed color-mix(in srgb, var(--purple) 40%, transparent);font-size:.8rem;}
+.tax-match-txt{flex:1;min-width:0;}
+.tax-match .ti{color:var(--purple-ink);}
+.tax-btn-pair{display:grid;grid-template-columns:1fr;gap:var(--sp2);margin-top:var(--sp3);}
+@media (min-width:760px){ .tax-btn-pair{grid-template-columns:1fr 1fr;} }
+.tax-mrow{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp2);padding:8px 0;border-bottom:1px solid var(--border);font-size:.84rem;}
+.tax-mrow:last-child{border-bottom:none;}
+.tax-mrow-main{flex:1 1 140px;min-width:0;}
+.tax-mrow-amt{flex:none;}
+.tax-mrow-acts{flex:none;display:flex;align-items:center;gap:6px;}
+.tax-mrow-acts select{min-height:44px;width:auto;min-width:84px;}
+.tax-okbox{border-radius:var(--radius-sm);padding:10px 12px;font-size:.8rem;line-height:1.5;margin-bottom:var(--sp3);color:var(--text);
+  background:var(--success-bg);border:1px solid color-mix(in srgb, var(--success) 45%, transparent);}
+.tax-okbox .ti{color:var(--success);}
+.tax-mt{margin-top:var(--sp3);margin-bottom:0;}
+
+/* Bills: read-only Tax due dates */
+.bl-tax-card{margin-bottom:var(--sp3);}
+.bl-tax-row{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 0;border:none;border-bottom:1px solid var(--border);
+  background:transparent;color:var(--text);font-family:var(--font-body);font-size:.82rem;text-align:left;cursor:pointer;}
+.bl-tax-row:last-of-type{border-bottom:none;}
+.bl-tax-row:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:var(--radius-sm);}
+.bl-tax-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.btype-tax{background:var(--purple-bg);color:var(--purple-ink);}
+.bl-tax-note{font-size:.74rem;margin-top:var(--sp2);}
+.bl-cal-dot span.bl-cal-dot-tax{background:var(--purple);}
+
+/* Forecast: Tax outflows listed under adjustments */
+.fc2-tax{margin-top:var(--sp4);}
+.fc2-tax .btn{margin-top:var(--sp2);min-height:44px;}
+.fc2-tax-sub{display:block;font-size:.72rem;color:var(--tax-sub);}
+
 /* Intro (Tax page while the beta is off) */
 .tax-intro-list{list-style:none;margin:0;padding:0;}
 .tax-intro-list li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);font-size:.88rem;color:var(--text);}

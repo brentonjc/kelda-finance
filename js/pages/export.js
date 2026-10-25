@@ -762,8 +762,10 @@ const EXPORT_SECTIONS = [
     count: () => GOALS.length + ' goals',
     exportJSON: () => { downloadFile(JSON.stringify({goals: GOALS}, null, 2), exportFilename('goals', 'json'), 'application/json'); },
     exportCSV:  () => {
-      const rows = GOALS.map(g => '"' + String(g.name || '').replace(/"/g, '""') + '",' + _goalTarget(g) + ',' + _goalCurrent(g));
-      downloadFile(['Name,Target,Saved', ...rows].join('\n'), exportFilename('goals', 'csv'), 'text/csv');
+      const ctx = goalCtx();
+      const rows = GOALS.map(g => '"' + String(g.name || '').replace(/"/g, '""') + '",' + goalTarget(g) + ',' + goalCurrent(g, ctx)
+        + ',' + (g.type || 'save') + ',' + (g.owner || 'joint') + ',' + goalStatus(g, ctx) + ',' + (g.contributions || []).length);
+      downloadFile(['Name,Target,Saved,Type,Owner,Status,Contributions', ...rows].join('\n'), exportFilename('goals', 'csv'), 'text/csv');
       toast('✅ Goals exported');
     },
     clear: () => { if(confirm('Delete all savings goals?')) { GOALS=[]; save(K.goals,GOALS); renderGoals(); toast('🗑️ Goals cleared'); renderExportPage(); } }

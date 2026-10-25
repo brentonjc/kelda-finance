@@ -599,6 +599,7 @@ function renderBills() {
 
 function blRenderTabPanel() {
   if (blTab === 'overview') {
+    blRenderTaxCard();
     blRenderKPIs();
     blRenderOverview();
     blRenderAnnualSpotlight();
@@ -1284,6 +1285,32 @@ function blRenderAnnualSpotlight() {
   }).join('');
 }
 
+// ── Tax (Beta) due dates: read-only "Tax" items, worked out in Tax ──
+function blTaxItems(start, end, overdue) {
+  if (typeof taxUpcomingItems !== 'function') return [];
+  try { return taxUpcomingItems(start, end, { overdue: !!overdue }); } catch(e) { return []; }
+}
+function blTaxRow(it) {
+  var flag = it.overdue ? ' <span class="badge b-overdue bl-badge-gap-sm">Overdue</span>'
+           : it.estimated ? ' <span class="badge bl-badge-gap-sm btype-tax">Estimate</span>' : '';
+  return '<button class="bl-tax-row" onclick="go(\'tax\')">'
+    + '<span class="bl-biller-ico">' + iconTag('receipt-tax') + '</span>'
+    + '<span class="bl-tax-main"><span class="bl-biller-name">' + esc(it.title) + ' <span class="badge btype-tax">Tax</span>' + flag + '</span>'
+    + '<span class="bl-muted bl-freq">Due ' + blDateLabel(it.date) + '</span></span>'
+    + '<span class="mono bl-txrow-amt">' + (it.estimated ? '~' : '') + fmt(it.amount) + '</span></button>';
+}
+function blRenderTaxCard() {
+  var el = document.getElementById('bl-tax');
+  if (!el) return;
+  var items = blTaxItems(today(), blAddDays(today(), 365), true);
+  if (!items.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="card bl-tax-card"><div class="bl-card-hd"><div class="section-label section-label--flush">Tax due dates <span class="tax-beta">Beta</span></div>'
+    + '<button class="btn btn-ghost btn-sm" onclick="go(\'tax\')">Open Tax</button></div>'
+    + items.slice(0, 5).map(blTaxRow).join('')
+    + '<div class="bl-muted bl-tax-note">' + (items.length > 5 ? '+' + (items.length - 5) + ' more in the next 12 months, also on the Calendar. ' : '')
+    + 'From Tax (Beta). Read-only: change them in Tax. They aren’t counted in the bill totals below.</div></div>';
+}
+
 // ══════════════════════════════════════════════════════════════
 // 4.5 — UPCOMING TIMELINE
 // ══════════════════════════════════════════════════════════════
@@ -1634,6 +1661,8 @@ function blRenderCalendar() {
   blConfirmed().forEach(function(b) {
     blOccurrencesInRange(b, monthStart, monthEnd).forEach(function(d){ (byDay[d] = byDay[d] || []).push(b); });
   });
+  var taxByDay = {};
+  blTaxItems(monthStart, monthEnd).forEach(function(it){ (taxByDay[it.date] = taxByDay[it.date] || []).push(it); });
   var wd = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   var html = '<div class="bl-cal-weekdays">' + wd.map(function(w){ return '<div class="bl-cal-wd">' + w + '</div>'; }).join('') + '</div><div class="bl-cal-grid">';
   var i;
@@ -1641,13 +1670,19 @@ function blRenderCalendar() {
   for (var day = 1; day <= daysIn; day++) {
     var ds = y + '-' + mm + '-' + String(day).padStart(2, '0');
     var bills = byDay[ds] || [];
+    var taxes = taxByDay[ds] || [];
+    var n = bills.length + taxes.length;
     var isToday = ds === today();
-    var total = bills.reduce(function(s,b){ return s + blOccurrenceAmount(b, ds); }, 0);
-    var dots = bills.slice(0, 4).map(function(){ return '<span></span>'; }).join('');
-    html += '<div class="bl-cal-cell' + (bills.length ? ' has-bills' : '') + (isToday ? ' today' : '') + '" data-ds="' + ds + '"'
-      + (bills.length ? ' onclick="blShowCalDay(\'' + ds + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();blShowCalDay(\'' + ds + '\');}" role="button" tabindex="0" aria-label="' + blDateLabel(ds) + ', ' + bills.length + ' bill' + (bills.length===1?'':'s') + '"' : '') + '>'
+    var total = bills.reduce(function(s,b){ return s + blOccurrenceAmount(b, ds); }, 0)
+              + taxes.reduce(function(s,t){ return s + t.amount; }, 0);
+    var dots = bills.slice(0, 4).map(function(){ return '<span></span>'; }).join('')
+             + taxes.slice(0, Math.max(0, 4 - bills.length)).map(function(){ return '<span class="bl-cal-dot-tax"></span>'; }).join('');
+    var lbl = blDateLabel(ds) + ', ' + (bills.length ? bills.length + ' bill' + (bills.length===1?'':'s') : '')
+            + (bills.length && taxes.length ? ' and ' : '') + (taxes.length ? taxes.length + ' tax payment' + (taxes.length===1?'':'s') : '');
+    html += '<div class="bl-cal-cell' + (n ? ' has-bills' : '') + (isToday ? ' today' : '') + '" data-ds="' + ds + '"'
+      + (n ? ' onclick="blShowCalDay(\'' + ds + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();blShowCalDay(\'' + ds + '\');}" role="button" tabindex="0" aria-label="' + lbl + '"' : '') + '>'
       + '<div class="bl-cal-daynum">' + day + '</div>'
-      + (bills.length ? '<div class="bl-cal-dot">' + dots + '</div><div class="bl-cal-amt">' + blMoneyShort(total) + '</div>' : '') + '</div>';
+      + (n ? '<div class="bl-cal-dot">' + dots + '</div><div class="bl-cal-amt">' + blMoneyShort(total) + '</div>' : '') + '</div>';
   }
   html += '</div>';
   grid.innerHTML = html;
@@ -1672,15 +1707,18 @@ function blShowCalDay(ds) {
     if (cell) cell.classList.add('selected');
   }
   var bills = blConfirmed().filter(function(b){ return blOccurrencesInRange(b, ds, ds).length; });
-  if (!bills.length) { dl.innerHTML = ''; return; }
-  var total = bills.reduce(function(s,b){ return s + blOccurrenceAmount(b, ds); }, 0);
+  var taxes = blTaxItems(ds, ds);
+  if (!bills.length && !taxes.length) { dl.innerHTML = ''; return; }
+  var total = bills.reduce(function(s,b){ return s + blOccurrenceAmount(b, ds); }, 0)
+            + taxes.reduce(function(s,t){ return s + t.amount; }, 0);
   dl.innerHTML = '<div class="bl-cal-daypanel">'
     + '<div class="section-label bl-daypanel-sl">' + blDateLabel(ds) + ' · ' + fmt(total) + '</div>'
     + bills.map(function(b) {
         return '<div class="bl-txrow bl-clickable" onclick="blOpenDetail(\'' + b.id + '\')">'
           + '<div class="bl-dayrow-main"><span class="bl-biller-ico">' + iconTag(b.icon) + '</span><div><div class="bl-biller-name">' + esc(b.displayName || 'Bill') + blPaidByBadge(b) + '</div><div class="bl-muted bl-freq">' + esc(BILL_FREQ_LABELS[b.frequency] || 'Monthly') + '</div></div></div>'
           + '<div class="mono bl-txrow-amt">' + (b.amountType === 'variable' ? '~' : '') + fmt(blOccurrenceAmount(b, ds)) + '</div></div>';
-      }).join('') + '</div>';
+      }).join('')
+    + taxes.map(blTaxRow).join('') + '</div>';
   var panel = dl.querySelector('.bl-cal-daypanel');
   if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
@@ -1762,12 +1800,14 @@ function blCreateBufferGoal() {
   var due = annual.map(function(b){ return b.nextDueDate; }).filter(Boolean).sort()[0] || '';
   var existing = GOALS.find(function(g){ return g._source === 'bills_buffer'; });
   if (existing) {
-    existing.targetAmount = target;
+    existing.target = target;
     if (due) existing.targetDate = due;
     try { save(K.goals, GOALS); } catch(e) {}
     toast('✅ Updated “Annual Bills Buffer” goal to ' + fmt(target));
   } else {
-    GOALS.push({ id:Date.now(), name:'Annual Bills Buffer', icon:'target', targetAmount:target, currentAmount:0, targetDate:due, linkedAccount:'', createdAt:new Date().toISOString().split('T')[0], _source:'bills_buffer' });
+    var goal = makeGoal({ name:'Annual Bills Buffer', icon:'target', target:target, targetDate:due });
+    goal._source = 'bills_buffer';
+    GOALS.push(goal);
     try { save(K.goals, GOALS); } catch(e) {}
     toast('✅ Created “Annual Bills Buffer” savings goal');
   }
