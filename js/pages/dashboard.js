@@ -1141,6 +1141,15 @@ function kdBudgetActualsRange(months) {
 }
 
 // ══ Main render ══
+// One announcement card at a time: the Tax (Beta) intro, else What's new.
+// What's new isn't asked until the Tax card is gone, so its 14-day clock
+// only starts once it can actually be seen.
+function kdNewsCardHtml() {
+  var tax = (typeof taxDashboardCardHtml === 'function') ? taxDashboardCardHtml() : '';
+  if (tax) return tax;
+  return (typeof whatsNewCardHtml === 'function') ? whatsNewCardHtml() : '';
+}
+
 function kdRenderDashboard() {
   var host = document.getElementById('page-dashboard');
   if (!host) return;
@@ -1398,7 +1407,7 @@ function kdRenderDashboard() {
     + '<button class="kd-pill' + (kdPeriod==='ytd'?' active':'') + '" onclick="kdSetPeriod(\'ytd\')">Year to Date</button>'
     + '<button class="kd-pill' + (kdPeriod==='lastYear'?' active':'') + '" onclick="kdSetPeriod(\'lastYear\')">Last Year</button>'
     + '</div></div>'
-    + (typeof whatsNewCardHtml === 'function' ? whatsNewCardHtml() : '')
+    + kdNewsCardHtml()
     + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
     + '</div>';
 

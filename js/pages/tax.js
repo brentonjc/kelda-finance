@@ -123,12 +123,14 @@ function _taxName(person) {
 }
 function _taxBadge(text, cls) { return '<span class="badge ' + cls + '">' + esc(text) + '</span>'; }
 
-// ── Navigation visibility ───────────────────────────────────────
+// ── Navigation ──────────────────────────────────────────────────
+// Tax is always listed under Beta Features so people can find it. Until it's turned on, the
+// entry carries a "Try it" tag and the page shows the intro, which leads to the opt-in sheet.
 function taxSyncNav() {
   var on = taxEnabled();
   ['n-tax', 'mob-tax'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.classList.toggle('tax-nav-off', !on);
+    if (el) el.classList.toggle('tax-nav-try', !on);
   });
 }
 
@@ -151,11 +153,7 @@ function _taxInitUi() {
 function renderTaxPage() {
   var el = document.getElementById('page-tax');
   if (!el) return;
-  if (!taxEnabled()) {
-    el.innerHTML = '<div class="page-title">Tax</div><div class="card"><div class="empty"><p>Tax (Beta) is off. Turn it on in Settings › Beta features.</p>' +
-      '<button class="btn btn-primary" onclick="go(\'settings\')">Open Settings</button></div></div>';
-    return;
-  }
+  if (!taxEnabled()) { el.innerHTML = _taxIntroHtml(); return; }
   _taxInitUi();
   var today = taxToday();
   var c = taxCfg();
@@ -2571,6 +2569,46 @@ function taxSaveLodgement() {
   toast('Lodgement saved', 2400, 'success');
 }
 
+// ── Intro (the Tax page while the beta is off) ──────────────────
+function _taxIntroHtml() {
+  var h = '<div class="page-title tax-ttl">Tax <span class="tax-beta">Beta</span></div>';
+  h += '<div class="page-sub">Prepare figures for your own return and keep on top of what you owe.</div>';
+  h += '<div class="card mb tax-intro"><ul class="tax-intro-list">';
+  [['calendar-dollar', 'PAYG instalments', 'Due dates, payments matched from Spending, and a check on whether the year looks right.'],
+   ['file-text', 'Return worksheet', 'Income, deductions and capital gains laid out by ATO label, ready for myTax or your agent.'],
+   ['chart-arrows', 'Share awards', 'Tax on RSU vests, including the 30-day rule, and how much to set aside.'],
+   ['scale', 'What you owe', 'Estimated tax shown in net worth, with due dates on Bills and Forecast. You can switch the net worth part off.']
+  ].forEach(function(x) {
+    h += '<li><i class="ti ti-' + x[0] + '" aria-hidden="true"></i><span><b>' + esc(x[1]) + '</b><span class="tax-note">' + esc(x[2]) + '</span></span></li>';
+  });
+  h += '</ul>';
+  h += '<p class="tax-desc">Estimates only, not tax advice. Kelda can\'t lodge your return. Everything stays on this device, and you can turn it off any time in Settings.</p>';
+  h += '<button class="btn btn-primary tax-full" onclick="taxBetaToggle()">Turn on Tax (Beta)</button></div>';
+  return h;
+}
+
+// One-time Dashboard card pointing at the intro. Gone once Tax is on or the card is dismissed
+// (taxcfg.introDismissed, shared by the household).
+function taxDashboardCardHtml() {
+  var c = load(K.taxcfg);
+  // consentAt: they've tried it before, so turning it off was a choice; don't nudge again
+  if (c && (c.betaEnabled || c.introDismissed || c.consentAt)) return '';
+  return '<div class="tax-dash" id="tax-dash" role="region" aria-label="New in Kelda">' +
+    '<i class="ti ti-receipt-tax tax-dash-ic" aria-hidden="true"></i>' +
+    '<div class="tax-dash-txt"><b>New: Tax <span class="tax-beta">Beta</span></b>' +
+    '<span class="tax-note">Track PAYG instalments and prepare the figures for your return.</span></div>' +
+    '<div class="tax-dash-acts"><button class="btn btn-sm btn-primary" onclick="go(\'tax\')">Have a look</button>' +
+    '<button class="btn btn-sm btn-ghost" onclick="taxDismissDashCard()">Dismiss</button></div></div>';
+}
+function taxDismissDashCard() {
+  var c = taxCfg();
+  c.introDismissed = true;
+  save(K.taxcfg, c);
+  var el = document.getElementById('tax-dash');
+  if (el) el.remove();
+  toast('Tax (Beta) stays in the menu if you want it later', 2400, 'info');
+}
+
 // ── Beta opt-in (Settings › Beta features) ──────────────────────
 function taxSettingsCardHtml() {
   var on = taxEnabled();
@@ -2613,6 +2651,9 @@ function taxSetBeta(on) {
   taxCloseSheet();
   taxSyncNav();
   if (typeof renderSettings === 'function') renderSettings();
+  // Turned on from the intro: open the page itself
+  var pg = document.getElementById('page-tax');
+  if (pg && pg.classList.contains('active')) renderTaxPage();
   toast(on ? 'Tax (Beta) is on' : 'Tax (Beta) is off', 2400, on ? 'success' : 'info');
   var sw = document.getElementById('tax-beta-sw'); if (sw) sw.focus();
 }

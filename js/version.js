@@ -14,7 +14,7 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 //
 //  Each entry also feeds "What's new" (js/pages/whatsnew.js):
-//    headline   what the user can now do, ≤ 60 chars, second person
+//    headline   what the user can now do, ≤ 70 chars, second person
 //    benefits   2–3 user-facing bullets, ≤ 110 chars each
 //    link       optional { page, label }: the Try it button and the
 //               nav item that gets a "New" badge
@@ -50,6 +50,22 @@ var APP_CHANGELOG = [
     ],
   },
   {
+    version: '2.10.2',
+    date: '2026-10-25',
+    title: 'Tax (Beta) is easier to find',
+    headline: 'Tax (Beta) is easier to find and try',
+    benefits: [
+      'Tax (Beta) is always listed under Beta Features, with a Try it tag until you turn it on',
+      'Open it to see what it does before you turn it on',
+    ],
+    link: { page: 'tax', label: 'Open Tax (Beta)' },
+    notes: [
+      'Tax (Beta) is now always listed under Beta Features, with a “Try it” tag until you turn it on',
+      'Opening it shows what it does and a button to turn it on. It still needs your OK before anything changes',
+      'A one-time card on the Dashboard introduces it. Dismiss it and it won’t come back'
+    ]
+  },
+  {
     version: '2.10.1',
     date: '2026-10-25',
     title: 'Tax (Beta): match instalment payments',
@@ -60,7 +76,6 @@ var APP_CHANGELOG = [
       'Compare your forecast tax with what you’ve paid through instalments and withholding',
     ],
     link: { page: 'tax', label: 'Open Tax (Beta)' },
-    requires: 'tax',
     notes: [
       'Match a PAYG instalment to the ATO payment in Spending. Tax suggests the likely transaction under each quarter',
       'Year check on the Instalments tab: your forecast tax against the ATO’s instalments plus withholding',
@@ -137,7 +152,6 @@ var APP_CHANGELOG = [
       'Estimated tax owed comes off net worth and borrowing power, labelled as an estimate. You can turn this off',
     ],
     link: { page: 'tax', label: 'Open Tax (Beta)' },
-    requires: 'tax',
     notes: [
       'Record each RSU vest from your Equities grant: market value, the exchange rate you used, any sale and whether it matches your ESS statement',
       'Shares sold within 30 days of vesting are taxed at the sale date, which can move the income into the next financial year',
@@ -157,7 +171,6 @@ var APP_CHANGELOG = [
       'See an estimate of what you’ll pay or get back, and export a pack for your tax agent',
     ],
     link: { page: 'tax', label: 'Open Tax (Beta)' },
-    requires: 'tax',
     notes: [
       'Enter each employer’s income statement, and see a return worksheet laid out by ATO label, with where every figure came from',
       'Interest comes from your Interest transactions, capital gains from your Equities sales, and deductions from transactions you tag in Spending',
@@ -177,7 +190,6 @@ var APP_CHANGELOG = [
       'Turn it on in Settings › Beta features. Estimates only, not tax advice',
     ],
     link: { page: 'tax', label: 'Open Tax (Beta)' },
-    requires: 'tax',
     notes: [
       'New Tax (Beta) page, hidden until you turn it on in Settings › Beta features. Estimates only, not tax advice, and Kelda can’t lodge',
       'Choose how each person lodges (yourself, a tax agent, or not sure yet) and see the matching ATO due dates, including weekend notes',

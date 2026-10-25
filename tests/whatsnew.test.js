@@ -237,3 +237,16 @@ test('release-notes.json rows carry only the public fields (AC25)', () => {
   assert.deepEqual(Object.keys(rows[0]).sort(), ['benefits', 'date', 'headline', 'highlight', 'version']);
   assert.equal(rows[1].highlight, false);
 });
+
+// ── Markup the badges rely on ──────────────────────────────────
+
+test('every More menu tile has a matching data-page and a valid onclick', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const tiles = html.match(/<button class="mob-menu-item[^>]*goMob[^>]*>/g) || [];
+  assert.ok(tiles.length > 10, 'expected the More menu tiles');
+  tiles.forEach((tile) => {
+    const call = tile.match(/onclick="goMob\('([a-z-]+)'\)"/);
+    assert.ok(call, "onclick should be goMob('page'): " + tile);
+    assert.ok(tile.includes('data-page="' + call[1] + '"'), 'data-page should match: ' + tile);
+  });
+});
