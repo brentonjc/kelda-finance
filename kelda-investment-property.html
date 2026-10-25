@@ -12,6 +12,7 @@
 
 <!-- Chart.js — self-hosted (shared with the main Kelda app); graceful fallback handled by safeChart -->
 <script src="assets/vendor/chart.umd.min.js" onerror="window._chartJsError=true"></script>
+<script src="js/profiles.js"></script>
 
 <!-- Mirror the parent Kelda app's theme (palette + light/dark). Standalone falls back to the
      data-mode/data-palette on <html>. -->
@@ -486,7 +487,7 @@ function readKelda(){
   var out = { tx:[], loans:[], owners:[] }, i;
   var cfg = load(KELDA_KEYS.userconfig) || {};
   if(cfg.p1name) out.owners.push(cfg.p1name);
-  if(cfg.p2name && cfg.p2enabled !== false) out.owners.push(cfg.p2name);
+  if(cfg.p2name && secondUserOn(cfg, load('cff_pins'))) out.owners.push(cfg.p2name);
 
   var ids = keldaIpCatIds(), tx = load(KELDA_KEYS.tx) || [];
   for(i=0;i<tx.length;i++){

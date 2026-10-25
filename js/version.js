@@ -14,11 +14,22 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.10.1';
+var APP_VERSION = '2.10.3';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.10.3',
+    date: '2026-10-25',
+    title: 'Single person by default',
+    notes: [
+      'Kelda is set up for one person unless you add a second during setup or in Settings › Profiles',
+      'With one person, the second profile, Joint view and their options no longer show on Super, Insurance, Assets, Bills, Investments or Spending',
+      'Add or remove a second person in Settings › Profiles. Removing them keeps their records',
+      'Setup no longer suggests a “Joint” name for a third account'
+    ]
+  },
   {
     version: '2.10.1',
     date: '2026-10-25',

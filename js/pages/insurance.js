@@ -107,7 +107,7 @@ function insShowAddModal(){
   const typeEl=document.getElementById('ins-type');
   if(typeEl){typeEl.value='Life';insTypeChanged();}
   const covEl=document.getElementById('ins-covered');
-  if(covEl)covEl.value='joint';
+  if(covEl)covEl.value=hasSecondUser()?'joint':'brenton';
   const freqEl=document.getElementById('ins-freq');
   if(freqEl)freqEl.value='annual';
   const locEl=document.getElementById('ins-location');
@@ -761,7 +761,8 @@ function showSuperResults(){
 
 function renderSuperChart(){
   const rowsB=SUPER.b?.age?projectSuper(SUPER.b):[];
-  const rowsS=SUPER.s?.age?projectSuper(SUPER.s):[];
+  const p2=hasSecondUser();
+  const rowsS=p2&&SUPER.s?.age?projectSuper(SUPER.s):[];
   const now=new Date().getFullYear();
   const maxLen=Math.max(rowsB.length,rowsS.length);
   if(!maxLen)return;
@@ -773,9 +774,10 @@ function renderSuperChart(){
     type:'line',
     data:{labels,datasets:[
       {label:getUserName('brenton'),data:rowsB.map(r=>r.nominal),borderColor:'#e8457a',backgroundColor:'#e8457a22',fill:true,tension:.3,pointRadius:2,spanGaps:true},
+    ].concat(p2?[
       {label:getUserName('shelley'),data:rowsS.map(r=>r.nominal),borderColor:'#a29bfe',backgroundColor:'#a29bfe22',fill:true,tension:.3,pointRadius:2,spanGaps:true},
       {label:'Combined',data:labels.map((_,i)=>(rowsB[i]?.nominal||0)+(rowsS[i]?.nominal||0)),borderColor:'#f0a040',borderDash:[6,3],borderWidth:2.5,backgroundColor:'transparent',pointRadius:2,spanGaps:true},
-    ]},
+    ]:[])},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:13,color:insToken('--muted')}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y)}}},
@@ -786,6 +788,13 @@ function renderSuperChart(){
   const fB=rowsB.length?rowsB[rowsB.length-1].nominal:0;
   const fS=rowsS.length?rowsS[rowsS.length-1].nominal:0;
   const combo=fB+fS;
+  if(!p2){
+    document.getElementById('super-combined').innerHTML=`
+    <div class="g3">
+      <div class="stat stat-pink"><div class="sl">${getUserName('brenton')} at ${SUPER.b?.retire||67}</div><div class="sv">${fmt(fB)}</div><div class="ss">${fmt(fB*.04/12)}/mo (4% rule)</div></div>
+    </div>`;
+    return;
+  }
   document.getElementById('super-combined').innerHTML=`
     <div class="g3">
       <div class="stat stat-pink"><div class="sl">${getUserName('brenton')} at ${SUPER.b?.retire||67}</div><div class="sv">${fmt(fB)}</div></div>
@@ -969,7 +978,7 @@ function renderD293Section() {
   const people = [
     { key:'b', name:getUserName('brenton'), d:SUPER.b, color:'#e8457a', grad:'linear-gradient(135deg,#8b1a4a,#e8457a)' },
     { key:'s', name:getUserName('shelley'), d:SUPER.s, color:'#a29bfe', grad:'linear-gradient(135deg,#3a2060,#7c5cbf)' },
-  ];
+  ].filter(p => p.key === 'b' || hasSecondUser());
 
   el.innerHTML = people.map(p => {
     if (!p.d?.salary) {

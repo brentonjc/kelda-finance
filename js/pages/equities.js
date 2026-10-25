@@ -1122,8 +1122,10 @@ function openEqModal(id) {
 
     var typeOpts = EQ_TYPES.map(function(t){ return '<option value="'+t.key+'"'+(selType===t.key?' selected':'')+'>'+t.label+'</option>'; }).join('');
     var ownerOpts = '<option value="brenton"'+(!h||h.owner==='brenton'?' selected':'')+'>'+getUserName('brenton')+'</option>'
-        +'<option value="shelley"'+(h&&h.owner==='shelley'?' selected':'')+'>'+getUserName('shelley')+'</option>'
-        +'<option value="joint"'+(h&&h.owner==='joint'?' selected':'')+'>Joint</option>';
+        +(hasSecondUser()||(h&&(h.owner==='shelley'||h.owner==='joint'))
+          ?'<option value="shelley"'+(h&&h.owner==='shelley'?' selected':'')+'>'+getUserName('shelley')+'</option>'
+          +'<option value="joint"'+(h&&h.owner==='joint'?' selected':'')+'>Joint</option>'
+          :'');
 
     overlay.innerHTML = '<div class="eq-modal-box" onclick="event.stopPropagation()">'
         +'<div class="eq-modal-hd">'
