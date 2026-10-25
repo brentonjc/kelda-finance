@@ -184,6 +184,7 @@ function _settAboutCard() {
   h += '<div class="sett-ver-num">v' + _settEsc(ver) + '</div>';
   h += '</div>';
   h += '<p class="sett-ver-hint">Quote this version number when reporting an issue.</p>';
+  h += '<button class="btn btn-ghost btn-sm sett-ver-wn" onclick="go(\'whatsnew\')"><i class="ti ti-sparkles"></i> See what’s new</button>';
 
   // Version history
   h += '<div class="section-label section-label--mb10">Version history</div>';

@@ -105,21 +105,19 @@ Existing fields are kept, so Settings › About keeps working unchanged.
   version: '2.10.0',
   date: '2026-10-25',
   title: 'Goals keep a history',          // existing: short internal label, Settings history
-  headline: 'Goal finish dates now follow your real pace', // NEW: benefit, ≤ 60 chars
+  headline: 'Goal finish dates now follow your real pace', // NEW: benefit, ≤ 70 chars
   benefits: [                             // NEW: 2–3 user-facing bullets, ≤ 110 chars each
     'Once you add money to a goal, its finish date is based on that goal’s own pace',
     'Link a goal to any of your accounts, not only the first four',
   ],
   link: { page: 'goals', label: 'Open Goals' }, // NEW, optional: Try it target + badge
-                                          //   optional `action`: a key into WHATSNEW_ACTIONS,
-                                          //   run after go(page), e.g. 'import' → openCsvModal()
   requires: 'tax',                        // NEW, optional: beta flag the link depends on
   highlight: true,                        // NEW, optional: overrides the version rule
   notes: [ ... ],                         // existing: detailed, Settings only
 }
 ```
 
-`WHATSNEW_ACTIONS` is a fixed map in `whatsnew.js`. It starts as `{ import: openCsvModal }`, the same thing the welcome screen's CSV shortcut in `login.js` does when it calls `go('transactions')` and then `openCsvModal()`. An unknown key falls back to plain `go(page)`. Entries never contain function names or code.
+Imports link to the `upload` page, which is the CSV import flow on both phone and desktop, so `link` needs no extra action field. Entries never contain function names or code.
 
 Entries with no `headline` fall back to `title`, and entries with no `benefits` fall back to the first 3 `notes`. Old entries render without being rewritten.
 
@@ -139,13 +137,14 @@ A new storage key, `K.whatsnew = 'cff_whatsnew'`:
 
 ```js
 {
-  brenton: { seen: '2.10.0', cardShown: {},                         visited: { goals: '2.10.0' } },
-  shelley: { seen: '2.9.1',  cardShown: { '2.10.0': '2026-10-26' }, visited: {} },
-  joint:   { seen: '2.10.0', cardShown: {},                         visited: {} }
+  brenton: { start: '2.9.1', seen: '2.10.0',  cardShown: {},                         visited: { goals: '2.10.0' } },
+  shelley: { start: '2.9.1', seen: '2.9.1',  cardShown: { '2.10.0': '2026-10-26' }, visited: {} },
+  joint:   { start: '2.9.1', seen: '2.10.0',  cardShown: {},                         visited: {} }
 }
 ```
 
 - Joint has its own record and is treated like a third profile, even though it has no PIN.
+- `start` is the version the record was created at. Releases up to it never get a nav badge, so a fresh install shows none.
 - `seen` is the highest version whose card or list this profile has acknowledged.
 - `cardShown[version]` is the date the card first appeared for that release. It drives the 14-day expiry.
 - `visited[page]` is the version whose badge for `page` this profile has already cleared.
@@ -180,7 +179,7 @@ Put these in `js/whatsnew-core.js`, a classic script with globals so it can be l
 - Don't use people's names. The app ships to beta testers: say "everyone in your household", not "Brenton and Shelley".
 - Beta features say "(Beta)" in the headline and keep the "estimates only" caveat where it applies.
 - Bug fixes say what now works, not what was broken, unless the user would have noticed the bug.
-- Limits: headline ≤ 60 characters, bullets ≤ 110 characters, at most 3 bullets.
+- Limits: headline ≤ 70 characters, bullets ≤ 110 characters, at most 3 bullets.
 
 ## 7. Release process changes
 
@@ -207,7 +206,7 @@ Put these in `js/whatsnew-core.js`, a classic script with globals so it can be l
 | AC9 | Try it on a release whose `requires` beta flag is off opens Settings › Beta features, not a hidden page. | Manual |
 | AC10 | Shelley, first unlocking a week after the upgrade, still gets the card. | Auto (all profiles initialised together) |
 | AC10a | A card nobody acts on stops showing 14 days after it first appeared for that profile, and the release stays unread in the bell and the list. | Auto (`cardRelease`) |
-| AC10b | Try it on v2.9.0 and v2.5.8 opens Transactions with the CSV import open, on phone and desktop. | Manual |
+| AC10b | Try it on v2.9.0 and v2.5.8 opens the Upload page (CSV import), on phone and desktop. | Manual |
 
 ### What's new page and entry points
 | # | Criterion | Check |
@@ -241,7 +240,7 @@ Put these in `js/whatsnew-core.js`, a classic script with globals so it can be l
 
 1. **Joint** has its own seen state and is treated like a third profile (§5.3).
 2. **Goals contribution history (v2.10.0)** isn't visible to users yet, so the copy doesn't promise it. When the one-tap contributions release ships, its entry gets a "see every dollar you've added" benefit.
-3. **Import deep link:** "Import a file" opens the CSV import directly, using `link.action: 'import'` (§5.1).
+3. **Import deep link:** "Import a file" opens the Upload page, which is the CSV import flow (§5.1).
 4. **Card lifetime:** the card expires 14 days after it first appears for that profile (§4.1).
 
 ---
@@ -270,7 +269,7 @@ Put these in `js/whatsnew-core.js`, a classic script with globals so it can be l
 - Kelda fills in that debt's monthly balances and current balance for you
 - Choose "balances only" so repayments already in your bank account aren't counted twice
 
-`link: { page: 'transactions', action: 'import', label: 'Import a file' }`
+`link: { page: 'upload', label: 'Import a file' }`
 
 ### v2.8.0 · H · requires `tax`
 **Tax (Beta): know what to set aside when your shares vest**
@@ -328,4 +327,4 @@ Put these in `js/whatsnew-core.js`, a classic script with globals so it can be l
 - Amex CSV files now import, with purchases as spending and repayments filed as transfers
 - Addresses that run over several lines no longer break a transaction into pieces
 
-`link: { page: 'transactions', action: 'import', label: 'Import a file' }`
+`link: { page: 'upload', label: 'Import a file' }`

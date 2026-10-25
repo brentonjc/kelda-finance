@@ -12,17 +12,55 @@
 //    PATCH  bug fixes and small tweaks
 //
 //  Keep this in step with the service-worker CACHE name in sw.js.
+//
+//  Each entry also feeds "What's new" (js/pages/whatsnew.js):
+//    headline   what the user can now do, ≤ 60 chars, second person
+//    benefits   2–3 user-facing bullets, ≤ 110 chars each
+//    link       optional { page, label }: the Try it button and the
+//               nav item that gets a "New" badge
+//    requires   optional beta flag the link depends on ('tax')
+//    highlight  optional. X.Y.0 releases show the Dashboard card and
+//               patches don't; set true for a patch that adds
+//               something users want to know about, false for a
+//               MINOR that is purely internal
+//  `notes` stay the detailed list in Settings › About.
+//  Writing guide: docs/specs/whats-new.md §6.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.10.1';
+var APP_VERSION = '2.11.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
   {
+    version: '2.11.0',
+    date: '2026-10-25',
+    title: 'What’s new',
+    headline: 'See what’s new in Kelda, right on your Dashboard',
+    benefits: [
+      'After an update, new features show as a card on your Dashboard the first time you open Kelda',
+      'Find every update under What’s new in the menu, the bell, or on the sign-in screen',
+      'Pages with something new get a New tag until you’ve had a look',
+    ],
+    notes: [
+      'A What’s new card appears on the Dashboard once after a feature update. Dismiss it, or it goes by itself after 14 days',
+      'Each person sees it once; dismissing it on your profile doesn’t hide it for anyone else',
+      'New What’s new page in the menu, plus a link from the bell and from the version number on the sign-in screen',
+      'A New tag marks the page an update added to, until you open it or for 30 days',
+    ],
+  },
+  {
     version: '2.10.1',
     date: '2026-10-25',
     title: 'Tax (Beta): match instalment payments',
+    headline: 'Tax (Beta): match each instalment to its payment',
+    benefits: [
+      'Tax suggests which Spending transaction paid each PAYG instalment',
+      'Instalment and tax due dates now show on Bills and in Forecast',
+      'Compare your forecast tax with what you’ve paid through instalments and withholding',
+    ],
+    link: { page: 'tax', label: 'Open Tax (Beta)' },
+    requires: 'tax',
     notes: [
       'Match a PAYG instalment to the ATO payment in Spending. Tax suggests the likely transaction under each quarter',
       'Year check on the Instalments tab: your forecast tax against the ATO’s instalments plus withholding',
@@ -35,6 +73,13 @@ var APP_CHANGELOG = [
     version: '2.10.0',
     date: '2026-10-25',
     title: 'Goals keep a history',
+    headline: 'Goal finish dates now follow your real pace',
+    benefits: [
+      'Once you add money to a goal, its finish date is based on that goal’s own pace',
+      'Link a goal to any of your accounts, not only the first four',
+      'Deleting an account no longer touches its goals. They keep their amounts and stop syncing',
+    ],
+    link: { page: 'goals', label: 'Open Goals' },
     notes: [
       'Goals now keep a history of the money added to them, ready for one-tap contributions in the next update. Your goals and amounts are unchanged',
       'Finish dates now follow each goal’s own pace once it has contributions. A goal linked to an account counts its month-to-month balance changes',
@@ -47,6 +92,12 @@ var APP_CHANGELOG = [
     version: '2.9.1',
     date: '2026-10-18',
     title: 'Goals fixes',
+    headline: 'Goal dates you can trust',
+    benefits: [
+      'Finish dates use what you’ve actually saved over the last 3 months, not a guessed $500 a month',
+      'Your Dashboard and Goals page now show the same finish date',
+      'Deleted a goal by mistake? You have 5 seconds to undo it',
+    ],
     notes: [
       'A goal you’ve reached now shows a green bar and a green “Goal reached”, instead of turning amber and then red as you got closer',
       'Finish dates are now worked out from your actual average savings over the last 3 months, split across your unfinished goals, instead of assuming $500 a month',
@@ -60,6 +111,13 @@ var APP_CHANGELOG = [
     version: '2.9.0',
     date: '2026-10-18',
     title: 'Balances for cards and loans',
+    headline: 'Import a card or loan statement and its balance fills itself in',
+    benefits: [
+      'Pick a credit card, BNPL, loan or mortgage when you import a bank file with a running balance',
+      'Kelda fills in that debt’s monthly balances and current balance for you',
+      'Choose “balances only” so repayments already in your bank account aren’t counted twice',
+    ],
+    link: { page: 'upload', label: 'Import a file' },
     notes: [
       'When you import a bank file with a running balance, you can now pick a credit card, BNPL, loan or mortgage as well as a cash account',
       'Kelda works out whether the file shows the amount owed as a positive or negative balance, then fills in that liability’s monthly balances and updates its current balance',
@@ -72,6 +130,14 @@ var APP_CHANGELOG = [
     version: '2.8.0',
     date: '2026-10-11',
     title: 'Tax (Beta): share awards and tax owed in net worth',
+    headline: 'Tax (Beta): know what to set aside when your shares vest',
+    benefits: [
+      'Record each RSU vest and see the tax to put aside on it, and on the next one coming up',
+      'Shares sold within 30 days of vesting are handled correctly, even across financial years',
+      'Estimated tax owed comes off net worth and borrowing power, labelled as an estimate. You can turn this off',
+    ],
+    link: { page: 'tax', label: 'Open Tax (Beta)' },
+    requires: 'tax',
     notes: [
       'Record each RSU vest from your Equities grant: market value, the exchange rate you used, any sale and whether it matches your ESS statement',
       'Shares sold within 30 days of vesting are taxed at the sale date, which can move the income into the next financial year',
@@ -84,6 +150,14 @@ var APP_CHANGELOG = [
     version: '2.7.0',
     date: '2026-10-05',
     title: 'Tax (Beta): return worksheet',
+    headline: 'Tax (Beta): see your return take shape before you lodge',
+    benefits: [
+      'A worksheet laid out by ATO label, showing where every figure came from',
+      'Interest, capital gains and tagged deductions fill in from what’s already in Kelda',
+      'See an estimate of what you’ll pay or get back, and export a pack for your tax agent',
+    ],
+    link: { page: 'tax', label: 'Open Tax (Beta)' },
+    requires: 'tax',
     notes: [
       'Enter each employer’s income statement, and see a return worksheet laid out by ATO label, with where every figure came from',
       'Interest comes from your Interest transactions, capital gains from your Equities sales, and deductions from transactions you tag in Spending',
@@ -96,6 +170,14 @@ var APP_CHANGELOG = [
     version: '2.6.0',
     date: '2026-10-04',
     title: 'Tax (Beta), off by default',
+    headline: 'Tax (Beta): PAYG instalments and ATO due dates in one place',
+    benefits: [
+      'See your ATO due dates based on how you lodge, whether yourself or through a tax agent',
+      'Track each PAYG instalment, when it’s due and what you’ve paid',
+      'Turn it on in Settings › Beta features. Estimates only, not tax advice',
+    ],
+    link: { page: 'tax', label: 'Open Tax (Beta)' },
+    requires: 'tax',
     notes: [
       'New Tax (Beta) page, hidden until you turn it on in Settings › Beta features. Estimates only, not tax advice, and Kelda can’t lodge',
       'Choose how each person lodges (yourself, a tax agent, or not sure yet) and see the matching ATO due dates, including weekend notes',
@@ -106,6 +188,14 @@ var APP_CHANGELOG = [
     version: '2.5.13',
     date: '2026-10-08',
     title: 'Balances from your bank file',
+    highlight: true,
+    headline: 'Your account balances can now fill themselves in',
+    benefits: [
+      'When your bank file includes a running balance, Kelda fills in that account’s monthly balances',
+      'A check before import shows anything that doesn’t add up, and nothing changes until you’ve reviewed it',
+      'Everyone in your household now sees the same net worth',
+    ],
+    link: { page: 'cash', label: 'Open Bank Accounts' },
     notes: [
       'When a bank CSV has a running-balance column, Kelda can fill in that account’s Cash Tracker balances for you. Pick the account on the column step',
       'A balance check before import shows anything that doesn’t add up, and nothing is synced until you’ve reviewed it',
@@ -117,6 +207,11 @@ var APP_CHANGELOG = [
     version: '2.5.12',
     date: '2026-10-08',
     title: 'Checkboxes look like checkboxes',
+    headline: 'Checkboxes that look like checkboxes',
+    benefits: [
+      'Checkboxes and options use your device’s own style, in your theme colour',
+      'On phones you can tap the label next to a checkbox, not just the box',
+    ],
     notes: [
       'Checkboxes and option buttons across the app use your device’s own style, tinted with the theme colour, instead of showing as blank boxes',
       'On phones, the label beside each checkbox can be tapped too',
@@ -126,6 +221,10 @@ var APP_CHANGELOG = [
     version: '2.5.11',
     date: '2026-10-08',
     title: 'Easier-to-read text in every theme',
+    headline: 'Easier to read in every theme',
+    benefits: [
+      'Status badges, buttons and green, amber and red amounts have stronger contrast in every theme',
+    ],
     notes: [
       'Paid, Due, Overdue and other status badges use stronger text colours, so they’re readable in every theme',
       'Buttons and toggles filled with the theme colour use a label colour that stands out from it. In the Kelda dark theme, those labels are now dark',
@@ -139,6 +238,12 @@ var APP_CHANGELOG = [
     version: '2.5.10',
     date: '2026-10-08',
     title: 'More accurate categories',
+    headline: 'More of your transactions get the right category on their own',
+    benefits: [
+      '“Purchase at…” and “Online purchase from…” are matched on the shop’s name',
+      'A rule you set for Bunnings now covers every Bunnings store',
+      'Fewer odd matches: Uber Eats is food delivery, not a taxi',
+    ],
     notes: [
       'Transactions worded “Purchase at…”, “Online purchase from…” or “To… receipt number” are now matched on the shop or payee name, so more of them get a category',
       'A category you set for one of these now also covers the same merchant when your bank words it differently, and “Apply to all” offers the shop name instead of “Purchase”',
@@ -154,6 +259,10 @@ var APP_CHANGELOG = [
     version: '2.5.9',
     date: '2026-10-08',
     title: 'Credit card CSV signs',
+    headline: 'Card statements with positive spending import correctly',
+    benefits: [
+      'New “Positive amounts are spending” option for statements that list purchases as positive',
+    ],
     notes: [
       'New “Positive amounts are spending” box on the column step, for card statements that list purchases as positive amounts. It is ticked for American Express files and can be unticked',
     ],
@@ -162,6 +271,13 @@ var APP_CHANGELOG = [
     version: '2.5.8',
     date: '2026-10-08',
     title: 'American Express CSV import',
+    highlight: true,
+    headline: 'Import your American Express statements',
+    benefits: [
+      'Amex CSV files now import, with purchases as spending and repayments filed as transfers',
+      'Addresses that run over several lines no longer break a transaction into pieces',
+    ],
+    link: { page: 'upload', label: 'Import a file' },
     notes: [
       'American Express CSV files now import. Purchases come in as expenses, and card repayments are filed under Transfers › Credit Card Payment',
       'Cells that run over several lines, such as Amex addresses, no longer split a transaction into broken rows',
@@ -317,8 +433,9 @@ var APP_CHANGELOG = [
 
 // ── On-device upgrade tracking ─────────────────────────────────
 // Records the version the user last ran so the app can detect an
-// upgrade locally (e.g. to show a "what's new" banner later). This
-// never leaves the device — it's just another localStorage value.
+// upgrade locally (What's new reads PREV_RUN_VERSION to tell an
+// upgrade from a fresh install). This never leaves the device —
+// it's just another localStorage value.
 var APP_VERSION_KEY = 'cff_app_version';
 
 function getLastRunVersion() {
@@ -326,10 +443,13 @@ function getLastRunVersion() {
   catch (e) { return null; }
 }
 
-// Returns true the first time the app runs after a version bump.
+// The version this device ran before this load (null on a fresh
+// install). Read before recordCurrentVersion() below overwrites it.
+var PREV_RUN_VERSION = getLastRunVersion();
+
+// True when this load is the first run after a version bump.
 function isFreshUpgrade() {
-  var last = getLastRunVersion();
-  return last !== null && last !== APP_VERSION;
+  return PREV_RUN_VERSION !== null && PREV_RUN_VERSION !== APP_VERSION;
 }
 
 function recordCurrentVersion() {
