@@ -14,11 +14,21 @@
 //  Keep this in step with the service-worker CACHE name in sw.js.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.10.1';
+var APP_VERSION = '2.10.2';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.10.2',
+    date: '2026-10-25',
+    title: 'Tax (Beta) is easier to find',
+    notes: [
+      'Tax (Beta) is now always listed under Beta Features, with a “Try it” tag until you turn it on',
+      'Opening it shows what it does and a button to turn it on. It still needs your OK before anything changes',
+      'A one-time card on the Dashboard introduces it. Dismiss it and it won’t come back'
+    ]
+  },
   {
     version: '2.10.1',
     date: '2026-10-25',
