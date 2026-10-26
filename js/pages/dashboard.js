@@ -1051,9 +1051,13 @@ function renderNotifModal() {
     return '<div class="notif-nudge"><span class="notif-nudge-ic">' + iconTag(n.icon) + '</span><span>' + n.text + '</span></div>';
   }).join('');
 
-  el.innerHTML = (cardsHtml ? '<div class="notif-section-lbl">Priorities</div>' + cardsHtml : '')
+  // What's new leads when there's something unread; otherwise it's a quiet link at the end.
+  var wn = (typeof wnNotifParts === 'function') ? wnNotifParts() : { lead: '', tail: '' };
+  el.innerHTML = wn.lead
+    + (cardsHtml ? '<div class="notif-section-lbl' + (wn.lead ? ' notif-section-lbl--gap' : '') + '">Priorities</div>' + cardsHtml : '')
     + (nudgesHtml ? '<div class="notif-section-lbl notif-section-lbl--gap">Smart insights</div>' + nudgesHtml : '')
-    + (!cardsHtml && !nudgesHtml ? '<div class="kd-empty">Nothing to flag right now — you\'re all caught up.</div>' : '');
+    + (!cardsHtml && !nudgesHtml && !wn.lead ? '<div class="kd-empty">Nothing to flag right now — you\'re all caught up.</div>' : '')
+    + wn.tail;
 }
 
 // ── Period selector — drives the cashflow & budget tiles ───────
@@ -1137,6 +1141,15 @@ function kdBudgetActualsRange(months) {
 }
 
 // ══ Main render ══
+// One announcement card at a time: the Tax (Beta) intro, else What's new.
+// What's new isn't asked until the Tax card is gone, so its 14-day clock
+// only starts once it can actually be seen.
+function kdNewsCardHtml() {
+  var tax = (typeof taxDashboardCardHtml === 'function') ? taxDashboardCardHtml() : '';
+  if (tax) return tax;
+  return (typeof whatsNewCardHtml === 'function') ? whatsNewCardHtml() : '';
+}
+
 function kdRenderDashboard() {
   var host = document.getElementById('page-dashboard');
   if (!host) return;
@@ -1394,7 +1407,7 @@ function kdRenderDashboard() {
     + '<button class="kd-pill' + (kdPeriod==='ytd'?' active':'') + '" onclick="kdSetPeriod(\'ytd\')">Year to Date</button>'
     + '<button class="kd-pill' + (kdPeriod==='lastYear'?' active':'') + '" onclick="kdSetPeriod(\'lastYear\')">Last Year</button>'
     + '</div></div>'
-    + (typeof taxDashboardCardHtml === 'function' ? taxDashboardCardHtml() : '')
+    + kdNewsCardHtml()
     + '<div class="kd-bodywrap">' + tileNW + tileAcc + tileBudget + tileGoals + tileBills + tile6 + '</div>'
     + '</div>';
 

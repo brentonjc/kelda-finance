@@ -1,0 +1,117 @@
+/* ═══════════════════════════════════════════════════════════════
+   whatsnew.css — Dashboard card, What's new page and sheet,
+   bell row, unread dots and "New" nav badges (js/pages/whatsnew.js)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard card ─────────────────────────────────────────── */
+.wn-card{
+  position:relative;margin:0 0 16px;padding:16px;
+  background:var(--card);border:1px solid var(--border);border-left:3px solid var(--primary);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);
+}
+.wn-card__hd{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.wn-card__kicker{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary-ink);
+}
+.wn-card__close{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:44px;min-height:44px;margin:-10px -10px -10px 0;
+  background:transparent;border:none;border-radius:var(--radius-sm);
+  color:var(--muted);font-size:1.1rem;cursor:pointer;
+}
+.wn-card__close:hover{background:var(--pink-dim);color:var(--text);}
+.wn-card__title{font-family:var(--font-head);font-size:1.05rem;font-weight:700;color:var(--text);margin:4px 0 8px;line-height:1.3;}
+.wn-card__list,.wn-rel__list{margin:0 0 12px;padding-left:18px;color:var(--text);font-size:.9rem;line-height:1.45;}
+.wn-card__list li,.wn-rel__list li{margin-bottom:4px;}
+.wn-card__actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;}
+.wn-card__try{min-height:44px;}
+.wn-card__all,.wn-card__more,.wn-notif-all{
+  display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;
+  background:transparent;border:none;cursor:pointer;
+  color:var(--primary-ink);font-family:var(--font-body);font-size:.85rem;font-weight:600;
+}
+.wn-card__more{display:flex;color:var(--muted);font-weight:500;}
+.wn-card__all:hover,.wn-card__more:hover,.wn-notif-all:hover{text-decoration:underline;}
+
+/* ── What's new page and sheet list ─────────────────────────── */
+.wn-page{max-width:680px;}
+.wn-list{list-style:none;margin:0;padding:0;}
+.wn-rel{padding:16px 0;border-bottom:1px solid var(--border);}
+.wn-rel:first-child{padding-top:8px;}
+.wn-rel__meta{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.wn-rel__ver{font-family:var(--font-mono);font-size:.75rem;font-weight:500;color:var(--muted);}
+.wn-rel__date{font-size:.75rem;color:var(--muted);}
+.wn-rel__title{font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--text);margin:0 0 8px;line-height:1.3;}
+.wn-rel__list{margin-bottom:8px;}
+.wn-rel__try{min-height:44px;}
+.wn-new-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;}
+
+.wn-rel--fixes{padding:8px 0;}
+.wn-fixes__sum{
+  display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;list-style:none;
+  color:var(--text);font-size:.9rem;font-weight:600;
+}
+.wn-fixes__sum::-webkit-details-marker{display:none;}
+.wn-fixes__chev{margin-left:auto;color:var(--muted);transition:transform .15s;}
+details[open] .wn-fixes__chev{transform:rotate(180deg);}
+.wn-fixes__list{list-style:none;margin:0 0 8px;padding:0 0 0 2px;font-size:.85rem;color:var(--text);}
+.wn-fixes__list li{padding:4px 0;line-height:1.4;}
+.wn-fixes__list .wn-rel__ver{margin-right:6px;}
+
+.wn-foot{margin:16px 0 0;font-size:.82rem;color:var(--muted);}
+.wn-foot a{color:var(--primary-ink);}
+.wn-empty{color:var(--muted);font-size:.9rem;}
+
+/* Sheet: sits above the sign-in screen (z 9000) and the tab bar */
+.wn-sheet{z-index:10002;}
+.wn-sheet .modal-close{min-width:44px;min-height:44px;}
+.wn-sheet #wn-sheet-body{overflow-y:auto;}
+
+/* ── Bell row ───────────────────────────────────────────────── */
+.wn-notif{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 12px;
+  background:var(--pink-dim);border:1px solid var(--border);border-radius:var(--radius-sm);
+  color:var(--text);text-align:left;cursor:pointer;font-family:var(--font-body);
+}
+.wn-notif__ic{color:var(--primary-ink);font-size:1.1rem;}
+.wn-notif__body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+.wn-notif__lbl{font-size:.72rem;color:var(--muted);}
+.wn-notif__ttl{font-size:.9rem;font-weight:600;}
+.wn-notif-all{margin-top:12px;}
+
+/* ── Unread dots and "New" badges ───────────────────────────── */
+.wn-dot{
+  display:inline-block;width:8px;height:8px;margin-left:6px;border-radius:50%;
+  background:var(--primary);vertical-align:middle;flex-shrink:0;
+}
+.wn-badge{
+  display:inline-flex;align-items:center;margin-left:auto;padding:1px 7px;
+  border-radius:var(--radius-pill);background:var(--pink-dim-strong);color:var(--primary-ink);
+  font-family:var(--font-body);font-size:.62rem;font-weight:700;letter-spacing:.03em;line-height:1.5;
+  white-space:nowrap;flex-shrink:0;
+}
+/* Collapsed sidebar: icons only, so the badge becomes a dot on the icon. */
+#nav .nav-item,#nav .nav-cat,#nav .nav-settings-btn{position:relative;}
+#nav .nav-item>.wn-badge,#nav .nav-cat>.wn-badge,#nav .nav-settings-btn>.wn-dot{position:absolute;top:6px;left:28px;}
+#nav .nav-item>.wn-badge,#nav .nav-cat>.wn-badge{width:8px;height:8px;padding:0;font-size:0;}
+#nav:hover .nav-item>.wn-badge,#nav:hover .nav-cat>.wn-badge{
+  position:static;width:auto;height:auto;padding:1px 7px;font-size:.62rem;
+}
+.nav-fly-item .wn-badge{margin-left:8px;}
+
+/* More menu tiles and the tab bar (the tile's own `span` rule sets 1.4rem) */
+.mob-menu-item{position:relative;}
+.mob-menu-item>.wn-badge,.mob-menu-item>.wn-dot{position:absolute;top:6px;right:6px;margin:0;font-size:.6rem;}
+.mob-menu-item>.wn-dot{font-size:0;}
+.tab-btn{position:relative;}
+.tab-btn>.wn-badge--tab{position:absolute;top:2px;right:calc(50% - 26px);margin:0;font-size:.55rem;}
+.tab-btn>.wn-dot--tab{position:absolute;top:6px;right:calc(50% - 16px);margin:0;}
+
+/* ── Sign-in version link and Settings ──────────────────────── */
+button.kl-version{
+  background:transparent;border:none;padding:12px 0;min-height:44px;cursor:pointer;
+  text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;
+}
+button.kl-version:hover,button.kl-version:focus-visible{text-decoration-color:currentColor;}
+.sett-ver-wn{min-height:44px;margin:0 0 16px;}
