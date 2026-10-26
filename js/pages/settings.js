@@ -56,7 +56,13 @@ function renderSettings() {
 
   html += _settProfileCard('brenton', '👔', 'Profile 1');
   html += '<div class="sett-gap12"></div>';
-  html += _settProfileCard('shelley', '👩', 'Profile 2');
+  if (hasSecondUser()) {
+    html += _settProfileCard('shelley', '👩', 'Profile 2');
+    html += '<button class="btn btn-ghost btn-sm sett-p2-toggle" onclick="settingsSetSecondUser(false)">Remove second person</button>';
+  } else {
+    html += '<div class="sett-desc">Sharing Kelda with a partner or family member? Add them to get their own profile and PIN, plus a Joint view.</div>';
+    html += '<button class="btn btn-ghost btn-sm" onclick="settingsSetSecondUser(true)">+ Add a second person</button>';
+  }
 
   html += '<div class="sett-foot">';
   html += '<button class="btn btn-primary btn-sm" onclick="settingsSaveProfiles()">Save Profile Names</button>';
@@ -408,6 +414,20 @@ function settingsSaveAppIdentity() {
   toast('✅ App name saved');
 }
 
+// Turn the second person on or off. Turning off only hides them: their PIN
+// and records stay saved and come back if they're turned on again.
+function settingsSetSecondUser(on) {
+  if (!on) {
+    if (activeProfile !== 'brenton') { toast('Sign in as ' + getUserName('brenton') + ' to remove the second person'); return; }
+    if (!confirm('Remove ' + getUserName('shelley') + ' from Kelda? Their records stay saved and come back if you add a second person again.')) return;
+  }
+  USER_CONFIG.p2enabled = !!on;
+  saveUserConfig();
+  applyUserConfig();
+  renderSettings();
+  toast(on ? 'Second person added. They set their PIN the first time they sign in.' : 'Second person removed');
+}
+
 function settingsSaveProfiles() {
   var g = function(id) {
     var el = document.getElementById(id);
@@ -415,8 +435,10 @@ function settingsSaveProfiles() {
   };
   USER_CONFIG.p1icon = g('s-brenton-icon') || '👤';
   USER_CONFIG.p1name = g('s-brenton-name') || 'Profile 1';
-  USER_CONFIG.p2icon = g('s-shelley-icon') || '👤';
-  USER_CONFIG.p2name = g('s-shelley-name') || 'Profile 2';
+  if (hasSecondUser()) {
+    USER_CONFIG.p2icon = g('s-shelley-icon') || '👤';
+    USER_CONFIG.p2name = g('s-shelley-name') || 'Profile 2';
+  }
   saveUserConfig();
   applyUserConfig();
   // Sync any open mob-menu panel inputs

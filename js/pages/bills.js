@@ -1072,8 +1072,10 @@ function blRenderTable() {
       var p2 = (typeof getUserName === 'function' ? getUserName('shelley') : 'Person 2') || 'Person 2';
       legEl.innerHTML = '<span class="bl-muted bl-legend-lbl">PAID BY</span>'
         + '<span class="bl-paidby p1">' + esc(p1.charAt(0).toUpperCase()) + '</span>' + esc(p1)
-        + '<span class="bl-paidby p2">' + esc(p2.charAt(0).toUpperCase()) + '</span>' + esc(p2)
-        + '<span class="bl-paidby joint">Joint</span>shared';
+        + (hasSecondUser()
+          ? '<span class="bl-paidby p2">' + esc(p2.charAt(0).toUpperCase()) + '</span>' + esc(p2)
+            + '<span class="bl-paidby joint">Joint</span>shared'
+          : '');
     } else { legEl.innerHTML = ''; }
   }
 }
@@ -1082,7 +1084,9 @@ function blRenderTable() {
 function blPaidByOptions(selected) {
   var p1 = (typeof getUserName === 'function' ? getUserName('brenton') : 'Person 1') || 'Person 1';
   var p2 = (typeof getUserName === 'function' ? getUserName('shelley') : 'Person 2') || 'Person 2';
-  var opts = [['','Unassigned'], ['brenton', p1], ['shelley', p2], ['joint', 'Joint / shared']];
+  var opts = hasSecondUser() || selected === 'shelley' || selected === 'joint'
+    ? [['','Unassigned'], ['brenton', p1], ['shelley', p2], ['joint', 'Joint / shared']]
+    : [['','Unassigned'], ['brenton', p1]];
   return opts.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === (selected||'') ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('');
 }
 function blPaidByBadge(b) {

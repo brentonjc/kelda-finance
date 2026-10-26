@@ -7,7 +7,13 @@
 //  Spec: docs/specs/whats-new.md
 // ═══════════════════════════════════════════════════════════════
 
-var WN_PROFILE_IDS = ['brenton', 'shelley', 'joint'];
+// Profiles in use: the second person and Joint only once a second person
+// is set up (js/profiles.js). A profile switched on later gets its record
+// then, starting at the current version.
+function wnProfileIds() {
+  var two = (typeof hasSecondUser === 'function') ? hasSecondUser() : true;
+  return two ? ['brenton', 'shelley', 'joint'] : ['brenton'];
+}
 
 // Beta flags a release's Try it link can depend on (entry.requires).
 var WN_BETA_CHECKS = {
@@ -41,7 +47,9 @@ function wnProfile() {
 // this device ran before (an upgrade) or the current one (a fresh install).
 function wnStore() {
   var store = load(K.whatsnew);
-  var ids = WN_PROFILE_IDS.slice();
+  var ids = wnProfileIds();
+  var p = wnProfile();
+  if (p && ids.indexOf(p) < 0) ids.push(p);
   var missing = !store || ids.some(function(id) { return !store[id]; });
   if (missing) {
     var prev = (typeof PREV_RUN_VERSION !== 'undefined') ? PREV_RUN_VERSION : null;

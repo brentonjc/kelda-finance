@@ -1681,6 +1681,7 @@ hr.liab-hr{border:none;border-top:1px solid rgba(255,255,255,.07);margin:16px 0;
 .btn.sett-save-id{margin-top:14px;}
 .sett-gap12{height:12px;}
 .sett-foot{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.sett-p2-toggle{margin-top:10px;}
 .sett-acct-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
 .sett-desc{font-size:.8rem;color:var(--muted);margin-bottom:14px;}
 .sett-desc--16{margin-bottom:16px;}
@@ -2281,3 +2282,6 @@ tr.row-pending{background:transparent;}
 .btype-btn:hover{filter:brightness(1.12);box-shadow:0 0 0 1.5px var(--border);}
 .btype-btn::after{opacity:.85;margin-left:1px;}
 .confetti{position:fixed;pointer-events:none;font-size:2rem;animation:confetti-fall 3s ease-in forwards;}
+
+/* Second-person UI, shown only when a second person is turned on (app.js syncSecondUser) */
+html[data-second-user="off"] .p2-only{display:none;}

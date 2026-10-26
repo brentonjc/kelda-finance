@@ -873,8 +873,8 @@ window.addEventListener('unhandledrejection',function(e){
         </div>
       </div>
 
-      <div class="mob-p-head tone-purple">Profile 2</div>
-      <div class="mob-p-grid mob-p-grid--mb18">
+      <div class="mob-p-head tone-purple p2-only">Profile 2</div>
+      <div class="mob-p-grid mob-p-grid--mb18 p2-only">
         <div>
           <label class="mob-p-lbl">Icon</label>
           <input type="text" id="usc-p2icon" placeholder="👩" class="mob-p-icon"/>
@@ -1257,7 +1257,7 @@ window.addEventListener('unhandledrejection',function(e){
       </div>
       <div class="ins-row2">
         <div><label class="lbl">Covered Person</label>
-          <select id="ins-edit-covered"><option value="joint">Both</option><option value="brenton">Profile 1</option><option value="shelley">Profile 2</option></select>
+          <select id="ins-edit-covered"><option value="joint" data-second-user>Both</option><option value="brenton" data-profile-name="brenton">Profile 1</option><option value="shelley" data-profile-name="shelley">Profile 2</option></select>
         </div>
         <div><label class="lbl">Location</label>
           <select id="ins-edit-location"><option value="outside">Outside Super</option><option value="inside">Inside Super</option></select>
@@ -1312,7 +1312,7 @@ window.addEventListener('unhandledrejection',function(e){
       <div class="ins-row2">
         <div><label class="lbl">Covered Person</label>
           <select id="ins-covered" onchange="insAutoFillNeed()">
-            <option value="joint">Both</option><option value="brenton" data-profile-name="brenton">Profile 1</option><option value="shelley" data-profile-name="shelley">Profile 2</option>
+            <option value="joint" data-second-user>Both</option><option value="brenton" data-profile-name="brenton">Profile 1</option><option value="shelley" data-profile-name="shelley">Profile 2</option>
           </select>
         </div>
         <div><label class="lbl">Location</label>
@@ -1529,7 +1529,7 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ TRANSACTIONS ═══ -->
   <div class="page" id="page-transactions">
     <div class="page-title">Income & Expenses</div>
-    <div class="page-sub" id="tx-page-sub">Log transactions for both profiles</div>
+    <div class="page-sub" id="tx-page-sub">Log and review your transactions</div>
     <div id="how-to-transactions"></div>
     <div class="tx-actions">
       <button class="btn btn-primary" onclick="openTxModal()"><i class="ti ti-plus"></i> Add Transaction</button>
@@ -1566,7 +1566,7 @@ window.addEventListener('unhandledrejection',function(e){
           <option value="home">Home Transaction</option>
           <option value="brenton" data-profile-name="brenton" data-label-suffix=" Savings">Profile 1 Savings</option>
           <option value="shelley" data-profile-name="shelley" data-label-suffix=" Savings">Profile 2 Savings</option>
-          <option value="joint">Joint</option>
+          <option value="joint">Joint / Other</option>
         </select>
         <input type="text" id="tx-filter-search" placeholder="Search merchant / description..."
           oninput="txSearchInput()"/>
@@ -1629,7 +1629,7 @@ window.addEventListener('unhandledrejection',function(e){
           <select id="tx-person">
             <option value="brenton" data-profile-name="brenton">Profile 1</option>
             <option value="shelley" data-profile-name="shelley">Profile 2</option>
-            <option value="joint">Joint</option>
+            <option value="joint" data-second-user>Joint</option>
           </select>
         </div>
         <div><label class="lbl">Account</label>
@@ -2277,7 +2277,7 @@ window.addEventListener('unhandledrejection',function(e){
           </div>
         </div>
         <!-- SHELLEY -->
-        <div class="li-card">
+        <div class="li-card p2-only">
           <div class="li-card-hd li-card-hd--p2">
             <span class="li-hd-ico"><i class="ti ti-briefcase"></i></span>
             <div><div class="li-hd-name" data-profile-label="shelley">Profile 2</div><div class="li-hd-sub">Life Insurance Needs</div></div>
@@ -2307,7 +2307,7 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ SUPERANNUATION ═══ -->
   <div class="page" id="page-super">
     <div class="page-title">Superannuation</div>
-    <div class="page-sub" id="super-page-sub">Track and project super balances for both profiles</div>
+    <div class="page-sub" id="super-page-sub">Track and project your super balances</div>
     <div id="how-to-super"></div>
 
     <!-- Super Accounts Aggregation -->
@@ -2382,7 +2382,7 @@ window.addEventListener('unhandledrejection',function(e){
         <div id="sb-result" class="sp-result"></div>
       </div>
       <!-- Profile 2 -->
-      <div class="card">
+      <div class="card p2-only">
         <div class="super-header super-header--p2">
           <span class="sp-hd-ico"><i class="ti ti-briefcase"></i></span>
           <div><div class="sp-hd-name" data-profile-label="shelley">Profile 2</div><div class="sp-hd-sub">Superannuation</div></div>
@@ -2454,7 +2454,7 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
 
     <div class="card">
-      <div class="section-label">Combined Super Projection</div>
+      <div class="section-label">Super Projection</div>
       <div class="chart-box"><canvas id="super-chart"></canvas></div>
       <div id="super-combined" class="sp-combined"></div>
     </div>
@@ -3480,6 +3480,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script defer src="js/version.js"></script>
 <script defer src="js/whatsnew-core.js"></script>
 <script defer src="js/storage.js"></script>
+<script defer src="js/profiles.js"></script>
 <script defer src="js/goals-calc.js"></script>
 <script defer src="js/data.js"></script>
 <script defer src="js/auth.js"></script>
@@ -3539,7 +3540,8 @@ var obAssetLabels  = { 'property': 'Property', 'equities': 'Investments', 'super
 var obAccountPanelMap = { starter: 'panel-accounts-starter', household: 'panel-accounts-household', full: 'panel-accounts-full' };
 var obAcctContainerMap = { starter: 'account-cards-starter', household: 'account-cards-household', full: 'account-cards-full' };
 var _OB_PILLS = ['Everyday','Spending','Savings','Joint','Offset','Emergency fund','Credit card','Business'];
-var _OB_DEFS  = ['Everyday','Savings','Joint',''];
+// No 'Joint' default: the second person is opt-in and chosen later, on the security step
+var _OB_DEFS  = ['Everyday','Savings','Emergency fund',''];
 
 // ── Simple PIN hash (kf_pin_hash — separate from cff_pins SHA-256) ──
 function obHashPin(pin) {

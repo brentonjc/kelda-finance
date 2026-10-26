@@ -70,11 +70,12 @@ function renderAssets() {
   // ── Super ─────────────────────────────────────────────────
   var supB = (SUPER.b && SUPER.b.balance) ? SUPER.b.balance : 0;
   var supS = (SUPER.s && SUPER.s.balance) ? SUPER.s.balance : 0;
+  var p2 = hasSecondUser() || supS > 0;
   var supTotal = supB + supS;
 
   document.getElementById('assets-super').innerHTML =
     '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('brenton') + '</span><span class="dr-v">' + fmt(supB) + '</span></div>'
-    + '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('shelley') + '</span><span class="dr-v">' + fmt(supS) + '</span></div>'
+    + (p2 ? '<div class="dr"><span class="dr-k">' + ICON('briefcase') + ' ' + getUserName('shelley') + '</span><span class="dr-v">' + fmt(supS) + '</span></div>' : '')
     + '<div class="dr dr--total">'
     + '<span class="dr-k">Total Super</span>'
     + '<span class="dr-v tone-pink">' + fmt(supTotal) + '</span></div>';

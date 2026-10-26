@@ -279,7 +279,7 @@ function ctRenderAcct(a) {
   var acctObj = ACCOUNTS.find(function(x){ return x.id === a.id; }) || {};
   var bankLabel = acctObj.bank ? acctObj.bank : '';
   var ownerLbl = a.id === 'sav1' ? getUserName('brenton')
-               : a.id === 'sav2' ? getUserName('shelley')
+               : a.id === 'sav2' && hasSecondUser() ? getUserName('shelley')
                : (a.owner === 'shared' ? 'Shared' : (a.owner || 'Shared'));
   var subLine = [bankLabel, ownerLbl].filter(Boolean).join(' · ');
 

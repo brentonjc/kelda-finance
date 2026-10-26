@@ -50,6 +50,23 @@ var APP_CHANGELOG = [
     ],
   },
   {
+    version: '2.10.3',
+    date: '2026-10-25',
+    title: 'Single person by default',
+    headline: 'Kelda now fits a one-person household',
+    benefits: [
+      'Kelda is set up for one person unless you add a second in setup or Settings › Profiles',
+      'With one person, the second profile and Joint view stay out of your way',
+      'Removing a second person keeps their records',
+    ],
+    notes: [
+      'Kelda is set up for one person unless you add a second during setup or in Settings › Profiles',
+      'With one person, the second profile, Joint view and their options no longer show on Super, Insurance, Assets, Bills, Investments or Spending',
+      'Add or remove a second person in Settings › Profiles. Removing them keeps their records',
+      'Setup no longer suggests a “Joint” name for a third account'
+    ]
+  },
+  {
     version: '2.10.2',
     date: '2026-10-25',
     title: 'Tax (Beta) is easier to find',

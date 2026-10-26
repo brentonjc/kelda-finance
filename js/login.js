@@ -22,7 +22,7 @@ var PIN_LEN = 4;
 // ── Profile model ─────────────────────────────────────────────
 function _lgBuildProfiles() {
   var li = {}; try { li = load(K.lastIn) || {}; } catch(e) {}
-  var p2 = (typeof USER_CONFIG !== 'undefined') && USER_CONFIG.p2enabled !== false;
+  var p2 = (typeof hasSecondUser === 'function') && hasSecondUser();
   var defs = [{ id:'brenton', grad:'a1' }];
   if (p2) {
     defs.push({ id:'shelley', grad:'a2' });

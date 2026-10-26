@@ -153,11 +153,11 @@ A new storage key, `K.whatsnew = 'cff_whatsnew'`:
 ### 5.4 Initialising "seen" (fresh install vs upgrade)
 
 1. In `version.js`, read the previous `cff_app_version` into `PREV_RUN_VERSION` **before** `recordCurrentVersion()` stamps the new one. Fix `isFreshUpgrade()` to compare against `PREV_RUN_VERSION`.
-2. The first time `cff_whatsnew` is missing, create a record for **every** profile (brenton, shelley, joint), with `seen` set to:
+2. The first time `cff_whatsnew` is missing, create a record for **every profile in use**: brenton, plus shelley and joint when a second person is set up (`hasSecondUser()`, since v2.10.3). Set `seen` to:
    - `PREV_RUN_VERSION` if it exists. This is an existing user who just upgraded, and they'll see what's new since then.
    - otherwise `APP_VERSION`. This is a fresh install (D6), so there's no card.
-3. All profiles are initialised together so that Shelley, unlocking a week later, still gets the card even though the device-level version has moved on.
-4. A profile that appears later (the user adds one) starts at the current `APP_VERSION`.
+3. Profiles in use are initialised together so that Shelley, unlocking a week later, still gets the card even though the device-level version has moved on.
+4. A profile that appears later (a second person is turned on) starts at the current `APP_VERSION`, so they don't inherit a backlog of updates from before they joined.
 
 ### 5.5 Pure logic (unit-testable)
 

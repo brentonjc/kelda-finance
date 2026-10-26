@@ -527,6 +527,33 @@ function getUserIcon(profileId) {
   if (profileId === 'shelley') return USER_CONFIG.p2icon || '👤';
   return '👤';
 }
+// Second person is opt-in (js/profiles.js secondUserOn).
+function hasSecondUser() {
+  return secondUserOn(USER_CONFIG, typeof PINS !== 'undefined' ? PINS : null);
+}
+// Turns second-person UI on or off: <html data-second-user> drives the
+// .p2-only CSS rule, and the second person's <option>s (and Joint / Both,
+// marked data-second-user) are taken out of their selects. Removed rather
+// than hidden because iOS Safari still lists hidden options.
+var _p2Opts = null;
+function syncSecondUser() {
+  var on = hasSecondUser();
+  document.documentElement.setAttribute('data-second-user', on ? 'on' : 'off');
+  if (!_p2Opts) {
+    _p2Opts = [];
+    document.querySelectorAll('option[data-profile-name="shelley"], option[data-second-user]').forEach(function(o) {
+      _p2Opts.push({ opt: o, parent: o.parentNode, next: o.nextSibling });
+    });
+  }
+  _p2Opts.forEach(function(r) {
+    if (on && !r.opt.parentNode) {
+      var before = (r.next && r.next.parentNode === r.parent) ? r.next : null;
+      r.parent.insertBefore(r.opt, before);
+    } else if (!on && r.opt.parentNode) {
+      r.opt.parentNode.removeChild(r.opt);
+    }
+  });
+}
 function getAccountName(acctId) {
   // Check ACCOUNTS first (covers custom + renamed core accounts)
   if (typeof ACCOUNTS !== 'undefined' && ACCOUNTS) {
@@ -582,6 +609,7 @@ function applyUserConfig() {
     var suffix = (replaced !== text) ? (' — ' + replaced) : '';
     el.textContent = getUserName(p) + suffix;
   });
+  syncSecondUser();
   // Update <option data-profile-name> elements (person/account selects)
   document.querySelectorAll('option[data-profile-name]').forEach(function(opt) {
     var p = opt.getAttribute('data-profile-name');
