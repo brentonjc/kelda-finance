@@ -17,7 +17,7 @@ var _wz = {
   appName : '', appSub  : '',
   p1Name  : '', p1Icon  : '👔',
   p1Input : '', p1First : '', p1Step : 0, p1Done : false,
-  p2On    : true,
+  p2On    : false,
   p2Name  : '', p2Icon  : '👩',
   p2Input : '', p2First : '', p2Step : 0, p2Done : false,
   acctOffset : '', acctHome : '', acctSav1 : '', acctSav2 : ''
@@ -144,7 +144,7 @@ function wzRestart() {
     p1Name  : USER_CONFIG.p1name || '',
     p1Icon  : USER_CONFIG.p1icon || '👔',
     p1Input : '', p1First : '', p1Step : 0, p1Done : false,
-    p2On    : USER_CONFIG.p2enabled !== false,
+    p2On    : hasSecondUser(),
     p2Name  : USER_CONFIG.p2name || '',
     p2Icon  : USER_CONFIG.p2icon || '👩',
     p2Input : '', p2First : '', p2Step : 0, p2Done : false,
@@ -466,7 +466,7 @@ function wzFinish() {
 // PROFILE BUTTON VISIBILITY
 // ══════════════════════════════════════════════════════════════
 function applyLoginProfileVis() {
-  var p2ok = USER_CONFIG.p2enabled !== false;
+  var p2ok = hasSecondUser();
   var pb2  = document.getElementById('pb-shelley');
   var pbj  = document.getElementById('pb-joint');
   if (pb2) pb2.style.display = p2ok ? '' : 'none';

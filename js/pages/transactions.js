@@ -27,7 +27,7 @@ function txRescanCategories() {
 
 function togglePerson(){
   const w=document.getElementById('tx-person-wrap');
-  if(w)w.style.display=document.getElementById('tx-type').value==='income'?'':'none';
+  if(w)w.style.display=document.getElementById('tx-type').value==='income'&&hasSecondUser()?'':'none';
   if(typeof taxTxFormSync==='function')taxTxFormSync();   // the tax tag is for expenses only
 }
 
@@ -39,7 +39,7 @@ var _txModalWasEdit = false; // last open was an edit → clear its values befor
 function txSetModalMode(editing){
   var set=function(id,txt){var el=document.getElementById(id);if(el)el.textContent=txt;};
   set('tx-modal-title', editing?'Edit Transaction':'＋ Add Transaction');
-  set('tx-modal-sub', editing?'Update or delete this transaction':'Manually log an income or expense for either profile');
+  set('tx-modal-sub', editing?'Update or delete this transaction':'Manually log an income or expense');
   set('tx-save-btn', editing?'Save changes':'＋ Add Transaction');
   var del=document.getElementById('tx-del-btn'); if(del)del.style.display=editing?'':'none';
 }
@@ -151,7 +151,8 @@ function addTx(){
     if(et){
       var prevCat=catIdFor(et.catId||et.category);
       var catObj=LCATS.find(function(c){return c.id===cat;});
-      et.date=date; et.type=type; et.amount=amt; et.person=person; et.account=account;
+      // person is '' when the record's person isn't listed (second person turned off): keep it
+      et.date=date; et.type=type; et.amount=amt; et.person=person||et.person; et.account=account;
       et.name=name; et.description=desc; et.subcat=subcat;
       if(cat){ et.catId=cat; et.category=catObj?catObj.name:cat; }
       if(typeof taxTxApplyForm==='function')taxTxApplyForm(et);
