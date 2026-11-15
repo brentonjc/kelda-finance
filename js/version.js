@@ -27,11 +27,31 @@
 //  Writing guide: docs/specs/whats-new.md §6.
 // ═══════════════════════════════════════════════════════════════
 
-var APP_VERSION = '2.11.0';
+var APP_VERSION = '2.12.0';
 
 // Newest first. `date` is ISO YYYY-MM-DD. `notes` is a short list
 // of human-readable highlights shown in the Settings history.
 var APP_CHANGELOG = [
+  {
+    version: '2.12.0',
+    date: '2026-11-15',
+    title: 'Import PDF statements',
+    headline: 'Import your bank’s PDF statements, not just CSV files',
+    benefits: [
+      'Upload a PDF statement if your bank doesn’t offer CSV. It’s read on this device',
+      'Upload your bank’s CSV as it is: no template or reformatting needed',
+      'Kelda remembers the columns you chose for each bank’s file',
+    ],
+    link: { page: 'upload', label: 'Import a statement' },
+    notes: [
+      'Upload Transactions now reads PDF statements as well as CSV files, on this device. Check the preview before importing',
+      'Upload your bank’s CSV as it is. Files with no header row, such as CommBank’s, keep their first transaction',
+      'The template matches bank files: Date, Merchant, Description, Amount (negative is spending), and an optional Category',
+      'Impossible dates, month-first dates, amounts like 100.00- or 1.234,56, and broken quotes are caught instead of imported wrongly',
+      'Kelda remembers the columns you chose for each bank’s file',
+      'Different purchases on the same day for the same amount are no longer skipped as duplicates'
+    ]
+  },
   {
     version: '2.11.0',
     date: '2026-10-25',

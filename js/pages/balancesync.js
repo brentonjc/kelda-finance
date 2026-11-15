@@ -10,7 +10,8 @@ var BalanceSync = (function() {
 
   // ── Parsing ──────────────────────────────────────────────────
 
-  // "$1,234.56", "(12.00)", "-5", "12.00 DR", "3.10CR" → cents, or null if not money.
+  // "$1,234.56", "(12.00)", "-5", "12.00-", "12.00 DR", "3.10CR", "-1.234,56" → cents,
+  // or null if not money. The CSV import and the PDF statement reader use this too.
   function parseCents(s) {
     if (s === null || s === undefined) return null;
     var t = String(s).trim().toUpperCase();
@@ -18,11 +19,15 @@ var BalanceSync = (function() {
     var neg = false;
     var m = t.match(/^(.*?)\s*(CR|DR)$/);
     if (m) { t = m[1]; if (m[2] === 'DR') neg = !neg; }
-    t = t.replace(/AUD|\$|,|\s/g, '');
+    t = t.replace(/AUD|\$|\s/g, '');
     if (/^\(.*\)$/.test(t)) { neg = !neg; t = t.slice(1, -1); }
     if (/^-/.test(t)) { neg = !neg; t = t.slice(1); }
     else if (/-$/.test(t)) { neg = !neg; t = t.slice(0, -1); }
     if (/^\+/.test(t)) t = t.slice(1);
+    // Comma decimals ("1.234,56", "12,50"): a comma then one or two digits at the end,
+    // with dots (or nothing) as thousands. "1,234" stays one thousand two hundred and four.
+    if (/^\d{1,3}(\.\d{3})+,\d{1,2}$/.test(t) || /^\d+,\d{1,2}$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+    else t = t.replace(/,/g, '');
     if (!/^(\d+\.?\d*|\.\d+)$/.test(t)) return null;
     var c = Math.round(parseFloat(t) * 100);
     return neg && c !== 0 ? -c : c;
@@ -491,7 +496,7 @@ function bsPrepare(map, fileName) {
   if (!t.liab && bsIsCard(t.acct)) { _bsCheck = Object.assign(base, { reason: 'card' }); return true; }
   if (BalanceSync.balanceFill(_csvRaw, map.balance) < BalanceSync.MIN_FILL) { _bsCheck = Object.assign(base, { reason: 'blank' }); return true; }
   var posSpend = typeof csvPosIsSpend === 'function' && csvPosIsSpend();
-  var chain = BalanceSync.deriveChain(BalanceSync.buildRows(_csvRaw, map, csvDate, { posSpend: posSpend }), { owed: t.liab });
+  var chain = BalanceSync.deriveChain(BalanceSync.buildRows(_csvRaw, map, csvRowDate, { posSpend: posSpend }), { owed: t.liab });
   if (!chain || chain.openingCents === null || chain.closingCents === null) { _bsCheck = Object.assign(base, { reason: 'blank' }); return true; }
   var store = bsLoadStore(), tr = bsTracker(t, store);
   var rec = BalanceSync.reconcile({

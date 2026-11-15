@@ -2601,13 +2601,13 @@ window.addEventListener('unhandledrejection',function(e){
   <!-- ═══ UPLOAD TRANSACTIONS ═══ -->
   <div class="page" id="page-upload">
     <div class="page-title">Upload Transactions</div>
-    <div class="page-sub">Import transactions from a bank CSV export, Excel save, or Google Sheets download. Everything stays on this device.</div>
+    <div class="page-sub">Import transactions from your bank’s CSV export or PDF statement. Files are read on this device and never uploaded anywhere.</div>
     <div id="how-to-upload"></div>
     <!-- Default home of the CSV wizard. openCsvModal() temporarily relocates #csv-wizard into the modal. -->
     <div id="csv-mount">
       <div class="card" id="csv-wizard">
         <div class="up-hd">
-          <div class="section-label section-label--flush"><i class="ti ti-folder"></i> Import from CSV</div>
+          <div class="section-label section-label--flush"><i class="ti ti-folder"></i> Import a statement</div>
           <div class="up-hd-tools">
             <button class="btn btn-ghost btn-sm" onclick="csvDownloadTemplate()"><i class="ti ti-download"></i> Download Template</button>
             <button class="btn btn-ghost btn-sm" id="csv-cancel-btn" onclick="csvReset()" style="display:none"><i class="ti ti-x"></i> Start over</button>
@@ -2629,14 +2629,19 @@ window.addEventListener('unhandledrejection',function(e){
             onclick="document.getElementById('csv-file-input').click()"
             ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
             <div class="cd-icon"><i class="ti ti-file-text"></i></div>
-            <p><strong>Click to browse</strong> or drag & drop your CSV file here</p>
-            <p>Works with bank exports, Excel saves, and Google Sheets downloads</p>
+            <p><strong>Choose a file</strong> or drag it here</p>
+            <p>A CSV export or PDF statement from your bank or card</p>
           </div>
-          <input type="file" id="csv-file-input" class="file-input-hidden" accept=".csv,.txt" onchange="csvFileChosen(event)"/>
+          <div class="csv-reading" id="csv-reading" role="status" aria-live="polite" hidden>
+            <i class="ti ti-loader-2 csv-reading__spin" aria-hidden="true"></i>
+            <span id="csv-reading-msg">Reading statement…</span>
+          </div>
+          <input type="file" id="csv-file-input" class="file-input-hidden" accept=".csv,.txt,.pdf,text/csv,application/pdf" onchange="csvFileChosen(event)"/>
+          <div class="imp-err" id="csv-err" role="alert" hidden></div>
           <div class="imp-hint">
-            <strong><i class="ti ti-bulb"></i> What format does my CSV need?</strong>
-            Any CSV with a <code>date</code>, <code>amount</code>, and <code>description</code> column works.
-            You'll map your columns in the next step. Download the template above for a ready-to-fill example.
+            <strong><i class="ti ti-bulb"></i> Which file should I use?</strong>
+            Upload your bank’s file as it is. You don’t need to change it or use the template. A CSV export is the most accurate. If your bank only offers PDF statements, upload the PDF and check the rows before importing. Scanned or photographed statements can’t be read.
+            <span class="imp-hint__more">The template is only for typing transactions in yourself: negative amounts are spending, and Category can be left blank.</span>
           </div>
         </div>
 
@@ -2645,6 +2650,7 @@ window.addEventListener('unhandledrejection',function(e){
           <p class="up-p2-desc">
             We found these columns in your file. Tell us what each one is — then click Preview.
           </p>
+          <p class="up-note" id="csv-src-note" hidden></p>
           <div class="up-scroll">
             <table class="map-tbl">
               <thead><tr><th>Your Column</th><th>Sample Values</th><th>Maps To</th></tr></thead>
@@ -3498,6 +3504,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script defer src="js/pages/assets.js"></script>
 <script defer src="js/pages/export.js"></script>
 <script defer src="js/pages/balancesync.js"></script>
+<script defer src="js/statement-pdf.js"></script>
 <script defer src="js/pages/autocategorise.js"></script>
 <script defer src="js/pages/categories.js"></script>
 <script defer src="js/pages/bva.js"></script>

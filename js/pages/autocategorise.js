@@ -1306,14 +1306,19 @@ var AutoCat = (function() {
     return null;
   }
 
-  function isDuplicate(date, amount, name, existingTx) {
+  // Same date and amount, and the same payee as far as we can tell. Each side is
+  // named by its merchant, or by its description when it has none (bank files with
+  // only a description column). Two different texts aren't duplicates unless one
+  // contains the other ("coles" and "coles 1234 sydney"); a side with no text at
+  // all matches anything on that date and amount.
+  function isDuplicate(date, amount, name, existingTx, desc) {
     if (!existingTx || !existingTx.length) return false;
-    var nameLower = (name || '').toLowerCase().trim();
+    var key = String(name || desc || '').toLowerCase().trim();
     for (var i = 0; i < existingTx.length; i++) {
       var t = existingTx[i];
       if (t.date === date && Math.abs(Number(t.amount) - Number(amount)) < 0.01) {
-        var tName = (t.name || '').toLowerCase().trim();
-        if (!nameLower || !tName || tName === nameLower) return true;
+        var tKey = String(t.name || t.description || '').toLowerCase().trim();
+        if (!key || !tKey || tKey === key || tKey.indexOf(key) >= 0 || key.indexOf(tKey) >= 0) return true;
       }
     }
     return false;
