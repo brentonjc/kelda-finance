@@ -91,10 +91,10 @@ function loginSkipIntro() {
   if (intro) intro.hidden = true;
 }
 
-// Show the semantic version in the bottom-left badge.
+// Show the semantic version in the bottom-left badge, which opens What's new.
 function _lgStampVersion() {
   var el = document.getElementById('kl-version');
-  if (el && typeof APP_VERSION === 'string') el.textContent = 'v' + APP_VERSION;
+  if (el && typeof APP_VERSION === 'string') el.textContent = 'v' + APP_VERSION + ' · What’s new';
 }
 
 // ── Screen 1: profile picker ──────────────────────────────────

@@ -54,6 +54,7 @@
 <link rel="stylesheet" href="css/dashboard.css"/>
 <link rel="stylesheet" href="css/borrowing.css"/>
 <link rel="stylesheet" href="css/tax.css"/>
+<link rel="stylesheet" href="css/whatsnew.css"/>
 <link rel="stylesheet" href="css/login.css"/>
 <link rel="stylesheet" href="css/utilities.css"/>
 
@@ -779,55 +780,61 @@ window.addEventListener('unhandledrejection',function(e){
     <button class="mob-menu-close" onclick="closeMobMenu()" aria-label="Close menu"><i class="ti ti-x"></i></button>
   </div>
   <div class="mob-menu-section">
+    <div class="mob-menu-label"><i class="ti ti-sparkles"></i> Kelda</div>
+    <div class="mob-menu-grid">
+      <button class="mob-menu-item" data-page="whatsnew" onclick="goMob('whatsnew')"><span><i class="ti ti-sparkles"></i></span>What’s new</button>
+    </div>
+  </div>
+  <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-credit-card"></i> Spend</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('bills')"><span><i class="ti ti-calendar"></i></span>Bills</button>
-      <button class="mob-menu-item" onclick="goMob('cash')"><span><i class="ti ti-building-bank"></i></span>Cash</button>
-      <button class="mob-menu-item" onclick="goMob('transfers')"><span><i class="ti ti-refresh"></i></span>Transfers</button>
-      <button class="mob-menu-item" onclick="goMob('insights')"><span><i class="ti ti-chart-histogram"></i></span>Graphs</button>
+      <button class="mob-menu-item" data-page="bills" onclick="goMob('bills')"><span><i class="ti ti-calendar"></i></span>Bills</button>
+      <button class="mob-menu-item" data-page="cash" onclick="goMob('cash')"><span><i class="ti ti-building-bank"></i></span>Cash</button>
+      <button class="mob-menu-item" data-page="transfers" onclick="goMob('transfers')"><span><i class="ti ti-refresh"></i></span>Transfers</button>
+      <button class="mob-menu-item" data-page="insights" onclick="goMob('insights')"><span><i class="ti ti-chart-histogram"></i></span>Graphs</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-coin"></i> Save</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('goals')"><span><i class="ti ti-target"></i></span>Goals</button>
-      <button class="mob-menu-item" onclick="goMob('assets')"><span><i class="ti ti-coin"></i></span>Net Worth</button>
+      <button class="mob-menu-item" data-page="goals" onclick="goMob('goals')"><span><i class="ti ti-target"></i></span>Goals</button>
+      <button class="mob-menu-item" data-page="assets" onclick="goMob('assets')"><span><i class="ti ti-coin"></i></span>Net Worth</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-building-bank"></i> Borrow</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('mortgage')"><span><i class="ti ti-home-2"></i></span>Mortgage</button>
-      <button class="mob-menu-item" onclick="goMob('liabilities')"><span><i class="ti ti-scale"></i></span>Liabilities</button>
+      <button class="mob-menu-item" data-page="mortgage" onclick="goMob('mortgage')"><span><i class="ti ti-home-2"></i></span>Mortgage</button>
+      <button class="mob-menu-item" data-page="liabilities" onclick="goMob('liabilities')"><span><i class="ti ti-scale"></i></span>Liabilities</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-clipboard-list"></i> Plan</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('super')"><span><i class="ti ti-briefcase"></i></span>Super</button>
-      <button class="mob-menu-item" onclick="goMob('insurance')"><span><i class="ti ti-shield-check"></i></span>Insurance</button>
-      <button class="mob-menu-item" onclick="goMob('equities')"><span><i class="ti ti-trending-up"></i></span>Equities</button>
-      <button class="mob-menu-item" onclick="goMob('forecast')"><span><i class="ti ti-sparkles"></i></span>Forecast</button>
+      <button class="mob-menu-item" data-page="super" onclick="goMob('super')"><span><i class="ti ti-briefcase"></i></span>Super</button>
+      <button class="mob-menu-item" data-page="insurance" onclick="goMob('insurance')"><span><i class="ti ti-shield-check"></i></span>Insurance</button>
+      <button class="mob-menu-item" data-page="equities" onclick="goMob('equities')"><span><i class="ti ti-trending-up"></i></span>Equities</button>
+      <button class="mob-menu-item" data-page="forecast" onclick="goMob('forecast')"><span><i class="ti ti-sparkles"></i></span>Forecast</button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-tools"></i> Tools</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('upload')"><span><i class="ti ti-upload"></i></span>Upload</button>
-      <button class="mob-menu-item" onclick="goMob('smartrules')"><span><i class="ti ti-bolt"></i></span>Smart Rules</button>
-      <button class="mob-menu-item" onclick="goMob('borrowing')"><span><i class="ti ti-home-dollar"></i></span>Borrowing (Beta)</button>
-      <button class="mob-menu-item" onclick="goMob('investment')"><span><i class="ti ti-building-community"></i></span>Investment (Beta)</button>
-      <button class="mob-menu-item tax-nav-try" id="mob-tax" onclick="goMob('tax')"><span><i class="ti ti-receipt-tax"></i></span>Tax (Beta)<span class="tax-try">Try it</span></button>
+      <button class="mob-menu-item" data-page="upload" onclick="goMob('upload')"><span><i class="ti ti-upload"></i></span>Upload</button>
+      <button class="mob-menu-item" data-page="smartrules" onclick="goMob('smartrules')"><span><i class="ti ti-bolt"></i></span>Smart Rules</button>
+      <button class="mob-menu-item" data-page="borrowing" onclick="goMob('borrowing')"><span><i class="ti ti-home-dollar"></i></span>Borrowing (Beta)</button>
+      <button class="mob-menu-item" data-page="investment" onclick="goMob('investment')"><span><i class="ti ti-building-community"></i></span>Investment (Beta)</button>
+      <button class="mob-menu-item tax-nav-try" id="mob-tax" data-page="tax" onclick="goMob('tax')"><span><i class="ti ti-receipt-tax"></i></span>Tax (Beta)<span class="tax-try">Try it</span></button>
     </div>
   </div>
   <div class="mob-menu-section">
     <div class="mob-menu-label"><i class="ti ti-settings"></i> Controls</div>
     <div class="mob-menu-grid">
-      <button class="mob-menu-item" onclick="goMob('categories')"><span><i class="ti ti-tag"></i></span>Categories</button>
-      <button class="mob-menu-item" onclick="goMob('export')"><span><i class="ti ti-download"></i></span>Export</button>
-      <button class="mob-menu-item" onclick="goMob('settings')"><span><i class="ti ti-settings"></i></span>Settings</button>
-      <button class="mob-menu-item" onclick="goMob('dashboard-layout')"><span><i class="ti ti-layout-dashboard"></i></span>Layout</button>
-      <button class="mob-menu-item" onclick="goMob('quickstart')"><span><i class="ti ti-rocket"></i></span>Quick Start</button>
+      <button class="mob-menu-item" data-page="categories" onclick="goMob('categories')"><span><i class="ti ti-tag"></i></span>Categories</button>
+      <button class="mob-menu-item" data-page="export" onclick="goMob('export')"><span><i class="ti ti-download"></i></span>Export</button>
+      <button class="mob-menu-item" data-page="settings" onclick="goMob('settings')"><span><i class="ti ti-settings"></i></span>Settings</button>
+      <button class="mob-menu-item" data-page="dashboard-layout" onclick="goMob('dashboard-layout')"><span><i class="ti ti-layout-dashboard"></i></span>Layout</button>
+      <button class="mob-menu-item" data-page="quickstart" onclick="goMob('quickstart')"><span><i class="ti ti-rocket"></i></span>Quick Start</button>
     </div>
   </div>
   <div class="mob-menu-section">
@@ -1056,8 +1063,8 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
   </div>
 
-  <!-- Version badge — populated by login.js from APP_VERSION -->
-  <div class="kl-version" id="kl-version" aria-label="App version"></div>
+  <!-- Version badge — populated by login.js from APP_VERSION; opens the What's new sheet -->
+  <button class="kl-version" id="kl-version" type="button" onclick="wnOpenSheet()"></button>
 </div>
 
 <!-- SETUP WIZARD (shown on first run, before login) -->
@@ -1162,6 +1169,7 @@ window.addEventListener('unhandledrejection',function(e){
     </div>
   </div>
   <div class="nav-foot">
+    <button class="nav-settings-btn" id="n-whatsnew" onclick="go('whatsnew')" title="What’s new" aria-label="What’s new"><span class="ni"><i class="ti ti-sparkles"></i></span><span class="nav-lbl">What’s new</span></button>
     <button class="nav-settings-btn" id="n-settings" onclick="go('settings')" title="Settings" aria-label="Settings"><span class="ni"><i class="ti ti-settings"></i></span><span class="nav-lbl">Settings</span></button>
   </div>
 </nav>
@@ -3105,6 +3113,9 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="page" id="page-investment"></div>
   <div class="page" id="page-tax"></div>
 
+  <!-- ═══ WHAT'S NEW — rendered by renderWhatsNewPage() (js/pages/whatsnew.js) ═══ -->
+  <div class="page" id="page-whatsnew"></div>
+
   <div class="page" id="page-dashboard-layout">
     <div class="page-title">Dashboard Layout</div>
     <div class="page-sub">Choose which set of tiles your dashboard shows</div>
@@ -3160,6 +3171,17 @@ window.addEventListener('unhandledrejection',function(e){
       <button class="btn btn-ghost btn-sm" onclick="closeNotifModal()"><i class="ti ti-x"></i> Close</button>
     </div>
     <div id="notif-modal-body"></div>
+  </div>
+</div>
+
+<!-- WHAT'S NEW SHEET — read-only list, opened from the sign-in screen's version link -->
+<div class="modal-overlay wn-sheet" id="wn-sheet" onclick="if(event.target===this)wnCloseSheet()">
+  <div class="modal-box mdl-85 mdl-w520" role="dialog" aria-modal="true" aria-labelledby="wn-sheet-title" onclick="event.stopPropagation()">
+    <div class="mdl-hd">
+      <div class="section-label section-label--flush" id="wn-sheet-title"><i class="ti ti-sparkles"></i> What’s new</div>
+      <button class="modal-close" onclick="wnCloseSheet()" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="wn-sheet-body"></div>
   </div>
 </div>
 
@@ -3456,6 +3478,7 @@ window.addEventListener('unhandledrejection',function(e){
 <!-- ═══════════ JAVASCRIPT MODULES ═══════════ -->
 <script defer src="js/icons.js"></script>
 <script defer src="js/version.js"></script>
+<script defer src="js/whatsnew-core.js"></script>
 <script defer src="js/storage.js"></script>
 <script defer src="js/profiles.js"></script>
 <script defer src="js/goals-calc.js"></script>
@@ -3488,6 +3511,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script defer src="js/tax/engine.js"></script>
 <script defer src="js/pages/tax.js"></script>
 <script defer src="js/pages/settings.js"></script>
+<script defer src="js/pages/whatsnew.js"></script>
 <script defer src="js/pages/quickstart.js"></script>
 <script defer src="js/wizard.js"></script>
 <script defer src="js/login.js"></script>
