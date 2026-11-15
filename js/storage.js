@@ -20,6 +20,7 @@ const K={
   taxinst:   'cff_tax_inst',    // { FY: { person: { enrolled, method, amount, rate, quarterIncome, payments:[] } } }
   taxcgt:    'cff_tax_cgt',     // scenarios, valuations30Jun2027, lossesCF
   taxassess: 'cff_tax_assess',  // notice-of-assessment entries [{ person, fy, amount, date, paidDate }]
+  whatsnew:  'cff_whatsnew',    // { profileId: { start, seen, cardShown:{ver:date}, visited:{page:ver} } }
   // Per-component monthly histories — power the Net Worth breakdown table
   superHist:    'cff_super_history',    // { 'YYYY-MM': { brenton, shelley } }
   mortgageHist: 'cff_mortgage_history', // { 'YYYY-MM': { homeValue, balance } }

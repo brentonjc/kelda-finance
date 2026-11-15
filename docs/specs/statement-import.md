@@ -111,4 +111,4 @@ Two commits on one PR, so the CSV fixes can be reviewed apart from the PDF featu
 1. CSV import fixes + template + saved mappings
 2. PDF statement import
 
-Version bump: minor (new feature).
+Version bump: minor (new feature), 2.12.0 after the What’s new release took 2.11.0.

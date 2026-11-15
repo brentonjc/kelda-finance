@@ -102,9 +102,9 @@ function toast(msg,dur=2400,type){
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════
-const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','borrowing','investment','settings','dashboard-layout','quickstart','tax'];
+const PAGES=['dashboard','insights','transactions','bills','goals','mortgage','liabilities','cash','insurance','super','assets','bva','categories','smartrules','export','upload','forecast','transfers','equities','borrowing','investment','settings','dashboard-layout','quickstart','tax','whatsnew'];
 // Short titles for the compact mobile header (the dashboard keeps the greeting instead)
-const MOB_TITLES={insights:'Graphs',transactions:'Spending',bills:'Bills',goals:'Goals',mortgage:'Mortgage',liabilities:'Liabilities',cash:'Cash',insurance:'Insurance',super:'Super',assets:'Net Worth',bva:'Budget',categories:'Categories',smartrules:'Smart Rules',export:'Export',upload:'Upload',forecast:'Forecast',transfers:'Transfers',equities:'Equities',borrowing:'Borrowing Power',investment:'Investment Property',settings:'Settings','dashboard-layout':'Dashboard Layout',quickstart:'Quick Start',tax:'Tax'};
+const MOB_TITLES={insights:'Graphs',transactions:'Spending',bills:'Bills',goals:'Goals',mortgage:'Mortgage',liabilities:'Liabilities',cash:'Cash',insurance:'Insurance',super:'Super',assets:'Net Worth',bva:'Budget',categories:'Categories',smartrules:'Smart Rules',export:'Export',upload:'Upload',forecast:'Forecast',transfers:'Transfers',equities:'Equities',borrowing:'Borrowing Power',investment:'Investment Property',settings:'Settings','dashboard-layout':'Dashboard Layout',quickstart:'Quick Start',tax:'Tax',whatsnew:'What’s new'};
 
 function go(id){
   var _ut=document.getElementById('undo-toast');if(_ut)_ut.remove();
@@ -145,6 +145,7 @@ function go(id){
     else if(id==='dashboard-layout'){if(typeof renderDashboardLayout==='function')renderDashboardLayout();}
     else if(id==='quickstart'){if(typeof renderQuickStart==='function')renderQuickStart();}
     else if(id==='tax'){if(typeof renderTaxPage==='function')renderTaxPage();}
+    else if(id==='whatsnew'){if(typeof renderWhatsNewPage==='function')renderWhatsNewPage();}
   }catch(e){console.warn('render error for page',id,e);}
   window.scrollTo(0,0);
   // Sync mobile tab bar — pages without their own tab light up "More"
@@ -174,6 +175,7 @@ function navSyncActive(id){
   });
   updateNotifDot();
   renderTopbarGreeting();
+  if(typeof wnOnNavigate==='function'){try{wnOnNavigate(id);}catch(e){console.warn('whatsnew nav',e);}}
 }
 
 // Greeting + date shown in the top bar (item 4). Global — reflects the active profile.
@@ -437,6 +439,7 @@ function updateNotifDot(){
   var n = 0;
   try { if (typeof generateActionCards === 'function') n += (generateActionCards()||[]).length; } catch(e){}
   try { if (typeof generateNudges === 'function') n += (generateNudges()||[]).length; } catch(e){}
+  try { if (typeof wnUnreadCount === 'function') n += wnUnreadCount(); } catch(e){}
   dot.style.display = n > 0 ? 'block' : 'none';
 }
 
