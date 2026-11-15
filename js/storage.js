@@ -35,7 +35,9 @@ const K={
   lastCsvImport:  'kf_last_csv_import',   // ISO 'YYYY-MM-DD', set on successful CSV import
   lastIn:         'kf_last_in',           // { profileId: epoch-ms } — "Last in" meta on profile picker
   // Bank balances read from CSV imports: { v, anchors:{acctId:[{date,cents,batchId,kind}]}, log:[] }
-  balanceSync:    'cff_balance_sync'
+  balanceSync:    'cff_balance_sync',
+  // Column choices confirmed on import, per header row: { signature: { map:{header:field}, posSpend, at } }
+  csvMaps:        'cff_csv_maps'
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage unavailable:',e);}}

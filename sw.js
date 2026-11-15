@@ -1,7 +1,7 @@
 // Kelda Finance — Service Worker
 // Network-first strategy: always fetches fresh code, falls back to cache if offline.
 
-const CACHE = 'kelda-finance-v76';
+const CACHE = 'kelda-finance-v77';
 
 const SHELL = [
   './',
@@ -53,6 +53,9 @@ const SHELL = [
   './js/pages/assets.js',
   './js/pages/export.js',
   './js/pages/balancesync.js',
+  // pdf.js itself (assets/vendor/pdfjs, ~1.8 MB) isn't precached: it loads the
+  // first time a PDF is chosen and the fetch handler below caches it then
+  './js/statement-pdf.js',
   './js/pages/autocategorise.js',
   './js/pages/categories.js',
   './js/pages/bva.js',

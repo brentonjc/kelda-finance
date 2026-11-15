@@ -1,5 +1,13 @@
 // ══════════════════════════════════════════════════════════════
+// STATEMENT IMPORT. CSV files are parsed here; PDF statements are read by
+// js/statement-pdf.js into the same {headers, rows} shape, so both share the
+// mapping, preview, duplicate check and balance sync below.
 let _csvRaw=[], _csvHeaders=[], _csvParsed=[], _csvFileName='';
+// 'dmy' or 'mdy', decided once per file by csvDateOrder
+let _csvDateOrder='dmy';
+// The headers were made up by Kelda (PDF statement or a CSV with no header row),
+// so the mapping isn't remembered against them
+let _csvSynthetic=false;
 
 const CSV_FIELDS=[
   {v:'',      l:'— Ignore —'},
@@ -44,7 +52,7 @@ function csvGuess(h,amex){
   if(/debit|withdraw|charge/.test(s))return'debit';
   if(/credit|deposit/.test(s))return'credit';
   if(/amount|amt|sum|total/.test(s)&&!/balance/.test(s))return'amount';
-  if(/merchant|vendor|payee|supplier|store|shop/.test(s))return'name';
+  if(s==='name'||/merchant|vendor|payee|supplier|store|shop/.test(s))return'name';
   if(/subcat|subcategory|sub/.test(s))return'subcat';
   if(/^cat|category|class|group/.test(s))return'cat';
   if(/account|acct|wallet/.test(s))return'account';
@@ -53,11 +61,11 @@ function csvGuess(h,amex){
   return'';
 }
 
-// Parse CSV text → {headers, rows}
+// Parse CSV text → {headers, rows}, plus {error} when the file can't be read.
 // Quoted cells may hold commas, line breaks (Amex addresses and extended
 // details) and "" for a literal quote. Line breaks inside a cell become spaces.
 function csvParse(text){
-  const recs=[];let rec=[],cur='',inQ=false;
+  const recs=[];let rec=[],cur='',inQ=false,qAt=-1;
   text=String(text).replace(/^\uFEFF/,'');
   for(let i=0;i<text.length;i++){
     const c=text[i];
@@ -66,7 +74,7 @@ function csvParse(text){
       else if(c==='\r'&&text[i+1]==='\n')continue;
       else cur+=(c==='\r'||c==='\n')?' ':c;
     }
-    else if(c==='"'&&!cur.trim())inQ=true;
+    else if(c==='"'&&!cur.trim()){inQ=true;qAt=i;}
     else if(c===','){rec.push(cur.trim());cur='';}
     else if(c==='\n'||c==='\r'){
       if(c==='\r'&&text[i+1]==='\n')i++;
@@ -74,46 +82,126 @@ function csvParse(text){
     }
     else cur+=c;
   }
+  // A quote that never closes would swallow every row after it
+  if(inQ){
+    const line=text.slice(0,qAt).split(/\r\n|\r|\n/).length;
+    return{headers:[],rows:[],error:'Line '+line+' opens a quote (") that never closes, so the rows after it can’t be read. Open the file in a spreadsheet app, check that line, and save it as CSV again.'};
+  }
   rec.push(cur.trim());recs.push(rec);
   const filled=recs.filter(v=>v.some(x=>x));
+  if(!filled.length)return{headers:[],rows:[],error:'This file is empty.'};
   // Some exports put a title or account summary above the header row. Use the
-  // first row that names a date column and an amount column, else the first row.
+  // first row that names a date column and an amount column.
   let hi=filled.findIndex(v=>{
     const g=v.map(h=>csvGuess(h));
     return g.includes('date')&&(g.includes('amount')||g.includes('debit')||g.includes('credit'));
   });
+  // No header row at all (CommBank's CSV starts straight with transactions):
+  // name the columns from their contents so the first transaction isn't lost
+  if(hi<0&&csvLooksLikeTransaction(filled[0])){
+    const headers=csvHeadersFromValues(filled.slice(0,50));
+    return{headers,rows:csvRowsToObjects(headers,filled),headerless:true};
+  }
   if(hi<0)hi=0;
-  if(filled.length-hi<2)return{headers:[],rows:[]};
+  if(filled.length-hi<2){
+    return{headers:[],rows:[],error:'No transactions found. Kelda looks for a row of column names (such as Date, Description, Amount) followed by transactions. The file starts with: “'+filled[0].join(', ').slice(0,120)+'”'};
+  }
   const headers=filled[hi];
-  const rows=filled.slice(hi+1).map(v=>{
+  return{headers,rows:csvRowsToObjects(headers,filled.slice(hi+1))};
+}
+
+function csvRowsToObjects(headers,recs){
+  return recs.map(v=>{
     const obj={};headers.forEach((h,j)=>{obj[h]=v[j]||'';});
     return obj;
   });
-  return{headers,rows};
 }
 
-// Parse dollar string → float (handles $1,234.56 and (123) negatives)
+function csvIsDateCell(v){return !!(csvDate(v,'dmy')||csvDate(v,'mdy'));}
+// Cents shown, or a sign: "12.50", "-5", "+995.00". Bare integers are more often
+// account or reference numbers.
+function csvIsMoneyCell(v){return /\.\d{2}\b|^[-+(]|[-)]$|(CR|DR)$/i.test(String(v||'').trim())&&!isNaN(csvDollar(v));}
+
+// A row with a date and an amount: a transaction rather than column names
+function csvLooksLikeTransaction(rec){
+  return rec.some(csvIsDateCell)&&rec.some(v=>!csvIsDateCell(v)&&csvIsMoneyCell(v));
+}
+
+// Name the columns of a headerless file by what they hold, using names csvGuess
+// already maps: the first date column is Date; one money column is Amount, two are
+// Amount and Balance, three are Debit, Credit and Balance; the longest text is Description.
+function csvHeadersFromValues(recs){
+  const n=Math.max(...recs.map(r=>r.length));
+  const kind=[],textLen=[];
+  for(let j=0;j<n;j++){
+    const vals=recs.map(r=>r[j]||'').filter(Boolean);
+    textLen[j]=vals.reduce((s,v)=>s+v.length,0)/(vals.length||1);
+    // Description text has letters; digit-only columns (account or reference numbers) stay unnamed
+    kind[j]=!vals.length?'':vals.every(csvIsDateCell)?'date':vals.every(csvIsMoneyCell)?'money':vals.some(v=>/[a-z]/i.test(v))?'text':'';
+  }
+  const names=new Array(n).fill('');
+  const dateCol=kind.indexOf('date');
+  if(dateCol>=0)names[dateCol]='Date';
+  const money=kind.map((k,j)=>k==='money'?j:-1).filter(j=>j>=0);
+  const moneyNames=money.length===1?['Amount']:money.length===2?['Amount','Balance']:money.length===3?['Debit','Credit','Balance']:[];
+  moneyNames.forEach((nm,i)=>{names[money[i]]=nm;});
+  let best=-1;
+  kind.forEach((k,j)=>{if(k==='text'&&(best<0||textLen[j]>textLen[best]))best=j;});
+  if(best>=0)names[best]='Description';
+  return names.map((nm,j)=>nm||'Column '+(j+1));
+}
+
+// Parse dollar string → number, or NaN. One parser for every import path:
+// "$1,234.56", "(12.00)", "12.00-", "12.00 DR", "-1.234,56".
 function csvDollar(s){
-  if(!s)return NaN;
-  s=String(s).replace(/[$, ]/g,'').trim();
-  if(/^\(.*\)$/.test(s))return-parseFloat(s.replace(/[()]/g,''));
-  return parseFloat(s);
+  const c=BalanceSync.parseCents(s);
+  return c===null?NaN:c/100;
 }
 
-// Parse date string → YYYY-MM-DD
-function csvDate(s){
+// A real calendar date as YYYY-MM-DD, or null (31/02 and month 14 are rejected)
+function csvYmd(y,m,d){
+  y=String(y);if(y.length===2)y='20'+y;
+  const Y=+y,M=+m,D=+d;
+  if(!(Y>=1900&&Y<=2100&&M>=1&&M<=12&&D>=1))return null;
+  if(D>new Date(Date.UTC(Y,M,0)).getUTCDate())return null;
+  return Y+'-'+String(M).padStart(2,'0')+'-'+String(D).padStart(2,'0');
+}
+
+// Which way round a file writes numeric dates. Any first number above 12 means
+// day first; otherwise any second number above 12 means month first (Excel on a
+// US-locale computer re-saves dates that way). Neither: day first, as in Australia.
+function csvDateOrder(values){
+  let dmy=false,mdy=false;
+  values.forEach(v=>{
+    const p=String(v||'').trim().match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+    if(!p)return;
+    if(+p[1]>12)dmy=true;else if(+p[2]>12)mdy=true;
+  });
+  return mdy&&!dmy?'mdy':'dmy';
+}
+
+// csvDate with the current file's date order
+function csvRowDate(s){return csvDate(s,_csvDateOrder);}
+
+// Parse date string → YYYY-MM-DD, or null. order: 'dmy' (default) or 'mdy'.
+function csvDate(s,order){
   if(!s)return null;
-  s=s.trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
-  // Australian format DD/MM/YYYY: treat first number as day, second as month
-  const parts=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
-  if(parts){let[,a,b,y]=parts;if(y.length===2)y='20'+y;return`${y}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;}
+  s=String(s).trim();
+  let p=s.match(/^(\d{4})[\-\/.](\d{1,2})[\-\/.](\d{1,2})$/);
+  if(p)return csvYmd(p[1],p[2],p[3]);
+  // Numbers: day first unless the file writes month first
+  p=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})$/);
+  if(p)return order==='mdy'?csvYmd(p[3],p[1],p[2]):csvYmd(p[3],p[2],p[1]);
   // Month-name dates: "8 Oct 2026", "08-Oct-26", "Oct 8, 2026"
   const mon=m=>['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m.slice(0,3).toLowerCase())+1;
   let mn=s.match(/^(\d{1,2})[ \-]([a-z]{3,9})\.?,?[ \-](\d{2}|\d{4})$/i),d,m,y;
   if(mn){[,d,m,y]=mn;}
   else if((mn=s.match(/^([a-z]{3,9})\.? (\d{1,2}),? (\d{4})$/i))){[,m,d,y]=mn;}
-  if(mn&&mon(m)){if(y.length===2)y='20'+y;return`${y}-${String(mon(m)).padStart(2,'0')}-${d.padStart(2,'0')}`;}
+  if(mn)return mon(m)?csvYmd(y,mon(m),d):null;
+  // The browser's parser reads almost anything ending in a number ("Coles 2" is
+  // 1 Feb 2001), so only hand it ISO timestamps and text naming a month and a year
+  // ("Thu Oct 08 2026", "2026-10-08T00:00:00")
+  if(!/^\d{4}-\d{2}-\d{2}[T ]/.test(s)&&!(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i.test(s)&&/\b(19|20)\d{2}\b/.test(s)))return null;
   // Anything else the browser can read. Use the local calendar date: toISOString()
   // is UTC, which is the previous day for midnight in Australia.
   const nd=new Date(s);
@@ -184,12 +272,31 @@ function csvPosIsSpend(){
 
 function csvReset(){
   _csvRaw=[];_csvHeaders=[];_csvParsed=[];_csvFileName='';
+  _csvDateOrder='dmy';_csvSynthetic=false;
   if(typeof _bsCheck!=='undefined')_bsCheck=null;
+  if(typeof pdfCancel==='function')pdfCancel();
   csvSetPosSpend(false);
+  csvShowError('');csvSetNote('');
   document.getElementById('csv-file-input').value='';
   const bw=document.getElementById('csv-bal-acct-wrap');if(bw)bw.hidden=true;
   const bs=document.getElementById('csv-bal-acct');if(bs)bs.value='';
   csvGoStep(1);
+}
+
+// Step 1's error box. Longer than a toast can hold, and it stays until the next file.
+function csvShowError(msg){
+  const el=document.getElementById('csv-err');
+  if(!el){if(msg)toast('⚠️ '+msg);return;}
+  el.textContent=msg||'';
+  el.hidden=!msg;
+}
+
+// Step 2's note about where the columns came from (PDF, no header row, saved mapping)
+function csvSetNote(msg){
+  const el=document.getElementById('csv-src-note');
+  if(!el)return;
+  el.textContent=msg||'';
+  el.hidden=!msg;
 }
 
 // ── CSV wizard host management ───────────────────────────────
@@ -225,22 +332,74 @@ function csvDrop(e){
 function csvFileChosen(e){if(e.target.files[0])csvProcess(e.target.files[0]);}
 
 function csvProcess(file){
-  if(!file.name.match(/\.(csv|txt)$/i)){toast('⚠️ Please upload a .csv file');return;}
+  const name=file.name||'';
+  csvShowError('');
+  // A PDF still being read would otherwise replace this file's columns when it finishes
+  if(typeof pdfCancel==='function')pdfCancel();
+  if(/\.pdf$/i.test(name)||file.type==='application/pdf'){
+    if(typeof pdfImportFile==='function')pdfImportFile(file);
+    else csvShowError('PDF statements can’t be read in this browser. Download a CSV from your bank instead.');
+    return;
+  }
+  if(/\.(xlsx|xlsm|xls|numbers|ods)$/i.test(name)){
+    csvShowError('That’s a spreadsheet file, not a CSV. Save it as CSV first: in Excel choose File › Save As › CSV UTF-8; in Numbers choose File › Export To › CSV; in Google Sheets choose File › Download › Comma-separated values. Then upload the .csv file.');
+    return;
+  }
+  if(!/\.(csv|txt)$/i.test(name)){
+    csvShowError('Kelda reads CSV files and PDF statements. “'+name+'” is neither. Download a CSV or PDF statement from your bank’s website or app.');
+    return;
+  }
   const r=new FileReader();
   r.onload=e=>{
-    const{headers,rows}=csvParse(e.target.result);
-    if(!headers.length||!rows.length){toast('⚠️ Could not read file — check the format');return;}
-    _csvHeaders=headers;_csvRaw=rows;_csvFileName=file.name;
-    const amex=csvIsAmex(headers);
-    csvSetPosSpend(amex);
-    csvBuildMapTable(amex);csvGoStep(2);
-    if(amex)toast('American Express file: “Positive amounts are spending” is ticked');
+    const parsed=csvParse(e.target.result);
+    if(parsed.error){csvShowError(parsed.error);return;}
+    csvLoadTable(parsed,name,{
+      synthetic:!!parsed.headerless,
+      note:parsed.headerless?'This file has no row of column names, so Kelda named the columns from what they hold. Check them below.':''
+    });
   };
   r.readAsText(file);
 }
 
+// Load a parsed table ({headers, rows}) into step 2. CSV files and PDF statements
+// both arrive here. opts.synthetic: the headers were made up by Kelda; opts.note:
+// what step 2 should say about where the columns came from.
+function csvLoadTable(parsed,fileName,opts){
+  opts=opts||{};
+  const{headers,rows}=parsed;
+  if(!headers.length||!rows.length){csvShowError('No transactions found in this file.');return false;}
+  _csvHeaders=headers;_csvRaw=rows;_csvFileName=fileName||'';
+  _csvSynthetic=!!opts.synthetic;
+  const amex=csvIsAmex(headers);
+  const saved=_csvSynthetic?null:csvSavedMapping(headers);
+  csvSetPosSpend(saved?!!saved.posSpend:amex);
+  csvBuildMapTable(amex,saved);
+  csvSetNote(opts.note||(saved?'Using the columns you chose last time for a file like this. Change any that are wrong.':''));
+  csvGoStep(2);
+  if(amex&&!saved)toast('American Express file: “Positive amounts are spending” is ticked');
+  return true;
+}
+
+// ── SAVED MAPPINGS ───────────────────────────────────────────
+// The columns a user confirms are remembered per header row, so the next file
+// from the same bank opens with them already chosen. { signature: {map, posSpend, at} }
+const CSV_MAPS_MAX=20;
+function csvMapSignature(headers){return headers.map(h=>String(h).trim().toLowerCase()).join('|');}
+function csvSavedMapping(headers){
+  const all=load(K.csvMaps)||{};
+  return all[csvMapSignature(headers)]||null;
+}
+function csvRememberMapping(colMap,posSpend){
+  if(_csvSynthetic)return;
+  const all=load(K.csvMaps)||{};
+  all[csvMapSignature(_csvHeaders)]={map:colMap,posSpend:!!posSpend,at:Date.now()};
+  // Keep the most recent few
+  Object.keys(all).sort((a,b)=>(all[b].at||0)-(all[a].at||0)).slice(CSV_MAPS_MAX).forEach(k=>{delete all[k];});
+  save(K.csvMaps,all);
+}
+
 // ── MAPPING TABLE ────────────────────────────────────────────
-function csvBuildMapTable(amex){
+function csvBuildMapTable(amex,saved){
   const tbody=document.getElementById('csv-map-body');
   const html=[];
   // First matching column wins, so "Date Processed" or "Reference" can't
@@ -248,7 +407,7 @@ function csvBuildMapTable(amex){
   const taken=new Set();
   _csvHeaders.forEach(h=>{
     const samples=_csvRaw.slice(0,3).map(r=>r[h]).filter(Boolean).join(', ');
-    let guess=csvGuess(h,amex);
+    let guess=saved?(saved.map[h]||''):csvGuess(h,amex);
     if(taken.has(guess))guess='';
     if(guess)taken.add(guess);
     const opts=CSV_FIELDS.map(o=>'<option value="'+o.v+'"'+(o.v===guess?' selected':'')+'>'+o.l+'</option>').join('');
@@ -265,18 +424,21 @@ function csvBuildMapTable(amex){
 // ── PREVIEW ──────────────────────────────────────────────────
 function csvPreview(){
   // Collect mapping
-  const map={};
-  document.querySelectorAll('#csv-map-body select').forEach(sel=>{if(sel.value)map[sel.value]=sel.dataset.col;});
+  const map={},colMap={};
+  document.querySelectorAll('#csv-map-body select').forEach(sel=>{if(sel.value){map[sel.value]=sel.dataset.col;colMap[sel.dataset.col]=sel.value;}});
   if(!map.date){toast('⚠️ Please map a Date column');return;}
   if(!map.amount&&!map.debit&&!map.credit){toast('⚠️ Please map an Amount, Debit or Credit column');return;}
+  csvRememberMapping(colMap,csvPosIsSpend());
 
   // Only a single Amount column is flipped; Debit/Credit columns carry their own direction
   const flip=!!map.amount&&csvPosIsSpend();
+  _csvDateOrder=csvDateOrder(_csvRaw.map(row=>row[map.date]));
+  if(_csvDateOrder==='mdy')toast('Dates in this file are month first (e.g. 3/14/2026), so they’re read that way');
   _csvParsed=_csvRaw.map((row,idx)=>{
     const r={_idx:idx,_err:null,_dup:false};
 
     // Date
-    r.date=csvDate(row[map.date]);
+    r.date=csvRowDate(row[map.date]);
     if(!r.date)r._err='Invalid date';
 
     // Amount
@@ -290,7 +452,7 @@ function csvPreview(){
     // Balance files: read the amount the way the balance check does (CR/DR suffixes),
     // so imported rows carry the same sign the running balance proves
     if(map.balance&&typeof BalanceSync!=='undefined'){
-      const bc=BalanceSync.buildRows([row],map,csvDate,{posSpend:flip})[0].amountCents;
+      const bc=BalanceSync.buildRows([row],map,csvRowDate,{posSpend:flip})[0].amountCents;
       if(bc!==null)amt=bc/100;
     }
     if(isNaN(amt)){r._err=r._err||'Invalid amount';amt=0;}
@@ -335,7 +497,7 @@ function csvPreview(){
 
     // Duplicate check
     r._dup = (typeof AutoCat !== 'undefined')
-      ? AutoCat.isDuplicate(r.date, r.amount, r.name, TX)
+      ? AutoCat.isDuplicate(r.date, r.amount, r.name, TX, r.description)
       : TX.some(t=>t.date===r.date&&Math.abs(Number(t.amount)-r.amount)<0.01&&(t.description||'').toLowerCase()===(r.description||'').toLowerCase());
 
     return r;
@@ -437,18 +599,25 @@ function csvFinishImport(count){
 }
 
 // ── TEMPLATE DOWNLOAD ────────────────────────────────────────
-function csvDownloadTemplate(){
-  const rows=[
-    ['date','type','name','category','subcategory','description','amount'],
-    ['2025-03-01','expense','Woolworths','Food & Eating Out','Groceries','Weekly shop','127.50'],
-    ['2025-03-01','income','','Salary','Regular Pay','Profile 1 salary','9200.00'],
-    ['2025-03-03','expense','AGL','Home','Power Bill','March electricity','180.00'],
-    ['2025-03-05','expense','Netflix','Entertainment','Netflix','Monthly subscription','19.99'],
-    ['2025-03-07','income','','Salary','Regular Pay','Profile 2 salary','7800.00'],
-    ['2025-03-10','expense','The Grill Restaurant','Food & Eating Out','Eating Out (Cafes, Restaurant Food)','Anniversary dinner','95.00'],
-    ['2025-03-12','expense','Ampol Fuel','Car & Transport','Petrol','Fill up','90.00'],
+// For typing transactions in by hand. Bank files don't need it: they import as they are.
+// Same shape as a bank export: day-first dates, one signed Amount (negative = spending),
+// no Type column. Category and Subcategory are optional; blank ones are auto-filled.
+// Category names come from the user's own categories so they always match.
+function csvTemplateRows(){
+  const cat=(id,fallback)=>{const c=(typeof LCATS!=='undefined'?LCATS:[]).find(x=>x.id===id);return c?c.name:fallback;};
+  return[
+    ['Date','Merchant','Description','Amount','Category','Subcategory'],
+    ['14/03/2026','Woolworths','Weekly shop','-127.50',cat('food_eating_out','Food & Eating Out'),'Groceries'],
+    ['15/03/2026','Employer Pty Ltd','Salary','3200.00',cat('salary','Salary'),'Regular Pay'],
+    ['16/03/2026','AGL','Electricity','-180.00','',''],
+    ['18/03/2026','Netflix','Subscription','-18.99','',''],
+    ['21/03/2026','Ampol','Fuel','-90.00',cat('car_transport','Car & Transport'),'Petrol'],
   ];
-  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+}
+function csvCell(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function csvDownloadTemplate(){
+  const rows=csvTemplateRows();
+  const blob=new Blob([rows.map(r=>r.map(csvCell).join(',')).join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='kelda-finance-template.csv';a.click();
   toast('📄 Template downloaded!');

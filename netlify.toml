@@ -19,6 +19,13 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
 
+# pdf.js ships as ES modules (.mjs). Module scripts need a JavaScript type, and the
+# site sends nosniff, so don't rely on Netlify's default for the extension.
+[[headers]]
+  for = "/assets/vendor/pdfjs/*.mjs"
+  [headers.values]
+    Content-Type = "text/javascript; charset=utf-8"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

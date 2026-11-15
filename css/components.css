@@ -653,6 +653,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:18px 0;}
 .imp-stat .isl{font-size:.66rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.06em;}
 .imp-hint{background:var(--pink-dim);border:1px solid color-mix(in srgb, var(--primary) 30%, transparent);border-radius:9px;padding:11px 14px;font-size:.76rem;color:var(--pink-light);margin-top:14px;line-height:1.5;}
 .imp-hint strong{display:block;margin-bottom:3px;}
+.imp-hint__more{display:block;margin-top:6px;}
+/* Statement import: step 1 error, PDF reading progress, step 2 source note */
+.imp-err{background:var(--danger-bg);border:1px solid color-mix(in srgb, var(--danger) 40%, transparent);border-radius:9px;padding:11px 14px;font-size:.82rem;color:var(--danger-ink);margin-top:14px;line-height:1.5;}
+.imp-err[hidden],.csv-reading[hidden],.up-note[hidden]{display:none;}
+.csv-reading{display:flex;align-items:center;gap:8px;min-height:44px;margin-top:12px;font-size:.85rem;color:var(--muted);}
+.csv-reading__spin{font-size:1.1rem;animation:csvSpin 1s linear infinite;}
+@keyframes csvSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.csv-reading__spin{animation:none;}}
+.up-note{background:var(--pink-dim);border-radius:9px;padding:10px 14px;font-size:.8rem;color:var(--pink-light);margin-bottom:14px;line-height:1.5;}
 .imp-hint code{background:var(--card);border-radius:4px;padding:1px 5px;font-size:.74rem;}
 /* Upload page / CSV import wizard (was inline) */
 .file-input-hidden{display:none;}
